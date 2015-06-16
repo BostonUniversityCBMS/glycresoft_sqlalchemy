@@ -2,7 +2,7 @@ import os
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy import JSONType, Numeric, Unicode, create_engine, Column, Integer, ForeignKey
+from sqlalchemy import PickleType, Numeric, Unicode, create_engine, Column, Integer, ForeignKey
 from .json_type import JSONType
 Base = declarative_base()
 
@@ -11,7 +11,7 @@ class Experiment(Base):
     __tablename__ = "Experiment"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(Unicode, default=u"")
+    name = Column(Unicode(128), default=u"")
     proteins = relationship("Protein", backref=backref("experiment", order_by=id),
                             collection_class=attribute_mapped_collection('name'))
 
@@ -32,8 +32,8 @@ class ExperimentParameter(Base):
 
     experiment_id = Column(Integer, ForeignKey("Experiment.id"))
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(Unicode, default=u"", index=True)
-    value = Column(JSONType)
+    name = Column(Unicode(128), default=u"", index=True)
+    value = Column(PickleType)
 
     @classmethod
     def parameters_for(cls, param_dict, experiment_id, session):
@@ -49,9 +49,9 @@ class Glycan(Base):
     __tablename__ = "Glycan"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(Unicode, default=u"")
+    name = Column(Unicode(128), default=u"")
     mass = Column(Numeric(10, 6, asdecimal=False), default=-1.0)
-    composition = Column(Unicode, default=u"")
+    composition = Column(Unicode(128), default=u"")
     experiment_id = Column(Integer, ForeignKey("Experiment.id"))
 
 
@@ -59,10 +59,10 @@ class Protein(Base):
     __tablename__ = "Protein"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    protein_sequence = Column(Unicode, default=u"")
-    name = Column(Unicode, default=u"", index=True)
+    protein_sequence = Column(Unicode(128), default=u"")
+    name = Column(Unicode(128), default=u"", index=True)
     experiment_id = Column(Integer, ForeignKey("Experiment.id"))
-    glycosylation_sites = Column(JSONType)
+    glycosylation_sites = Column(PickleType)
     theoretical_glycopeptides = relationship("TheoreticalGlycopeptide", backref=backref('protein', order_by=id))
     glycopeptide_matches = relationship("GlycopeptideMatch", backref=backref('protein', order_by=id))
 
@@ -91,24 +91,24 @@ class TheoreticalGlycopeptide(Base):
     start_position = Column(Integer)
     end_position = Column(Integer)
 
-    base_peptide_sequence = Column(Unicode, index=True)
-    modified_peptide_sequence = Column(Unicode)
-    glycopeptide_sequence = Column(Unicode, index=True)
-    glycan_composition_str = Column(Unicode, index=True)
+    base_peptide_sequence = Column(Unicode(128), index=True)
+    modified_peptide_sequence = Column(Unicode(128))
+    glycopeptide_sequence = Column(Unicode(128), index=True)
+    glycan_composition_str = Column(Unicode(128), index=True)
     sequence_length = Column(Integer, index=True)
 
-    peptide_modifications = Column(Unicode)
+    peptide_modifications = Column(Unicode(128))
 
-    glycosylation_sites = Column(JSONType)
+    glycosylation_sites = Column(PickleType)
 
-    oxonium_ions = Column(JSONType)
-    stub_ions = Column(JSONType)
+    oxonium_ions = Column(PickleType)
+    stub_ions = Column(PickleType)
 
-    bare_b_ions = Column(JSONType)
-    glycosylated_b_ions = Column(JSONType)
+    bare_b_ions = Column(PickleType)
+    glycosylated_b_ions = Column(PickleType)
 
-    bare_y_ions = Column(JSONType)
-    glycosylated_y_ions = Column(JSONType)
+    bare_y_ions = Column(PickleType)
+    glycosylated_y_ions = Column(PickleType)
 
     def __repr__(self):
         rep = "<TheoreticalGlycopeptide {} {}>".format(self.glycopeptide_sequence, self.observed_mass)
@@ -146,30 +146,30 @@ class GlycopeptideMatch(Base):
     start_position = Column(Integer)
     end_position = Column(Integer)
 
-    base_peptide_sequence = Column(Unicode)
-    modified_peptide_sequence = Column(Unicode)
-    glycopeptide_sequence = Column(Unicode)
+    base_peptide_sequence = Column(Unicode(128))
+    modified_peptide_sequence = Column(Unicode(128))
+    glycopeptide_sequence = Column(Unicode(128))
     sequence_length = Column(Integer, index=True)
 
-    peptide_modifications = Column(Unicode)
-    glycan_composition_str = Column(Unicode)
+    peptide_modifications = Column(Unicode(128))
+    glycan_composition_str = Column(Unicode(128))
 
-    scan_id_range = Column(JSONType)
+    scan_id_range = Column(PickleType)
     first_scan = Column(Integer)
     last_scan = Column(Integer)
 
-    glycosylation_sites = Column(JSONType)
+    glycosylation_sites = Column(PickleType)
 
-    oxonium_ions = Column(JSONType)
-    stub_ions = Column(JSONType)
+    oxonium_ions = Column(PickleType)
+    stub_ions = Column(PickleType)
 
-    bare_b_ions = Column(JSONType)
-    glycosylated_b_ions = Column(JSONType)
+    bare_b_ions = Column(PickleType)
+    glycosylated_b_ions = Column(PickleType)
 
-    bare_y_ions = Column(JSONType)
-    glycosylated_y_ions = Column(JSONType)
+    bare_y_ions = Column(PickleType)
+    glycosylated_y_ions = Column(PickleType)
 
-    glycan_composition = Column(JSONType)
+    glycan_composition = Column(PickleType)
 
     mean_coverage = Column(Numeric(10, 6, asdecimal=False))
     mean_hexnac_coverage = Column(Numeric(10, 6, asdecimal=False))
@@ -184,7 +184,7 @@ class SpectrumMatch(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     spectrum_id = Column(Integer)
     theoretical_glycopeptide_id = Column(Integer, ForeignKey("TheoreticalGlycopeptide.id"), index=True)
-    peak_match_map = Column(JSONType)
+    peak_match_map = Column(PickleType)
 
 
 class DatabaseManager(object):

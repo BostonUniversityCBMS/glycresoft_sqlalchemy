@@ -16,10 +16,14 @@ from glycresoft_ms2_classification.structure import constants
 from glycresoft_ms2_classification.proteomics import get_enzyme, msdigest_xml_parser
 
 from .. import data_model as model
+from ..data_model import commit_pool
 
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)(\w+)')
 g_colon_prefix = "G:"
+
+
+pooling_queue = None
 
 
 def parse_site_file(site_lists):
@@ -293,7 +297,7 @@ def from_sequence(row, monosaccharide_identities):
     return [product]
 
 
-def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccharide_identities, database_manager, proteins):
+def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccharide_identities, pool_addr, proteins):
     """Multiprocessing dispatch function to generate all theoretical sequences and their
     respective fragments from a given MS1 result
 
@@ -313,12 +317,18 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccha
     list of dicts:
         List of each theoretical sequence and its fragment ions
     """
+    try:
+        queue = pooling_queue.work_queue
+    except NameError:
+        global pooling_queue
+        pooling_queue = CommitPooler(pool_addr)
+        queue = pooling_queue.start()
+
     ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
 
     if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
         return 0
 
-    session = database_manager.session()
     # Compute the set of modifications that can occur.
     mod_list = get_peptide_modifications(
         ms1_result.peptide_modifications, modification_table)
@@ -341,9 +351,9 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccha
     i = 0
     for sequence in fragments:
         sequence.protein_id = proteins[ms1_result.protein_id].id
-        session.add(sequence)
+        queue.put(sequence)
         i += 1
-    session.commit()
+
     return i
 
 
@@ -414,11 +424,13 @@ class TheoreticalSearchSpace(object):
             self.session.add(model.Protein(name=name, glycosylation_sites=sites, experiment_id=self.experiment.id))
 
         self.session.commit()
+        self.pooler = commit_pool.CommitPooler(self.manager.path)
 
     def prepare_task_fn(self):
+
         task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map, monosaccharide_identities=self.monosaccharide_identities,
-                                    database_manager=self.manager, proteins=self.experiment.proteins)
+                                    queue=self.pooler.start(), proteins=self.experiment.proteins)
         return task_fn
 
     def run(self):
