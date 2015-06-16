@@ -1,3 +1,8 @@
+import logging
+logging.basicConfig(level=logging.DEBUG, filemode='w',
+                    format="%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
+                    datefmt="%H:%M:%S")
+
 from glycresoft_sqlalchemy.search_space_builder import search_space_builder
 
 if __name__ == '__main__':
