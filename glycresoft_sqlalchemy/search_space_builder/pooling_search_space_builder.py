@@ -16,14 +16,11 @@ from glycresoft_ms2_classification.structure import constants
 from glycresoft_ms2_classification.proteomics import get_enzyme, msdigest_xml_parser
 
 from .. import data_model as model
-from ..data_model import commit_pool
 
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)(\w+)')
 g_colon_prefix = "G:"
 
-
-pooling_queue = None
 
 
 def parse_site_file(site_lists):
@@ -297,7 +294,7 @@ def from_sequence(row, monosaccharide_identities):
     return [product]
 
 
-def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccharide_identities, pool_addr, proteins):
+def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccharide_identities, proteins):
     """Multiprocessing dispatch function to generate all theoretical sequences and their
     respective fragments from a given MS1 result
 
@@ -317,17 +314,10 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccha
     list of dicts:
         List of each theoretical sequence and its fragment ions
     """
-    try:
-        queue = pooling_queue.work_queue
-    except NameError:
-        global pooling_queue
-        pooling_queue = CommitPooler(pool_addr)
-        queue = pooling_queue.start()
-
     ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
 
     if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
-        return 0
+        return []
 
     # Compute the set of modifications that can occur.
     mod_list = get_peptide_modifications(
@@ -339,7 +329,7 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccha
 
     # No recorded sites, skip this component.
     if len(glycan_sites) == 0:
-        return 0
+        return []
 
     # Adjust the glycan_sites to relative position
     glycan_sites = [x - ms1_result.start_position for x in glycan_sites]
@@ -348,13 +338,11 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccha
     seq_list = ss.get_theoretical_sequence(ms1_result.count_glycosylation_sites)
     fragments = [generate_fragments(seq, ms1_result)
                  for seq in seq_list]
-    i = 0
-    for sequence in fragments:
-        sequence.protein_id = proteins[ms1_result.protein_id].id
-        queue.put(sequence)
-        i += 1
 
-    return i
+    for sequence in fragments:
+        sequence.protein_id = proteins[ms1_result.protein_id]
+
+    return fragments
 
 
 class TheoreticalSearchSpace(object):
@@ -424,13 +412,12 @@ class TheoreticalSearchSpace(object):
             self.session.add(model.Protein(name=name, glycosylation_sites=sites, experiment_id=self.experiment.id))
 
         self.session.commit()
-        self.pooler = commit_pool.CommitPooler(self.manager.path)
 
     def prepare_task_fn(self):
 
         task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map, monosaccharide_identities=self.monosaccharide_identities,
-                                    queue=self.pooler.start(), proteins=self.experiment.proteins)
+                                    proteins={protein.name: protein.id for protein in self.experiment.proteins.values()})
         return task_fn
 
     def run(self):
@@ -439,22 +426,29 @@ class TheoreticalSearchSpace(object):
         '''
         task_fn = self.prepare_task_fn()
         cntr = 0
+        checkpoint = 0
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
             for res in worker_pool.imap(task_fn, self.ms1_results_reader, chunksize=25):
-                cntr += res
-                if True: #(cntr % 1000) == 0:
+                self.session.add_all(res)
+                cntr += len(res)
+                if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
-
+                    self.session.commit()
+                    checkpoint = cntr + 1000
             worker_pool.terminate()
         else:
             logger.debug("Building theoretical sequences sequentially")
             for row in self.ms1_results_reader:
                 res = task_fn(row)
-                cntr += res
-                if True: #(cntr % 1000) == 0:
+                self.session.add_all(res)
+                cntr += len(res)
+                if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
+                    self.session.commit()
+                    checkpoint = cntr + 1000
+        self.session.commit()
 
 
 class ExactSearchSpace(TheoreticalSearchSpace):
@@ -504,6 +498,7 @@ class ExactSearchSpace(TheoreticalSearchSpace):
             "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS
         }, experiment_id=self.experiment.id)
         self.session.add(self.metadata)
+        self.session.commit()
 
     def prepare_task_fn(self):
         task_fn = functools.partial(from_sequence, monosaccharide_identities=self.monosaccharide_identities)
