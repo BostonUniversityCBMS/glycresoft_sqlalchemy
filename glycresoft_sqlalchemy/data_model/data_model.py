@@ -63,7 +63,7 @@ class Protein(Base):
     name = Column(Unicode(128), default=u"", index=True)
     experiment_id = Column(Integer, ForeignKey("Experiment.id"))
     glycosylation_sites = Column(PickleType)
-    theoretical_glycopeptides = relationship("TheoreticalGlycopeptide", backref=backref('protein', order_by=id))
+    theoretical_glycopeptides = relationship("TheoreticalGlycopeptide", backref=backref('protein', order_by=id), lazy='dynamic')
     glycopeptide_matches = relationship("GlycopeptideMatch", backref=backref('protein', order_by=id))
 
     def __repr__(self):

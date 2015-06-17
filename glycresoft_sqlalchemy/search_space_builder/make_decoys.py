@@ -155,11 +155,12 @@ class DecoySearchSpaceBuilder(object):
             self.protein_decoy_map[k] = v.id
 
     def stream_theoretical_glycopeptides(self):
+        session = self.manager.session()
         for exp_id in self.experiment_ids:
-            for name, protein_id in self.session.query(
+            for name, protein_id in session.query(
                     Protein.name, Protein.id).filter(Protein.experiment_id == exp_id):
                 print(name)
-                theoretical_glycopeptide_ids = (self.session.query(
+                theoretical_glycopeptide_ids = (session.query(
                        TheoreticalGlycopeptide.id).filter(TheoreticalGlycopeptide.protein_id == protein_id))
                 for theoretical_id in itertools.chain.from_iterable(theoretical_glycopeptide_ids):
                     yield theoretical_id

@@ -22,7 +22,6 @@ mod_pattern = re.compile(r'(\d+)(\w+)')
 g_colon_prefix = "G:"
 
 
-
 def parse_site_file(site_lists):
     site_list_map = {}
     last_name = None
@@ -271,7 +270,7 @@ def generate_fragments(seq, ms1_result):
     return theoretical_glycopeptide
 
 
-def from_sequence(row, monosaccharide_identities):
+def from_sequence(row, monosaccharide_identities, proteins):
     """Convert an MS1GlycopeptideResult directly into its fragments
     with exact positions pre-specified on its :attr:`peptide_sequence`
 
@@ -290,7 +289,9 @@ def from_sequence(row, monosaccharide_identities):
     if len(ms1_result.base_peptide_sequence) == 0:
         return []
     seq = Sequence(ms1_result.base_peptide_sequence)
+    seq.glycan = ""
     product = generate_fragments(seq, ms1_result)
+    product.protein_id = proteins[row.protein_id]
     return [product]
 
 
@@ -362,12 +363,17 @@ class TheoreticalSearchSpace(object):
                  enzyme=None,
                  site_list=None,
                  constant_modifications=None,
-                 variable_modifications=None, n_processes=4, **kwargs):
+                 variable_modifications=None,
+                 n_processes=4,
+                 commit_checkpoint=1000, **kwargs):
         if db_file_name is None:
             db_file_name = os.path.splitext(ms1_results_file)[0] + '.db'
+        self.db_file_name = db_file_name
         self.manager = model.initialize(db_file_name)
         self.session = self.manager.session()
         self.ms1_results_file = ms1_results_file
+
+        self.commit_checkpoint = commit_checkpoint
 
         tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
 
@@ -416,13 +422,19 @@ class TheoreticalSearchSpace(object):
     def prepare_task_fn(self):
 
         task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
-                                    site_list_map=self.glycosylation_site_map, monosaccharide_identities=self.monosaccharide_identities,
+                                    site_list_map=self.glycosylation_site_map,
+                                    monosaccharide_identities=self.monosaccharide_identities,
                                     proteins={protein.name: protein.id for protein in self.experiment.proteins.values()})
         return task_fn
 
     def run(self):
         '''
-        Execute the algorithm on :attr:`n_processes` processes
+        Execute the algorithm on :attr:`n_processes` processes in a pool, or
+        in the main process if :attr:`n_processes` == 1.
+
+        All records produced in worker processes are pooled in the main process, and
+        are commit to the database approximately every :attr:`commit_checkpoint` records
+        or so to prevent bottlenecks.
         '''
         task_fn = self.prepare_task_fn()
         cntr = 0
@@ -436,7 +448,8 @@ class TheoreticalSearchSpace(object):
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
                     self.session.commit()
-                    checkpoint = cntr + 1000
+                    self.session = self.manager.session()
+                    checkpoint = cntr + self.commit_checkpoint
             worker_pool.terminate()
         else:
             logger.debug("Building theoretical sequences sequentially")
@@ -447,7 +460,8 @@ class TheoreticalSearchSpace(object):
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
                     self.session.commit()
-                    checkpoint = cntr + 1000
+                    self.session.expunge_all()
+                    checkpoint = cntr + self.commit_checkpoint
         self.session.commit()
 
 
@@ -498,10 +512,16 @@ class ExactSearchSpace(TheoreticalSearchSpace):
             "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS
         }, experiment_id=self.experiment.id)
         self.session.add(self.metadata)
+
+        for name, sites in self.glycosylation_site_map.items():
+            self.session.add(model.Protein(name=name, glycosylation_sites=sites, experiment_id=self.experiment.id))
+
         self.session.commit()
 
     def prepare_task_fn(self):
-        task_fn = functools.partial(from_sequence, monosaccharide_identities=self.monosaccharide_identities)
+        task_fn = functools.partial(from_sequence, monosaccharide_identities=self.monosaccharide_identities,
+                                    proteins={protein.name: protein.id for protein in
+                                              self.experiment.proteins.values()})
         return task_fn
 
 

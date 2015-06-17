@@ -19,7 +19,7 @@ from ..spectra import DeconIOBase, MSMSSqlDB, ObservedPrecursorSpectrum
 from ..spectra.bupid_topdown_deconvoluter import BUPIDYamlParser
 from glycresoft_ms2_classification.utils.parallel_opener import ParallelParser
 
-
+from ..scoring import score_matches
 from .. import data_model as model
 
 Experiment = model.Experiment
@@ -56,6 +56,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
     theoretical = session.query(TheoreticalGlycopeptide).filter(
         TheoreticalGlycopeptide.id == theoretical).first()
 
+    # Containers for global theoretical peak matches
     oxonium_ions = []
     bare_b_ions = []
     bare_y_ions = []
@@ -63,6 +64,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
     glycosylated_y_ions = []
     stub_ions = []
 
+    # Localized global references
     proton = PROTON
     lppm_error = ppm_error
     lfabs = math.fabs
@@ -92,81 +94,81 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
         collect = bare_b_ions.append
         for theoretical_ion in theoretical.bare_b_ions:
             query_mass = theoretical_ion['mass']
+            deprotonated_mass = query_mass - proton
             for peak in peak_list:
                 observed_mass = peak.neutral_mass
-                deprotonated_mass = observed_mass - proton
-                match_error = lppm_error(deprotonated_mass, query_mass)
+                match_error = lppm_error(observed_mass, deprotonated_mass)
                 if lfabs(match_error) <= ms2_tolerance:
                     match = ({'key': theoretical_ion['key'],
-                              "observed_mass": deprotonated_mass,
+                              "observed_mass": observed_mass,
                               'ppm_error': match_error, "peak_id": peak.id})
                     collect(match)
                     peak_match_map[peak.id].append(match)
-                elif deprotonated_mass > query_mass + 10:
+                elif observed_mass > query_mass + 10:
                     break
 
         collect = bare_y_ions.append
         for theoretical_ion in theoretical.bare_y_ions:
             query_mass = theoretical_ion['mass']
+            deprotonated_mass = query_mass - proton
             for peak in peak_list:
                 observed_mass = peak.neutral_mass
-                deprotonated_mass = observed_mass - proton
-                match_error = lppm_error(deprotonated_mass, query_mass)
+                match_error = lppm_error(observed_mass, deprotonated_mass)
                 if lfabs(match_error) <= ms2_tolerance:
                     match = ({'key': theoretical_ion['key'],
-                              "observed_mass": deprotonated_mass,
+                              "observed_mass": observed_mass,
                               'ppm_error': match_error, "peak_id": peak.id})
                     collect(match)
                     peak_match_map[peak.id].append(match)
-                elif deprotonated_mass > query_mass + 10:
+                elif observed_mass > query_mass + 10:
                     break
 
         collect = glycosylated_b_ions.append
         for theoretical_ion in theoretical.glycosylated_b_ions:
             query_mass = theoretical_ion['mass']
+            deprotonated_mass = query_mass - proton
             for peak in peak_list:
                 observed_mass = peak.neutral_mass
-                deprotonated_mass = observed_mass - proton
-                match_error = lppm_error(deprotonated_mass, query_mass)
+                match_error = lppm_error(observed_mass, deprotonated_mass)
                 if lfabs(match_error) <= ms2_tolerance:
                     match = ({'key': theoretical_ion['key'],
-                              "observed_mass": deprotonated_mass,
+                              "observed_mass": observed_mass,
                               'ppm_error': match_error, "peak_id": peak.id})
                     collect(match)
                     peak_match_map[peak.id].append(match)
-                elif deprotonated_mass > query_mass + 10:
+                elif observed_mass > query_mass + 10:
                     break
 
         collect = glycosylated_y_ions.append
         for theoretical_ion in theoretical.glycosylated_y_ions:
             query_mass = theoretical_ion['mass']
+            deprotonated_mass = query_mass - proton
             for peak in peak_list:
                 observed_mass = peak.neutral_mass
-                deprotonated_mass = observed_mass - proton
-                match_error = lppm_error(deprotonated_mass, query_mass)
+                match_error = lppm_error(observed_mass, deprotonated_mass)
                 if lfabs(match_error) <= ms2_tolerance:
                     match = ({'key': theoretical_ion['key'],
-                              "observed_mass": deprotonated_mass,
+                              "observed_mass": observed_mass,
                               'ppm_error': match_error, "peak_id": peak.id})
                     collect(match)
                     peak_match_map[peak.id].append(match)
-                elif deprotonated_mass > query_mass + 10:
+                elif observed_mass > query_mass + 10:
                     break
 
         collect = stub_ions.append
         for theoretical_ion in theoretical.stub_ions:
             query_mass = theoretical_ion['mass']
+            deprotonated_mass = query_mass - proton
             for peak in peak_list:
                 observed_mass = peak.neutral_mass
-                deprotonated_mass = observed_mass - proton
-                match_error = lppm_error(deprotonated_mass, query_mass)
+                match_error = lppm_error(observed_mass, deprotonated_mass)
                 if lfabs(match_error) <= ms2_tolerance:
                     match = ({'key': theoretical_ion['key'],
-                              "observed_mass": deprotonated_mass,
+                              "observed_mass": observed_mass,
                               'ppm_error': match_error, "peak_id": peak.id})
                     collect(match)
                     peak_match_map[peak.id].append(match)
-                elif deprotonated_mass > query_mass + 10:
+                elif observed_mass > query_mass + 10:
                     break
 
         spectrum_matches.append((spectrum, peak_match_map))
@@ -191,6 +193,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
 
         gpm = GlycopeptideMatch(
             id=theoretical.id,
+            protein_id=theoretical.protein_id,
             ms1_score=theoretical.ms1_score,
             observed_mass=theoretical.observed_mass,
             calculated_mass=theoretical.calculated_mass,
@@ -216,6 +219,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
             first_scan=first_scan,
             last_scan=last_scan
         )
+        score_matches.apply(gpm, theoretical)
         session.add(gpm)
         session.commit()
 
@@ -302,11 +306,12 @@ class IonMatching(object):
         return task_fn
 
     def stream_theoretical_glycopeptides(self, chunksize=50):
+        session = self.manager.session()
         for exp_id in self.experiment_ids:
-            for name, protein_id in self.session.query(
+            for name, protein_id in session.query(
                     Protein.name, Protein.id).filter(Protein.experiment_id == exp_id):
                 print(name)
-                theoretical_glycopeptide_ids = (self.session.query(
+                theoretical_glycopeptide_ids = (session.query(
                        TheoreticalGlycopeptide.id).filter(TheoreticalGlycopeptide.protein_id == protein_id))
                 ## When the number of processes used is small, the more work done in the main process.
                 # for theoretical_ids in _chunk_iter(
@@ -334,7 +339,6 @@ class IonMatching(object):
             pool.close()
             pool.join()
         else:
-        # if True:
             for theoretical in self.stream_theoretical_glycopeptides():
                 cntr += task_fn(theoretical)
                 if cntr % 1000 == 0:
