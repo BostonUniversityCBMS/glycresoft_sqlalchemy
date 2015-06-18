@@ -2,7 +2,7 @@ import os
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy import PickleType, Numeric, Unicode, create_engine, Column, Integer, ForeignKey
+from sqlalchemy import PickleType, Numeric, Unicode, create_engine, Column, Integer, ForeignKey, UnicodeText
 from .json_type import JSONType
 Base = declarative_base()
 
@@ -59,16 +59,16 @@ class Protein(Base):
     __tablename__ = "Protein"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    protein_sequence = Column(Unicode(128), default=u"")
+    protein_sequence = Column(UnicodeText, default=u"")
     name = Column(Unicode(128), default=u"", index=True)
     experiment_id = Column(Integer, ForeignKey("Experiment.id"))
     glycosylation_sites = Column(PickleType)
     theoretical_glycopeptides = relationship("TheoreticalGlycopeptide", backref=backref('protein', order_by=id), lazy='dynamic')
-    glycopeptide_matches = relationship("GlycopeptideMatch", backref=backref('protein', order_by=id))
+    glycopeptide_matches = relationship("GlycopeptideMatch", backref=backref('protein', order_by=id), lazy='dynamic')
 
     def __repr__(self):
         return "<Protein {0} {1} {2} {3}...>".format(
-            self.id, self.name, len(self.glycopeptide_matches), self.protein_sequence[:20])
+            self.id, self.name, (self.glycopeptide_matches.count()), self.protein_sequence[:20])
 
 
 class TheoreticalGlycopeptide(Base):
@@ -181,6 +181,7 @@ class GlycopeptideMatch(Base):
 
 class SpectrumMatch(Base):
     __tablename__ = "SpectrumMatch"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     spectrum_id = Column(Integer)
     theoretical_glycopeptide_id = Column(Integer, ForeignKey("TheoreticalGlycopeptide.id"), index=True)
@@ -189,6 +190,7 @@ class SpectrumMatch(Base):
 
 class DatabaseManager(object):
     connect_args = {"timeout": 30}
+    database_uri_prefix = "sqlite:///"
 
     def __init__(self, path, clear=False):
         if clear:
@@ -199,7 +201,7 @@ class DatabaseManager(object):
         self.path = path
 
     def connect(self):
-        return create_engine("sqlite:///{}".format(self.path), connect_args=self.connect_args)
+        return create_engine("{}{}".format(self.database_uri_prefix, self.path), connect_args=self.connect_args)
 
     def initialize(self, conn=None):
         if conn is None:
@@ -216,3 +218,8 @@ def initialize(database_path):
     manager = DatabaseManager(database_path, clear=True)
     manager.initialize()
     return manager
+
+
+def session(database_path):
+    manager = DatabaseManager(database_path)
+    return manager.session()

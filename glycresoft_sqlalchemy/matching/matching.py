@@ -40,8 +40,8 @@ decon_format_lookup = {
 
 PROTON = 1.007276035
 
-ms1_tolerance_default = 10e-6
-ms2_tolerance_default = 20e-6
+ms1_tolerance_default = 1e-5
+ms2_tolerance_default = 2e-5
 
 
 def ppm_error(x, y):
@@ -322,6 +322,7 @@ class IonMatching(object):
                 ## When the number of processes is large, do more work in the child processes
                 for theoretical_id in itertools.chain.from_iterable(theoretical_glycopeptide_ids):
                     yield theoretical_id
+        session.close()
 
     def run(self):
         if self.msmsdb is None:

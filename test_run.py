@@ -14,21 +14,21 @@ def main(ms1_results_path, digest_path, site_list_path, observed_ions_path,
         ms1_results_path, site_list=site_list_path, n_processes=6,
         **digest.__dict__)
     builder.run()
-    builder.session.close()
+    builder.session.commit()
 
     decoy_maker = make_decoys.DecoySearchSpaceBuilder(builder.db_file_name, n_processes=8)
     decoy_maker.run()
-    decoy_maker.session.close()
+    decoy_maker.session.commit()
 
     matcher = matching.IonMatching(builder.db_file_name, observed_ions_path,
                                    observed_ions_type, None, ms1_tolerance,
                                    ms2_tolerance, 8)
     matcher.run()
-    matcher.session.close()
+    matcher.session.commit()
 
     summarize.main(builder.db_file_name)
 
 
 if __name__ == '__main__':
-    main("datafiles/Pure_ResultsOf.csv", "datafiles/KK-Keratin-type1-prospector.xml",
+    main("datafiles/ResultOf20140918_01_isos.csv", "datafiles/KK-Keratin-type1-prospector.xml",
          "datafiles/sitelist.txt", "datafiles/20140918_01.yaml.db")

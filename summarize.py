@@ -7,6 +7,8 @@ def main(database_path):
     for experiment in session.query(Experiment):
         print experiment
         for protein in experiment.proteins.values():
+            if protein.theoretical_glycopeptides.count() == 0:
+                continue
             print protein
             print "Top Score: ", session.query(
                 sql_max(GlycopeptideMatch.ms2_score)).filter(GlycopeptideMatch.protein_id == protein.id).first()

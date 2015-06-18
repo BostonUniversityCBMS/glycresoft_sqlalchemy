@@ -164,6 +164,7 @@ class DecoySearchSpaceBuilder(object):
                        TheoreticalGlycopeptide.id).filter(TheoreticalGlycopeptide.protein_id == protein_id))
                 for theoretical_id in itertools.chain.from_iterable(theoretical_glycopeptide_ids):
                     yield theoretical_id
+        session.close()
 
     def prepare_task_fn(self):
         return functools.partial(make_decoy, prefix_len=self.prefix_len, suffix_len=self.suffix_len,
