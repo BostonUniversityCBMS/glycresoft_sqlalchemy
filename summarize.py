@@ -1,4 +1,4 @@
-from glycresoft_sqlalchemy.data_model import DatabaseManager, GlycopeptideMatch, Experiment, TheoreticalGlycopeptide
+from glycresoft_sqlalchemy.data_model import DatabaseManager, GlycopeptideMatch, Experiment
 from sqlalchemy.sql.functions import max as sql_max
 
 

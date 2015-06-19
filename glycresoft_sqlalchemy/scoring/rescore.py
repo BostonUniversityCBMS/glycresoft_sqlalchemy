@@ -1,4 +1,4 @@
-from ..data_model import DatabaseManager, Experiment, TheoreticalGlycopeptide, GlycopeptideMatch
+from ..data_model import DatabaseManager, TheoreticalGlycopeptide, GlycopeptideMatch
 from .score_matches import apply
 
 
@@ -15,7 +15,8 @@ class MatchScorer(object):
         session = self.manager.session()
         for i in session.query(GlycopeptideMatch.id):
             i = i[0]
-            q = session.query(GlycopeptideMatch, TheoreticalGlycopeptide).filter(GlycopeptideMatch.id == i, TheoreticalGlycopeptide.id == i)
+            q = session.query(GlycopeptideMatch, TheoreticalGlycopeptide).filter(
+                GlycopeptideMatch.id == i, TheoreticalGlycopeptide.id == i)
             for match, theoretical in q:
                 rescore(match, theoretical)
                 session.add(match)

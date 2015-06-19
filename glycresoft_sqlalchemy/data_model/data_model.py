@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+
 import os
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy import PickleType, Numeric, Unicode, create_engine, Column, Integer, ForeignKey, UnicodeText
-from .json_type import JSONType
+
 Base = declarative_base()
 
 
@@ -20,7 +22,6 @@ class Experiment(Base):
     parameters = relationship("ExperimentParameter", backref=backref("experiment", order_by=id),
                               collection_class=attribute_mapped_collection('name'),
                               cascade="all, delete-orphan")
-
 
     def __repr__(self):
         return "<Experiment {0} {1} {2} proteins {3} glycans>".format(
@@ -63,8 +64,10 @@ class Protein(Base):
     name = Column(Unicode(128), default=u"", index=True)
     experiment_id = Column(Integer, ForeignKey("Experiment.id"))
     glycosylation_sites = Column(PickleType)
-    theoretical_glycopeptides = relationship("TheoreticalGlycopeptide", backref=backref('protein', order_by=id), lazy='dynamic')
-    glycopeptide_matches = relationship("GlycopeptideMatch", backref=backref('protein', order_by=id), lazy='dynamic')
+    theoretical_glycopeptides = relationship(
+        "TheoreticalGlycopeptide", backref=backref('protein', order_by=id), lazy='dynamic')
+    glycopeptide_matches = relationship(
+        "GlycopeptideMatch", backref=backref('protein', order_by=id), lazy='dynamic')
 
     def __repr__(self):
         return "<Protein {0} {1} {2} {3}...>".format(
@@ -76,7 +79,7 @@ class TheoreticalGlycopeptide(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     protein_id = Column(Integer, ForeignKey("Protein.id"), index=True)
-    # glycan_id = Column(Integer, ForeignKey("Glycan.id"), index=True)
+    glycan_id = Column(Integer, ForeignKey("Glycan.id"), index=True)
     ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
 
     observed_mass = Column(Numeric(10, 6, asdecimal=False))
@@ -121,9 +124,14 @@ class GlycopeptideMatch(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     theoretical_glycopeptide = Column(Integer, ForeignKey("TheoreticalGlycopeptide.id"), index=True)
     protein_id = Column(Integer, ForeignKey("Protein.id"), index=True)
-    # glycan_id = Column(Integer, ForeignKey("Glycan.id"), index=True)
+    glycan_id = Column(Integer, ForeignKey("Glycan.id"), index=True)
+
     ms1_score = Column(Numeric(10, 6, asdecimal=False))
     ms2_score = Column(Numeric(10, 6, asdecimal=False))
+
+    # As defined in [1]
+    p_value = Column(Numeric(10, 6, asdecimal=False))
+    q_value = Column(Numeric(10, 6, asdecimal=False))
 
     observed_mass = Column(Numeric(10, 6, asdecimal=False))
     calculated_mass = Column(Numeric(10, 6, asdecimal=False))
@@ -138,6 +146,7 @@ class GlycopeptideMatch(Base):
     total_glycosylated_b_ions_possible = Column(Integer)
     total_bare_y_ions_possible = Column(Integer)
     total_glycosylated_y_ions_possible = Column(Integer)
+
     percent_bare_b_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
     percent_bare_y_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
     percent_glycosylated_b_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
@@ -168,8 +177,6 @@ class GlycopeptideMatch(Base):
 
     bare_y_ions = Column(PickleType)
     glycosylated_y_ions = Column(PickleType)
-
-    glycan_composition = Column(PickleType)
 
     mean_coverage = Column(Numeric(10, 6, asdecimal=False))
     mean_hexnac_coverage = Column(Numeric(10, 6, asdecimal=False))
@@ -223,3 +230,14 @@ def initialize(database_path):
 def session(database_path):
     manager = DatabaseManager(database_path)
     return manager.session()
+
+
+'''
+Citations
+---------
+
+[1] L. Käll, J. D. Storey, M. J. MacCoss, and W. S. Noble,
+“Assigning significance to peptides identified by tandem mass spectrometry using decoy databases,”
+J. Proteome Res., vol. 7, pp. 29–34, 2008.
+
+'''

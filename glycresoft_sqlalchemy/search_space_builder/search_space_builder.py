@@ -103,7 +103,7 @@ class MS1GlycopeptideResult(object):
         self.modified_peptide_sequence = modified_peptide_sequence
 
     def __repr__(self):
-        return self.glycopeptide_sequence
+        return str((self.base_peptide_sequence, self.peptide_modifications, self.glycan_composition_str))
 
 
 def get_monosaccharide_identities(csv_columns):
@@ -293,7 +293,8 @@ def from_sequence(row, monosaccharide_identities):
     return [product]
 
 
-def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccharide_identities, database_manager, proteins):
+def process_predicted_ms1_ion(row, modification_table, site_list_map,
+                              monosaccharide_identities, database_manager, proteins):
     """Multiprocessing dispatch function to generate all theoretical sequences and their
     respective fragments from a given MS1 result
 
@@ -358,7 +359,8 @@ class TheoreticalSearchSpace(object):
     Includes a single- and multi-process compatible implementation. The more processes used,
     the more memory must be allocated to buffer results.
     '''
-    table_name = "theoretical_search_space"
+
+    manager_type = model.DatabaseManager
 
     def __init__(self, ms1_results_file, db_file_name=None,
                  enzyme=None,
@@ -367,8 +369,12 @@ class TheoreticalSearchSpace(object):
                  variable_modifications=None, n_processes=4, **kwargs):
         if db_file_name is None:
             db_file_name = os.path.splitext(ms1_results_file)[0] + '.db'
-        self.manager = model.initialize(db_file_name)
+        self.db_file_name = db_file_name
+
+        self.manager = self.manager_type(db_file_name)
+        self.manager.initialize()
         self.session = self.manager.session()
+
         self.ms1_results_file = ms1_results_file
 
         tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
@@ -397,7 +403,7 @@ class TheoreticalSearchSpace(object):
         self.monosaccharide_identities = get_monosaccharide_identities(self.ms1_results_reader.fieldnames)
         enzyme = map(get_enzyme, enzyme)
 
-        self.metadata = model.ExperimentParameter(name="metdata", value={
+        self.metadata = model.ExperimentParameter(name="metadata", value={
             "monosaccharide_identities": self.monosaccharide_identities,
             "enzyme": enzyme,
             "site_list_map": site_list_map,
@@ -432,7 +438,7 @@ class TheoreticalSearchSpace(object):
             logger.debug("Building theoretical sequences concurrently")
             for res in worker_pool.imap(task_fn, self.ms1_results_reader, chunksize=25):
                 cntr += res
-                if True: #(cntr % 1000) == 0:
+                if (cntr % 1000) == 0:
                     logger.info("Committing, %d records made", cntr)
 
             worker_pool.terminate()
@@ -441,7 +447,7 @@ class TheoreticalSearchSpace(object):
             for row in self.ms1_results_reader:
                 res = task_fn(row)
                 cntr += res
-                if True: #(cntr % 1000) == 0:
+                if (cntr % 1000) == 0:
                     logger.info("Committing, %d records made", cntr)
 
 
@@ -480,7 +486,7 @@ class ExactSearchSpace(TheoreticalSearchSpace):
 
         self.monosaccharide_identities = get_monosaccharide_identities(self.ms1_results_reader.fieldnames)
         enzyme = map(get_enzyme, enzyme)
-        self.metadata = model.ExperimentParameter(name="metdata", value={
+        self.metadata = model.ExperimentParameter(name="metadata", value={
             "monosaccharide_identities": self.monosaccharide_identities,
             "enzyme": enzyme,
             "site_list_map": site_list_map,

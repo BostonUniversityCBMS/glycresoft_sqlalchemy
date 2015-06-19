@@ -75,6 +75,8 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
         peak_list = spectrum.tandem_data
         peak_list = sorted(peak_list, key=neutral_mass_getter)
         peak_match_map = defaultdict(list)
+
+        c = 0
         collect = oxonium_ions.append
         for theoretical_ion in theoretical.oxonium_ions:
             query_mass = theoretical_ion['mass']
@@ -88,8 +90,13 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
                               'ppm_error': match_error, "peak_id": peak.id})
                     collect(match)
                     peak_match_map[peak.id].append(match)
+                    c += 1
                 elif protonated_mass > query_mass + 10:
                     break
+
+        # If no oxonium ions were found, skip this spectrum
+        if c < 1:
+            continue
 
         collect = bare_b_ions.append
         for theoretical_ion in theoretical.bare_b_ions:
@@ -256,12 +263,15 @@ def _chunk_iter(iterable, size=50):
 
 
 class IonMatching(object):
+
+    manager_type = model.DatabaseManager
+
     def __init__(self, database_path, observed_ions_path, observed_ions_type='bupid_yaml',
                  experiment_ids=None,
                  ms1_tolerance=ms1_tolerance_default,
                  ms2_tolerance=ms2_tolerance_default,
                  n_processes=4):
-        self.manager = model.DatabaseManager(database_path)
+        self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
         if experiment_ids is None:
             experiment_ids = [exp_id for query in self.session.query(Experiment.id) for exp_id in query]
