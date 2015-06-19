@@ -18,7 +18,8 @@ class Experiment(Base):
                             collection_class=attribute_mapped_collection('name'))
 
     glycans = relationship("Glycan", backref=backref("experiment", order_by=id),
-                            collection_class=attribute_mapped_collection('name'))
+                           collection_class=attribute_mapped_collection('name'))
+
     parameters = relationship("ExperimentParameter", backref=backref("experiment", order_by=id),
                               collection_class=attribute_mapped_collection('name'),
                               cascade="all, delete-orphan")
@@ -53,6 +54,7 @@ class Glycan(Base):
     name = Column(Unicode(128), default=u"")
     mass = Column(Numeric(10, 6, asdecimal=False), default=-1.0)
     composition = Column(Unicode(128), default=u"")
+    other = Column(PickleType)
     experiment_id = Column(Integer, ForeignKey("Experiment.id"))
 
 

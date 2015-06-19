@@ -120,8 +120,10 @@ class PoolingTheoreticalSearchSpace(TheoreticalSearchSpace):
                  n_processes=4,
                  commit_checkpoint=1000, **kwargs):
         super(PoolingTheoreticalSearchSpace, self).__init__(
-            ms1_results_file, db_file_name, enzyme, site_list, constant_modifications,
-            variable_modifications, **kwargs)
+            ms1_results_file, db_file_name,
+            constant_modifications=constant_modifications,
+            enzyme=enzyme, site_list=site_list,
+            variable_modifications=variable_modifications, n_processes=n_processes, **kwargs)
         self.commit_checkpoint = commit_checkpoint
 
     def prepare_task_fn(self):
@@ -146,7 +148,7 @@ class PoolingTheoreticalSearchSpace(TheoreticalSearchSpace):
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
-            for res in worker_pool.imap(task_fn, self.ms1_results_reader, chunksize=5):
+            for res in worker_pool.imap(task_fn, self.ms1_results_reader, chunksize=500):
                 self.session.add_all(res)
                 cntr += len(res)
                 if cntr >= checkpoint:
@@ -167,6 +169,3 @@ class PoolingTheoreticalSearchSpace(TheoreticalSearchSpace):
                     self.session.expunge_all()
                     checkpoint = cntr + self.commit_checkpoint
         self.session.commit()
-
-
-TheoreticalSearchSpace = PoolingTheoreticalSearchSpace

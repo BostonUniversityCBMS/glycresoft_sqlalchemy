@@ -298,7 +298,9 @@ class IonMatching(object):
         self.msmsdb = msmsdb
 
         for exp_id in self.experiment_ids:
-            for exp_param in self.session.query(ExperimentParameter).filter(Experiment.id == exp_id):
+            for exp_param in self.session.query(ExperimentParameter).filter(
+                    Experiment.id == exp_id,
+                    ExperimentParameter.name == 'metadata'):
                 exp_param.value.update({
                         "ms1_ppm_tolerance": ms1_tolerance,
                         "ms2_ppm_tolerance": ms2_tolerance,

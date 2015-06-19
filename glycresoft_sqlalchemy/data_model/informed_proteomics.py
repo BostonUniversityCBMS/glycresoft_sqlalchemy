@@ -1,7 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy import PickleType, Numeric, Unicode, create_engine, Column, Integer, ForeignKey
+from sqlalchemy import PickleType, Numeric, Unicode, Column, Integer, ForeignKey
 
 from .data_model import Base, Experiment, Protein, TheoreticalGlycopeptide, GlycopeptideMatch
 

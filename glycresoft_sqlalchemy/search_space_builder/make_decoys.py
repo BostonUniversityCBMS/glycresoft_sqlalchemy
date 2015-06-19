@@ -6,11 +6,12 @@ import logging
 
 from glycresoft_ms2_classification.structure import sequence, constants
 from glycresoft_ms2_classification.structure import stub_glycopeptides
-from glycresoft_ms2_classification.structure.parser import sequence_tokenizer_respect_sequons
+from glycresoft_ms2_classification.structure.parser import sequence_tokenizer_respect_sequons, sequence_tokenizer
 
-from ..data_model import TheoreticalGlycopeptide, Experiment, Protein, DatabaseManager
+from ..data_model import TheoreticalGlycopeptide, Experiment, Protein, DatabaseManager, ExperimentParameter
 
 Sequence = sequence.Sequence
+
 StubGlycopeptide = stub_glycopeptides.StubGlycopeptide
 strip_modifications = sequence.strip_modifications
 list_to_sequence = sequence.list_to_sequence
@@ -69,7 +70,7 @@ def reverse_preserve_sequon(sequence, prefix_len=0, suffix_len=1):
 
 
 def reverse_sequence(sequence, prefix_len=0, suffix_len=1):
-    sequence_tokens, mods, glycan, n_term, c_term = sequence.sequence_tokenizer(sequence)[0]
+    sequence_tokens, mods, glycan, n_term, c_term = sequence_tokenizer(sequence)
     pref = sequence_tokens[:prefix_len]
     if suffix_len == 0:
         suf = ""
@@ -78,8 +79,8 @@ def reverse_sequence(sequence, prefix_len=0, suffix_len=1):
         suf = sequence_tokens[-suffix_len:]
         body = sequence_tokens[prefix_len:-suffix_len]
     body = body[::-1]
-    rev_sequence_tokens = (list_to_sequence(pref + list(body) + suf))
-    if str(list_to_sequence(sequence_tokens)) == str(rev_sequence_tokens):
+    rev_sequence = (list_to_sequence(pref + list(body) + suf))
+    if str(list_to_sequence(sequence_tokens)) == str(rev_sequence):
         rot_body = pair_rotate(body)
         rev_sequence = (list_to_sequence(pref + list(rot_body) + suf))
     rev_sequence.n_term = n_term
@@ -90,46 +91,50 @@ def reverse_sequence(sequence, prefix_len=0, suffix_len=1):
 def make_decoy(theoretical_sequence, prefix_len=0, suffix_len=1,
                protein_decoy_map=None, database_manager=None,
                permute_fn=reverse_preserve_sequon):
-    session = database_manager.session()
+    try:
+        session = database_manager.session()
 
-    theoretical_sequence = session.query(TheoreticalGlycopeptide).filter(
-        TheoreticalGlycopeptide.id == theoretical_sequence).first()
+        theoretical_sequence = session.query(TheoreticalGlycopeptide).filter(
+            TheoreticalGlycopeptide.id == theoretical_sequence).first()
 
-    if protein_decoy_map is None:
-        protein_decoy_map = {}
+        if protein_decoy_map is None:
+            protein_decoy_map = {}
 
-    permuted_sequence = permute_fn(theoretical_sequence.glycopeptide_sequence,
-                                   prefix_len=prefix_len, suffix_len=suffix_len)
+        permuted_sequence = permute_fn(theoretical_sequence.glycopeptide_sequence,
+                                       prefix_len=prefix_len, suffix_len=suffix_len)
 
-    (oxonium_ions, bare_b_ions, bare_y_ions, glycosylated_b_ions,
-        glycosylated_y_ions, stub_ions) = fragments(permuted_sequence)
+        (oxonium_ions, bare_b_ions, bare_y_ions, glycosylated_b_ions,
+            glycosylated_y_ions, stub_ions) = fragments(permuted_sequence)
 
-    decoy = TheoreticalGlycopeptide(
-        ms1_score=theoretical_sequence.ms1_score,
-        observed_mass=theoretical_sequence.observed_mass,
-        calculated_mass=theoretical_sequence.calculated_mass,
-        ppm_error=theoretical_sequence.ppm_error,
-        volume=theoretical_sequence.volume,
-        count_glycosylation_sites=theoretical_sequence.count_glycosylation_sites,
-        count_missed_cleavages=theoretical_sequence.count_missed_cleavages,
-        start_position=theoretical_sequence.start_position,
-        end_position=theoretical_sequence.end_position,
-        base_peptide_sequence=strip_modifications(str(permuted_sequence)),
-        modified_peptide_sequence=str(permuted_sequence),
-        peptide_modifications=theoretical_sequence.peptide_modifications,
-        glycopeptide_sequence=str(permuted_sequence) + theoretical_sequence.glycan_composition_str,
-        sequence_length=len(permuted_sequence),
-        glycan_composition_str=theoretical_sequence.glycan_composition_str,
-        bare_b_ions=bare_b_ions,
-        bare_y_ions=bare_y_ions,
-        oxonium_ions=oxonium_ions,
-        stub_ions=stub_ions,
-        glycosylated_b_ions=glycosylated_b_ions,
-        glycosylated_y_ions=glycosylated_y_ions,
-        protein_id=protein_decoy_map[theoretical_sequence.protein_id]
-    )
-    session.add(decoy)
-    session.commit()
+        decoy = TheoreticalGlycopeptide(
+            ms1_score=theoretical_sequence.ms1_score,
+            observed_mass=theoretical_sequence.observed_mass,
+            calculated_mass=theoretical_sequence.calculated_mass,
+            ppm_error=theoretical_sequence.ppm_error,
+            volume=theoretical_sequence.volume,
+            count_glycosylation_sites=theoretical_sequence.count_glycosylation_sites,
+            count_missed_cleavages=theoretical_sequence.count_missed_cleavages,
+            start_position=theoretical_sequence.start_position,
+            end_position=theoretical_sequence.end_position,
+            base_peptide_sequence=strip_modifications(str(permuted_sequence)),
+            modified_peptide_sequence=str(permuted_sequence),
+            peptide_modifications=theoretical_sequence.peptide_modifications,
+            glycopeptide_sequence=str(permuted_sequence) + theoretical_sequence.glycan_composition_str,
+            sequence_length=len(permuted_sequence),
+            glycan_composition_str=theoretical_sequence.glycan_composition_str,
+            bare_b_ions=bare_b_ions,
+            bare_y_ions=bare_y_ions,
+            oxonium_ions=oxonium_ions,
+            stub_ions=stub_ions,
+            glycosylated_b_ions=glycosylated_b_ions,
+            glycosylated_y_ions=glycosylated_y_ions,
+            protein_id=protein_decoy_map[theoretical_sequence.protein_id]
+        )
+        session.add(decoy)
+        session.commit()
+
+    finally:
+        session.close()
     return 1
 
 
@@ -174,16 +179,24 @@ def fragments(sequence):
             stub_ions)
 
 
+decoy_type_map = {
+    0: reverse_preserve_sequon,
+    1: reverse_sequence
+}
+
+
 class DecoySearchSpaceBuilder(object):
     manager_type = DatabaseManager
 
-    def __init__(self, database_path, prefix_len=0, suffix_len=1, experiment_ids=None, n_processes=4):
+    def __init__(self, database_path, prefix_len=0, suffix_len=1,
+                 experiment_ids=None, n_processes=4, decoy_type=0):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
         if experiment_ids is None:
             experiment_ids = [eid for experiment in self.session.query(Experiment.id)
                               for eid in experiment]
         self.experiment_ids = experiment_ids
+        self.decoy_type = decoy_type
         self.n_processes = n_processes
         self.prefix_len = prefix_len
         self.suffix_len = suffix_len
@@ -192,12 +205,21 @@ class DecoySearchSpaceBuilder(object):
             reference_experiment = self.session.query(Experiment).filter(
                 Experiment.id == experiment_id).first()
             decoy_experiment = Experiment(name=reference_experiment.name.replace("target", "decoy"))
+
             self.session.add(decoy_experiment)
             for protein in reference_experiment.proteins.values():
                 decoy_protein = self.protein_decoy_map[protein.id] = Protein(name='decoy-' + protein.name,
                                                                              experiment_id=decoy_experiment.id)
                 self.session.add(decoy_protein)
             self.session.commit()
+
+            parameter = reference_experiment.parameters.get("decoys")
+            if parameter is None:
+                parameter = ExperimentParameter(name="decoys", value=[], experiment_id=experiment_id)
+            parameter.value.append({"experiment_id": decoy_experiment.id, "type": self.decoy_type})
+            self.session.add(parameter)
+            self.session.commit()
+
         for k, v in list(self.protein_decoy_map.items()):
             self.protein_decoy_map[k] = v.id
 
@@ -215,7 +237,8 @@ class DecoySearchSpaceBuilder(object):
 
     def prepare_task_fn(self):
         return functools.partial(make_decoy, prefix_len=self.prefix_len, suffix_len=self.suffix_len,
-                                 protein_decoy_map=self.protein_decoy_map, database_manager=self.manager)
+                                 protein_decoy_map=self.protein_decoy_map, database_manager=self.manager,
+                                 permute_fn=decoy_type_map[self.decoy_type])
 
     def run(self):
         task_fn = self.prepare_task_fn()
