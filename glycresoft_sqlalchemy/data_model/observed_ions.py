@@ -62,14 +62,14 @@ class TandemScan(ScanBase):
         return self.peaks.all()
 
     @hybrid_method
-    def ppm_tolerance_search(self, mass, tolerance, mass_shift=0):
+    def ppm_match_tolerance_search(self, mass, tolerance, mass_shift=0):
         spread = mass * tolerance
         hi = mass + spread
         lo = mass - spread
         return (lo <= self.precursor_neutral_mass) & (self.precursor_neutral_mass <= hi)
 
-    @ppm_tolerance_search.expression
-    def ppm_tolerance_search(cls, mass, tolerance, mass_shift=0):
+    @ppm_match_tolerance_search.expression
+    def ppm_match_tolerance_search(cls, mass, tolerance, mass_shift=0):
         spread = mass * tolerance
         hi = mass + spread
         lo = mass - spread
@@ -98,4 +98,4 @@ class MSMSSqlDB(DatabaseManager):
 
     def ppm_match_tolerance_search(self, mass, tolerance, mass_shift=0):
         session = self.session()
-        session.query(TandemScan).filter(TandemScan.ppm_match_tolerance_search(mass, tolerance, mass_shift))
+        return session.query(TandemScan).filter(TandemScan.ppm_match_tolerance_search(mass, tolerance, mass_shift))

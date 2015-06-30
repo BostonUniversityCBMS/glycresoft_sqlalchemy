@@ -17,6 +17,8 @@ from glycresoft_ms2_classification.proteomics import get_enzyme, msdigest_xml_pa
 
 from .. import data_model as model
 from ..data_model import PipelineModule
+from .peptide_utilities import SiteListFastaFileParser
+
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)(\w+)')
 g_colon_prefix = "G:"

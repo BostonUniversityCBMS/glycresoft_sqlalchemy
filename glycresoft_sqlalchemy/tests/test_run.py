@@ -23,10 +23,15 @@ def test_main(ms1_results_path, digest_path, site_list_path, observed_ions_path,
     decoy_maker.start()
     decoy_maker.session.commit()
 
-    matcher = matching.IonMatching(builder.db_file_name, observed_ions_path,
+    matcher = matching.IonMatching(builder.db_file_name, 1, observed_ions_path,
                                    observed_ions_type, None, ms1_tolerance,
                                    ms2_tolerance, n_processes=8)
     matcher.start()
+    matcher = matching.IonMatching(builder.db_file_name, 2, observed_ions_path,
+                                   observed_ions_type, None, ms1_tolerance,
+                                   ms2_tolerance, n_processes=8)
+    matcher.start()
+
     matcher.session.commit()
     tda = target_decoy.TargetDecoyAnalyzer(builder.db_file_name, 1, 2)
     tda.start()
@@ -35,6 +40,6 @@ def test_main(ms1_results_path, digest_path, site_list_path, observed_ions_path,
 
 if __name__ == '__main__':
     test_main("datafiles/Pure_ResultsOf.csv", "datafiles/KK-Keratin-type1-prospector.xml",
-         "datafiles/sitelist.txt", "datafiles/20140918_01.yaml.db",
+         "datafiles/sitelist.txt", "datafiles/20140918_01.db",
          output_path="datafiles/Pure_ResultsOf.preserve_sequons_reverse.db",
          decoy_type=0)

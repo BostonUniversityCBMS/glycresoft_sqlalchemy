@@ -49,7 +49,9 @@ class NullDict(dict):
 class BUPIDMSMSYamlParser(object):
     manager_type = DatabaseManager
 
-    def __init__(self, file_path, database_path):
+    def __init__(self, file_path, database_path=None):
+        if database_path is None:
+            database_path = os.path.splitext(file_path)[0] + '.db'
         self.file_path = file_path
         self.manager = self.manager_type(database_path)
         self.loader = Loader(open(file_path))
@@ -62,6 +64,7 @@ class BUPIDMSMSYamlParser(object):
         self.sample_run = SampleRun(name=os.path.basename(file_path), parameters={"file_path": file_path})
         session.add(self.sample_run)
         session.commit()
+        self.parse()
 
     def seek_scans(self):
         seeking = True

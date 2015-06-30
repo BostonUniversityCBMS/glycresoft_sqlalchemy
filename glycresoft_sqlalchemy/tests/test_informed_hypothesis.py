@@ -39,8 +39,9 @@ def test_main():
 
     job = make_decoys.DecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[i], n_processes=4)
     job.start()
-    job = matching.IonMatching(db_file_name, "./datafiles/20140918_01.yaml.db",
-                               hypothesis_ids=None, n_processes=6)
+    job = matching.IonMatching(db_file_name, i, "./datafiles/20140918_01.db", n_processes=6)
+    job.start()
+    job = matching.IonMatching(db_file_name, i + 1, "./datafiles/20140918_01.db", n_processes=6)
     job.start()
     tda = target_decoy.TargetDecoyAnalyzer(db_file_name, i, i + 1)
     tda.start()

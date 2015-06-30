@@ -2,11 +2,11 @@
 
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import (PickleType, Numeric, Unicode, create_engine, Table,
+from sqlalchemy import (PickleType, Numeric, Unicode,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 
 from .generic import MutableDict, MutableList
-from .data_model import Base, Hypothesis, TheoreticalGlycopeptide
+from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan, PeptideGlycanAssociation
 from .observed_ions import SampleRun
 
 
@@ -21,13 +21,34 @@ class HypothesisSampleMatch(Base):
     decoy_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id))
 
 
-class GlycopeptideMatch(TheoreticalGlycopeptide):
+class GlycopeptideMatch(PeptideBase):
     __tablename__ = "GlycopeptideMatch"
 
-    id = Column(Integer, ForeignKey(TheoreticalGlycopeptide.id), primary_key=True)
-    theoretical_glycopeptide = relationship(TheoreticalGlycopeptide, remote_side=[id])
+    id = Column(Integer, ForeignKey(PeptideBase.id), primary_key=True)
+    theoretical_glycopeptide_id = (Integer, ForeignKey(TheoreticalGlycopeptide.id))
     hypothesis_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id))
     ms2_score = Column(Numeric(10, 6, asdecimal=False))
+
+    glycans = relationship(Glycan, secondary=PeptideGlycanAssociation, lazy='dynamic')
+    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+
+    observed_mass = Column(Numeric(10, 6, asdecimal=False))
+    glycan_mass = Column(Numeric(10, 6, asdecimal=False))
+    ppm_error = Column(Numeric(10, 6, asdecimal=False))
+    volume = Column(Numeric(10, 6, asdecimal=False))
+
+    glycopeptide_sequence = Column(Unicode(128), index=True)
+    glycan_composition_str = Column(Unicode(128), index=True)
+
+    oxonium_ions = Column(MutableList.as_mutable(PickleType))
+    stub_ions = Column(MutableList.as_mutable(PickleType))
+
+    bare_b_ions = Column(MutableList.as_mutable(PickleType))
+    glycosylated_b_ions = Column(MutableList.as_mutable(PickleType))
+
+    bare_y_ions = Column(MutableList.as_mutable(PickleType))
+    glycosylated_y_ions = Column(MutableList.as_mutable(PickleType))
+
 
     # As defined in [1]
     p_value = Column(Numeric(10, 6, asdecimal=False))

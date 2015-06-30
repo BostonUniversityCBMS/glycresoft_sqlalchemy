@@ -23,8 +23,11 @@ def test_main(ms1_results_path, digest_path, site_list_path, observed_ions_path,
     decoy_maker.start()
     decoy_maker.session.commit()
 
-    matcher = matching.IonMatching(builder.db_file_name, observed_ions_path,
-                                   observed_ions_type, None, ms1_tolerance,
+    matcher = matching.IonMatching(builder.db_file_name, builder.hypothesis.id, observed_ions_path,
+                                   observed_ions_type, ms1_tolerance,
+                                   ms2_tolerance, n_processes=8)
+    matcher = matching.IonMatching(builder.db_file_name, builder.hypothesis.id + 1, observed_ions_path,
+                                   observed_ions_type, ms1_tolerance,
                                    ms2_tolerance, n_processes=8)
     matcher.start()
     matcher.session.commit()
@@ -35,10 +38,10 @@ def test_main(ms1_results_path, digest_path, site_list_path, observed_ions_path,
 
 if __name__ == '__main__':
     test_main("datafiles/ResultOf20140918_01_isos.csv", "datafiles/KK-Keratin-type1-prospector.xml",
-         "datafiles/sitelist.txt", "datafiles/20140918_01.yaml.db",
+         "datafiles/sitelist.txt", "datafiles/20140918_01.db",
          output_path="datafiles/ResultOf20140918_01_isos.preserve_sequons_reverse.db",
          decoy_type=0)
     test_main("datafiles/ResultOf20140918_01_isos.csv", "datafiles/KK-Keratin-type1-prospector.xml",
-         "datafiles/sitelist.txt", "datafiles/20140918_01.yaml.db",
+         "datafiles/sitelist.txt", "datafiles/20140918_01.db",
          output_path="datafiles/ResultOf20140918_01_isos.reverse.db",
          decoy_type=1)
