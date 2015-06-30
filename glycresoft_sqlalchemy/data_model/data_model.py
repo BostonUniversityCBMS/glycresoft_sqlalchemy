@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
 
 import os
+
+from glycresoft_ms2_classification.structure import sequence
+
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy import PickleType, Numeric, Unicode, create_engine, Column, Integer, ForeignKey, UnicodeText
+from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy import (PickleType, Numeric, Unicode, create_engine, Table,
+                        Column, Integer, ForeignKey, UnicodeText, Boolean)
+
+from .generic import MutableDict, MutableList
 
 Base = declarative_base()
 
@@ -14,37 +22,40 @@ class Experiment(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Unicode(128), default=u"")
-    proteins = relationship("Protein", backref=backref("experiment", order_by=id),
-                            collection_class=attribute_mapped_collection('name'))
+    # proteins = relationship("Protein", backref=backref("experiment", order_by=id),
+    #                         collection_class=attribute_mapped_collection('name'))
 
-    glycans = relationship("Glycan", backref=backref("experiment", order_by=id),
-                           collection_class=attribute_mapped_collection('name'))
+    # glycans = relationship("Glycan", backref=backref("experiment", order_by=id),
+    #                        collection_class=attribute_mapped_collection('name'))
 
-    parameters = relationship("ExperimentParameter", backref=backref("experiment", order_by=id),
-                              collection_class=attribute_mapped_collection('name'),
-                              cascade="all, delete-orphan")
+    is_decoy = Column(Boolean, default=False)
+    parameters = Column(MutableDict.as_mutable(PickleType), default={})
 
     def __repr__(self):
         return "<Experiment {0} {1} {2} proteins {3} glycans>".format(
             self.id, self.name, len(self.proteins), len(self.glycans))
 
 
-class ExperimentParameter(Base):
-    __tablename__ = "ExperimentParameter"
+class Hypothesis(Base):
+    '''
+    Represents a database of theoretical sequences to search against.
+    '''
+    __tablename__ = "Hypothesis"
 
-    experiment_id = Column(Integer, ForeignKey("Experiment.id"))
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(Unicode(128), default=u"", index=True)
-    value = Column(PickleType)
+    name = Column(Unicode(128), default=u"")
+    proteins = relationship("Protein", backref=backref("hypothesis", order_by=id),
+                            collection_class=attribute_mapped_collection('name'))
 
-    @classmethod
-    def parameters_for(cls, param_dict, experiment_id, session):
-        for k, v in param_dict.items():
-            session.add(cls(name=k, value=v, experiment_id=experiment_id))
-        session.commit()
+    glycans = relationship("Glycan", backref=backref("hypothesis", order_by=id),
+                           collection_class=attribute_mapped_collection('name'))
+
+    is_decoy = Column(Boolean, default=False)
+    parameters = Column(MutableDict.as_mutable(PickleType), default={})
 
     def __repr__(self):
-        return "<{name} -> {value}>".format(**self.__dict__)
+        return "<Hypothesis {0} {1} {2} proteins {3} glycans>".format(
+            self.id, self.name, len(self.proteins), len(self.glycans))
 
 
 class Glycan(Base):
@@ -52,10 +63,10 @@ class Glycan(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Unicode(128), default=u"")
-    mass = Column(Numeric(10, 6, asdecimal=False), default=-1.0)
+    mass = Column(Numeric(10, 6, asdecimal=False), default=0)
     composition = Column(Unicode(128), default=u"")
-    other = Column(PickleType)
-    experiment_id = Column(Integer, ForeignKey("Experiment.id"))
+    other = Column(MutableDict.as_mutable(PickleType))
+    hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id"))
 
 
 class Protein(Base):
@@ -64,31 +75,30 @@ class Protein(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     protein_sequence = Column(UnicodeText, default=u"")
     name = Column(Unicode(128), default=u"", index=True)
-    experiment_id = Column(Integer, ForeignKey("Experiment.id"))
-    glycosylation_sites = Column(PickleType)
+    other = Column(MutableDict.as_mutable(PickleType))
+    hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id"))
+    glycosylation_sites = Column(MutableList.as_mutable(PickleType))
+
     theoretical_glycopeptides = relationship(
         "TheoreticalGlycopeptide", backref=backref('protein', order_by=id), lazy='dynamic')
+
     glycopeptide_matches = relationship(
-        "GlycopeptideMatch", backref=backref('protein', order_by=id), lazy='dynamic')
+        "GlycopeptideMatch", lazy='dynamic')
 
     def __repr__(self):
         return "<Protein {0} {1} {2} {3}...>".format(
-            self.id, self.name, (self.glycopeptide_matches.count()), self.protein_sequence[:20])
+            self.id, self.name, (self.glycopeptide_matches.count()),
+            self.protein_sequence[:20] if self.protein_sequence is not None else "")
 
 
-class TheoreticalGlycopeptide(Base):
-    __tablename__ = "TheoreticalGlycopeptide"
+class PeptideBase(Base):
+    __tablename__ = "PeptideBase"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    protein_id = Column(Integer, ForeignKey("Protein.id"), index=True)
-    glycan_id = Column(Integer, ForeignKey("Glycan.id"), index=True)
-    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    sequence_type = Column(Unicode(20))
 
-    observed_mass = Column(Numeric(10, 6, asdecimal=False))
+    protein_id = Column(Integer, ForeignKey(Protein.id), index=True)
     calculated_mass = Column(Numeric(10, 6, asdecimal=False), index=True)
-    glycan_mass = Column(Numeric(10, 6, asdecimal=False))
-    ppm_error = Column(Numeric(10, 6, asdecimal=False))
-    volume = Column(Numeric(10, 6, asdecimal=False))
 
     count_glycosylation_sites = Column(Integer)
     count_missed_cleavages = Column(Integer)
@@ -97,120 +107,117 @@ class TheoreticalGlycopeptide(Base):
     end_position = Column(Integer)
 
     base_peptide_sequence = Column(Unicode(128), index=True)
-    modified_peptide_sequence = Column(Unicode(128))
-    glycopeptide_sequence = Column(Unicode(128), index=True)
-    glycan_composition_str = Column(Unicode(128), index=True)
+    modified_peptide_sequence = Column(Unicode(128), index=True)
+
     sequence_length = Column(Integer, index=True)
 
     peptide_modifications = Column(Unicode(128))
+    glycosylation_sites = Column(MutableList.as_mutable(PickleType))
 
-    glycosylation_sites = Column(PickleType)
+    @hybrid_method
+    def spans(self, point):
+        return (self.start_position <= point) & (point < self.end_position)
 
-    oxonium_ions = Column(PickleType)
-    stub_ions = Column(PickleType)
+    @property
+    def n_glycan_sequon_sites(peptide):
+        sites = set(sequence.find_n_glycosylation_sequons(peptide.base_peptide_sequence))
+        try:
+            if peptide.protein is not None:
+                sites |= set(site - peptide.start_position for site in peptide.parent.glycosylation_sites
+                             if peptide.start_position <= site < peptide.end_position)
+        except AttributeError:
+            pass
+        return list(sites)
 
-    bare_b_ions = Column(PickleType)
-    glycosylated_b_ions = Column(PickleType)
+    __mapper_args__ = {
+        'polymorphic_identity': u'PeptideBase',
+        'polymorphic_on': sequence_type
+    }
 
-    bare_y_ions = Column(PickleType)
-    glycosylated_y_ions = Column(PickleType)
+
+PeptideGlycanAssociation = Table(
+    "PeptideGlycanAssociation", Base.metadata,
+    Column("peptide_id", Integer, ForeignKey("PeptideBase.id")),
+    Column("glycan_id", Integer, ForeignKey("Glycan.id")))
+
+
+class TheoreticalGlycopeptide(PeptideBase):
+    __tablename__ = "TheoreticalGlycopeptide"
+    id = Column(Integer, ForeignKey(PeptideBase.id), primary_key=True)
+    glycans = relationship(Glycan, secondary=PeptideGlycanAssociation, backref='glycopeptides', lazy='dynamic')
+    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+
+    observed_mass = Column(Numeric(10, 6, asdecimal=False))
+    glycan_mass = Column(Numeric(10, 6, asdecimal=False))
+    ppm_error = Column(Numeric(10, 6, asdecimal=False))
+    volume = Column(Numeric(10, 6, asdecimal=False))
+
+    glycopeptide_sequence = Column(Unicode(128), index=True)
+    glycan_composition_str = Column(Unicode(128), index=True)
+
+    oxonium_ions = Column(MutableList.as_mutable(PickleType))
+    stub_ions = Column(MutableList.as_mutable(PickleType))
+
+    bare_b_ions = Column(MutableList.as_mutable(PickleType))
+    glycosylated_b_ions = Column(MutableList.as_mutable(PickleType))
+
+    bare_y_ions = Column(MutableList.as_mutable(PickleType))
+    glycosylated_y_ions = Column(MutableList.as_mutable(PickleType))
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'TheoreticalGlycopeptide',
+    }
 
     def __repr__(self):
         rep = "<TheoreticalGlycopeptide {} {}>".format(self.glycopeptide_sequence, self.observed_mass)
         return rep
 
 
-class GlycopeptideMatch(Base):
-    __tablename__ = "GlycopeptideMatch"
+class ConnectionManager(object):
+    echo = False
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    theoretical_glycopeptide = Column(Integer, ForeignKey("TheoreticalGlycopeptide.id"), index=True)
-    protein_id = Column(Integer, ForeignKey("Protein.id"), index=True)
-    glycan_id = Column(Integer, ForeignKey("Glycan.id"), index=True)
+    def __init__(self, database_uri, database_uri_prefix, connect_args=None):
+        self.database_uri = database_uri
+        self.database_uri_prefix = database_uri_prefix
+        self.connect_args = connect_args or {}
 
-    ms1_score = Column(Numeric(10, 6, asdecimal=False))
-    ms2_score = Column(Numeric(10, 6, asdecimal=False))
+    def connect(self):
+        return create_engine(
+            "{}{}".format(self.database_uri_prefix, self.database_uri),
+            echo=self.echo,
+            connect_args=self.connect_args)
 
-    # As defined in [1]
-    p_value = Column(Numeric(10, 6, asdecimal=False))
-    q_value = Column(Numeric(10, 6, asdecimal=False))
-
-    observed_mass = Column(Numeric(10, 6, asdecimal=False))
-    calculated_mass = Column(Numeric(10, 6, asdecimal=False))
-    glycan_mass = Column(Numeric(10, 6, asdecimal=False))
-    ppm_error = Column(Numeric(10, 6, asdecimal=False))
-    volume = Column(Numeric(10, 6, asdecimal=False))
-
-    count_glycosylation_sites = Column(Integer)
-    count_missed_cleavages = Column(Integer)
-
-    total_bare_b_ions_possible = Column(Integer)
-    total_glycosylated_b_ions_possible = Column(Integer)
-    total_bare_y_ions_possible = Column(Integer)
-    total_glycosylated_y_ions_possible = Column(Integer)
-
-    percent_bare_b_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
-    percent_bare_y_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
-    percent_glycosylated_b_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
-    percent_glycosylated_y_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
-
-    start_position = Column(Integer)
-    end_position = Column(Integer)
-
-    base_peptide_sequence = Column(Unicode(128))
-    modified_peptide_sequence = Column(Unicode(128))
-    glycopeptide_sequence = Column(Unicode(128))
-    sequence_length = Column(Integer, index=True)
-
-    peptide_modifications = Column(Unicode(128))
-    glycan_composition_str = Column(Unicode(128))
-
-    scan_id_range = Column(PickleType)
-    first_scan = Column(Integer)
-    last_scan = Column(Integer)
-
-    glycosylation_sites = Column(PickleType)
-
-    oxonium_ions = Column(PickleType)
-    stub_ions = Column(PickleType)
-
-    bare_b_ions = Column(PickleType)
-    glycosylated_b_ions = Column(PickleType)
-
-    bare_y_ions = Column(PickleType)
-    glycosylated_y_ions = Column(PickleType)
-
-    mean_coverage = Column(Numeric(10, 6, asdecimal=False))
-    mean_hexnac_coverage = Column(Numeric(10, 6, asdecimal=False))
-
-    def __repr__(self):
-        rep = "<GlycopeptideMatch {} {} {}>".format(self.glycopeptide_sequence, self.ms2_score, self.observed_mass)
-        return rep
+    def clear(self):
+        pass
 
 
-class SpectrumMatch(Base):
-    __tablename__ = "SpectrumMatch"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    spectrum_id = Column(Integer)
-    theoretical_glycopeptide_id = Column(Integer, ForeignKey("TheoreticalGlycopeptide.id"), index=True)
-    peak_match_map = Column(PickleType)
-
-
-class DatabaseManager(object):
+class SQLiteConnectionManager(ConnectionManager):
     connect_args = {"timeout": 30}
     database_uri_prefix = "sqlite:///"
 
+    def __init__(self, path, connect_args=None):
+        if connect_args is None:
+            connect_args = self.connect_args
+        super(SQLiteConnectionManager, self).__init__(path, self.database_uri_prefix, connect_args)
+
+    def clear(self):
+        try:
+            os.remove(self.database_uri)
+        except:
+            pass
+
+
+class DatabaseManager(object):
+    connection_manager_type = SQLiteConnectionManager
+
     def __init__(self, path, clear=False):
+        self.connection_manager = self.connection_manager_type(path)
         if clear:
-            try:
-                os.remove(path)
-            except:
-                pass
+            self.connection_manager.clear()
         self.path = path
 
     def connect(self):
-        return create_engine("{}{}".format(self.database_uri_prefix, self.path), connect_args=self.connect_args)
+        return self.connection_manager.connect()
 
     def initialize(self, conn=None):
         if conn is None:
@@ -232,14 +239,3 @@ def initialize(database_path):
 def session(database_path):
     manager = DatabaseManager(database_path)
     return manager.session()
-
-
-'''
-Citations
----------
-
-[1] L. Käll, J. D. Storey, M. J. MacCoss, and W. S. Noble,
-“Assigning significance to peptides identified by tandem mass spectrometry using decoy databases,”
-J. Proteome Res., vol. 7, pp. 29–34, 2008.
-
-'''

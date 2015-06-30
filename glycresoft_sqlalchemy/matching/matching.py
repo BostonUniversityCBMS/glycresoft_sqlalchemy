@@ -14,28 +14,29 @@ from collections import Counter, defaultdict
 
 from glycresoft_ms2_classification.error_code_interface import NoIonsMatchedException
 from glycresoft_ms2_classification.utils import collectiontools
-from glycresoft_ms2_classification.ms import default_loader, default_serializer
-from ..spectra import DeconIOBase, MSMSSqlDB, ObservedPrecursorSpectrum
-from ..spectra.bupid_topdown_deconvoluter import BUPIDYamlParser
+from ..spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 from glycresoft_ms2_classification.utils.parallel_opener import ParallelParser
 
 from ..scoring import score_matches
 from .. import data_model as model
+from ..data_model import PipelineModule, MSMSSqlDB
 
-Experiment = model.Experiment
-ExperimentParameter = model.ExperimentParameter
+
+HypothesisSampleMatch = model.HypothesisSampleMatch
+Hypothesis = model.Hypothesis
+SampleRun = model.SampleRun
 Protein = model.Protein
 TheoreticalGlycopeptide = model.TheoreticalGlycopeptide
 SpectrumMatch = model.SpectrumMatch
 GlycopeptideMatch = model.GlycopeptideMatch
 
+
 neutral_mass_getter = operator.attrgetter("neutral_mass")
 key_getter = operator.itemgetter('key')
 
 decon_format_lookup = {
-    "bupid_yaml": BUPIDYamlParser,
+    "bupid_yaml": BUPIDMSMSYamlParser,
     "db": MSMSSqlDB,
-    "default": default_loader
 }
 
 PROTON = 1.007276035
@@ -199,13 +200,13 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
         stub_ions = merge_ion_matches(stub_ions)
 
         gpm = GlycopeptideMatch(
-            id=theoretical.id,
             protein_id=theoretical.protein_id,
             ms1_score=theoretical.ms1_score,
             observed_mass=theoretical.observed_mass,
             calculated_mass=theoretical.calculated_mass,
             volume=theoretical.volume,
             ppm_error=theoretical.ppm_error,
+            glycan_composition_str=theoretical.glycan_composition_str,
             base_peptide_sequence=theoretical.base_peptide_sequence,
             modified_peptide_sequence=theoretical.modified_peptide_sequence,
             glycopeptide_sequence=theoretical.glycopeptide_sequence,
@@ -229,7 +230,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
         score_matches.apply(gpm, theoretical)
         session.add(gpm)
         session.commit()
-
+        session.close()
     return 1
 
 
@@ -262,20 +263,20 @@ def _chunk_iter(iterable, size=50):
     yield results
 
 
-class IonMatching(object):
+class IonMatching(PipelineModule):
 
     manager_type = model.DatabaseManager
 
-    def __init__(self, database_path, observed_ions_path, observed_ions_type='bupid_yaml',
-                 experiment_ids=None,
+    def __init__(self, database_path,  hypothesis_id,
+                 observed_ions_path,
+                 observed_ions_type='bupid_yaml',
+                 sample_run_id=None,
                  ms1_tolerance=ms1_tolerance_default,
                  ms2_tolerance=ms2_tolerance_default,
                  n_processes=4):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
-        if experiment_ids is None:
-            experiment_ids = [exp_id for query in self.session.query(Experiment.id) for exp_id in query]
-        self.experiment_ids = experiment_ids
+        self.hypothesis_id = hypothesis_id
         self.n_processes = n_processes
 
         self.ms1_tolerance = ms1_tolerance
@@ -297,16 +298,15 @@ class IonMatching(object):
         self.incoming_deconio = incoming_deconio
         self.msmsdb = msmsdb
 
-        for exp_id in self.experiment_ids:
-            for exp_param in self.session.query(ExperimentParameter).filter(
-                    Experiment.id == exp_id,
-                    ExperimentParameter.name == 'metadata'):
-                exp_param.value.update({
+        for hypothesis_id in self.hypothesis_ids:
+            for hypothesis in self.session.query(Hypothesis).filter(
+                    Hypothesis.id == hypothesis_id):
+                hypothesis.parameters.update({
                         "ms1_ppm_tolerance": ms1_tolerance,
                         "ms2_ppm_tolerance": ms2_tolerance,
                         "observed_ions_path": observed_ions_path
                 })
-                self.session.add(exp_param)
+                self.session.add(hypothesis)
         self.session.commit()
 
     def prepare_task_fn(self):
@@ -319,10 +319,10 @@ class IonMatching(object):
 
     def stream_theoretical_glycopeptides(self, chunksize=50):
         session = self.manager.session()
-        for exp_id in self.experiment_ids:
+        for hypothesis_id in self.hypothesis_ids:
             for name, protein_id in session.query(
-                    Protein.name, Protein.id).filter(Protein.experiment_id == exp_id):
-                print(name)
+                    Protein.name, Protein.id).filter(Protein.hypothesis_id == hypothesis_id):
+                logger.info("Streaming %s (%d)", name, protein_id)
                 theoretical_glycopeptide_ids = (session.query(
                        TheoreticalGlycopeptide.id).filter(TheoreticalGlycopeptide.protein_id == protein_id))
                 ## When the number of processes used is small, the more work done in the main process.
@@ -337,6 +337,7 @@ class IonMatching(object):
         session.close()
 
     def run(self):
+        session = self.session
         if self.msmsdb is None:
             decon_io = self.incoming_deconio.await()
             database = decon_io.to_db()
@@ -355,4 +356,6 @@ class IonMatching(object):
             for theoretical in self.stream_theoretical_glycopeptides():
                 cntr += task_fn(theoretical)
                 if cntr % 1000 == 0:
-                    print "%d Searches Complete." % cntr
+                    logger.info("%d Searches Complete." % cntr)
+        session.commit()
+        session.close()

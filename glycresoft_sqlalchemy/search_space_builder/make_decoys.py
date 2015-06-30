@@ -1,18 +1,18 @@
-import re
 import multiprocessing
 import functools
 import itertools
 import logging
 
-from glycresoft_ms2_classification.structure import sequence, constants
-from glycresoft_ms2_classification.structure import stub_glycopeptides
+from glycresoft_ms2_classification.structure import sequence
 from glycresoft_ms2_classification.structure.parser import sequence_tokenizer_respect_sequons, sequence_tokenizer
 
-from ..data_model import TheoreticalGlycopeptide, Experiment, Protein, DatabaseManager, ExperimentParameter
+from ..data_model import TheoreticalGlycopeptide, Hypothesis, Protein, DatabaseManager
+from ..data_model import PipelineModule
+
+from .utils import fragments
 
 Sequence = sequence.Sequence
 
-StubGlycopeptide = stub_glycopeptides.StubGlycopeptide
 strip_modifications = sequence.strip_modifications
 list_to_sequence = sequence.list_to_sequence
 logger = logging.getLogger(__name__)
@@ -132,51 +132,12 @@ def make_decoy(theoretical_sequence, prefix_len=0, suffix_len=1,
         )
         session.add(decoy)
         session.commit()
-
+    except Exception, e:
+        logger.exception("%r", locals(), exc_info=e)
+        raise e
     finally:
         session.close()
     return 1
-
-
-def fragments(sequence):
-    fragments = zip(*map(sequence.break_at, range(1, len(sequence))))
-    b_type = fragments[0]
-    b_ions = []
-    b_ions_hexnac = []
-    for b in b_type:
-        for fm in b:
-            key = fm.get_fragment_name()
-            if key == ("b1" or re.search(r'b1\+', key)) and constants.EXCLUDE_B1:
-                # B1 Ions aren't actually seen in reality, but are an artefact of the generation process
-                # so do not include them in the output
-                continue
-            mass = fm.get_mass()
-            golden_pairs = fm.golden_pairs
-            if "HexNAc" in key:
-                b_ions_hexnac.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-            else:
-                b_ions.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-
-    y_type = fragments[1]  # seq.get_fragments('Y')
-    y_ions = []
-    y_ions_hexnac = []
-    for y in y_type:
-        for fm in y:
-            key = fm.get_fragment_name()
-            mass = fm.get_mass()
-            golden_pairs = fm.golden_pairs
-            if "HexNAc" in key:
-                y_ions_hexnac.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-            else:
-                y_ions.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-
-    pep_stubs = StubGlycopeptide.from_sequence(sequence)
-
-    stub_ions = pep_stubs.get_stubs()
-    oxonium_ions = pep_stubs.get_oxonium_ions()
-    return (oxonium_ions, b_ions, b_ions,
-            b_ions_hexnac, y_ions_hexnac,
-            stub_ions)
 
 
 decoy_type_map = {
@@ -185,39 +146,40 @@ decoy_type_map = {
 }
 
 
-class DecoySearchSpaceBuilder(object):
+class DecoySearchSpaceBuilder(PipelineModule):
     manager_type = DatabaseManager
 
     def __init__(self, database_path, prefix_len=0, suffix_len=1,
-                 experiment_ids=None, n_processes=4, decoy_type=0):
+                 hypothesis_ids=None, n_processes=4, decoy_type=0):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
-        if experiment_ids is None:
-            experiment_ids = [eid for experiment in self.session.query(Experiment.id)
-                              for eid in experiment]
-        self.experiment_ids = experiment_ids
+        if hypothesis_ids is None:
+            hypothesis_ids = [eid for hypothesis in self.session.query(Hypothesis.id)
+                              for eid in hypothesis]
+        self.hypothesis_ids = hypothesis_ids
         self.decoy_type = decoy_type
         self.n_processes = n_processes
         self.prefix_len = prefix_len
         self.suffix_len = suffix_len
         self.protein_decoy_map = {}
-        for experiment_id in self.experiment_ids:
-            reference_experiment = self.session.query(Experiment).filter(
-                Experiment.id == experiment_id).first()
-            decoy_experiment = Experiment(name=reference_experiment.name.replace("target", "decoy"))
-
-            self.session.add(decoy_experiment)
-            for protein in reference_experiment.proteins.values():
+        for hypothesis_id in self.hypothesis_ids:
+            reference_hypothesis = self.session.query(Hypothesis).filter(
+                Hypothesis.id == hypothesis_id).first()
+            decoy_hypothesis = Hypothesis(name=reference_hypothesis.name.replace("target", "decoy"), is_decoy=True)
+            decoy_hypothesis.parameters = {}
+            decoy_hypothesis.parameters['is_decoy'] = True
+            self.session.add(decoy_hypothesis)
+            for protein in reference_hypothesis.proteins.values():
                 decoy_protein = self.protein_decoy_map[protein.id] = Protein(name='decoy-' + protein.name,
-                                                                             experiment_id=decoy_experiment.id)
+                                                                             hypothesis_id=decoy_hypothesis.id)
                 self.session.add(decoy_protein)
             self.session.commit()
 
-            parameter = reference_experiment.parameters.get("decoys")
+            parameter = reference_hypothesis.parameters.get("decoys")
             if parameter is None:
-                parameter = ExperimentParameter(name="decoys", value=[], experiment_id=experiment_id)
-            parameter.value.append({"experiment_id": decoy_experiment.id, "type": self.decoy_type})
-            self.session.add(parameter)
+                reference_hypothesis.parameters['decoys'] = []
+            reference_hypothesis.parameters['decoys'].append({"hypothesis_id": decoy_hypothesis.id, "type": self.decoy_type})
+            self.session.add(reference_hypothesis)
             self.session.commit()
 
         for k, v in list(self.protein_decoy_map.items()):
@@ -225,10 +187,10 @@ class DecoySearchSpaceBuilder(object):
 
     def stream_theoretical_glycopeptides(self):
         session = self.manager.session()
-        for exp_id in self.experiment_ids:
+        for exp_id in self.hypothesis_ids:
             for name, protein_id in session.query(
-                    Protein.name, Protein.id).filter(Protein.experiment_id == exp_id):
-                print(name)
+                    Protein.name, Protein.id).filter(Protein.hypothesis_id == exp_id):
+                logger.info("Streaming %s (%d)", name, protein_id)
                 theoretical_glycopeptide_ids = (session.query(
                        TheoreticalGlycopeptide.id).filter(TheoreticalGlycopeptide.protein_id == protein_id))
                 for theoretical_id in itertools.chain.from_iterable(theoretical_glycopeptide_ids):
@@ -245,7 +207,7 @@ class DecoySearchSpaceBuilder(object):
         cntr = 0
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
-            for res in pool.imap(task_fn, self.stream_theoretical_glycopeptides(), chunksize=500):
+            for res in pool.imap_unordered(task_fn, self.stream_theoretical_glycopeptides(), chunksize=500):
                 cntr += res
                 if cntr % 1000 == 0:
                     logger.info("%d Decoys Complete." % cntr)

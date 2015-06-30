@@ -1,0 +1,9 @@
+{%- extends "layout.templ" %}
+
+{% block body %}
+    {% for hypothesis in hypotheses %}
+    <div class='row'>
+        {% include "components/hypothesis_detail_partial.templ" %}
+    </div>
+    {% endfor %}
+{% endblock %}

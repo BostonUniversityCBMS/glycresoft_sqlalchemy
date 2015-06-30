@@ -10,7 +10,7 @@ import matplotlib.patches as mpatches
 import numpy as np
 
 
-from glypy import Composition
+from glycresoft_ms2_classification.structure.composition import Composition
 
 PROTON = Composition("H+").mass
 db_logger = logging.getLogger(__name__)

@@ -1,0 +1,26 @@
+<!DOCTYPE html5>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/materialize.css') }}">
+    <script src="{{ url_for('static',filename='js/jquery.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/materialize.js') }}"></script>
+    <script>
+$(function() {
+    $('select').material_select();
+});
+    </script>
+</head>
+<body>
+    {% include "header.templ" %}
+    <div class='container'>
+    {% block body %}
+    {% endblock %}
+    </div>
+
+    {% include "footer.templ" %}
+</body>
+</html>

@@ -16,7 +16,7 @@ from glycresoft_ms2_classification.structure import constants
 from glycresoft_ms2_classification.proteomics import get_enzyme, msdigest_xml_parser
 
 from .. import data_model as model
-
+from ..data_model import PipelineModule
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)(\w+)')
 g_colon_prefix = "G:"
@@ -103,7 +103,7 @@ class MS1GlycopeptideResult(object):
         self.modified_peptide_sequence = modified_peptide_sequence
 
     def __repr__(self):
-        return str((self.base_peptide_sequence, self.peptide_modifications, self.glycan_composition_str))
+        return "MS1GlycopeptideResult(%s)" % str((self.base_peptide_sequence, self.peptide_modifications, self.glycan_composition_str))
 
 
 def get_monosaccharide_identities(csv_columns):
@@ -155,8 +155,9 @@ def get_peptide_modifications(peptide_mod_str, modification_table):
     for i in items:
         if i[1] == '':
             continue
-        mod = modification_table.get_modification(i[1], -1, int(i[0]))
-        mod_list.append(mod)
+        for part in i[1].split(":"):
+            mod = modification_table.get_modification(part, -1, int(i[0]))
+            mod_list.append(mod)
     return mod_list
 
 
@@ -270,29 +271,6 @@ def generate_fragments(seq, ms1_result):
     return theoretical_glycopeptide
 
 
-def from_sequence(row, monosaccharide_identities):
-    """Convert an MS1GlycopeptideResult directly into its fragments
-    with exact positions pre-specified on its :attr:`peptide_sequence`
-
-    Parameters
-    ----------
-    row: dict
-        A row from the input csv
-    monosaccharide_identities: list of str
-        List of monosaccaride names
-
-    Returns
-    -------
-    dict
-    """
-    ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
-    if len(ms1_result.base_peptide_sequence) == 0:
-        return []
-    seq = Sequence(ms1_result.base_peptide_sequence)
-    product = generate_fragments(seq, ms1_result)
-    return [product]
-
-
 def process_predicted_ms1_ion(row, modification_table, site_list_map,
                               monosaccharide_identities, database_manager, proteins):
     """Multiprocessing dispatch function to generate all theoretical sequences and their
@@ -348,7 +326,7 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map,
     return i
 
 
-class TheoreticalSearchSpace(object):
+class TheoreticalSearchSpace(PipelineModule):
     '''
     Describe the process of generating all theoretical sequences and their fragments
     from an MS1 Results CSV, a collection of constant and variable peptide modifications,
@@ -379,8 +357,8 @@ class TheoreticalSearchSpace(object):
 
         tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
 
-        self.experiment = model.Experiment(name="target-{}".format(tag))
-        self.session.add(self.experiment)
+        self.hypothesis = model.Hypothesis(name="target-{}".format(tag))
+        self.session.add(self.hypothesis)
         self.session.commit()
 
         try:
@@ -403,7 +381,7 @@ class TheoreticalSearchSpace(object):
         self.monosaccharide_identities = get_monosaccharide_identities(self.ms1_results_reader.fieldnames)
         enzyme = map(get_enzyme, enzyme)
 
-        self.metadata = model.ExperimentParameter(name="metadata", value={
+        self.hypothesis.parameters = {
             "monosaccharide_identities": self.monosaccharide_identities,
             "enzyme": enzyme,
             "site_list_map": site_list_map,
@@ -413,18 +391,18 @@ class TheoreticalSearchSpace(object):
             "enzyme": enzyme,
             "tag": tag,
             "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS
-        }, experiment_id=self.experiment.id)
-        self.session.add(self.metadata)
+        }
+        self.session.add(self.hypothesis)
 
         for name, sites in self.glycosylation_site_map.items():
-            self.session.add(model.Protein(name=name, glycosylation_sites=sites, experiment_id=self.experiment.id))
+            self.session.add(model.Protein(name=name, glycosylation_sites=sites, hypothesis_id=self.hypothesis.id))
 
         self.session.commit()
 
     def prepare_task_fn(self):
         task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map, monosaccharide_identities=self.monosaccharide_identities,
-                                    database_manager=self.manager, proteins=self.experiment.proteins)
+                                    database_manager=self.manager, proteins=self.hypothesis.proteins)
         return task_fn
 
     def run(self):
@@ -436,7 +414,7 @@ class TheoreticalSearchSpace(object):
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
-            for res in worker_pool.imap(task_fn, self.ms1_results_reader, chunksize=25):
+            for res in worker_pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=25):
                 cntr += res
                 if (cntr % 1000) == 0:
                     logger.info("Committing, %d records made", cntr)
@@ -466,8 +444,8 @@ class ExactSearchSpace(TheoreticalSearchSpace):
 
         tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
 
-        self.experiment = model.Experiment(name="target-{}".format(tag))
-        self.session.add(self.experiment)
+        self.hypothesis = model.Hypothesis(name="target-{}".format(tag))
+        self.session.add(self.hypothesis)
         self.session.commit()
 
         try:
@@ -486,7 +464,8 @@ class ExactSearchSpace(TheoreticalSearchSpace):
 
         self.monosaccharide_identities = get_monosaccharide_identities(self.ms1_results_reader.fieldnames)
         enzyme = map(get_enzyme, enzyme)
-        self.metadata = model.ExperimentParameter(name="metadata", value={
+
+        self.hypothesis.parameters = {
             "monosaccharide_identities": self.monosaccharide_identities,
             "enzyme": enzyme,
             "site_list_map": site_list_map,
@@ -496,8 +475,9 @@ class ExactSearchSpace(TheoreticalSearchSpace):
             "enzyme": enzyme,
             "tag": tag,
             "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS
-        }, experiment_id=self.experiment.id)
-        self.session.add(self.metadata)
+        }
+        self.session.add(self.hypothesis)
+        self.session.commit()
 
     def prepare_task_fn(self):
         task_fn = functools.partial(from_sequence, monosaccharide_identities=self.monosaccharide_identities)

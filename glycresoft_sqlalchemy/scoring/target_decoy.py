@@ -3,6 +3,7 @@ from collections import namedtuple
 
 from sqlalchemy import func, distinct
 from ..data_model import DatabaseManager, GlycopeptideMatch, Protein
+from ..data_model import PipelineModule
 
 
 Threshold = namedtuple("Threshold", ("score", "targets", "decoys", "fdr"))
@@ -11,22 +12,22 @@ ms2_score = GlycopeptideMatch.ms2_score
 p_value = GlycopeptideMatch.p_value
 
 
-class TargetDecoyAnalyzer(object):
+class TargetDecoyAnalyzer(PipelineModule):
     manager_type = DatabaseManager
 
-    def __init__(self, database_path, target_experiment_id=None, decoy_experiment_id=None):
+    def __init__(self, database_path, target_hypothesis_id=None, decoy_hypothesis_id=None):
         self.manager = self.manager_type(database_path)
-        self.target_id = target_experiment_id
-        self.decoy_id = decoy_experiment_id
+        self.target_id = target_hypothesis_id
+        self.decoy_id = decoy_hypothesis_id
 
     def target_decoy_ratio(self, cutoff, score=ms2_score):
         session = self.manager.session()
         tq = session.query(GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.experiment_id == self.target_id)
+            Protein.hypothesis_id == self.target_id)
         dq = session.query(GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.experiment_id == self.decoy_id)
+            Protein.hypothesis_id == self.decoy_id)
 
         decoys_at = dq.filter(GlycopeptideMatch.ms2_score >= cutoff).count()
         targets_at = tq.filter(GlycopeptideMatch.ms2_score >= cutoff).count()
@@ -34,7 +35,7 @@ class TargetDecoyAnalyzer(object):
             ratio = decoys_at / float(targets_at)
         except ZeroDivisionError:
             ratio = 1.
-
+        session.close()
         return ratio, targets_at, decoys_at
 
     def global_thresholds(self):
@@ -61,11 +62,11 @@ class TargetDecoyAnalyzer(object):
         thresholds = session.query(distinct(func.round(GlycopeptideMatch.ms2_score, 2)))
         tq = session.query(GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.experiment_id == self.target_id).group_by(
+            Protein.hypothesis_id == self.target_id).group_by(
             GlycopeptideMatch.base_peptide_sequence, GlycopeptideMatch.glycan_composition_str).order_by(
             GlycopeptideMatch.ms2_score.desc())
         dq = session.query(GlycopeptideMatch).filter(
-            GlycopeptideMatch.protein_id == Protein.id, Protein.experiment_id == self.decoy_id).group_by(
+            GlycopeptideMatch.protein_id == Protein.id, Protein.hypothesis_id == self.decoy_id).group_by(
             GlycopeptideMatch.base_peptide_sequence, GlycopeptideMatch.glycan_composition_str).order_by(
             GlycopeptideMatch.ms2_score.desc())
 
@@ -92,11 +93,11 @@ class TargetDecoyAnalyzer(object):
 
         tq = session.query(GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.experiment_id == self.target_id).order_by(
+            Protein.hypothesis_id == self.target_id).order_by(
             GlycopeptideMatch.ms2_score.desc())
         dq = session.query(GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.experiment_id == self.decoy_id)
+            Protein.hypothesis_id == self.decoy_id)
 
         total_decoys = float(dq.count())
 
@@ -121,15 +122,16 @@ class TargetDecoyAnalyzer(object):
 
         tq = session.query(GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.experiment_id == self.target_id)
+            Protein.hypothesis_id == self.target_id)
 
         dq = session.query(GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.experiment_id == self.decoy_id)
+            Protein.hypothesis_id == self.decoy_id)
 
         target_cut = tq.filter(score >= 0, score < cutoff).count()
         decoy_cut = dq.filter(score >= 0, score < cutoff).count()
         percent_incorrect_targets = target_cut / float(decoy_cut)
+        session.close()
         return percent_incorrect_targets
 
     def fdr_with_percent_incorrect_targets(self, cutoff):
@@ -140,7 +142,7 @@ class TargetDecoyAnalyzer(object):
         session = self.manager.session()
         thresholds = chain.from_iterable(session.query(distinct(GlycopeptideMatch.ms2_score)).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.experiment_id == self.target_id).order_by(
+            Protein.hypothesis_id == self.target_id).order_by(
             GlycopeptideMatch.ms2_score.asc()))
 
         mapping = {}
@@ -158,6 +160,7 @@ class TargetDecoyAnalyzer(object):
                 mapping[threshold] = q_value
             except ZeroDivisionError:
                 mapping[threshold] = 1.
+        session.close()
         return mapping
 
     def q_values(self):
@@ -165,7 +168,7 @@ class TargetDecoyAnalyzer(object):
 
         tq = session.query(GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.experiment_id == self.target_id)
+            Protein.hypothesis_id == self.target_id)
 
         q_map = self._calculate_q_values()
 

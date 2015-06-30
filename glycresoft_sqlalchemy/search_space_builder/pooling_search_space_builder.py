@@ -130,7 +130,7 @@ class PoolingTheoreticalSearchSpace(TheoreticalSearchSpace):
         task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map,
                                     monosaccharide_identities=self.monosaccharide_identities,
-                                    proteins={protein.name: protein.id for protein in self.experiment.proteins.values()})
+                                    proteins={protein.name: protein.id for protein in self.hypothesis.proteins.values()})
         return task_fn
 
     def run(self):
@@ -148,7 +148,7 @@ class PoolingTheoreticalSearchSpace(TheoreticalSearchSpace):
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
-            for res in worker_pool.imap(task_fn, self.ms1_results_reader, chunksize=500):
+            for res in worker_pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=500):
                 self.session.add_all(res)
                 cntr += len(res)
                 if cntr >= checkpoint:

@@ -1,0 +1,12 @@
+.file-format-radio {
+    position: relative !important;
+    left: 80px !important;
+}
+
+.modification-selection {
+    height: 100px;
+}
+
+.help-text{
+    vertical-align: bottom;
+}

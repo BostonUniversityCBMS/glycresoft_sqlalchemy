@@ -1,0 +1,43 @@
+{%- extends "layout.templ" %}
+
+{% block body %}
+<h2>Match Hypothesis Against Samples</h2>
+<div class='row'>
+    <form action="match_samples_submit" class="col s12" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+        <div class="row">
+            <div class="input-field col s8">
+                <label for="sample_name">Sample Name</label>
+                <br>
+                <input id='sample_name' name="sample_name" type="text" class="validate">
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col s8'>
+                <div class="file-field input-field">
+                    <h6>Observed Ions</h6>
+                    <div class="btn">
+                        <span>Select File...</span>
+                        <input name='observed-ions-file' type="file"/>
+                    </div>
+                    <input class="file-path validate" type="text" style="width: 60%;padding-left:5px;"/>
+                </div>
+            </div>
+            <div class='col s4 help-text' id='observed-ions-file-help'>
+                <small>The file containing the LC-MS/MS data deconvoluted by <code>BUPID Top Down</code></small>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='input-field'>    
+                <label for="hypothesis_choice">Choose a Hypothesis</label>
+                <br>
+                <select id="hypothesis_choice" name="hypothesis_choice" class=''>
+                    {% for hypothesis in query(Hypothesis).filter(Hypothesis.is_decoy != True) %}
+                    <option value={{hypothesis.id}}>{{hypothesis.name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

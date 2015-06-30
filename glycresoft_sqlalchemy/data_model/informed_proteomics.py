@@ -1,23 +1,40 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy import PickleType, Numeric, Unicode, Column, Integer, ForeignKey
+from sqlalchemy import PickleType, Numeric, Unicode, Column, Integer, ForeignKey, Table
 
-from .data_model import Base, Experiment, Protein, TheoreticalGlycopeptide, GlycopeptideMatch
-
-
-class InformedPeptide(Base):
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    protein_id = Column(Integer, ForeignKey(Protein.id), index=True)
-    base_peptide_sequence = Column(Unicode(128), index=True)
-    modified_peptide_sequence = Column(Unicode(128), index=True)
-    glycosylation_sites = Column(PickleType)
-    peptide_score = Column(Numeric(10, 6), index=True)
-    start_position = Column(Integer, index=True)
-    end_position = Column(Integer, index=True)
+from .data_model import Base, Glycan, TheoreticalGlycopeptide, PeptideBase
 
 
-class InformedPeptideToTheoreticalGlycopeptide(Base):
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    informed_peptide = Column(Integer, ForeignKey(InformedPeptide.id), index=True)
-    theoretical_glycopeptide = Column(Integer, ForeignKey(TheoreticalGlycopeptide.id), index=True)
+class InformedPeptide(PeptideBase):
+    __tablename__ = "InformedPeptide"
+    id = Column(Integer, ForeignKey(PeptideBase.id), primary_key=True)
+    peptide_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    other = Column(PickleType)
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'InformedPeptide',
+    }
+
+
+InformedPeptideToTheoreticalGlycopeptide = Table(
+    "InformedPeptideToTheoreticalGlycopeptide", Base.metadata,
+    Column("informed_peptide", Integer, ForeignKey(InformedPeptide.id)),
+    Column("theoretical_glycopeptide", Integer, ForeignKey(TheoreticalGlycopeptide.id)))
+
+
+class InformedMS1Glycopeptide(InformedPeptide):
+    __tablename__ = "InformedMS1Glycopeptide"
+    id = Column(Integer, ForeignKey(InformedPeptide.id), primary_key=True)
+
+    base_peptide = relationship(InformedPeptide, remote_side=[id])
+    glycan_id = Column(Integer, ForeignKey(Glycan.id), index=True)
+
+    glycopeptide_sequence = Column(Unicode(128), index=True)
+
+    glycan_composition_str = Column(Unicode(128), index=True)
+
+    glycan = relationship(
+        Glycan, backref=backref('informed_ms1_glycopeptides', lazy='dynamic'))
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'InformedMS1Glycopeptide',
+    }

@@ -1,4 +1,4 @@
-from glycresoft_sqlalchemy.data_model import DatabaseManager, GlycopeptideMatch, Experiment
+from glycresoft_sqlalchemy.data_model import DatabaseManager, GlycopeptideMatch, Hypothesis
 from sqlalchemy.sql.functions import max as sql_max, count
 
 
@@ -13,9 +13,11 @@ def format_q_value(pairs):
 
 def main(database_path):
     session = DatabaseManager(database_path).session()
-    for experiment in session.query(Experiment):
-        print experiment
-        for protein in experiment.proteins.values():
+    for hypothesis in session.query(Hypothesis):
+        print hypothesis
+        if hypothesis.parameters.get("is_decoy", False):
+            continue
+        for protein in hypothesis.proteins.values():
             if protein.theoretical_glycopeptides.count() == 0:
                 continue
             print protein
@@ -30,7 +32,7 @@ def main(database_path):
                 GlycopeptideMatch.protein_id == protein.id).group_by(
                 GlycopeptideMatch.q_value).all())
             print "\n"
-
+    session.close()
 
 if __name__ == '__main__':
     import sys
