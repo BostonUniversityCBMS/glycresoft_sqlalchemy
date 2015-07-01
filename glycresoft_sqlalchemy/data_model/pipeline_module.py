@@ -33,7 +33,30 @@ class Pipeline(object):
 
 
 class PipelineModule(object):
+    '''
+    Represent a single step in a program pipeline. This is a base class for all
+    other pipeline steps. It provides basic state tracking information about the
+    task run, and sets up some common logging events.
+
+    Attributes
+    ----------
+    manager_type: DatabaseManager
+        A subclass of :class:`DatabaseManager` which provides :class:`Session` objects
+        from a bound database. Does not contain any open connections itself, so it may
+        be safely shared with worker processes.
+    start_time: float
+        The instant the task began, as returned by :func:`time.time`
+    end_time: float
+        The instant the task ended, as returned by :func:`time.time`
+    status: int
+        An equivalent to a return code
+    error: Exception or None
+        Any Exception that was unhandled by the task and caused it to terminate.
+        The exception does not propagate, but is logged, and a status code of -1
+        is set.
+    '''
     manager_type = DatabaseManager
+    error = None
 
     def start(self, *args, **kwargs):
         self._begin(*args, **kwargs)

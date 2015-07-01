@@ -78,7 +78,7 @@ def run_search(
 app = argparse.ArgumentParser('database-search')
 app.add_argument("database_path")
 app.add_argument("target_hypothesis_id")
-app.add_argument("-n", "-n-processes", default=4, required=False, type=int)
+app.add_argument("-n", "--n-processes", default=4, required=False, type=int)
 app.add_argument("-i", "--observed-ions-path")
 app.add_argument("-p", "--observed-ions-type", default='bupid_yaml', choices=["bupid_yaml", "db"])
 app.add_argument("-d", "--decoy-hypothesis-id", type=int, default=None, required=False)

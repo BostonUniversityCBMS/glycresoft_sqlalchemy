@@ -37,24 +37,56 @@ class TargetDecoyAnalyzer(PipelineModule):
         self.target_id = target_hypothesis_id
         self.decoy_id = decoy_hypothesis_id
 
-    def target_decoy_ratio(self, cutoff, score=ms2_score):
         session = self.manager.session()
-        tq = session.query(
+
+        self.target_count = session.query(
             GlycopeptideMatch.ms2_score).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.target_id)
-        dq = session.query(
+            Protein.hypothesis_id == self.target_id).count()
+
+        self.decoy_count = session.query(
             GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.decoy_id)
+            Protein.hypothesis_id == self.decoy_id).count()
 
-        decoys_at = dq.filter(GlycopeptideMatch.ms2_score >= cutoff).count()
-        targets_at = tq.filter(GlycopeptideMatch.ms2_score >= cutoff).count()
+        session.close()
+        self.n_targets_at = {}
+        self.n_decoys_at = {}
+
+    def calculate_n_decoys_at(self, threshold):
+        if threshold in self.n_decoys_at:
+            return self.n_decoys_at[threshold]
+        else:
+            session = self.manager.session()
+            self.n_decoys_at[threshold] = session.query(
+            GlycopeptideMatch).filter(
+            GlycopeptideMatch.protein_id == Protein.id,
+            Protein.hypothesis_id == self.decoy_id).filter(
+            GlycopeptideMatch.ms2_score >= threshold).count()
+            return self.n_decoys_at[threshold]
+
+    def calculate_n_targets_at(self, threshold):
+        if threshold in self.n_targets_at:
+            return self.n_targets_at[threshold]
+        else:
+            session = self.manager.session()
+            self.n_targets_at[threshold] = session.query(
+            GlycopeptideMatch).filter(
+            GlycopeptideMatch.protein_id == Protein.id,
+            Protein.hypothesis_id == self.target_id).filter(
+            GlycopeptideMatch.ms2_score >= threshold).count()
+            return self.n_targets_at[threshold]
+
+
+    def target_decoy_ratio(self, cutoff, score=ms2_score):
+        session = self.manager.session()
+
+        decoys_at = self.calculate_n_decoys_at(cutoff)
+        targets_at = self.calculate_n_targets_at(cutoff)
         try:
             ratio = decoys_at / float(targets_at)
         except ZeroDivisionError:
             ratio = 1.
-        session.close()
         return ratio, targets_at, decoys_at
 
     def global_thresholds(self):
@@ -88,7 +120,8 @@ class TargetDecoyAnalyzer(PipelineModule):
             Protein.hypothesis_id == self.decoy_id)
 
         total_decoys = float(dq.count())
-
+        if total_decoys == 0:
+            raise ValueError("No decoy matches found")
         last_score = 0
         last_p_value = 0
         for target in tq:
@@ -99,8 +132,7 @@ class TargetDecoyAnalyzer(PipelineModule):
                 session.commit()
                 decoys_at = dq.filter(GlycopeptideMatch.ms2_score >= target.ms2_score).count()
                 last_score = target.ms2_score
-                if total_decoys == 0:
-                    raise ValueError("No decoy matches found")
+                
                 last_p_value = decoys_at / total_decoys
                 target.p_value = last_p_value
                 session.add(target)
@@ -111,16 +143,10 @@ class TargetDecoyAnalyzer(PipelineModule):
     def estimate_percent_incorrect_targets(self, cutoff, score=ms2_score):
         session = self.manager.session()
 
-        tq = session.query(GlycopeptideMatch.ms2_score).filter(
-            GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.target_id)
-
-        dq = session.query(GlycopeptideMatch.ms2_score).filter(
-            GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.decoy_id)
-
-        target_cut = tq.filter(score >= 0, score < cutoff).count()
-        decoy_cut = dq.filter(score >= 0, score < cutoff).count()
+        # target_cut = tq.filter(score >= 0, score < cutoff).count()
+        target_cut = self.target_count - self.calculate_n_targets_at(cutoff)
+        # decoy_cut = dq.filter(score >= 0, score < cutoff).count()
+        decoy_cut = self.decoy_count - self.calculate_n_decoys_at(cutoff)
         percent_incorrect_targets = target_cut / float(decoy_cut)
         session.close()
         return percent_incorrect_targets
@@ -171,7 +197,7 @@ class TargetDecoyAnalyzer(PipelineModule):
         session.close()
 
     def run(self):
-        thresholds = self.global_thresholds()
-        self.p_values()
+        # thresholds = self.global_thresholds()
+        # self.p_values()
         self.q_values()
-        return thresholds
+        # return thresholds
