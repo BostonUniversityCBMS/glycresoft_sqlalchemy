@@ -5,7 +5,8 @@ from glycresoft_sqlalchemy.data_model import DatabaseManager, Hypothesis, Protei
 def export_matches_as_csv(database_path, output_path=None):
     manager = DatabaseManager(database_path)
     session = manager.session()
-    gpms = session.query(GlycopeptideMatch)
+    gpms = session.query(GlycopeptideMatch).filter(
+        GlycopeptideMatch.protein_id == Protein.id, Protein.hypothesis_id == 1)
     if output_path is None:
         output_path = database_path[-3:] + ".glycopeptide_matches.csv"
     with open(output_path) as fh:
