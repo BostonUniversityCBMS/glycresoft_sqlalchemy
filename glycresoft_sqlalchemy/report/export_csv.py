@@ -9,7 +9,7 @@ def export_matches_as_csv(database_path, output_path=None):
         GlycopeptideMatch.protein_id == Protein.id, Protein.hypothesis_id == 1)
     if output_path is None:
         output_path = database_path[:-3] + ".glycopeptide_matches.csv"
-    with open(output_path) as fh:
+    with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         header = [
             "id", "ms1_score", "ms2_score", "q_value", "observed_mass", "volume", "ppm_error",
