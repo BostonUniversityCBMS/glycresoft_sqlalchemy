@@ -70,26 +70,30 @@ def glycosylate_callback(peptide, session, hypothesis_id, position_selector):
 
 
 def make_theoretical_glycopeptide(peptide, position_selector, database_manager, hypothesis_id):
-    session = database_manager.session()
-    glycoforms = glycosylate_callback(peptide, session, hypothesis_id, position_selector)
-    for glycoform in glycoforms:
-        informed_glycopeptide = InformedMS1Glycopeptide(
-            protein_id=peptide.protein_id,
-            base_peptide_sequence=peptide.base_peptide_sequence,
-            modified_peptide_sequence=peptide.modified_peptide_sequence,
-            glycopeptide_sequence=str(glycoform),
-            calculated_mass=glycoform.mass,
-            glycosylation_sites=list(glycoform.n_glycan_sequon_sites),
-            peptide_score=peptide.peptide_score,
-            start_position=peptide.start_position,
-            end_position=peptide.end_position,
-            other=peptide.other,
-            glycan_composition_str=glycoform.glycan)
-        session.add(informed_glycopeptide)
-    if len(glycoforms) > 0:
-        session.commit()
-        session.close()
-    return len(glycoforms)
+    try:
+        session = database_manager.session()
+        glycoforms = glycosylate_callback(peptide, session, hypothesis_id, position_selector)
+        for glycoform in glycoforms:
+            informed_glycopeptide = InformedMS1Glycopeptide(
+                protein_id=peptide.protein_id,
+                base_peptide_sequence=peptide.base_peptide_sequence,
+                modified_peptide_sequence=peptide.modified_peptide_sequence,
+                glycopeptide_sequence=str(glycoform),
+                calculated_mass=glycoform.mass,
+                glycosylation_sites=list(glycoform.n_glycan_sequon_sites),
+                peptide_score=peptide.peptide_score,
+                start_position=peptide.start_position,
+                end_position=peptide.end_position,
+                other=peptide.other,
+                glycan_composition_str=glycoform.glycan)
+            session.add(informed_glycopeptide)
+        if len(glycoforms) > 0:
+            session.commit()
+            session.close()
+        return len(glycoforms)
+    except Exception, e:
+        logger.exception("An error occurred, %r", locals(), exc_info=e)
+        raise
 
 
 def load_proteomics(database_path, mzid_path):
@@ -169,6 +173,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
             for peptide in self.stream_peptides():
                 cntr += task_fn(peptide)
                 logger.info("Completed %d sequences", cntr)
+        return self.hypothesis_id
 
 
 class IntegratedOmicsMS1LegacyCSV(PipelineModule):
@@ -218,6 +223,7 @@ class IntegratedOmicsMS1LegacyCSV(PipelineModule):
             writer.writerow(column_headers)
             g = itertools.imap(glycopeptide_to_columns, self.stream_glycopeptides())
             writer.writerows(g)
+        return self.output_path
 
     def compute_column_headers(self):
         columns = ["Molecular Weight", "C", "Compositions"] + self.monosaccharide_identities +\

@@ -8,16 +8,19 @@ def taskmain(database_path, observed_ions_path, observed_ions_type='bupid_yaml',
              hypothesis_ids=None,
              ms1_tolerance=ms1_tolerance_default,
              ms2_tolerance=ms2_tolerance_default,
+             hypothesis_match_id=None,
+             sample_run_id=None,
              n_processes=4):
-    job = IonMatching(
-        database_path=database_path,
-        observed_ions_path=observed_ions_path,
-        observed_ions_type=observed_ions_type,
-        hypothesis_ids=hypothesis_ids,
-        ms1_tolerance=ms1_tolerance,
-        ms2_tolerance=ms2_tolerance,
-        )
-    job.start()
+    for hypothesis_id in hypothesis_ids:
+        job = IonMatching(
+            database_path=database_path,
+            observed_ions_path=observed_ions_path,
+            observed_ions_type=observed_ions_type,
+            hypothesis_id=hypothesis_id,
+            ms1_tolerance=ms1_tolerance,
+            ms2_tolerance=ms2_tolerance,
+            )
+        job.start()
 
     manager = DatabaseManager(database_path)
     session = manager.session()

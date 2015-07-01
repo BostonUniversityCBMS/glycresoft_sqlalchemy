@@ -35,7 +35,7 @@ def plot(qry):
                s=(frame.Abundance / frame.Abundance.max()) * 200, c=frame["Protein Name"].map(color_map),
                ax=ax2)
     ax2.set_xlim(0, 1)
-    ax2.set_ylim(0, 1)
+    ax2.set_ylim(-0.5, 1)
 
     ax1.set_xlim(0, 1)
     ax1.set_ylim(0, 1)

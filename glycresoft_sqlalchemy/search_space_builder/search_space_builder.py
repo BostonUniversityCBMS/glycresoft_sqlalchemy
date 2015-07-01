@@ -17,7 +17,6 @@ from glycresoft_ms2_classification.proteomics import get_enzyme, msdigest_xml_pa
 
 from .. import data_model as model
 from ..data_model import PipelineModule
-from .peptide_utilities import SiteListFastaFileParser
 
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)(\w+)')
@@ -294,41 +293,45 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map,
     list of dicts:
         List of each theoretical sequence and its fragment ions
     """
-    ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
+    try:
+        ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
 
-    if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
-        return 0
+        if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
+            return 0
 
-    session = database_manager.session()
-    # Compute the set of modifications that can occur.
-    mod_list = get_peptide_modifications(
-        ms1_result.peptide_modifications, modification_table)
+        session = database_manager.session()
+        # Compute the set of modifications that can occur.
+        mod_list = get_peptide_modifications(
+            ms1_result.peptide_modifications, modification_table)
 
-    # Get the start and end positions of fragment relative to the
-    glycan_sites = set(site_list_map.get(ms1_result.protein_id, [])).intersection(
-        range(ms1_result.start_position, ms1_result.end_position + 1))
+        # Get the start and end positions of fragment relative to the
+        glycan_sites = set(site_list_map.get(ms1_result.protein_id, [])).intersection(
+            range(ms1_result.start_position, ms1_result.end_position + 1))
 
-    # No recorded sites, skip this component.
-    if len(glycan_sites) == 0:
-        return 0
+        # No recorded sites, skip this component.
+        if len(glycan_sites) == 0:
+            return 0
 
-    # Adjust the glycan_sites to relative position
-    glycan_sites = [x - ms1_result.start_position for x in glycan_sites]
-    ss = get_search_space(
-        ms1_result, glycan_sites, mod_list)
-    seq_list = ss.get_theoretical_sequence(ms1_result.count_glycosylation_sites)
-    fragments = [generate_fragments(seq, ms1_result)
-                 for seq in seq_list]
-    i = 0
-    for sequence in fragments:
-        sequence.protein_id = proteins[ms1_result.protein_id].id
-        session.add(sequence)
-        i += 1
-    session.commit()
-    return i
+        # Adjust the glycan_sites to relative position
+        glycan_sites = [x - ms1_result.start_position for x in glycan_sites]
+        ss = get_search_space(
+            ms1_result, glycan_sites, mod_list)
+        seq_list = ss.get_theoretical_sequence(ms1_result.count_glycosylation_sites)
+        fragments = [generate_fragments(seq, ms1_result)
+                     for seq in seq_list]
+        i = 0
+        for sequence in fragments:
+            sequence.protein_id = proteins[ms1_result.protein_id].id
+            session.add(sequence)
+            i += 1
+        session.commit()
+        return i
+    except Exception, e:
+        logger.exception("An error occurred, %r", locals(), exc_info=e)
+        raise
 
 
-class TheoreticalSearchSpace(PipelineModule):
+class TheoreticalSearchSpaceBuilder(PipelineModule):
     '''
     Describe the process of generating all theoretical sequences and their fragments
     from an MS1 Results CSV, a collection of constant and variable peptide modifications,
@@ -359,9 +362,11 @@ class TheoreticalSearchSpace(PipelineModule):
 
         tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
 
-        self.hypothesis = model.Hypothesis(name="target-{}".format(tag))
+        self.hypothesis = model.Hypothesis(name=u"target-{}".format(tag))
         self.session.add(self.hypothesis)
         self.session.commit()
+        self.hypothesis_id = self.hypothesis.id
+        logger.info("Building %r", self.hypothesis)
 
         try:
             site_list_map = parse_site_file(open(site_list))
@@ -429,61 +434,7 @@ class TheoreticalSearchSpace(PipelineModule):
                 cntr += res
                 if (cntr % 1000) == 0:
                     logger.info("Committing, %d records made", cntr)
-
-
-class ExactSearchSpace(TheoreticalSearchSpace):
-    def __init__(self, ms1_results_file, db_file_name=None,
-                 enzyme=None,
-                 site_list=None,
-                 constant_modifications=None,
-                 variable_modifications=None, n_processes=4):
-
-        if db_file_name is None:
-            db_file_name = os.path.splitext(ms1_results_file)[0] + '.db'
-        self.manager = model.initialize(db_file_name)
-        self.session = self.manager.session()
-        self.ms1_results_file = ms1_results_file
-
-        tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
-
-        self.hypothesis = model.Hypothesis(name="target-{}".format(tag))
-        self.session.add(self.hypothesis)
-        self.session.commit()
-
-        try:
-            site_list_map = parse_site_file(open(site_list))
-        except IOError, e:
-            if isinstance(site_list, dict):
-                site_list_map = site_list
-            else:
-                raise e
-        except TypeError:
-            site_list_map = None
-
-        self.ms1_results_reader = csv.DictReader(open(self.ms1_results_file))
-
-        self.n_processes = n_processes
-
-        self.monosaccharide_identities = get_monosaccharide_identities(self.ms1_results_reader.fieldnames)
-        enzyme = map(get_enzyme, enzyme)
-
-        self.hypothesis.parameters = {
-            "monosaccharide_identities": self.monosaccharide_identities,
-            "enzyme": enzyme,
-            "site_list_map": site_list_map,
-            "constant_modification_list": constant_modifications,
-            "variable_modification_list": variable_modifications,
-            "ms1_output_file": ms1_results_file,
-            "enzyme": enzyme,
-            "tag": tag,
-            "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS
-        }
-        self.session.add(self.hypothesis)
-        self.session.commit()
-
-    def prepare_task_fn(self):
-        task_fn = functools.partial(from_sequence, monosaccharide_identities=self.monosaccharide_identities)
-        return task_fn
+        return self.hypothesis_id
 
 
 class MS1ResultsFile(object):

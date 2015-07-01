@@ -7,7 +7,6 @@ from sqlalchemy import (PickleType, Numeric, Unicode,
 
 from .generic import MutableDict, MutableList
 from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan, PeptideGlycanAssociation
-from .observed_ions import SampleRun
 
 
 class HypothesisSampleMatch(Base):
@@ -16,7 +15,7 @@ class HypothesisSampleMatch(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Unicode(128))
     parameters = Column(MutableDict.as_mutable(PickleType))
-    sample_run_id = Column(Integer, ForeignKey(SampleRun.id))
+    sample_run_name = Column(Unicode(128))
     target_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id))
     decoy_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id))
 
@@ -48,7 +47,6 @@ class GlycopeptideMatch(PeptideBase):
 
     bare_y_ions = Column(MutableList.as_mutable(PickleType))
     glycosylated_y_ions = Column(MutableList.as_mutable(PickleType))
-
 
     # As defined in [1]
     p_value = Column(Numeric(10, 6, asdecimal=False))

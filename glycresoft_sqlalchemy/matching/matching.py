@@ -18,7 +18,7 @@ from ..spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 
 from ..scoring import score_matches
 from .. import data_model as model
-from ..data_model import PipelineModule, MSMSSqlDB
+from ..data_model import PipelineModule, MSMSSqlDB, TandemScan
 
 
 HypothesisSampleMatch = model.HypothesisSampleMatch
@@ -48,7 +48,8 @@ def ppm_error(x, y):
     return (x - y) / y
 
 
-def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, database_manager):
+def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
+                    database_manager, hypothesis_match_id, sample_run_id):
     try:
         msmsdb = MSMSSqlDB(msmsdb_path)
 
@@ -72,7 +73,11 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
 
         spectrum_matches = []
 
-        for spectrum in msmsdb.ppm_match_tolerance_search(theoretical.calculated_mass, ms1_tolerance):
+        query = msmsdb.ppm_match_tolerance_search(theoretical.calculated_mass, ms1_tolerance)
+        if sample_run_id is not None:
+            query.filter(TandemScan.sample_run_id == sample_run_id)
+
+        for spectrum in query:
             peak_list = spectrum.tandem_data
             peak_list = sorted(peak_list, key=neutral_mass_getter)
             peak_match_map = defaultdict(list)
@@ -223,7 +228,8 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
                 glycosylated_y_ions=glycosylated_y_ions,
                 scan_id_range=scan_ids,
                 first_scan=first_scan,
-                last_scan=last_scan
+                last_scan=last_scan,
+                hypothesis_match_id=hypothesis_match_id
             )
             score_matches.apply(gpm, theoretical)
             session.add(gpm)
@@ -232,12 +238,12 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance, data
                 sm = SpectrumMatch(glycopeptide_match_id=gpm.id,
                                    spectrum_id=spectrum.id, peak_match_map=peak_match_map)
                 session.add(sm)
+            session.commit()
             session.close()
         return 1
 
     except Exception, e:
-        logger.exception("An error occurred, %r", e, exc_info=e)
-        print theoretical_ion
+        logger.exception("An error occurred, %r", locals(), exc_info=e)
         raise e
 
 
@@ -278,6 +284,7 @@ class IonMatching(PipelineModule):
                  observed_ions_path,
                  observed_ions_type='bupid_yaml',
                  sample_run_id=None,
+                 hypothesis_match_id=None,
                  ms1_tolerance=ms1_tolerance_default,
                  ms2_tolerance=ms2_tolerance_default,
                  n_processes=4):
@@ -290,6 +297,9 @@ class IonMatching(PipelineModule):
         self.ms2_tolerance = ms2_tolerance
         self.observed_ions_path = observed_ions_path
         self.observed_ions_type = observed_ions_type
+
+        self.hypothesis_match_id = hypothesis_match_id
+        self.sample_run_id = sample_run_id
 
         if isinstance(observed_ions_path, str):
             if observed_ions_type != "db" and splitext(observed_ions_path)[1] != '.db':
@@ -315,26 +325,26 @@ class IonMatching(PipelineModule):
                                     msmsdb_path=self.msmsdb.path,
                                     ms1_tolerance=self.ms1_tolerance,
                                     ms2_tolerance=self.ms2_tolerance,
-                                    database_manager=self.manager)
+                                    database_manager=self.manager,
+                                    hypothesis_match_id=self.hypothesis_match_id,
+                                    sample_run_id=self.sample_run_id)
         return task_fn
 
     def stream_theoretical_glycopeptides(self, chunksize=50):
         session = self.manager.session()
-        for name, protein_id in session.query(
-                Protein.name, Protein.id).filter(Protein.hypothesis_id == self.hypothesis_id):
-            logger.info("Streaming %s (%d)", name, protein_id)
-            theoretical_glycopeptide_ids = (session.query(
-                   TheoreticalGlycopeptide.id).filter(TheoreticalGlycopeptide.protein_id == protein_id))
-            ## When the number of processes used is small, the more work done in the main process.
-            # for theoretical_ids in _chunk_iter(
-            #         itertools.chain.from_iterable(theoretical_glycopeptide_ids), chunksize):
-            #     for theoretical in self.session.query(
-            #             TheoreticalGlycopeptide).filter(TheoreticalGlycopeptide.id.in_(theoretical_ids)):
-            #         yield theoretical
-            ## When the number of processes is large, do more work in the child processes
-            for theoretical_id in itertools.chain.from_iterable(theoretical_glycopeptide_ids):
-                yield theoretical_id
-        session.close()
+        try:
+            for name, protein_id in session.query(
+                    Protein.name, Protein.id).filter(Protein.hypothesis_id == self.hypothesis_id):
+                logger.info("Streaming %s (%d)", name, protein_id)
+                theoretical_glycopeptide_ids = (session.query(
+                       TheoreticalGlycopeptide.id).filter(TheoreticalGlycopeptide.protein_id == protein_id))
+                for theoretical_id in itertools.chain.from_iterable(theoretical_glycopeptide_ids):
+                    yield theoretical_id
+        except Exception, e:
+            logger.exception("An error occurred in stream_theoretical_glycopeptides, %r", locals(), exc_info=e)
+            raise
+        finally:
+            session.close()
 
     def run(self):
         session = self.session

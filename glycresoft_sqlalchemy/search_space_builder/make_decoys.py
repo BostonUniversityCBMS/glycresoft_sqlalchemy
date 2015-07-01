@@ -1,3 +1,4 @@
+import datetime
 import multiprocessing
 import functools
 import itertools
@@ -147,6 +148,10 @@ decoy_type_map = {
 
 
 class DecoySearchSpaceBuilder(PipelineModule):
+    '''
+    A pipeline step that builds 
+    '''
+
     manager_type = DatabaseManager
 
     def __init__(self, database_path, prefix_len=0, suffix_len=1,
@@ -162,13 +167,20 @@ class DecoySearchSpaceBuilder(PipelineModule):
         self.prefix_len = prefix_len
         self.suffix_len = suffix_len
         self.protein_decoy_map = {}
+        self.decoy_hypothesis_ids = []
         for hypothesis_id in self.hypothesis_ids:
-            reference_hypothesis = self.session.query(Hypothesis).filter(
-                Hypothesis.id == hypothesis_id).first()
-            decoy_hypothesis = Hypothesis(name=reference_hypothesis.name.replace("target", "decoy"), is_decoy=True)
-            decoy_hypothesis.parameters = {}
-            decoy_hypothesis.parameters['is_decoy'] = True
+            reference_hypothesis = self.session.query(Hypothesis).get(hypothesis_id)
+            logger.info("Making decoys for %r", reference_hypothesis)
+            # Build Decoy Hypothesis object
+            name = reference_hypothesis.name
+            if name is None:
+                name = 'decoy-{}'.format(datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S"))
+
+            decoy_hypothesis = Hypothesis(name=name.replace("target", "decoy"), is_decoy=True)
+            decoy_hypothesis.parameters = {"mirror": reference_hypothesis.id}
             self.session.add(decoy_hypothesis)
+            self.session.commit()
+            # Create Protein objects to mirror the Reference Hypothesis associated with the Decoy Hypothesis
             for protein in reference_hypothesis.proteins.values():
                 decoy_protein = self.protein_decoy_map[protein.id] = Protein(name='decoy-' + protein.name,
                                                                              hypothesis_id=decoy_hypothesis.id)
@@ -181,21 +193,25 @@ class DecoySearchSpaceBuilder(PipelineModule):
             reference_hypothesis.parameters['decoys'].append({"hypothesis_id": decoy_hypothesis.id, "type": self.decoy_type})
             self.session.add(reference_hypothesis)
             self.session.commit()
-
+            self.decoy_hypothesis_ids.append(decoy_hypothesis.id)
         for k, v in list(self.protein_decoy_map.items()):
             self.protein_decoy_map[k] = v.id
 
     def stream_theoretical_glycopeptides(self):
         session = self.manager.session()
-        for exp_id in self.hypothesis_ids:
+        i = 0
+        for hypothesis_id in self.hypothesis_ids:
             for name, protein_id in session.query(
-                    Protein.name, Protein.id).filter(Protein.hypothesis_id == exp_id):
+                    Protein.name, Protein.id).filter(Protein.hypothesis_id == hypothesis_id):
                 logger.info("Streaming %s (%d)", name, protein_id)
                 theoretical_glycopeptide_ids = (session.query(
                        TheoreticalGlycopeptide.id).filter(TheoreticalGlycopeptide.protein_id == protein_id))
                 for theoretical_id in itertools.chain.from_iterable(theoretical_glycopeptide_ids):
                     yield theoretical_id
+                    i += 1
         session.close()
+        if i == 0:
+            raise ValueError("No theoretical peptides streamed")
 
     def prepare_task_fn(self):
         return functools.partial(make_decoy, prefix_len=self.prefix_len, suffix_len=self.suffix_len,
@@ -211,9 +227,9 @@ class DecoySearchSpaceBuilder(PipelineModule):
                 cntr += res
                 if cntr % 1000 == 0:
                     logger.info("%d Decoys Complete." % cntr)
-            pool.terminate()
         else:
             for res in itertools.imap(task_fn, self.stream_theoretical_glycopeptides()):
                 cntr += res
                 if cntr % 1000 == 0:
                     logger.info("%d Decoys Complete." % cntr)
+        return self.decoy_hypothesis_ids

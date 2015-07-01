@@ -3,7 +3,8 @@ from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy import (PickleType, Numeric, Unicode, Table,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 
-from .data_model import Base, DatabaseManager
+from .data_model import Base
+from .connection import DatabaseManager
 from .generic import MutableDict
 
 
@@ -30,7 +31,8 @@ class ScanBase(Base):
 
     __mapper_args__ = {
         'polymorphic_identity': u'Scan',
-        'polymorphic_on': scan_type
+        'polymorphic_on': scan_type,
+        'concrete': True
     }
 
     def __repr__(self):
@@ -43,7 +45,7 @@ class MSScan(ScanBase):
     id = Column(Integer, ForeignKey(ScanBase.id), primary_key=True)
 
     __mapper_args__ = {
-        "polymorphic_identity": "MSScan"
+        "polymorphic_identity": "MSScan",
     }
 
 
@@ -76,7 +78,7 @@ class TandemScan(ScanBase):
         return cls.precursor_neutral_mass.between(lo, hi)
 
     __mapper_args__ = {
-        "polymorphic_identity": "TandemScan"
+        "polymorphic_identity": "TandemScan",
     }
 
 

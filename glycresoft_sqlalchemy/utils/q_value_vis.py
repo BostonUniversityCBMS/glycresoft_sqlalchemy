@@ -21,9 +21,9 @@ def plot(qry):
     hypothesis = pd.DataFrame(iter(qry), columns=["mass", "protein_id", "protein_name"])
     groups = hypothesis.groupby("protein_name")
     for protein_id, group in groups:
-        ax = group['mass'].hist(label=protein_id, alpha=0.5)
+        ax = group['mass'].hist(label=protein_id, binsize=0.01, alpha=0.5)
 
-    ax.set_title("Hypothesis Mass Range Density")
+    ax.set_title("q-value frequency")
     ax.set_xlabel("q value")
     ax.set_ylabel("Counts")
     handles, labels = (ax.get_legend_handles_labels())

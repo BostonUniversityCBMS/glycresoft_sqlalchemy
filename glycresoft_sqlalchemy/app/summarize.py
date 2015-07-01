@@ -18,8 +18,10 @@ def main(database_path):
         if hypothesis.parameters.get("is_decoy", False):
             continue
         for protein in hypothesis.proteins.values():
-            if protein.theoretical_glycopeptides.count() == 0:
+            gp_count = protein.theoretical_glycopeptides.count()
+            if gp_count == 0:
                 continue
+            print "%d Theoretical Glycopeptides" % gp_count
             print protein
             print "Top Score: ", session.query(
                 sql_max(GlycopeptideMatch.ms2_score)).filter(GlycopeptideMatch.protein_id == protein.id).first()
@@ -36,4 +38,5 @@ def main(database_path):
 
 if __name__ == '__main__':
     import sys
+    print sys.argv
     main(sys.argv[1])

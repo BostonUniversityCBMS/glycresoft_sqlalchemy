@@ -1,8 +1,20 @@
 import logging
 import time
-from .data_model import DatabaseManager
+
+from sqlalchemy import (PickleType, Numeric, Unicode, Table,
+                        Column, Integer, ForeignKey, UnicodeText, Boolean)
+
+from .connection import DatabaseManager
+from .data_model import Base
 
 logger = logging.getLogger("pipeline_module")
+
+
+class JobState(Base):
+    __tablename__ = "JobState"
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode(128))
+    state = Column(Unicode(128))
 
 
 class Pipeline(object):

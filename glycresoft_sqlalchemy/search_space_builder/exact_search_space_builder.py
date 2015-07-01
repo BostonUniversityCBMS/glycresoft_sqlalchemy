@@ -93,16 +93,20 @@ def generate_fragments(seq, ms1_result):
 
 
 def from_sequence(ms1_result, protein_map):
-    if len(ms1_result.base_peptide_sequence) == 0:
-        return None
-    if ms1_result.modified_peptide_sequence is None:
-        ms1_result.modified_peptide_sequence = ms1_result.base_peptide_sequence
-    seq = Sequence(ms1_result.modified_peptide_sequence)
-    seq.glycan = ''
-    product = generate_fragments(seq, ms1_result)
-    if not isinstance(product.protein_id, int):
-        product.protein_id = protein_map[product.protein_id]
-    return product
+    try:
+        if len(ms1_result.base_peptide_sequence) == 0:
+            return None
+        if ms1_result.modified_peptide_sequence is None:
+            ms1_result.modified_peptide_sequence = ms1_result.base_peptide_sequence
+        seq = Sequence(ms1_result.modified_peptide_sequence)
+        seq.glycan = ''
+        product = generate_fragments(seq, ms1_result)
+        if not isinstance(product.protein_id, int):
+            product.protein_id = protein_map[product.protein_id]
+        return product
+    except Exception, e:
+        logger.exception("An error occurred, %r", locals(), exc_info=e)
+        raise
 
 
 class ExactSearchSpaceBuilder(PipelineModule):
@@ -177,5 +181,7 @@ class ExactSearchSpaceBuilder(PipelineModule):
                 session.commit()
                 logger.info("%d records handled", cntr)
                 last = cntr
+        id = self.hypothesis.id
         session.commit()
         session.close()
+        return id

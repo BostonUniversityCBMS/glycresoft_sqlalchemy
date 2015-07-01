@@ -1,5 +1,10 @@
+import logging
+try:
+    logger = logging.getLogger("target_decoy")
+except:
+    pass
 from itertools import chain
-from collections import namedtuple
+from collections import namedtuple, Counter, defaultdict
 
 from sqlalchemy import func, distinct
 from ..data_model import DatabaseManager, GlycopeptideMatch, Protein
@@ -12,6 +17,18 @@ ms2_score = GlycopeptideMatch.ms2_score
 p_value = GlycopeptideMatch.p_value
 
 
+class RangeCounter(Counter):
+    def add_below(self, key, value):
+        for pkey in list(self.keys()):
+            if pkey <= key:
+                self[pkey] += value
+
+    def add_above(self, key, value):
+        for pkey in list(self.keys()):
+            if pkey > key:
+                self[pkey] += value
+
+
 class TargetDecoyAnalyzer(PipelineModule):
     manager_type = DatabaseManager
 
@@ -22,10 +39,12 @@ class TargetDecoyAnalyzer(PipelineModule):
 
     def target_decoy_ratio(self, cutoff, score=ms2_score):
         session = self.manager.session()
-        tq = session.query(GlycopeptideMatch).filter(
+        tq = session.query(
+            GlycopeptideMatch.ms2_score).filter(
             GlycopeptideMatch.protein_id == Protein.id,
             Protein.hypothesis_id == self.target_id)
-        dq = session.query(GlycopeptideMatch).filter(
+        dq = session.query(
+            GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
             Protein.hypothesis_id == self.decoy_id)
 
@@ -56,39 +75,8 @@ class TargetDecoyAnalyzer(PipelineModule):
         session.close()
         return results
 
-    def glycoform_thresholds(self):
-        session = self.manager.session()
-
-        thresholds = session.query(distinct(func.round(GlycopeptideMatch.ms2_score, 2)))
-        tq = session.query(GlycopeptideMatch).filter(
-            GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.target_id).group_by(
-            GlycopeptideMatch.base_peptide_sequence, GlycopeptideMatch.glycan_composition_str).order_by(
-            GlycopeptideMatch.ms2_score.desc())
-        dq = session.query(GlycopeptideMatch).filter(
-            GlycopeptideMatch.protein_id == Protein.id, Protein.hypothesis_id == self.decoy_id).group_by(
-            GlycopeptideMatch.base_peptide_sequence, GlycopeptideMatch.glycan_composition_str).order_by(
-            GlycopeptideMatch.ms2_score.desc())
-
-        results = {}
-
-        for score in thresholds:
-            score = score[0]
-            decoys_at = dq.filter(GlycopeptideMatch.ms2_score >= score).count()
-            targets_at = tq.filter(GlycopeptideMatch.ms2_score >= score).count()
-            try:
-                ratio = decoys_at / float(targets_at)
-            except ZeroDivisionError:
-                ratio = 0
-            if ratio >= 0.5:
-                continue
-            result = Threshold(score, targets_at, decoys_at, ratio)
-            results[score] = result
-
-        session.close()
-        return results
-
     def p_values(self):
+        logger.info("Computing p-values")
         session = self.manager.session()
 
         tq = session.query(GlycopeptideMatch).filter(
@@ -111,20 +99,23 @@ class TargetDecoyAnalyzer(PipelineModule):
                 session.commit()
                 decoys_at = dq.filter(GlycopeptideMatch.ms2_score >= target.ms2_score).count()
                 last_score = target.ms2_score
+                if total_decoys == 0:
+                    raise ValueError("No decoy matches found")
                 last_p_value = decoys_at / total_decoys
                 target.p_value = last_p_value
                 session.add(target)
         session.commit()
         session.close()
 
+
     def estimate_percent_incorrect_targets(self, cutoff, score=ms2_score):
         session = self.manager.session()
 
-        tq = session.query(GlycopeptideMatch).filter(
+        tq = session.query(GlycopeptideMatch.ms2_score).filter(
             GlycopeptideMatch.protein_id == Protein.id,
             Protein.hypothesis_id == self.target_id)
 
-        dq = session.query(GlycopeptideMatch).filter(
+        dq = session.query(GlycopeptideMatch.ms2_score).filter(
             GlycopeptideMatch.protein_id == Protein.id,
             Protein.hypothesis_id == self.decoy_id)
 
@@ -164,6 +155,7 @@ class TargetDecoyAnalyzer(PipelineModule):
         return mapping
 
     def q_values(self):
+        logger.info("Computing q-values")
         session = self.manager.session()
 
         tq = session.query(GlycopeptideMatch).filter(

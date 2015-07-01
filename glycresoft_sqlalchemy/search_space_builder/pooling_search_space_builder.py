@@ -19,34 +19,9 @@ from .. import data_model as model
 from .search_space_builder import (parse_site_file, parse_digest,
                                    MS1GlycopeptideResult, get_monosaccharide_identities,
                                    get_peptide_modifications, get_search_space,
-                                   generate_fragments, TheoreticalSearchSpace)
+                                   generate_fragments, TheoreticalSearchSpaceBuilder)
 
 logger = logging.getLogger("search_space_builder")
-
-
-def from_sequence(row, monosaccharide_identities, proteins):
-    """Convert an MS1GlycopeptideResult directly into its fragments
-    with exact positions pre-specified on its :attr:`peptide_sequence`
-
-    Parameters
-    ----------
-    row: dict
-        A row from the input csv
-    monosaccharide_identities: list of str
-        List of monosaccaride names
-
-    Returns
-    -------
-    dict
-    """
-    ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
-    if len(ms1_result.base_peptide_sequence) == 0:
-        return []
-    seq = Sequence(ms1_result.base_peptide_sequence)
-    seq.glycan = ""
-    product = generate_fragments(seq, ms1_result)
-    product.protein_id = proteins[row.protein_id]
-    return [product]
 
 
 def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccharide_identities, proteins):
@@ -69,38 +44,42 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccha
     list of dicts:
         List of each theoretical sequence and its fragment ions
     """
-    ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
+    try:
+        ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
 
-    if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
-        return []
+        if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
+            return []
 
-    # Compute the set of modifications that can occur.
-    mod_list = get_peptide_modifications(
-        ms1_result.peptide_modifications, modification_table)
+        # Compute the set of modifications that can occur.
+        mod_list = get_peptide_modifications(
+            ms1_result.peptide_modifications, modification_table)
 
-    # Get the start and end positions of fragment relative to the
-    glycan_sites = set(site_list_map.get(ms1_result.protein_id, [])).intersection(
-        range(ms1_result.start_position, ms1_result.end_position + 1))
+        # Get the start and end positions of fragment relative to the
+        glycan_sites = set(site_list_map.get(ms1_result.protein_id, [])).intersection(
+            range(ms1_result.start_position, ms1_result.end_position + 1))
 
-    # No recorded sites, skip this component.
-    if len(glycan_sites) == 0:
-        return []
+        # No recorded sites, skip this component.
+        if len(glycan_sites) == 0:
+            return []
 
-    # Adjust the glycan_sites to relative position
-    glycan_sites = [x - ms1_result.start_position for x in glycan_sites]
-    ss = get_search_space(
-        ms1_result, glycan_sites, mod_list)
-    seq_list = ss.get_theoretical_sequence(ms1_result.count_glycosylation_sites)
-    fragments = [generate_fragments(seq, ms1_result)
-                 for seq in seq_list]
+        # Adjust the glycan_sites to relative position
+        glycan_sites = [x - ms1_result.start_position for x in glycan_sites]
+        ss = get_search_space(
+            ms1_result, glycan_sites, mod_list)
+        seq_list = ss.get_theoretical_sequence(ms1_result.count_glycosylation_sites)
+        fragments = [generate_fragments(seq, ms1_result)
+                     for seq in seq_list]
 
-    for sequence in fragments:
-        sequence.protein_id = proteins[ms1_result.protein_id]
+        for sequence in fragments:
+            sequence.protein_id = proteins[ms1_result.protein_id]
 
-    return fragments
+        return fragments
+    except Exception, e:
+        logger.exception("An error occurred, %r", locals(), exc_info=e)
+        raise e
 
 
-class PoolingTheoreticalSearchSpace(TheoreticalSearchSpace):
+class PoolingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
     '''
     Describe the process of generating all theoretical sequences and their fragments
     from an MS1 Results CSV, a collection of constant and variable peptide modifications,
@@ -119,7 +98,7 @@ class PoolingTheoreticalSearchSpace(TheoreticalSearchSpace):
                  variable_modifications=None,
                  n_processes=4,
                  commit_checkpoint=1000, **kwargs):
-        super(PoolingTheoreticalSearchSpace, self).__init__(
+        super(PoolingTheoreticalSearchSpaceBuilder, self).__init__(
             ms1_results_file, db_file_name,
             constant_modifications=constant_modifications,
             enzyme=enzyme, site_list=site_list,
@@ -154,9 +133,7 @@ class PoolingTheoreticalSearchSpace(TheoreticalSearchSpace):
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
                     self.session.commit()
-                    self.session = self.manager.session()
                     checkpoint = cntr + self.commit_checkpoint
-            worker_pool.terminate()
         else:
             logger.debug("Building theoretical sequences sequentially")
             for row in self.ms1_results_reader:
@@ -166,6 +143,7 @@ class PoolingTheoreticalSearchSpace(TheoreticalSearchSpace):
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
                     self.session.commit()
-                    self.session.expunge_all()
+                    # self.session.expunge_all()
                     checkpoint = cntr + self.commit_checkpoint
         self.session.commit()
+        return self.hypothesis_id

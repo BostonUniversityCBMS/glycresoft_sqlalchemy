@@ -62,6 +62,7 @@ class BUPIDMSMSYamlParser(object):
         self.manager.initialize()
         session = self.manager.session()
         self.sample_run = SampleRun(name=os.path.basename(file_path), parameters={"file_path": file_path})
+        self.sample_run_name = self.sample_run.name
         session.add(self.sample_run)
         session.commit()
         self.parse()

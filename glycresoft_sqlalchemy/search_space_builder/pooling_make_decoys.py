@@ -96,3 +96,5 @@ class PoolingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
                 if cntr % self.commit_checkpoint == 0:
                     session.commit()
                     logger.info("%d Decoys Complete." % cntr)
+        session.commit()
+        return self.decoy_hypothesis_ids

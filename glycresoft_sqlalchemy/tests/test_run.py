@@ -12,7 +12,7 @@ def test_main(ms1_results_path, digest_path, site_list_path, observed_ions_path,
          observed_ions_type='bupid_yaml', ms1_tolerance=10e-6, ms2_tolerance=20e-6,
          output_path=None, decoy_type=0):
     digest = pooling_search_space_builder.parse_digest(digest_path)
-    builder = pooling_search_space_builder.PoolingTheoreticalSearchSpace(
+    builder = pooling_search_space_builder.PoolingTheoreticalSearchSpaceBuilder(
         ms1_results_path, output_path, site_list=site_list_path, n_processes=6,
         **digest.__dict__)
     builder.start()
