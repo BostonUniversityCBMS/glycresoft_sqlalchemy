@@ -59,11 +59,11 @@ if __name__ == '__main__':
     args = app.parse_args()
     session = DatabaseManager(args.database_path).session()
     if args.hypothesis_id is None:
-        hypothesiss = [j for i in session.query(Hypothesis.id) for j in i]
+        hypotheses = [j for i in session.query(Hypothesis.id) for j in i]
     else:
-        hypothesiss = [args.hypothesis_id]
-    for hypothesis_id in hypothesiss:
-        if args.out is not None and len(hypothesiss) > 1:
+        hypotheses = [args.hypothesis_id]
+    for hypothesis_id in hypotheses:
+        if args.out is not None and len(hypotheses) > 1:
             parts = os.path.splitext(args.out)
             name = session.query(Hypothesis.name).get(hypothesis_id)[0]
             out = parts[0] + "_" + name + parts[1]

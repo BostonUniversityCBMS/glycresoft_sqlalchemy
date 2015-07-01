@@ -1,3 +1,5 @@
+import argparse
+import os
 import itertools
 
 from glycresoft_sqlalchemy.data_model import DatabaseManager, Hypothesis, GlycopeptideMatch, Protein
@@ -62,22 +64,21 @@ def main(database_path, hypothesis_id, save_path=None, **kwargs):
     plt.savefig(save_path, bbox_extra_artists=(legend,), bbox_inches='tight', pad_inches=0.2, **kwargs)
     plt.close()
 
-if __name__ == '__main__':
-    import argparse
-    import os
-    app = argparse.ArgumentParser("score_scatterplot")
-    app.add_argument("database_path", help="path to the database file to analyze")
-    app.add_argument("-e", "--hypothesis-id", default=None, help="The hypothesis to analyze.")
-    app.add_argument("-o", "--out", default=None, help="Where to save the result")
 
+app = argparse.ArgumentParser("score_scatterplot")
+app.add_argument("database_path", help="path to the database file to analyze")
+app.add_argument("-e", "--hypothesis-id", default=None, help="The hypothesis to analyze.")
+app.add_argument("-o", "--out", default=None, help="Where to save the result")
+
+def taskmain():
     args = app.parse_args()
     session = DatabaseManager(args.database_path).session()
     if args.hypothesis_id is None:
-        hypothesiss = [j for i in session.query(Hypothesis.id) for j in i]
+        hypotheses = [j for i in session.query(Hypothesis.id) for j in i]
     else:
-        hypothesiss = [args.hypothesis_id]
-    for hypothesis_id in hypothesiss:
-        if args.out is not None and len(hypothesiss) > 1:
+        hypotheses = [args.hypothesis_id]
+    for hypothesis_id in hypotheses:
+        if args.out is not None and len(hypotheses) > 1:
             parts = os.path.splitext(args.out)
             name = session.query(Hypothesis.name).get(hypothesis_id)[0]
             out = parts[0] + "_" + name + parts[1]
@@ -85,3 +86,5 @@ if __name__ == '__main__':
             out = args.out
         main(args.database_path, hypothesis_id, out)
 
+if __name__ == '__main__':
+    taskmain()
