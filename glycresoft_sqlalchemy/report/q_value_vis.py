@@ -1,3 +1,5 @@
+import argparse
+import os
 from glycresoft_sqlalchemy.data_model import DatabaseManager, Hypothesis, GlycopeptideMatch, Protein
 
 import pandas as pd
@@ -48,14 +50,12 @@ def main(database_path, hypothesis_id, save_path=None, **kwargs):
     plt.savefig(save_path, bbox_extra_artists=(legend,), bbox_inches='tight', pad_inches=0.2, **kwargs)
     plt.close()
 
-if __name__ == '__main__':
-    import argparse
-    import os
-    app = argparse.ArgumentParser("q_value_vis")
-    app.add_argument("database_path", help="path to the database file to analyze")
-    app.add_argument("-e", "--hypothesis-id", default=None, help="The hypothesis to analyze.")
-    app.add_argument("-o", "--out", default=None, help="Where to save the result")
+app = argparse.ArgumentParser("q_value_vis")
+app.add_argument("database_path", help="path to the database file to analyze")
+app.add_argument("-e", "--hypothesis-id", default=None, help="The hypothesis to analyze.")
+app.add_argument("-o", "--out", default=None, help="Where to save the result")
 
+def taskmain():
     args = app.parse_args()
     session = DatabaseManager(args.database_path).session()
     if args.hypothesis_id is None:
@@ -70,3 +70,6 @@ if __name__ == '__main__':
         else:
             out = args.out
         main(args.database_path, hypothesis_id, out)
+
+if __name__ == '__main__':
+    taskmain()

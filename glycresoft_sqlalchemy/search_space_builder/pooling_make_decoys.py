@@ -11,17 +11,13 @@ from .make_decoys import (DecoySearchSpaceBuilder, strip_modifications, decoy_ty
 logger = logging.getLogger(__name__)
 
 
-def make_decoy(theoretical_sequence, prefix_len=0, suffix_len=1,
+def make_decoy(theoretical_sequence_id, prefix_len=0, suffix_len=1,
                protein_decoy_map=None, database_manager=None,
                permute_fn=reverse_preserve_sequon):
     try:
         session = database_manager.session()
 
-        theoretical_sequence = session.query(TheoreticalGlycopeptide).filter(
-            TheoreticalGlycopeptide.id == theoretical_sequence).first()
-
-        if protein_decoy_map is None:
-            protein_decoy_map = {}
+        theoretical_sequence = session.query(TheoreticalGlycopeptide).get(theoretical_sequence_id)
 
         permuted_sequence = permute_fn(theoretical_sequence.glycopeptide_sequence,
                                        prefix_len=prefix_len, suffix_len=suffix_len)
@@ -56,7 +52,7 @@ def make_decoy(theoretical_sequence, prefix_len=0, suffix_len=1,
 
         return decoy
     except Exception, e:
-        logger.exception("%r", locals(), exc_info=e)
+        logger.exception("An error occurred in make_decoy\n%r", locals(), exc_info=e)
         raise e
     finally:
         session.close()

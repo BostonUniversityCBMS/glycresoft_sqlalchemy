@@ -24,7 +24,7 @@ class ConnectionManager(object):
 
 
 class SQLiteConnectionManager(ConnectionManager):
-    connect_args = {"timeout": 30}
+    connect_args = {"timeout": 100}
     database_uri_prefix = "sqlite:///"
 
     def __init__(self, path, connect_args=None):

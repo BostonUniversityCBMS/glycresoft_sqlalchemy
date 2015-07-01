@@ -2,7 +2,7 @@ import logging
 from glycresoft_sqlalchemy.search_space_builder import pooling_search_space_builder, pooling_make_decoys
 from glycresoft_sqlalchemy.matching import matching
 from glycresoft_sqlalchemy.scoring import target_decoy
-import summarize
+
 logging.basicConfig(level=logging.DEBUG, filemode='w',
                     format="%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
                     datefmt="%H:%M:%S")
@@ -35,7 +35,6 @@ def test_main(ms1_results_path, digest_path, site_list_path, observed_ions_path,
     matcher.session.commit()
     tda = target_decoy.TargetDecoyAnalyzer(builder.db_file_name, 1, 2)
     tda.start()
-    summarize.main(builder.db_file_name)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 
 from itertools import cycle
 import matplotlib
@@ -10,6 +11,11 @@ from matplotlib.colors import cnames, hex2color
 
 from glycresoft_sqlalchemy.data_model import DatabaseManager, GlycopeptideMatch, Protein, Hypothesis
 from glycresoft_ms2_classification.structure import sequence
+
+
+def clean_file_name(file_name):
+    name = re.sub(r"\|", "_", file_name)
+    return name
 
 
 def lighten(rgb, factor=0.25):
@@ -63,6 +69,7 @@ def layout_layers(gpms):
 
 def draw_layers(layers, protein):
     figure, ax = plt.subplots(1,1)
+    i = 0
     for i, aa in enumerate(protein.protein_sequence):
         ax.text(-0.2 + i, 5.5, aa, family="monospace", fontsize=4)
     rect = mpatches.Rectangle((0, 0), i, 5, facecolor='red', alpha=0.5)
@@ -99,6 +106,8 @@ def draw_layers(layers, protein):
 
 def plot_glycoforms(protein, filterfunc=lambda x: x):
     gpms = filterfunc(protein.glycopeptide_matches).all()
+    if len(gpms) == 0:
+        return None
     layers = layout_layers(gpms)
     ax = draw_layers(layers, protein)
     return ax
@@ -110,11 +119,13 @@ def main(database_path, protein_id, filterfunc=lambda x: x, save_path=None, **kw
     protein = s.query(Protein).get(protein_id)
 
     if save_path is None:
-        save_path = protein.hypothesis.name + "_" + protein.name + "_glycoforms.png"
+        save_path = os.path.splitext(database_path)[0] + "_" + protein.hypothesis.name + "_" + clean_file_name(protein.name) + "_glycoforms.png"
         kwargs['format'] = 'png'
 
     ax = plot_glycoforms(protein, filterfunc=filterfunc)
-    plt.savefig(save_path, bbox_inches='tight', pad_inches=0.2, **kwargs)
+    if ax is None:
+        return
+    ax.get_figure().savefig(save_path, bbox_inches='tight', **kwargs)
     plt.close()
 
 app = argparse.ArgumentParser("draw_glycoforms")
@@ -130,14 +141,14 @@ def taskmain():
     else:
         proteins = [args.protein_id]
 
-    for protein_id in proteins
+    for protein_id in proteins:
         if args.out is not None and len(proteins) > 1:
             parts = os.path.splitext(args.out)
             name = session.query(Protein.name).get(protein_id)[0]
-            out = parts[0] + "_" + name + parts[1]
+            out = parts[0] + "_" + clean_file_name(name) + parts[1]
         else:
-            out = args.out
-        main(args.database_path, protein_id, out)
+            out = (args.out)
+        main(args.database_path, protein_id, save_path=out)
 
 if __name__ == '__main__':
     taskmain()

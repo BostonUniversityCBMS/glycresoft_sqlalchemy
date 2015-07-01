@@ -12,7 +12,6 @@ from glycresoft_sqlalchemy.search_space_builder import exact_search_space_builde
 from glycresoft_sqlalchemy.search_space_builder import make_decoys
 from glycresoft_sqlalchemy.matching import matching
 from glycresoft_sqlalchemy.scoring import target_decoy
-import summarize
 
 db_file_name = "./datafiles/integrated_omics_simple.db"
 
@@ -45,7 +44,6 @@ def test_main():
     job.start()
     tda = target_decoy.TargetDecoyAnalyzer(db_file_name, i, i + 1)
     tda.start()
-    summarize.main(db_file_name)
 
 if __name__ == '__main__':
     test_main()

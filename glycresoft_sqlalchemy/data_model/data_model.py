@@ -62,7 +62,7 @@ class Protein(Base):
         "TheoreticalGlycopeptide", backref=backref('protein', order_by=id), lazy='dynamic')
 
     glycopeptide_matches = relationship(
-        "GlycopeptideMatch", lazy='dynamic')
+        "GlycopeptideMatch", lazy='dynamic', backref=backref('protein', order_by=id))
 
     def __repr__(self):
         return "<Protein {0} {1} {2} {3}...>".format(
