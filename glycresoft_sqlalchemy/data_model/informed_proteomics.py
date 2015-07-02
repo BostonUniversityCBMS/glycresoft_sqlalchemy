@@ -6,12 +6,13 @@ from .data_model import Base, Glycan, TheoreticalGlycopeptide, PeptideBase
 
 class InformedPeptide(PeptideBase):
     __tablename__ = "InformedPeptide"
-    id = Column(Integer, ForeignKey(PeptideBase.id), primary_key=True)
+    id = Column(Integer, primary_key=True)
     peptide_score = Column(Numeric(10, 6, asdecimal=False), index=True)
     other = Column(PickleType)
 
     __mapper_args__ = {
         'polymorphic_identity': u'InformedPeptide',
+        "concrete": True
     }
 
 

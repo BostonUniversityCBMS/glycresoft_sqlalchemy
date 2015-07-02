@@ -7,7 +7,8 @@ setup(
   entry_points={
             'console_scripts': [
                 "glycresoft-build-database = glycresoft_sqlalchemy.app.build_database:main",
-                "glycresoft-database-search = glycresoft_sqlalchemy.app.run_search:main"
+                "glycresoft-database-search = glycresoft_sqlalchemy.app.run_search:main",
+                "glycresoft-report = glycresoft_sqlalchemy.app.reporting:taskmain"
             ],
         },
   include_package_data=True,

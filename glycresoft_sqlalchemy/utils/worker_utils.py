@@ -7,17 +7,32 @@ except:
 
 import multiprocessing
 
+try:
+    range = xrange
+except:
+    pass
 
-def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None, logger=logger, update_window=30):
+
+def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None,
+                      logger=logger, update_window=30, initial_load=1500,
+                      maxload=10000):
     if result_callback is None:
         result_callback = ResultCounter()
     work_queue = []
-    for item in work_stream:
-        work_queue.append(worker_pool.apply_async(task_fn, [item]))
+    work_loader = (work_queue.append(worker_pool.apply_async(task_fn, [item])) for item in work_stream)
+
+    work_left = True    
+    for i in range(initial_load):
+        try:
+            work_loader.next()
+        except StopIteration:
+            work_left = False
+
     last_length = len(work_queue)
     begin_time = timer = time.time()
     elapsed = False
-    while len(work_queue) > 0:
+
+    while len(work_queue) > 0 and work_left:
         next_round = []
         for i in range(len(work_queue)):
             task = work_queue[i]
@@ -35,6 +50,12 @@ def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None, l
             last_length = len(work_queue)
             logger.info("%d tasks remaining", last_length)
             timer = time.time()
+        if len(work_queue) < maxload:
+            for i in range(initial_load):
+                try:
+                    work_loader.next()
+                except StopIteration:
+                    work_left = False
     end_time = time.time()
     logger.info("Time elapsed: %0.2fs", (begin_time, end_time))
 

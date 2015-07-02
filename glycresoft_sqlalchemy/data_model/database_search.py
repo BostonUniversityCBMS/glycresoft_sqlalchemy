@@ -2,11 +2,11 @@
 
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import (PickleType, Numeric, Unicode,
+from sqlalchemy import (PickleType, Numeric, Unicode, Table,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 
 from .generic import MutableDict, MutableList
-from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan, PeptideGlycanAssociation
+from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan
 
 
 class HypothesisSampleMatch(Base):
@@ -20,16 +20,23 @@ class HypothesisSampleMatch(Base):
     decoy_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id))
 
 
+
+GlycopeptideMatchGlycanAssociation = Table(
+    "GlycopeptideMatchGlycanAssociation", Base.metadata,
+    Column("peptide_id", Integer, ForeignKey("GlycopeptideMatch.id")),
+    Column("glycan_id", Integer, ForeignKey("Glycan.id")))
+
+
 class GlycopeptideMatch(PeptideBase):
     __tablename__ = "GlycopeptideMatch"
 
-    id = Column(Integer, ForeignKey(PeptideBase.id), primary_key=True)
+    id = Column(Integer, primary_key=True)
     theoretical_glycopeptide_id = (Integer, ForeignKey(TheoreticalGlycopeptide.id))
     hypothesis_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id))
+    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
     ms2_score = Column(Numeric(10, 6, asdecimal=False))
 
-    glycans = relationship(Glycan, secondary=PeptideGlycanAssociation, lazy='dynamic')
-    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    glycans = relationship(Glycan, secondary=GlycopeptideMatchGlycanAssociation, lazy='dynamic')
 
     observed_mass = Column(Numeric(10, 6, asdecimal=False))
     glycan_mass = Column(Numeric(10, 6, asdecimal=False))
@@ -52,16 +59,6 @@ class GlycopeptideMatch(PeptideBase):
     p_value = Column(Numeric(10, 6, asdecimal=False))
     q_value = Column(Numeric(10, 6, asdecimal=False))
 
-    total_bare_b_ions_possible = Column(Integer)
-    total_glycosylated_b_ions_possible = Column(Integer)
-    total_bare_y_ions_possible = Column(Integer)
-    total_glycosylated_y_ions_possible = Column(Integer)
-
-    percent_bare_b_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
-    percent_bare_y_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
-    percent_glycosylated_b_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
-    percent_glycosylated_y_ion_coverage = Column(Numeric(10, 6, asdecimal=False))
-
     scan_id_range = Column(MutableList.as_mutable(PickleType))
     first_scan = Column(Integer)
     last_scan = Column(Integer)
@@ -75,6 +72,7 @@ class GlycopeptideMatch(PeptideBase):
 
     __mapper_args__ = {
         'polymorphic_identity': u'GlycopeptideMatch',
+        'concrete': True
     }
 
 

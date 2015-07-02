@@ -3,7 +3,7 @@
 from glycresoft_ms2_classification.structure import sequence
 
 
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import declarative_base, AbstractConcreteBase, declared_attr
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.hybrid import hybrid_method
@@ -70,13 +70,16 @@ class Protein(Base):
             self.protein_sequence[:20] if self.protein_sequence is not None else "")
 
 
-class PeptideBase(Base):
-    __tablename__ = "PeptideBase"
+class PeptideBase(AbstractConcreteBase, Base):
+    # __tablename__ = "PeptideBase"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     sequence_type = Column(Unicode(20))
 
-    protein_id = Column(Integer, ForeignKey(Protein.id), index=True)
+    @declared_attr
+    def protein_id(self):
+        return Column(Integer, ForeignKey(Protein.id), index=True)
+
     calculated_mass = Column(Numeric(10, 6, asdecimal=False), index=True)
 
     count_glycosylation_sites = Column(Integer)
@@ -134,17 +137,17 @@ class PeptideBase(Base):
     }
 
 
-PeptideGlycanAssociation = Table(
-    "PeptideGlycanAssociation", Base.metadata,
-    Column("peptide_id", Integer, ForeignKey("PeptideBase.id")),
+TheoreticalGlycopeptideGlycanAssociation = Table(
+    "TheoreticalGlycopeptideGlycanAssociation", Base.metadata,
+    Column("peptide_id", Integer, ForeignKey("TheoreticalGlycopeptide.id")),
     Column("glycan_id", Integer, ForeignKey("Glycan.id")))
 
 
 class TheoreticalGlycopeptide(PeptideBase):
     __tablename__ = "TheoreticalGlycopeptide"
 
-    id = Column(Integer, ForeignKey(PeptideBase.id), primary_key=True)
-    glycans = relationship(Glycan, secondary=PeptideGlycanAssociation, backref='glycopeptides', lazy='dynamic')
+    id = Column(Integer, primary_key=True)
+    glycans = relationship(Glycan, secondary=TheoreticalGlycopeptideGlycanAssociation, backref='glycopeptides', lazy='dynamic')
     ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
 
     observed_mass = Column(Numeric(10, 6, asdecimal=False))
@@ -166,6 +169,7 @@ class TheoreticalGlycopeptide(PeptideBase):
 
     __mapper_args__ = {
         'polymorphic_identity': u'TheoreticalGlycopeptide',
+        "concrete": True
     }
 
     def __repr__(self):

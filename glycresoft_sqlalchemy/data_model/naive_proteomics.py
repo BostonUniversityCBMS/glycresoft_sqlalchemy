@@ -7,10 +7,11 @@ from .data_model import PeptideBase
 class NaivePeptide(PeptideBase):
     __tablename__ = "NaivePeptide"
 
-    id = Column(Integer, ForeignKey(PeptideBase.id), primary_key=True)
+    id = Column(Integer, primary_key=True)
     protein = relationship("Protein", backref=backref("naive_peptides", lazy='dynamic'))
     __mapper_args__ = {
         'polymorphic_identity': u'NaivePeptide',
+        "concrete": True
     }
 
     def __repr__(self):

@@ -189,10 +189,14 @@ class TargetDecoyAnalyzer(PipelineModule):
             Protein.hypothesis_id == self.target_id)
 
         q_map = self._calculate_q_values()
+        for k in q_map:
+            session.query(GlycopeptideMatch).filter(
+                GlycopeptideMatch.ms2_score == k).update(
+                {"q_value": q_map[k]}, synchronize_session=False)
 
-        for target in tq:
-            target.q_value = q_map[target.ms2_score]
-            session.add(target)
+        # for target in tq:
+        #     target.q_value = q_map[target.ms2_score]
+        #     session.add(target)
         session.commit()
         session.close()
 

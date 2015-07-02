@@ -1,3 +1,4 @@
+import argparse
 from glycresoft_sqlalchemy.data_model import DatabaseManager, GlycopeptideMatch, Hypothesis
 from sqlalchemy.sql.functions import max as sql_max, count
 
@@ -36,7 +37,15 @@ def main(database_path):
             print "\n"
     session.close()
 
+
+app = argparse.ArgumentParser("summarize")
+app.add_argument("database_path")
+
+
+def taskmain():
+    args = app.parse_args()
+    main(args.database_path)
+
+
 if __name__ == '__main__':
-    import sys
-    print sys.argv
-    main(sys.argv[1])
+    taskmain()
