@@ -50,6 +50,25 @@ def ppm_error(x, y):
 
 def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                     database_manager, hypothesis_match_id, sample_run_id):
+    '''
+    *Task Function*
+
+    Arguments
+    ---------
+    theoretical: int
+        ID value for the theoretical sequence to search
+    msmsdb_path: str
+        Path to the ion database
+    ms1_tolerance: float
+        ppm mass error tolerance for MS1 matching
+    ms2_tolerance: float
+        ppm mass error tolerance for MS2 matching
+    hypothesis_match_id: int
+        If set, associate all GlycopeptideMatches with the indicated HypothesisSampleMatch
+    sample_run_id: int
+        If set, only select ions from the indicated SampleRun
+
+    '''
     try:
         msmsdb = MSMSSqlDB(msmsdb_path)
 

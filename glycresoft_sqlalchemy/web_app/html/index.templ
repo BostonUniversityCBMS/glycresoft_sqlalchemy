@@ -44,15 +44,40 @@
     </div>
     <div class='row'>
         <div class='col s4'>
-        <table id='hypothesis-table' class='hoverable bordered'>
+        <table id='hypothesis-table' class='bordered'>
             <caption>Search Space</caption>
-            {% for hypothesis in hypotheses %}
-            <tr>
-                <td>{{hypothesis.name}}</td>
-                <td>{{hypothesis.id}}</td>
-            </tr>
-            {% endfor %}
+            {% set hypotheses = Manager.hypotheses().filter_by(is_decoy=False).all() %}
+            {% if hypotheses|length != 0 %}
+                {% for hypothesis in hypotheses %}
+                <tr>
+                    <td>{{hypothesis.name}}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td>
+                        No Search Space Hypotheses have been added to this workspace. See above to add one.
+                    </td>
+                </tr>
+            {% endif %}
         </table>            
-        </div>        
+        </div>  
+        <div class='col s4'>
+        <table id='sample-table' class='bordered'>
+            <caption>Samples Loaded <a href='/add_sample'><i class="small material-icons inline-icon">library_add</i></a></caption>
+            {% set samples = Manager.samples() %}
+            {% if samples|length != 0 %}
+                    {% for sample in  samples%}
+                    <tr>
+                        <td>{{sample.name}}</td>
+                    </tr>
+                    {% endfor %}
+            {% else %}
+
+                <tr><td>No Samples have been added to this workspace.<br>
+                <a href='/add_sample'>Click To Add</a></td></tr>
+            {% endif %}
+        </table> 
+        </div>      
     </div>
 {% endblock %}

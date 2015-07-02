@@ -1,10 +1,19 @@
+import logging
+try:
+    logging.basicConfig(level='DEBUG')
+except:
+    pass
+
 from glycresoft_sqlalchemy.web_app import report
 from flask import Flask, request, session, g, redirect, url_for, \
-     abort, render_template, flash, Markup, make_response, jsonify, Response
+     abort, render_template, flash, Markup, make_response, jsonify, \
+     Response
+
+from werkzeug import secure_filename
 import argparse
 
-from glycresoft_sqlalchemy.data_model import DatabaseManager, Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch
-from glycresoft_sqlalchemy.data_model import informed_proteomics
+from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch
+from project_manager import ProjectManager
 
 
 app = Flask(__name__)
@@ -14,15 +23,16 @@ DATABASE = None
 DEBUG = True
 SECRETKEY = 'TG9yZW0gaXBzdW0gZG90dW0'
 
+manager = None
+
 
 def connect_db():
-    g.db = DatabaseManager(DATABASE).session()
+    g.db = manager.session()
 
 
 @app.route("/")
 def index():
-    hypotheses = g.db.query(Hypothesis).all()
-    return render_template("index.templ", hypotheses=hypotheses)
+    return render_template("index.templ")
 
 
 @app.route("/hypothesis")
@@ -51,6 +61,22 @@ def match_samples():
     return render_template("match_samples.templ")
 
 
+@app.route("/add_sample", methods=["POST"])
+def post_add_sample():
+    print dir(request.files['observed-ions-file'])
+    run_name = request.values['sample_name']
+    secure_name = secure_filename(run_name) + '.unprocessed'
+    path = manager.get_sample_path(secure_name)
+    print path
+    request.files['observed-ions-file'].save(path)
+    return redirect("/")
+
+
+@app.route("/add_sample")
+def add_sample():
+    return render_template("add_sample_form.templ")
+
+
 @app.before_request
 def before_request():
     print session
@@ -70,7 +96,8 @@ def inject_model():
         "Hypothesis": Hypothesis,
         "Protein": Protein,
         "TheoreticalGlycopeptide": TheoreticalGlycopeptide,
-        "GlycopeptideMatch": GlycopeptideMatch
+        "GlycopeptideMatch": GlycopeptideMatch,
+        "Manager": manager
     }
 
 
@@ -85,8 +112,9 @@ parser.add_argument("results_database")
 
 
 def main(results_database):
-    global DATABASE
+    global DATABASE, manager
     DATABASE = results_database
+    manager = ProjectManager(DATABASE)
     app.debug = DEBUG
     app.secret_key = SECRETKEY
     app.run()

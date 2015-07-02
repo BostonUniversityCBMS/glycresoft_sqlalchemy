@@ -3,6 +3,11 @@
     left: 80px !important;
 }
 
+.inline-icon{
+    position: relative;
+    top: 11px;
+}
+
 .modification-selection {
     height: 100px;
 }
