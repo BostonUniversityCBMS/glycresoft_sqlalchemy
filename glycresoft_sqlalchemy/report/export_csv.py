@@ -10,7 +10,8 @@ def export_matches_as_csv(database_path, hypothesis_id=1, output_path=None):
     gpms = session.query(GlycopeptideMatch).filter(
         GlycopeptideMatch.protein_id == Protein.id, Protein.hypothesis_id == hypothesis_id)
     if output_path is None:
-        output_path = database_path[:-3] + ".glycopeptide_matches.csv"
+        hypothesis = session.query(Hypothesis).get(hypothesis_id)
+        output_path = database_path[:-3] + "_" + hypothesis.name + ".glycopeptide_matches.csv"
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         header = [
