@@ -1,9 +1,10 @@
 import argparse
 import os
-from glycresoft_sqlalchemy.search_space_builder import pooling_search_space_builder, pooling_make_decoys, exact_search_space_builder
-
-commit_checkpoint = os.environ.get("GLYCRESOFT_COMMIT_INTERVAL", 2000)
+from glycresoft_sqlalchemy.search_space_builder import (
+    pooling_search_space_builder, pooling_make_decoys, exact_search_space_builder)
 import summarize
+
+commit_checkpoint = os.environ.get("GLYCRESOFT_COMMIT_INTERVAL", 1000)
 
 
 def build_naive_search_space_simple(glycopeptide_csv, site_list_file, digest_file, db_file_name=None, **kwargs):

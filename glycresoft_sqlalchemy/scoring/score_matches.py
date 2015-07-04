@@ -124,3 +124,13 @@ def observed_vs_enumerated_stub(matched):
 
 def bad_oxonium(matched, theoretical):
     pass
+
+
+def compute_percent_uncovered(matched):
+    bs, gbs, ys, gys = compute_backbone_vectors(matched)
+    backbone = vsum(bitwise_or(bs, gbs), bitwise_or(ys, gys))
+    is_zero = 0
+    for i in backbone:
+        if i == 0:
+            is_zero += 1
+    return is_zero / float(len(matched))

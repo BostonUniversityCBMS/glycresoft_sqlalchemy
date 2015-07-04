@@ -2,8 +2,22 @@ import argparse
 import os
 import re
 
+try:   # pragma: no cover
+    from cStringIO import StringIO
+except:  # pragma: no cover
+    try:
+        from StringIO import StringIO
+    except:
+        from io import StringIO
+try:  # pragma: no cover
+    from lxml import etree as ET
+except ImportError:  # pragma: no cover
+    try:
+        from xml.etree import cElementTree as ET
+    except:
+        from xml.etree import ElementTree as ET
+
 from itertools import cycle
-import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import patches as mpatches
 from matplotlib.path import Path
@@ -19,10 +33,13 @@ def clean_file_name(file_name):
 
 
 def lighten(rgb, factor=0.25):
+    '''Given a triplet of rgb values, lighten the color by `factor`%'''
     factor += 1
     return [min(c * factor, 1) for c in rgb]
 
+
 def darken(rgb, factor=0.25):
+    '''Given a triplet of rgb values, darken the color by `factor`%'''
     factor = 1 - factor
     return [(c * factor) for c in rgb]
 
@@ -36,6 +53,19 @@ color_name_map = {
 
 
 def get_color(name):
+    """Given a name, find the color mapped to that name, or
+    select the next color from the `colors` generator and assign
+    it to the name and return the new color.
+
+    Parameters
+    ----------
+    name : object
+        Any hashable object, usually a string
+
+    Returns
+    -------
+    tuple: RGB triplet
+    """
     try:
         return color_name_map[name]
     except KeyError:
@@ -46,6 +76,7 @@ def get_color(name):
 def span_overlap(a, b):
     return a.spans(b.start_position) or a.spans(b.end_position) or\
            b.spans(a.start_position) or b.spans(a.end_position)
+
 
 def layout_layers(gpms):
     layers = [[]]
@@ -89,15 +120,24 @@ def draw_layers(layers, protein):
     rect = mpatches.Rectangle((0, 0), i, 5, facecolor='red', alpha=0.5)
     id_mapper.add("main-sequence-%d", rect, {'main-sequence': True})
     ax.add_patch(rect)
-    ax.set_xlim(-10, i + 10)
+    if i != 0:
+        defer_x_bounds = False
+        ax.set_xlim(-10, i + 10)
+    else:
+        defer_x_bounds = True
     layer_height = 6
     row_width = 80
     y_step = -8
     cur_y = -5
     cur_position = 0
     next_row = cur_position + row_width
+
+    # Track the most extreme sequence for guessing the plot bounds when the
+    # parent sequence is not available
+    max_position = 0
     for layer in layers:
         for gpm in layer:
+            max_position = max(max_position, gpm.end_position)
             rect = mpatches.Rectangle(
                 (gpm.start_position, cur_y), width=gpm.sequence_length, height=layer_height,
                 facecolor='lightseagreen', edgecolor='darkseagreen',
@@ -124,6 +164,8 @@ def draw_layers(layers, protein):
                     ax.text(gpm.start_position + i + .13, cur_y, str(pos[1][0])[0], fontsize=5., family='monospace')
         cur_y += y_step
     ax.set_ylim(cur_y - 100, 50)
+    if defer_x_bounds:
+        ax.set_xlim(-10, max_position + 10)
     ax.axis('off')
 
     return ax, id_mapper
@@ -138,6 +180,24 @@ def plot_glycoforms(protein, filterfunc=lambda x: x):
     return ax, id_mapper
 
 
+def plot_glycoforms_svg(protein, filterfunc=lambda x: x):
+    ax, id_mapper = plot_glycoforms(protein, filterfunc)
+
+    fig = ax.get_figure()
+    fig.tight_layout(pad=0.2)
+    buff = StringIO()
+    fig.savefig(buff, format='svg')
+    root, ids = ET.XMLID(buff.getvalue())
+    root.attrib['class'] = 'plot-glycoforms-svg'
+    for id, attributes in id_mapper.items():
+        element = ids[id]
+        element.attrib.update({("data-" + k): str(v) for k, v in attributes.items()})
+        element.attrib['class'] = id.rsplit('-')[0]
+    svg = ET.tostring(root)
+    plt.close()
+    return svg
+
+
 def main(database_path, protein_id, filterfunc=lambda x: x, save_path=None, **kwargs):
     dbm = DatabaseManager(database_path)
     s = dbm.session()
@@ -149,14 +209,20 @@ def main(database_path, protein_id, filterfunc=lambda x: x, save_path=None, **kw
             base=os.path.splitext(database_path)[0], hypothesis=protein.hypothesis.name,
             protein=clean_file_name(protein.name), format=kwargs.get("format", "png"))
         kwargs.setdefault("format", "png")
-
-    ax, id_mapper = plot_glycoforms(protein, filterfunc=filterfunc)
-    if ax is None:
+    # Special handling for SVG to assign element ids
+    if kwargs.get('format') == 'svg' and kwargs.get("include_data", True):
+        svg = plot_glycoforms_svg(protein, filterfunc)
+        with open(save_path, 'wb') as fh:
+            fh.write(svg)
         return
-    fig = ax.get_figure()
-    fig.set_size_inches(16, 12)
-    fig.savefig(save_path, bbox_inches='tight', **kwargs)
-    plt.close()
+    else:
+        ax, id_mapper = plot_glycoforms(protein, filterfunc=filterfunc)
+        if ax is None:
+            return
+        fig = ax.get_figure()
+        fig.set_size_inches(16, 12)
+        fig.savefig(save_path, bbox_inches='tight', **kwargs)
+        plt.close()
 
 app = argparse.ArgumentParser("draw_glycoforms")
 app.add_argument("database_path", help="path to the database file to analyze")

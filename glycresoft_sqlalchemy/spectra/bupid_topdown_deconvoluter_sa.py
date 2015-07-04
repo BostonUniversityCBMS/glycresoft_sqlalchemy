@@ -33,17 +33,9 @@ PEAKS = 2
 
 
 class NullDict(dict):
-    def __init__(self):
-        pass
-
     def __setitem__(self, k, v):
-        pass
-
-    def __getitem__(self, key):
-        raise KeyError(key)
-
-    def __contains__(self, key):
-        return False
+        if isinstance(v, int):
+            dict.__setitem__(self, k, v)
 
 
 class BUPIDMSMSYamlParser(object):
@@ -54,12 +46,15 @@ class BUPIDMSMSYamlParser(object):
             database_path = os.path.splitext(file_path)[0] + '.db'
         self.file_path = file_path
         self.manager = self.manager_type(database_path)
-        self.loader = Loader(open(file_path))
+        self.file_handle = open(file_path)
+        self.loader = Loader(self.file_handle)
         self.loader.constructed_objects = NullDict()
 
         self.state = BEGIN
-
         self.manager.initialize()
+        if not self._is_in_database():
+            self.sample_run_name = os.path.basename(file_path)
+            return
         session = self.manager.session()
         self.sample_run = SampleRun(name=os.path.basename(file_path), parameters={"file_path": file_path})
         self.sample_run_name = self.sample_run.name
@@ -67,7 +62,24 @@ class BUPIDMSMSYamlParser(object):
         session.commit()
         self.parse()
 
+    def _is_in_database(self):
+        """Check if this sample name is already present in the target database file.
+
+        Returns
+        -------
+        bool : Whether the sample name is present in the database already
+        """
+        session = self.manager.session()
+        result = session.query(
+            SampleRun.id).filter(
+            SampleRun.name == os.path.basename(
+                self.file_path)).count() == 0
+        session.close()
+        return result
+
     def seek_scans(self):
+        """Advance the parse stream to the beginning of the scans section
+        """
         seeking = True
         loader = self.loader
         while seeking:
@@ -80,6 +92,9 @@ class BUPIDMSMSYamlParser(object):
         return loader
 
     def process_scans(self):
+        """Step the parser through the scans section, eliminating as many
+        object creation steps as possible to minimize memory consumption
+        """
         logger.info("Process Scans (State: %r)", self.state)
         if self.state == BEGIN:
             loader = self.seek_scans()
@@ -198,7 +213,7 @@ class BUPIDMSMSYamlParser(object):
 
         session = self.manager.session()
         session.add(scan)
-        session.add_all(tandem_peaks)
+        session.bulk_save_objects(tandem_peaks)
         session.commit()
         session.close()
 
@@ -206,6 +221,7 @@ class BUPIDMSMSYamlParser(object):
         self.process_scans()
         self.process_peaks()
         self.loader.dispose()
+        self.file_handle.close()
 
     def to_db(self):
         return self.manager

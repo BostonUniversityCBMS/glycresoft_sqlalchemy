@@ -96,6 +96,27 @@ class Peak(Base):
         return "<Peak {} {} {} {}>".format(self.id, self.neutral_mass, self.intensity, self.charge)
 
 
+class Decon2LSPeak(Base):
+    __tablename__ = "Decon2LSPeak"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    charge = Column(Integer)
+    intensity = Column(Integer)
+    monoisotopic_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+    monoisotopic_intensity = Column(Integer)
+    monoisotopic_plus_2_intensity = Column(Integer)
+    average_mass = Column(Numeric(12, 6, asdecimal=False))
+    most_abundant_mass = Column(Numeric(12, 6, asdecimal=False))
+    full_width_half_max = Column(Numeric(12, 6, asdecimal=False))
+    signal_to_noise = Column(Numeric(12, 6, asdecimal=False))
+
+    scan_id = Column(Integer, ForeignKey("ScanBase.id"), index=True)
+    scan = relationship('ScanBase', backref=backref("decon2ls_peaks", lazy='dynamic'))
+
+    def __repr__(self):
+        return "<Peak {} {} {} {}>".format(self.id, self.monoisotopic_mass, self.intensity, self.charge)
+
+
 class MSMSSqlDB(DatabaseManager):
 
     def ppm_match_tolerance_search(self, mass, tolerance, mass_shift=0):

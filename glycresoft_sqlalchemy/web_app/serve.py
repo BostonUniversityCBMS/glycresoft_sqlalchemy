@@ -3,7 +3,8 @@ try:
     logging.basicConfig(level='DEBUG')
 except:
     pass
-
+import json
+import functools
 from glycresoft_sqlalchemy.web_app import report
 from flask import Flask, request, session, g, redirect, url_for, \
      abort, render_template, flash, Markup, make_response, jsonify, \
@@ -13,8 +14,10 @@ from werkzeug import secure_filename
 import argparse
 
 from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch
-from project_manager import ProjectManager
+from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
 
+from glycresoft_sqlalchemy.web_app.task.do_bupid_yaml_parse import BUPIDYamlParseTask
+from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
 
 app = Flask(__name__)
 report.prepare_environment(app.jinja_env)
@@ -30,9 +33,57 @@ def connect_db():
     g.db = manager.session()
 
 
+def message_queue_stream():
+    """Implement a simple Server Side Event (SSE) stream based on the
+    stream of events emit from the :attr:`TaskManager.messages` queue of `manager`.
+
+    These messages are handled on the client side.
+
+    Yields
+    ------
+    str: Formatted Server Side Event Message
+
+    References
+    ----------
+    [1] - http://stackoverflow.com/questions/12232304/how-to-implement-server-push-in-flask-framework
+    """
+    payload = 'id: {id}\nevent: {event_name}\ndata: {data}\n\n'
+    i = 0
+    yield payload.format(id=i, event_name='begin-stream', data=json.dumps('Starting Stream'))
+    i += 1
+    while True:
+        try:
+            message = manager.messages.get(True, 3)
+            event = payload.format(
+                id=i, event_name=message.type,
+                data=json.dumps(message.message))
+            i += 1
+            print message, event
+            yield event
+        except KeyboardInterrupt:
+            break
+        except QueueEmptyException, e:
+            # Send a comment to keep the connection alive
+            yield ":no events\n\n"
+        except Exception, e:
+            logging.exception("An error occurred in message_queue_stream", exc_info=e)
+
+
 @app.route("/")
 def index():
     return render_template("index.templ")
+
+
+@app.route("/tasks")
+def get_tasks(self):
+    return jsonify(**{t.id: t.to_json() for t in manager.tasks.values()})
+
+
+@app.route('/stream')
+def message_stream():
+
+    return Response(message_queue_stream(),
+                    mimetype="text/event-stream")
 
 
 @app.route("/hypothesis")
@@ -63,12 +114,25 @@ def match_samples():
 
 @app.route("/add_sample", methods=["POST"])
 def post_add_sample():
-    print dir(request.files['observed-ions-file'])
+    """Handle an uploaded sample file
+
+    Returns
+    -------
+    TYPE : Description
+    """
     run_name = request.values['sample_name']
-    secure_name = secure_filename(run_name) + '.unprocessed'
-    path = manager.get_sample_path(secure_name)
-    print path
+    secure_name = secure_filename(run_name)
+    path = manager.get_temp_path(secure_name)
     request.files['observed-ions-file'].save(path)
+    dest = manager.get_sample_path(run_name)
+    # Construct the task with a callback to add the processed sample
+    # to the set of project samples
+    task = BUPIDYamlParseTask(
+        manager.path,
+        path,
+        dest,
+        functools.partial(manager.add_sample, path=dest))
+    manager.add_task(task)
     return redirect("/")
 
 
@@ -79,7 +143,6 @@ def add_sample():
 
 @app.before_request
 def before_request():
-    print session
     connect_db()
 
 
@@ -117,7 +180,7 @@ def main(results_database):
     manager = ProjectManager(DATABASE)
     app.debug = DEBUG
     app.secret_key = SECRETKEY
-    app.run()
+    app.run(use_reloader=False, threaded=True)
 
 if __name__ == "__main__":
     args = parser.parse_args()

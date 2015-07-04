@@ -24,7 +24,7 @@ class ConnectionManager(object):
 
 
 class SQLiteConnectionManager(ConnectionManager):
-    connect_args = {"timeout": 100}
+    connect_args = {"timeout": 300}
     database_uri_prefix = "sqlite:///"
 
     def __init__(self, path, connect_args=None):
@@ -40,10 +40,9 @@ class SQLiteConnectionManager(ConnectionManager):
 
 
 class DatabaseManager(object):
-    connection_manager_type = SQLiteConnectionManager
 
-    def __init__(self, path, clear=False):
-        self.connection_manager = self.connection_manager_type(path)
+    def __init__(self, path, clear=False, connection_manager_type=SQLiteConnectionManager):
+        self.connection_manager = connection_manager_type(path)
         if clear:
             self.connection_manager.clear()
         self.path = path

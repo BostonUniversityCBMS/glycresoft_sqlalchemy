@@ -8,20 +8,10 @@ import logging
 
 import functools
 
-from glycresoft_ms2_classification.structure.modification import RestrictedModificationTable
-from glycresoft_ms2_classification.structure.modification import ModificationTable
-from glycresoft_ms2_classification.structure.sequence import Sequence
-from glycresoft_ms2_classification.structure.sequence_space import SequenceSpace
-from glycresoft_ms2_classification.structure.stub_glycopeptides import StubGlycopeptide
-from glycresoft_ms2_classification.structure import constants
-from glycresoft_ms2_classification.proteomics import get_enzyme, msdigest_xml_parser
-
-from .. import data_model as model
-from .search_space_builder import (parse_site_file, parse_digest,
-                                   MS1GlycopeptideResult, get_monosaccharide_identities,
+from ..data_model import TheoreticalGlycopeptide
+from .search_space_builder import (MS1GlycopeptideResult, parse_digest,
                                    get_peptide_modifications, get_search_space,
                                    generate_fragments, TheoreticalSearchSpaceBuilder)
-from ..utils.worker_utils import async_worker_pool
 
 logger = logging.getLogger("search_space_builder")
 
@@ -131,50 +121,19 @@ class PoolingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
             for res in worker_pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=500):
-                self.session.add_all(res)
+                # self.session.add_all(res)
+                self.session.bulk_save_objects(res, update_changed_only=False)
                 cntr += len(res)
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
                     self.session.commit()
                     checkpoint = cntr + self.commit_checkpoint
-            # work_queue = []
-            # logger.debug("sending tasks")
-            # for item in self.ms1_results_reader:
-            #     work_queue.append(worker_pool.apply_async(task_fn, [item]))
-            #     last_length = len(work_queue)
-            # logger.debug("Async workers started")
-            # begin_time = timer = time.time()
-            # elapsed = False
-            # while len(work_queue) > 0:
-            #     logger.debug("New Round")
-            #     next_round = []
-            #     for i in range(len(work_queue)):
-            #         task = work_queue[i]
-            #         task.wait(0.1)
-            #         if task.ready():
-            #             logger.debug("Getting %r", task)
-            #             try:
-            #                 self.session.add_all(task.get())
-            #             except Exception, e:
-            #                 logger.exception("An error occurred", exc_info=e)
-            #                 raise e
-            #         else:
-            #             next_round.append(task)
-            #     work_queue = next_round
-            #     elapsed = time.time() - timer > update_window
-            #     if last_length != len(work_queue) or elapsed:
-            #         last_length = len(work_queue)
-            #         logger.info("%d tasks remaining", last_length)
-            #         timer = time.time()
-            #         self.session.commit()
-            # end_time = time.time()
-            # logger.info("Time elapsed: %0.2fs", (begin_time, end_time))
-            # self.sesion.commit()
+
         else:
             logger.debug("Building theoretical sequences sequentially")
             for row in self.ms1_results_reader:
                 res = task_fn(row)
-                self.session.add_all(res)
+                self.session.bulk_save_objects(res)
                 cntr += len(res)
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)

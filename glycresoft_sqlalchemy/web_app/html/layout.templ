@@ -13,7 +13,14 @@
     <script>
 $(function() {
     $('select').material_select();
+    var source = new EventSource('/stream');
+    source.addEventListener("update", function(event){
+        Materialize.toast(event.data, 4000)
+    })
 });
+
+
+
     </script>
 </head>
 <body>

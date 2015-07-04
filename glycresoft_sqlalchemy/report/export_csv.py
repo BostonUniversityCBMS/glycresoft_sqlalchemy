@@ -4,7 +4,7 @@ import argparse
 from glycresoft_sqlalchemy.data_model import DatabaseManager, Hypothesis, Protein, GlycopeptideMatch
 
 
-def export_matches_as_csv(database_path, hypothesis_id=1, output_path=None):
+def export_matches_as_csv(database_path, hypothesis_id=1, output_path=None, include_ions_matched=True):
     manager = DatabaseManager(database_path)
     session = manager.session()
     gpms = session.query(GlycopeptideMatch).filter(
@@ -20,6 +20,8 @@ def export_matches_as_csv(database_path, hypothesis_id=1, output_path=None):
             "stub_ions", "bare_b_ion_coverage", "bare_y_ion_coverage", "glycosylated_b_ion_coverage",
             "glycosylated_y_ion_coverage", "protein_name"
         ]
+        if include_ions_matched:
+            header.extend(["b_ions", "y_ions", 'stub_ions', 'oxonium_ions'])
         writer.writerow(header)
         for gpm in gpms:
             row = [
@@ -33,6 +35,15 @@ def export_matches_as_csv(database_path, hypothesis_id=1, output_path=None):
                 len(gpm.glycosylated_y_ions),
                 gpm.protein.name
             ]
+            if include_ions_matched:
+                row.extend([
+                        ";".join([ion['key'] for series in [gpm.bare_b_ions, gpm.glycosylated_b_ions]
+                                  for ion in series]),
+                        ";".join([ion['key'] for series in [gpm.bare_y_ions, gpm.glycosylated_y_ions]
+                                  for ion in series]),
+                        ";".join([ion['key'] for ion in gpm.stub_ions]),
+                        ";".join([ion['key'] for ion in gpm.oxonium_ions])
+                    ])
             writer.writerow(row)
     return output_path
 
@@ -44,8 +55,8 @@ app.add_argument("-e", "--hypothesis-id", default=None, help="The hypothesis to 
 app.add_argument("-o", "--out", default=None, help="Where to save the result")
 
 
-def main(database_path, hypothesis_id, out):
-    return export_matches_as_csv(database_path, hypothesis_id, out)
+def main(database_path, hypothesis_id, out, include_ions_matched):
+    return export_matches_as_csv(database_path, hypothesis_id, out, include_ions_matched)
 
 
 def taskmain():
