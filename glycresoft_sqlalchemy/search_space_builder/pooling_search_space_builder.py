@@ -128,7 +128,7 @@ class PoolingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
                     logger.info("Committing, %d records made", cntr)
                     self.session.commit()
                     checkpoint = cntr + self.commit_checkpoint
-
+            worker_pool.terminate()
         else:
             logger.debug("Building theoretical sequences sequentially")
             for row in self.ms1_results_reader:

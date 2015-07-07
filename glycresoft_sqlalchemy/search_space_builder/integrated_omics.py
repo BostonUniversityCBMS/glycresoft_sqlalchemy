@@ -169,6 +169,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
                 cntr += res
                 logger.info("Completed %d sequences", cntr)
             # async_worker_pool(pool, self.stream_peptides(), task_fn)
+            pool.terminate()
         else:
             for peptide in self.stream_peptides():
                 cntr += task_fn(peptide)

@@ -6,7 +6,7 @@ from glycresoft_sqlalchemy.matching import matching
 
 
 def test_main():
-    job = matching.IonMatching("./datafiles/ResultOf20140918_01_isos.db", 1, "./datafiles/20140918_01.db",
+    job = matching.IonMatching("./datafiles/Pure_ResultsOf.preserve_sequons_reverse.db", 1, "./datafiles/20140918_01.db",
                                n_processes=6)
     job.session.query(matching.GlycopeptideMatch).delete()
     job.session.query(matching.SpectrumMatch).delete()

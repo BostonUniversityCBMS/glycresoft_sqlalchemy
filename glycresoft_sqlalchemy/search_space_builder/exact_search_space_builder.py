@@ -8,7 +8,7 @@ import logging
 import functools
 
 from glycresoft_ms2_classification.structure.modification import ModificationTable
-from glycresoft_ms2_classification.structure.sequence import Sequence
+from glycresoft_ms2_classification.structure.sequence import Sequence, strip_modifications
 from glycresoft_ms2_classification.structure.stub_glycopeptides import StubGlycopeptide
 from glycresoft_ms2_classification.structure import constants
 from glycresoft_ms2_classification.proteomics import get_enzyme, msdigest_xml_parser
@@ -75,7 +75,7 @@ def generate_fragments(seq, ms1_result):
         count_missed_cleavages=ms1_result.count_missed_cleavages,
         start_position=ms1_result.start_position,
         end_position=ms1_result.end_position,
-        base_peptide_sequence=ms1_result.base_peptide_sequence,
+        base_peptide_sequence=strip_modifications(ms1_result.base_peptide_sequence),
         modified_peptide_sequence=seq_mod,
         peptide_modifications=ms1_result.peptide_modifications,
         glycopeptide_sequence=seq_mod + ms1_result.glycan_composition_str,
@@ -170,7 +170,7 @@ class ExactSearchSpaceBuilder(PipelineModule):
                     session.commit()
                     logger.info("%d records handled", cntr)
                     last = cntr
-
+            pool.terminate()
         for ms1_result in self.ms1_results_reader:
             theoretical = task_fn(ms1_result)
             if theoretical is None:

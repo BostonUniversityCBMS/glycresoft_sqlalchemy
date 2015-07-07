@@ -3,14 +3,13 @@ import multiprocessing
 import functools
 import itertools
 import logging
-import random
 import operator
 try:
     logger = logging.getLogger(__name__)
 except:
     pass
 from os.path import splitext
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 from glycresoft_ms2_classification.error_code_interface import NoIonsMatchedException
 from glycresoft_ms2_classification.utils import collectiontools
@@ -112,6 +111,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                     if lfabs(match_error) <= ms2_tolerance:
                         match = ({'key': theoretical_ion['key'],
                                   "observed_mass": protonated_mass,
+                                  "intensity": peak.intensity,
                                   'ppm_error': match_error, "peak_id": peak.id})
                         collect(match)
                         peak_match_map[peak.id].append(match)
@@ -132,6 +132,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                     match_error = lppm_error(observed_mass, deprotonated_mass)
                     if lfabs(match_error) <= ms2_tolerance:
                         match = ({'key': theoretical_ion['key'],
+                                  "intensity": peak.intensity,
                                   "observed_mass": observed_mass,
                                   'ppm_error': match_error, "peak_id": peak.id})
                         collect(match)
@@ -149,6 +150,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                     if lfabs(match_error) <= ms2_tolerance:
                         match = ({'key': theoretical_ion['key'],
                                   "observed_mass": observed_mass,
+                                  "intensity": peak.intensity,
                                   'ppm_error': match_error, "peak_id": peak.id})
                         collect(match)
                         peak_match_map[peak.id].append(match)
@@ -165,6 +167,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                     if lfabs(match_error) <= ms2_tolerance:
                         match = ({'key': theoretical_ion['key'],
                                   "observed_mass": observed_mass,
+                                  "intensity": peak.intensity,
                                   'ppm_error': match_error, "peak_id": peak.id})
                         collect(match)
                         peak_match_map[peak.id].append(match)
@@ -181,6 +184,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                     if lfabs(match_error) <= ms2_tolerance:
                         match = ({'key': theoretical_ion['key'],
                                   "observed_mass": observed_mass,
+                                  "intensity": peak.intensity,
                                   'ppm_error': match_error, "peak_id": peak.id})
                         collect(match)
                         peak_match_map[peak.id].append(match)
@@ -197,6 +201,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                     if lfabs(match_error) <= ms2_tolerance:
                         match = ({'key': theoretical_ion['key'],
                                   "observed_mass": observed_mass,
+                                  "intensity": peak.intensity,
                                   'ppm_error': match_error, "peak_id": peak.id})
                         collect(match)
                         peak_match_map[peak.id].append(match)
@@ -274,13 +279,13 @@ def merge_ion_matches(matches):
     for key, matched_key in groups.items():
         best_match = matched_key[0]
         best_ppm = fabs(best_match["ppm_error"])
-        ppm_to_peak_id = {best_match["peak_id"]: best_match["ppm_error"]}
+        peak_map = {best_match["peak_id"]: best_match}
         for match in matched_key[1:]:
-            ppm_to_peak_id[match["peak_id"]] = match["ppm_error"]
+            peak_map[match["peak_id"]] = match
             if fabs(match["ppm_error"]) < best_ppm:
                 best_match = match
                 best_ppm = fabs(match["ppm_error"])
-        best_match["scan_map"] = ppm_to_peak_id
+        best_match["peak_map"] = peak_map
         best_matches.append(best_match)
     return best_matches
 

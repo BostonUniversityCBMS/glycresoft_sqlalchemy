@@ -36,7 +36,7 @@ class MS1GlycanImporter(PipelineModule):
         try:
             for glycan in self.glycan_reader.glycans:
                 g = Glycan(composition=glycan_composition_string(glycan.composition),
-                           mass=glycan.mass, other=glycan.data,
+                           mass=glycan.mass,  # other=glycan.data,
                            hypothesis_id=self.hypothesis_id)
                 session.add(g)
             session.commit()

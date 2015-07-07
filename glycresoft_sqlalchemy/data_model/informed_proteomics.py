@@ -22,11 +22,15 @@ InformedPeptideToTheoreticalGlycopeptide = Table(
     Column("theoretical_glycopeptide", Integer, ForeignKey(TheoreticalGlycopeptide.id)))
 
 
-class InformedMS1Glycopeptide(InformedPeptide):
+class InformedMS1Glycopeptide(PeptideBase):
     __tablename__ = "InformedMS1Glycopeptide"
-    id = Column(Integer, ForeignKey(InformedPeptide.id), primary_key=True)
+    id = Column(Integer, primary_key=True)
 
-    base_peptide = relationship(InformedPeptide, remote_side=[id])
+    peptide_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    other = Column(PickleType)
+    base_peptide_id = Column(Integer, ForeignKey(InformedPeptide.id), index=True)
+    base_peptide = relationship(InformedPeptide)
+
     glycan_id = Column(Integer, ForeignKey(Glycan.id), index=True)
 
     glycopeptide_sequence = Column(Unicode(128), index=True)
@@ -38,4 +42,5 @@ class InformedMS1Glycopeptide(InformedPeptide):
 
     __mapper_args__ = {
         'polymorphic_identity': u'InformedMS1Glycopeptide',
+        "concrete": True
     }

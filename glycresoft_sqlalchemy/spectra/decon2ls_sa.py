@@ -1,7 +1,9 @@
 import csv
 import os
 
-from glycresoft_sqlalchemy.data_model.observed_ions import SampleRun, MSScan, Decon2LSPeak, DatabaseManager
+from glycresoft_sqlalchemy.data_model import PipelineModule
+from glycresoft_sqlalchemy.data_model.observed_ions import (
+    SampleRun, MSScan, Decon2LSPeak, DatabaseManager)
 
 isos_to_db_map = {
     "abundance": "intensity",
@@ -17,6 +19,38 @@ isos_to_db_map = {
 }
 
 TDecon2LSPeak = Decon2LSPeak.__table__
+
+
+class Decon2LSIsosParser(PipelineModule):
+    def __init__(self, file_path, database_path=None, interval=100000):
+        self.file_path = file_path
+        if database_path is None:
+            database_path = os.path.splitext(file_path)[0] + '.db'
+        self.interval = interval
+        self.manager = self.manager_type(database_path)
+        self.start()
+
+    def run(self):
+        self.manager.initialize()
+        session = self.manager.session()
+        sample_run = SampleRun(name=os.path.basename(self.file_path), parameters={"deconvoluted_by": 'decon2ls'})
+        session.add(sample_run)
+        session.commit()
+        last = 0
+        conn = session.connection()
+        last_scan_id = -1
+        for i, row in enumerate(csv.DictReader(open(self.file_path))):
+            remap = {v: row[k] for k, v in isos_to_db_map.items()}
+            if remap['scan_id'] != last_scan_id:
+                session.add(MSScan(id=remap['scan_id'], sample_run_id=sample_run.id))
+                last_scan_id = remap['scan_id']
+                if last + self.interval == i:
+                    session.commit()
+                    print "Commit!"
+                    last = i
+                    conn = session.connection()
+            conn.execute(TDecon2LSPeak.insert().values(**remap))
+        session.commit()
 
 
 def parse_decon2ls(isos_path, database_path=None):

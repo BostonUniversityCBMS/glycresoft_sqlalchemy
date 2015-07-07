@@ -11,8 +11,8 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 
 from .generic import MutableDict, MutableList
-
-Base = declarative_base()
+from .base import Base
+from .glycomics import TheoreticalGlycanComposition as Glycan
 
 
 class Hypothesis(Base):
@@ -26,7 +26,7 @@ class Hypothesis(Base):
     proteins = relationship("Protein", backref=backref("hypothesis", order_by=id),
                             collection_class=attribute_mapped_collection('name'))
 
-    glycans = relationship("Glycan", backref=backref("hypothesis", order_by=id),
+    glycans = relationship(Glycan, backref=backref("hypothesis", order_by=id),
                            collection_class=attribute_mapped_collection('name'))
 
     is_decoy = Column(Boolean, default=False)
@@ -37,15 +37,15 @@ class Hypothesis(Base):
             self.id, self.name, len(self.proteins), len(self.glycans))
 
 
-class Glycan(Base):
-    __tablename__ = "Glycan"
+# class Glycan(Base):
+#     __tablename__ = "Glycan"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(Unicode(128), default=u"")
-    mass = Column(Numeric(10, 6, asdecimal=False), default=0)
-    composition = Column(Unicode(128), default=u"")
-    other = Column(MutableDict.as_mutable(PickleType))
-    hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id"))
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     name = Column(Unicode(128), default=u"")
+#     mass = Column(Numeric(10, 6, asdecimal=False), default=0)
+#     composition = Column(Unicode(128), default=u'', index=True)
+#     other = Column(MutableDict.as_mutable(PickleType))
+#     hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id"))
 
 
 class Protein(Base):
@@ -100,6 +100,14 @@ class PeptideBase(AbstractConcreteBase, Base):
     def spans(self, point):
         return (self.start_position <= point) & (point < self.end_position)
 
+    @hybrid_method
+    def from_hypothesis(self, hypothesis_id):
+        return self.protein.hypothesis_id == hypothesis_id
+
+    @from_hypothesis.expression
+    def from_hypothesis(self, hypothesis_id):
+        return self.protein_id == Protein.id & Protein.hypothesis_id == hypothesis_id
+
     def __len__(self):
         if self.sequence_length is not None:
             return self.sequence_length
@@ -140,14 +148,15 @@ class PeptideBase(AbstractConcreteBase, Base):
 TheoreticalGlycopeptideGlycanAssociation = Table(
     "TheoreticalGlycopeptideGlycanAssociation", Base.metadata,
     Column("peptide_id", Integer, ForeignKey("TheoreticalGlycopeptide.id")),
-    Column("glycan_id", Integer, ForeignKey("Glycan.id")))
+    Column("glycan_id", Integer, ForeignKey(Glycan.id)))
 
 
 class TheoreticalGlycopeptide(PeptideBase):
     __tablename__ = "TheoreticalGlycopeptide"
 
     id = Column(Integer, primary_key=True)
-    glycans = relationship(Glycan, secondary=TheoreticalGlycopeptideGlycanAssociation, backref='glycopeptides', lazy='dynamic')
+    glycans = relationship(Glycan, secondary=TheoreticalGlycopeptideGlycanAssociation,
+                           backref='glycopeptides', lazy='dynamic')
     ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
 
     observed_mass = Column(Numeric(10, 6, asdecimal=False))
@@ -166,6 +175,42 @@ class TheoreticalGlycopeptide(PeptideBase):
 
     bare_y_ions = Column(MutableList.as_mutable(PickleType))
     glycosylated_y_ions = Column(MutableList.as_mutable(PickleType))
+
+    def fragments(self, kind=('ox', 'b', 'y', 'gb', 'gy', 'stub')):
+        '''
+        A unified API for accessing lazy sequences of molecular fragments
+
+        Parameters
+        ----------
+        kind: sequence of str
+            A sequence of sigil strings for the different types of fragments
+            to generate. These sigils follow the standard nomenclature of bc-yz for peptides
+            and the BC-YZ nomenclature for glycans, as well as special combinations for oxonium
+            ions and stub glycopeptide ions.
+
+        Yields
+        ------
+        dict: A simple mapping object that defines a fragment
+        '''
+        kind = set(kind)
+        if 'ox' in kind:
+            for ox in self.oxonium_ions:
+                yield ox
+        if 'b' in kind:
+            for b in self.bare_b_ions:
+                yield b
+        if 'y' in kind:
+            for y in self.bare_y_ions:
+                yield y
+        if 'gb' in kind:
+            for bg in self.glycosylated_b_ions:
+                yield bg
+        if 'gy' in kind:
+            for yg in self.glycosylated_y_ions:
+                yield yg
+        if 'stub' in kind:
+            for stub in self.stub_ions:
+                yield stub
 
     __mapper_args__ = {
         'polymorphic_identity': u'TheoreticalGlycopeptide',

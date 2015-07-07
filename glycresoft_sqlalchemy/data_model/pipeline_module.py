@@ -57,6 +57,7 @@ class PipelineModule(object):
     '''
     manager_type = DatabaseManager
     error = None
+    raise_on_error = True
 
     def start(self, *args, **kwargs):
         self._begin(*args, **kwargs)
@@ -66,6 +67,8 @@ class PipelineModule(object):
             logger.exception("An error occurred: %r", e, exc_info=e)
             out = self.error = e
             self.status = -1
+            if self.raise_on_error:
+                raise e
         else:
             self.status = 0
         self._end(*args, **kwargs)

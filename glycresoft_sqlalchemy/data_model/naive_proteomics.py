@@ -20,13 +20,14 @@ class NaivePeptide(PeptideBase):
             self.glycosylation_sites)
 
 
-class TheoreticalGlycopeptideComposition(NaivePeptide):
+class TheoreticalGlycopeptideComposition(PeptideBase):
     __tablename__ = "TheoreticalGlycopeptideComposition"
 
-    id = Column(Integer, ForeignKey(NaivePeptide.id), primary_key=True)
+    id = Column(Integer, primary_key=True)
     glycan_mass = Column(Numeric(10, 6, asdecimal=False))
     glycopeptide_sequence = Column(Unicode(128), index=True)
     glycan_composition_str = Column(Unicode(128), index=True)
+    protein = relationship("Protein", backref=backref("theoretical_glycopeptide_compositions", lazy='dynamic'))
 
     def __repr__(self):
         return "<TheoreticalGlycopeptideComposition {} {} {}>"
