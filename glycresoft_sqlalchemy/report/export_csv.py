@@ -55,7 +55,7 @@ app.add_argument("-e", "--hypothesis-id", default=None, help="The hypothesis to 
 app.add_argument("-o", "--out", default=None, help="Where to save the result")
 
 
-def main(database_path, hypothesis_id, out, include_ions_matched):
+def main(database_path, hypothesis_id, out, include_ions_matched=True):
     return export_matches_as_csv(database_path, hypothesis_id, out, include_ions_matched)
 
 
