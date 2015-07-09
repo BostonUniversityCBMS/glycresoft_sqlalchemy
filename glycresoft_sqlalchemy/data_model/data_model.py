@@ -37,17 +37,6 @@ class Hypothesis(Base):
             self.id, self.name, len(self.proteins), len(self.glycans))
 
 
-# class Glycan(Base):
-#     __tablename__ = "Glycan"
-
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     name = Column(Unicode(128), default=u"")
-#     mass = Column(Numeric(10, 6, asdecimal=False), default=0)
-#     composition = Column(Unicode(128), default=u'', index=True)
-#     other = Column(MutableDict.as_mutable(PickleType))
-#     hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id"))
-
-
 class Protein(Base):
     __tablename__ = "Protein"
 

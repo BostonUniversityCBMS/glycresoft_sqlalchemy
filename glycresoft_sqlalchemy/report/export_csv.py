@@ -16,8 +16,8 @@ def export_matches_as_csv(database_path, hypothesis_id=1, output_path=None, incl
         writer = csv.writer(fh)
         header = [
             "id", "ms1_score", "ms2_score", "q_value", "observed_mass", "volume", "ppm_error",
-            "scan_id_range", "glycopeptide_sequence", "mean_coverage", "mean_hexnac_coverage",
-            "stub_ions", "bare_b_ion_coverage", "bare_y_ion_coverage", "glycosylated_b_ion_coverage",
+            "scan_id_range", "glycopeptide_sequence", "sequence_length", "mean_coverage", "mean_hexnac_coverage",
+            "stub_ion_count", "bare_b_ion_coverage", "bare_y_ion_coverage", "glycosylated_b_ion_coverage",
             "glycosylated_y_ion_coverage", "protein_name"
         ]
         if include_ions_matched:
@@ -26,7 +26,7 @@ def export_matches_as_csv(database_path, hypothesis_id=1, output_path=None, incl
         for gpm in gpms:
             row = [
                 gpm.id, gpm.ms1_score, gpm.ms2_score, gpm.q_value, gpm.observed_mass, gpm.volume, gpm.ppm_error,
-                ' '.join(map(str, gpm.scan_id_range)), gpm.glycopeptide_sequence,
+                ';'.join(map(str, gpm.scan_id_range)), gpm.glycopeptide_sequence, gpm.sequence_length,
                 gpm.mean_coverage, gpm.mean_hexnac_coverage,
                 len(gpm.stub_ions),
                 len(gpm.bare_b_ions),

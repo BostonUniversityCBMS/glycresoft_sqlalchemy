@@ -21,7 +21,7 @@ def test_main():
     try:
         os.remove(db_file_name)
     except:
-        pass
+        print "Did not clear %s" % db_file_name
     i = integrated_omics.load_proteomics(db_file_name, "datafiles/AGP_Proteomics2.mzid")
     integrated_omics.load_glycomics_naive(db_file_name, "datafiles/human_n_glycan.csv", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(

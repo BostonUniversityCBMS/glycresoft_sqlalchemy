@@ -171,7 +171,7 @@ def draw_layers(layers, protein):
     return ax, id_mapper
 
 
-def plot_glycoforms(protein, filterfunc=lambda x: x):
+def plot_glycoforms(protein, filterfunc=lambda x: x.ms2_score > 0.2):
     gpms = filterfunc(protein.glycopeptide_matches).all()
     if len(gpms) == 0:
         return None, None

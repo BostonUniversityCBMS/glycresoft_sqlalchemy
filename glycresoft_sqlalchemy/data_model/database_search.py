@@ -10,6 +10,7 @@ from .generic import MutableDict, MutableList
 from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan
 from .naive_proteomics import TheoreticalGlycopeptideComposition
 from .glycomics import TheoreticalGlycanComposition, MassShift
+from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
 
 
 class HypothesisSampleMatch(Base):
@@ -110,7 +111,8 @@ class SpectrumMatch(Base):
 
 TheoreticalCompositionMap = {
     "TheoreticalGlycopeptideComposition": TheoreticalGlycopeptideComposition,
-    "TheoreticalGlycanComposition": TheoreticalGlycanComposition
+    "TheoreticalGlycanComposition": TheoreticalGlycanComposition,
+    "InformedTheoreticalGlycopeptideComposition": InformedTheoreticalGlycopeptideComposition
 }
 
 

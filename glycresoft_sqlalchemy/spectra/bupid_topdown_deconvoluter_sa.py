@@ -1,11 +1,13 @@
 import os
 import yaml
 import itertools
+import re
 import logging
 
 from ..data_model import DatabaseManager
 from ..data_model.observed_ions import SampleRun, MSScan, TandemScan, Peak
 from . import neutral_mass
+from ..utils import sqlitedict
 from .constants import constants as ms_constants
 
 try:
@@ -24,61 +26,45 @@ MappingStartEvent = yaml.events.MappingStartEvent
 MappingEndEvent = yaml.events.MappingEndEvent
 SequenceStartEvent = yaml.events.SequenceStartEvent
 SequenceEndEvent = yaml.events.SequenceEndEvent
+AliasEvent = yaml.events.AliasEvent
 
 ScalarNode = yaml.nodes.ScalarNode
 
 BEGIN = 0
 SCANS = 1
 PEAKS = 2
+IN_PEAKS = 3
+IN_PEAK_SCANS = 4
+DONE = 5
+
+states = {v: k for k, v in dict(
+    BEGIN=0,
+    SCANS=1,
+    PEAKS=2,
+    IN_PEAKS=3,
+    IN_PEAK_SCANS=4,
+    DONE=5
+).items()}
 
 
-class NullDict(dict):
-    def __setitem__(self, k, v):
-        if isinstance(v, int):
-            dict.__setitem__(self, k, v)
+int_pattern = re.compile(r":int$")
+float_pattern = re.compile(r":float$")
 
 
-class BUPIDMSMSYamlParser(object):
-    manager_type = DatabaseManager
-
-    def __init__(self, file_path, database_path=None):
-        if database_path is None:
-            database_path = os.path.splitext(file_path)[0] + '.db'
-        self.file_path = file_path
-        self.manager = self.manager_type(database_path)
-        self.file_handle = open(file_path)
-        self.loader = Loader(self.file_handle)
-        self.loader.constructed_objects = NullDict()
-
+class StreamingYAMLPusher(object):
+    def __init__(self, file_handle):
+        logging.basicConfig(level="DEBUG")
+        global logger
+        logger = logging.getLogger("bupid_topdown_deconvoluter:StatefulYAMLPusher")
+        self.file_handle = file_handle
+        self.loader = Loader(file_handle)
         self.state = BEGIN
-        self.manager.initialize()
-        if not self._is_in_database():
-            self.sample_run_name = os.path.basename(file_path)
-            return
-        session = self.manager.session()
-        self.sample_run = SampleRun(name=os.path.basename(file_path), parameters={
-            "file_path": file_path,
-            "deconvoluted_with": "BUPID Top Down Deconvoluter"
-            })
-        self.sample_run_name = self.sample_run.name
-        session.add(self.sample_run)
-        session.commit()
-        self.parse()
+        self.scan_counter = 0
 
-    def _is_in_database(self):
-        """Check if this sample name is already present in the target database file.
-
-        Returns
-        -------
-        bool : Whether the sample name is present in the database already
-        """
-        session = self.manager.session()
-        result = session.query(
-            SampleRun.id).filter(
-            SampleRun.name == os.path.basename(
-                self.file_path)).count() == 0
-        session.close()
-        return result
+    def clean(self, event):
+        del event.start_mark
+        del event.end_mark
+        return event
 
     def seek_scans(self):
         """Advance the parse stream to the beginning of the scans section
@@ -98,7 +84,7 @@ class BUPIDMSMSYamlParser(object):
         """Step the parser through the scans section, eliminating as many
         object creation steps as possible to minimize memory consumption
         """
-        logger.info("Process Scans (State: %r)", self.state)
+        # logger.info("Process Scans (State: %r)", self.state)
         if self.state == BEGIN:
             loader = self.seek_scans()
         elif self.state == SCANS:
@@ -106,38 +92,26 @@ class BUPIDMSMSYamlParser(object):
         else:
             raise Exception("Incorrect state: %s" % self.state)
         has_more_scans = True
-        session = self.manager.session()
         while has_more_scans:
             next_event = loader.peek_event()
             if isinstance(next_event, SequenceStartEvent):
                 loader.get_event()
             elif isinstance(next_event, MappingEndEvent):
                 loader.get_event()
+                yield self.clean(next_event)
             elif isinstance(next_event, MappingStartEvent):
-                node = loader.compose_mapping_node(next_event.anchor)
-                mapping = loader.construct_mapping(node)
-                # The only purpose of this inner loop is to register the
-                # scan references with the YAML parser.
-
-                # peak_id = mapping['id']
-                # scan = MSScan()
-                # session.add(scan)
-                # session.commit()
-                # z = mapping['z']
-                # precursor_peak = Peak(
-                #     id=peak_id, charge=z,
-                #     neutral_mass=neutral_mass(mapping['mz'], z), scan_id=scan.id)
-                # session.add(precursor_peak)
-                # yield scan, precursor_peak
+                loader.get_event()
+                yield self.clean(next_event)
+                self.scan_counter += 1
 
             elif isinstance(next_event, ScalarEvent):
-                next_event = loader.get_event()
+                loader.get_event()
+                yield self.clean(next_event)
+
             elif isinstance(next_event, SequenceEndEvent):
                 has_more_scans = False
             else:
                 raise TypeError("Unexpected Event: %r" % loader.get_event())
-        session.commit()
-        session.close()
 
     def seek_peaks(self):
         seeking = True
@@ -164,67 +138,216 @@ class BUPIDMSMSYamlParser(object):
 
         has_more_peaks = True
         while has_more_peaks:
-            next_event = loader.peek_event()
-            if isinstance(next_event, SequenceStartEvent):
-                loader.get_event()
-            elif isinstance(next_event, MappingEndEvent):
-                loader.get_event()
-            elif isinstance(next_event, MappingStartEvent):
-                node = loader.compose_mapping_node(next_event.anchor)
-                loader.anchors.pop(next_event.anchor)
-                self.resolve_peak(node)
-            elif isinstance(next_event, SequenceEndEvent):
+            next_event = loader.get_event()
+            # logger.debug("Next event = %r, State = %r", next_event, states[self.state])
+            # print 2, next_event, states[self.state]
+            if next_event is None:
                 has_more_peaks = False
-
-    def resolve_peak(self, node):
-        loader = self.loader
-        mass = []
-        charge = []
-        intensity = []
-        scans = []
-        for key, value in node.value:
-            if key.value == 'id':
-                scan_id = loader.construct_scalar(value)
-            elif key.value == 'num':
                 continue
-            elif key.value == 'scans':
-                if isinstance(value, ScalarNode):
-                    scans = [loader.construct_scalar(value)]
-                else:
-                    scans = map(loader.construct_mapping, value.value)
-            elif key.value in {'mass', 'z', 'intensity'}:
-                if isinstance(value, ScalarNode):
-                    payload = [loader.construct_scalar(value)]
-                else:
-                    payload = loader.construct_sequence(value)
-                if key.value == 'mass':
-                    mass = payload
-                elif key.value == 'z':
-                    charge = payload
-                elif key.value == 'intensity':
-                    intensity = payload
-                else:
-                    raise TypeError("Unknown value series %r" % key)
+            if isinstance(next_event, SequenceStartEvent):
+                yield self.clean(next_event)
+                if self.state is PEAKS:
+                    self.state = IN_PEAKS
+            elif isinstance(next_event, MappingEndEvent):
+                yield self.clean(next_event)
 
-        precursor_neutral_mass = neutral_mass(scans[0]['mz'], scans[0]['z'])
-        scan = TandemScan(
-            id=scan_id, precursor_neutral_mass=precursor_neutral_mass, sample_run_id=self.sample_run.id)
+                if self.state is IN_PEAK_SCANS:
+                    self.state = IN_PEAKS
+                if self.state is PEAKS:
+                    has_more_peaks = False
+                    logger.info("No more peaks")
+            elif isinstance(next_event, MappingStartEvent):
+                yield self.clean(next_event)
+                if self.state is PEAKS:
+                    self.state = IN_PEAKS
+                elif self.state is IN_PEAKS:
+                    self.state = IN_PEAK_SCANS
+            elif isinstance(next_event, SequenceEndEvent):
+                yield self.clean(next_event)
 
-        tandem_peaks = [None] * len(mass)
-        for i in range(len(mass)):
-            tandem_peaks[i] = Peak(neutral_mass=mass[i], charge=charge[i], intensity=intensity[i], scan_id=scan_id)
-
-        session = self.manager.session()
-        session.add(scan)
-        session.bulk_save_objects(tandem_peaks)
-        session.commit()
-        session.close()
+                if self.state is IN_PEAKS:
+                    self.state = PEAKS
+                # elif self.state is PEAKS:
+                #     has_more_peaks = False
+                #     logger.info("No more peaks")
+            elif isinstance(next_event, ScalarEvent):
+                yield self.clean(next_event)
+            elif isinstance(next_event, AliasEvent):
+                yield self.clean(next_event)
+            else:
+                raise Exception("Unexpected Event %r" % next_event)
 
     def parse(self):
-        self.process_scans()
-        self.process_peaks()
+        try:
+            yield (SCANS)
+            for event in self.process_scans():
+                yield event
+            yield (PEAKS)
+            for event in self.process_peaks():
+                yield event
+            yield (DONE)
+        except Exception, e:
+            print e, type(e)
+            raise
         self.loader.dispose()
         self.file_handle.close()
 
-    def to_db(self):
-        return self.manager
+
+class StreamingYAMLRenderer(object):
+    def __init__(self, database_path, source, sample_run_id=None):
+        self.database_path = database_path
+        self.manager = DatabaseManager(database_path)
+        self.source = source
+        self.anchors = sqlitedict.open()
+        self.cache = dict()
+        self.sample_run_id = sample_run_id
+
+    def run(self):
+        source = self.source
+        state = BEGIN
+
+        scan_id = None
+        scans = []
+        tandem_peaks = []
+        mass = []
+        charge = []
+        intensity = []
+
+        current_map = None
+        current_list = None
+        current_key = None
+        current_anchor = None
+        session = self.manager.session()
+        for event in source:
+            # logger.debug("Next event = %r", event)
+            if state is BEGIN:
+                if event == SCANS:
+                    state = SCANS
+                    logger.info("State -> SCANS")
+            if state is SCANS:
+                if event == PEAKS:
+                    state = PEAKS
+                    logger.info("State -> PEAKS")
+
+                elif isinstance(event, MappingStartEvent):
+                    current_anchor = event.anchor
+                    current_map = {}
+                elif isinstance(event, MappingEndEvent):
+                    self.anchors[current_anchor] = current_map
+                    current_map = None
+                    current_anchor = None
+                elif isinstance(event, ScalarEvent):
+                    if event.implicit[1]:
+                        current_key = event.value
+                    else:
+                        if current_list is not None:
+                            current_list.append(event.value)
+                        elif current_key is not None:
+                            # This section contains only ints or floats
+                            if int_pattern.match(event.tag):
+                                value = int(event.value)
+                            else:
+                                value = float(event.value)
+                            current_map[current_key] = value
+            elif state is PEAKS or state is IN_PEAKS:
+                if event == DONE:
+                    logger.info("Done!")
+                    break
+                elif isinstance(event, MappingStartEvent):
+                    current_map = {}
+                    current_anchor = event.anchor
+                    state = IN_PEAKS
+                elif isinstance(event, MappingEndEvent):
+                    if len(scans) == 0:
+                        continue
+                    precursor_neutral_mass = neutral_mass(scans[0]['mz'], scans[0]['z'])
+                    scan = TandemScan(
+                        id=scan_id, precursor_neutral_mass=precursor_neutral_mass, sample_run_id=self.sample_run_id)
+                    session.add(scan)
+
+                    tandem_peaks = [None] * len(mass)
+                    for i in range(len(mass)):
+                        tandem_peaks[i] = dict(
+                            neutral_mass=mass[i], charge=charge[i],
+                            intensity=intensity[i], scan_id=scan_id)
+                    session.bulk_insert_mappings(Peak, tandem_peaks)
+                    mass = []
+                    charge = []
+                    intensity = []
+                    scans = []
+                    state = PEAKS
+                elif isinstance(event, ScalarEvent):
+                    if event.implicit[1]:
+                        current_key = event.value
+                        if current_key == 'z':
+                            current_list = charge.append
+                        elif current_key == 'mass':
+                            current_list = mass.append
+                        elif current_key == 'intensity':
+                            current_list = intensity.append
+                        elif current_key == 'scans':
+                            current_list = scans.append
+                    else:
+                        if int_pattern.match(event.tag):
+                            value = int(event.value)
+                        else:
+                            value = float(event.value)
+                        if current_key == 'id':
+                            scan_id = value
+                        elif current_list is not None:
+                            current_list(value)
+
+                elif isinstance(event, AliasEvent):
+                    if current_list is not None:
+                        current_list(self.anchors[event.anchor])
+                    else:
+                        raise Exception("Expected an active sequence when recovering anchor")
+
+        session.commit()
+
+
+class BUPIDMSMSYamlParser(object):
+    def __init__(self, file_path, database_path=None):
+        if database_path is None:
+            database_path = os.path.splitext(file_path)[0] + '.db'
+        self.file_path = file_path
+        self.producer = None
+        self.consumer = None
+        self.queue = None
+        self.database_path = database_path
+        self.manager = DatabaseManager(database_path)
+        self.manager.initialize()
+        if not self._is_in_database():
+            self.sample_run_name = os.path.basename(file_path)
+            return
+        session = self.manager.session()
+        self.sample_run = SampleRun(name=os.path.basename(file_path), parameters={
+            "file_path": file_path,
+            "deconvoluted_with": "BUPID Top Down Deconvoluter"
+            })
+        self.sample_run_name = self.sample_run.name
+        session.add(self.sample_run)
+        session.commit()
+        self.sample_run_id = self.sample_run.id
+        self.run()
+
+    def _is_in_database(self):
+        """Check if this sample name is already present in the target database file.
+
+        Returns
+        -------
+        bool : Whether the sample name is present in the database already
+        """
+        session = self.manager.session()
+        result = session.query(
+            SampleRun.id).filter(
+            SampleRun.name == os.path.basename(
+                self.file_path)).count() == 0
+        session.close()
+        return result
+
+    def run(self):
+        self.producer = StreamingYAMLPusher(open(self.file_path, 'rb'))
+        event_stream = self.producer.parse()
+        self.consumer = StreamingYAMLRenderer(self.database_path, event_stream, self.sample_run_id)
+        self.consumer.run()

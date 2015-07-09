@@ -9,7 +9,8 @@ except:
 
 from sqlalchemy import func, bindparam
 from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
-                          TheoreticalGlycanComposition, TheoreticalGlycopeptideComposition, SampleRun,
+                          TheoreticalGlycanComposition, TheoreticalGlycopeptideComposition,
+                          InformedTheoreticalGlycopeptideComposition, SampleRun,
                           TheoreticalCompositionMap, MassShift, HypothesisSampleMatch, DatabaseManager,
                           PeakGroupDatabase, PeakGroupMatch)
 
@@ -368,50 +369,56 @@ def ppm_error(x, y):
 def match_peak_group(search_id, search_type, database_manager, observed_ions_manager,
                      matching_tolerance, mass_shift_map, sample_run_id, hypothesis_match_id):
     session = database_manager.session()
-    search_target = session.query(search_type).get(search_id)
+    try:
+        search_target = session.query(search_type).get(search_id)
 
-    base_mass = search_target.mass
-    matches = []
-    for mass_shift, count_range in mass_shift_map.items():
-        shift = mass_shift.mass
-        for shift_count in range(count_range):
-            total_mass = base_mass + shift * shift_count
-            for mass_match in observed_ions_manager.ppm_match_tolerance_search(
-                    total_mass, matching_tolerance, sample_run_id):
-                mass_error = ppm_error(mass_match, total_mass)
-                matches.append(mass_match, mass_error, mass_shift, shift_count)
-    params = []
-    for mass_match, mass_error, mass_shift, shift_count in matches:
+        base_mass = search_target.mass
+        matches = []
+        for mass_shift, count_range in mass_shift_map.items():
+            shift = mass_shift.mass
+            for shift_count in range(count_range):
+                total_mass = base_mass + shift * shift_count
+                for mass_match in observed_ions_manager.ppm_match_tolerance_search(
+                        total_mass, matching_tolerance, sample_run_id):
+                    mass_error = ppm_error(mass_match, total_mass)
+                    matches.append(mass_match, mass_error, mass_shift, shift_count)
+        params = []
+        for mass_match, mass_error, mass_shift, shift_count in matches:
 
-        case = {
-            "hypothesis_match_id": hypothesis_match_id,
-            "theoretical_match_type": search_type,
-            "theoretical_match_id": search_id,
-            "charge_state_count": mass_match.charge_state_count,
-            "scan_count": mass_match.scan_count,
-            "first_scan_id": mass_match.first_scan_id,
-            "last_scan_id": mass_match.last_scan_id,
-            "ppm_error": mass_error,
-            "scan_density": mass_match.scan_density,
-            "weighted_monoisotopic_mass": mass_match.weighted_monoisotopic_mass + mass_shift.mass * shift_count,
-            "total_volume": mass_match.total_volume,
-            "average_a_to_a_plus_2_ratio": mass_match.average_a_to_a_plus_2_ratio,
-            "a_peak_intensity_error": mass_match.a_peak_intensity_error,
-            "centroid_scan_estimate": mass_match.centroid_scan_estimate,
-            "centroid_scan_error": mass_match.centroid_scan_error,
-            "average_signal_to_noise": mass_match.average_signal_to_noise,
-            "peak_ids": mass_match.peak_ids,
-            "peak_data": mass_match.peak_data,
-            "matched": True,
-            "mass_shift_type": mass_shift,
-            "mass_shift_count": shift_count
-        }
-        params.append(case)
-        mass_match.matched = True
-        session.add(mass_match)
-    session.bulk_insert_mappings(PeakGroupMatch, params)
-    session.commit()
-    return len(params)
+            case = {
+                "hypothesis_match_id": hypothesis_match_id,
+                "theoretical_match_type": search_type,
+                "theoretical_match_id": search_id,
+                "charge_state_count": mass_match.charge_state_count,
+                "scan_count": mass_match.scan_count,
+                "first_scan_id": mass_match.first_scan_id,
+                "last_scan_id": mass_match.last_scan_id,
+                "ppm_error": mass_error,
+                "scan_density": mass_match.scan_density,
+                "weighted_monoisotopic_mass": mass_match.weighted_monoisotopic_mass + mass_shift.mass * shift_count,
+                "total_volume": mass_match.total_volume,
+                "average_a_to_a_plus_2_ratio": mass_match.average_a_to_a_plus_2_ratio,
+                "a_peak_intensity_error": mass_match.a_peak_intensity_error,
+                "centroid_scan_estimate": mass_match.centroid_scan_estimate,
+                "centroid_scan_error": mass_match.centroid_scan_error,
+                "average_signal_to_noise": mass_match.average_signal_to_noise,
+                "peak_ids": mass_match.peak_ids,
+                "peak_data": mass_match.peak_data,
+                "matched": True,
+                "mass_shift_type": mass_shift,
+                "mass_shift_count": shift_count,
+                "peak_group_id": mass_match.id
+            }
+            params.append(case)
+        observed_ions_manager.commit()
+        session.bulk_insert_mappings(PeakGroupMatch, params)
+        session.commit()
+        return len(params)
+    except Exception, e:
+        logger.exception("An exception occurred in match_peak_group, %r", locals(), exc_info=e)
+        raise e
+    finally:
+        session.close()
 
 
 class PeakGroupMatching(PipelineModule):
@@ -423,6 +430,7 @@ class PeakGroupMatching(PipelineModule):
         self.manager = self.manager_type(database_path)
         session = self.manager.session()
         no_shift = get_or_create(session, MassShift, mass=0.0, name=u"NoShift")
+        session.expunge(no_shift)
         lcms_database = PeakGroupDatabase(observed_ions_path)
         lcms_session = lcms_database.session()
         sample_run = lcms_session.query(SampleRun).get(sample_run_id or 1)
@@ -439,7 +447,9 @@ class PeakGroupMatching(PipelineModule):
             mass_shift_map = {no_shift: 1}
         else:
             mass_shift_map[no_shift] = 1
+        self.hypothesis_id = self.hypothesis_id
         self.mass_shift_map = mass_shift_map
+        self.match_tolernace = match_tolernace
         self.n_processes = n_processes
         self.lcms_database = lcms_database
         self.search_type = TheoreticalCompositionMap[search_type]
@@ -455,10 +465,22 @@ class PeakGroupMatching(PipelineModule):
         finally:
             session.close()
 
+    def prepare_task_fn(self):
+        fn = functools.partial(
+            match_peak_group,
+            search_type=self.search_type,
+            database_manager=self.manager,
+            observed_ions_manager=self.lcms_database,
+            matching_tolerance=self.match_tolernace,
+            mass_shift_map=self.mass_shift_map,
+            sample_run_id=self.sample_run_id,
+            hypothesis_match_id=self.hypothesis_match_id)
+        return fn
+
     def run(self):
         session = self.manager.session()
 
-        task_fn = callable
+        task_fn = self.prepare_task_fn()
 
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)

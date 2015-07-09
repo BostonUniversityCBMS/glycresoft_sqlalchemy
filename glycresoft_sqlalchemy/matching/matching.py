@@ -269,6 +269,11 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
     except Exception, e:
         logger.exception("An error occurred, %r", locals(), exc_info=e)
         raise e
+    finally:
+        try:
+            session.close()
+        except:
+            pass
 
 
 def merge_ion_matches(matches):

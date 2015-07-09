@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey
+from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table
 
-from .data_model import PeptideBase
+from .data_model import Base, PeptideBase, Glycan
 
 
 class NaivePeptide(PeptideBase):
@@ -20,13 +20,22 @@ class NaivePeptide(PeptideBase):
             self.glycosylation_sites)
 
 
+TheoreticalGlycopeptideCompositionGlycanAssociation = Table(
+    "TheoreticalGlycopeptideCompositionGlycanAssociation", Base.metadata,
+    Column("peptide_id", Integer, ForeignKey("TheoreticalGlycopeptideComposition.id")),
+    Column("glycan_id", Integer, ForeignKey(Glycan.id)))
+
+
 class TheoreticalGlycopeptideComposition(PeptideBase):
     __tablename__ = "TheoreticalGlycopeptideComposition"
 
     id = Column(Integer, primary_key=True)
+
     glycan_mass = Column(Numeric(10, 6, asdecimal=False))
     glycopeptide_sequence = Column(Unicode(128), index=True)
     glycan_composition_str = Column(Unicode(128), index=True)
+    glycans = relationship(Glycan, secondary=TheoreticalGlycopeptideCompositionGlycanAssociation)
+
     protein = relationship("Protein", backref=backref("theoretical_glycopeptide_compositions", lazy='dynamic'))
 
     def __repr__(self):

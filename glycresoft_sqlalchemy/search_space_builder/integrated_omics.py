@@ -7,7 +7,7 @@ import os
 from multiprocessing import Pool
 
 from ..data_model import Hypothesis, Protein, TheoreticalGlycopeptide, Glycan, DatabaseManager
-from ..data_model.informed_proteomics import InformedPeptide, InformedMS1Glycopeptide
+from ..data_model.informed_proteomics import InformedPeptide, InformedTheoreticalGlycopeptideComposition
 from ..data_model import PipelineModule
 from ..utils.worker_utils import async_worker_pool
 from .include_glycomics import MS1GlycanImporter
@@ -74,7 +74,7 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
         session = database_manager.session()
         glycoforms = glycosylate_callback(peptide, session, hypothesis_id, position_selector)
         for glycoform in glycoforms:
-            informed_glycopeptide = InformedMS1Glycopeptide(
+            informed_glycopeptide = InformedTheoreticalGlycopeptideComposition(
                 protein_id=peptide.protein_id,
                 base_peptide_sequence=peptide.base_peptide_sequence,
                 modified_peptide_sequence=peptide.modified_peptide_sequence,
@@ -206,11 +206,11 @@ class IntegratedOmicsMS1LegacyCSV(PipelineModule):
         try:
             for protein_id in protein_ids:
                 logger.info("Streaming Protein ID %d", protein_id)
-                for informed_glycopeptide in session.query(InformedMS1Glycopeptide).filter(
-                        InformedMS1Glycopeptide.protein_id == protein_id).group_by(
-                        InformedMS1Glycopeptide.modified_peptide_sequence,
-                        InformedMS1Glycopeptide.glycan_composition_str,
-                        InformedMS1Glycopeptide.start_position):
+                for informed_glycopeptide in session.query(InformedTheoreticalGlycopeptideComposition).filter(
+                        InformedTheoreticalGlycopeptideComposition.protein_id == protein_id).group_by(
+                        InformedTheoreticalGlycopeptideComposition.modified_peptide_sequence,
+                        InformedTheoreticalGlycopeptideComposition.glycan_composition_str,
+                        InformedTheoreticalGlycopeptideComposition.start_position):
                     session.expunge(informed_glycopeptide)
                     yield informed_glycopeptide
         finally:
