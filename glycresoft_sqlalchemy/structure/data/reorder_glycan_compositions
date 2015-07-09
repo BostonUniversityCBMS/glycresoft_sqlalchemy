@@ -1,0 +1,52 @@
+#!python
+import argparse
+import pandas as pd
+
+required_glycans = ["dHex", "Hex", "HexNAc", "NeuAc"]
+
+
+def main(glycans_compositions):
+    pre = []
+    glycan_identities = []
+    post = []
+    state = "pre"
+    for col in glycans_compositions.columns:
+        if col != "Compositions" and state == "pre":
+            pre.append(col)
+        elif col == "Compositions":
+            pre.append(col)
+            state = "glycan_identities"
+        elif col != "Adduct/Replacement" and state == "post":
+            post.append(col)
+        elif col == "Adduct/Replacement" and state == "glycan_identities":
+            post.append(col)
+            state = "post"
+        else:
+            glycan_identities.append(col)
+
+    # Ensure the required glycans are present
+    for req in required_glycans:
+        if req not in glycan_identities:
+            glycan_identities.append(req)
+            glycans_compositions[req] = 0
+
+    new_glycan_order = required_glycans[:]
+    for glyc in glycan_identities:
+        if glyc not in new_glycan_order:
+            new_glycan_order.append(glyc)
+
+    new_compositions = ["[" + ";".join(map(str, glycs[1:])) + "]" for glycs in
+                        glycans_compositions[new_glycan_order].itertuples()]
+    glycans_compositions["Compositions"] = new_compositions
+    return glycans_compositions[pre + new_glycan_order + post]
+
+if __name__ == '__main__':
+    app = argparse.ArgumentParser()
+    app.add_argument('-i', "--input-path", required=True)
+    app.add_argument('-o', "--output-path", default=None, required=False)
+    args = app.parse_args()
+    if args.output_path is None:
+        args.output_path = args.input_path[:-3] + "reorder.csv"
+    glycans_compositions = pd.read_csv(args.input_path)
+    reorder = main(glycans_compositions)
+    reorder.to_csv(args.output_path, index=False)

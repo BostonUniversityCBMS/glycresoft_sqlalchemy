@@ -96,6 +96,7 @@ def write_ini(path):
             writer.set(section.lower(), name.lower(), str(value))
     writer.write(open(path, 'w'))
 
+
 def load(path):
     try:
         read_json(path)

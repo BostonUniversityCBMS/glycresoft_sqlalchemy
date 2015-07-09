@@ -1,0 +1,2 @@
+recursive-include glycresoft_sqlalchemy/structure/data *.csv
+recursive-include glycresoft_sqlalchemy/structure/data *.json
