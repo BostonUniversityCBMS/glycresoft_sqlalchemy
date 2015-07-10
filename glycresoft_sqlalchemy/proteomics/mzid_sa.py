@@ -27,6 +27,16 @@ class MultipleProteinMatchesException(Exception):
         self.key = key
 
 
+def protein_names(mzid_path, pattern=r'.*'):
+    pattern = re.compile(pattern)
+    parser = Parser(mzid_path, retrieve_refs=True, iterative=False, build_id_cache=True)
+    for protein in parser.iterfind(
+                "ProteinDetectionHypothesis", retrieve_refs=True, recursive=False, iterative=True):
+        name = protein['accession']
+        if pattern.match(name):
+            yield name
+
+
 class Parser(MzIdentML):
     def _retrieve_refs(self, info, **kwargs):
         """Retrieves and embeds the data for each attribute in `info` that
