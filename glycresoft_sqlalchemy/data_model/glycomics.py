@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import AbstractConcreteBase, declared_attr
-from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey
+from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 
 from .base import Base
@@ -14,6 +14,13 @@ class MassShift(Base):
 
     def __hash__(self):
         return hash(self.name)
+
+
+class StructureMotif(Base):
+    __tablename__ = "StructureMotif"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(Unicode(128), index=True)
+    canonical_sequence = Column(Unicode(256))
 
 
 class GlycanBase(AbstractConcreteBase, Base):
@@ -37,9 +44,16 @@ class TheoreticalGlycanComposition(GlycanBase):
     __tablename__ = "TheoreticalGlycanComposition"
 
     __mapper_args__ = {
-        'polymorphic_identity': u'TheoreticalGlycan',
+        'polymorphic_identity': u'TheoreticalGlycanComposition',
         "concrete": True
     }
+
+
+TheoreticalGlycanCompositionToMotifTable = Table(
+    "TheoreticalGlycanCompositionToMotifTable", Base.metadata,
+    Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanComposition.id"), index=True),
+    Column("motif_id", Integer, ForeignKey("StructureMotif.id"))
+    )
 
 
 class TheoreticalGlycanStructure(GlycanBase):
@@ -48,6 +62,13 @@ class TheoreticalGlycanStructure(GlycanBase):
     glycoct = Column(Unicode(256), index=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': u'TheoreticalGlycan',
+        'polymorphic_identity': u'TheoreticalGlycanStructure',
         "concrete": True
     }
+
+
+TheoreticalGlycanStructureToMotifTable = Table(
+    "TheoreticalGlycanStructureToMotifTable", Base.metadata,
+    Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanStructure.id"), index=True),
+    Column("motif_id", Integer, ForeignKey("StructureMotif.id"))
+    )
