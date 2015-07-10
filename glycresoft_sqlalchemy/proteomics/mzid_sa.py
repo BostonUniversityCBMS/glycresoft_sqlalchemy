@@ -17,6 +17,7 @@ _local_name = mzid.xml._local_name
 peptide_evidence_ref = re.compile(r"(?P<evidence_id>PEPTIDEEVIDENCE_PEPTIDE_\d+_DBSEQUENCE_)(?P<parent_accession>.+)")
 
 PROTEOMICS_SCORE = ["PEAKS:peptideScore", "mascot:score", "PEAKS:proteinScore"]
+WHITELIST_GLYCOSITE_PTMS = {"Deamidation"}
 
 
 class MultipleProteinMatchesException(Exception):
@@ -216,7 +217,7 @@ def convert_dict_to_sequence(sequence_dict, session):
             start = found
             end = start + len(base_sequence)
         try:
-            glycosites = list(sequence.find_n_glycosylation_sequons(peptide_sequence))
+            glycosites = list(sequence.find_n_glycosylation_sequons(peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
             match = InformedPeptide(
                 calculated_mass=peptide_sequence.mass,
                 base_peptide_sequence=base_sequence,
