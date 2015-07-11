@@ -4,19 +4,25 @@ import functools
 import itertools
 try:
     logger = logging.getLogger("peak_grouping")
-except:
-    pass
+except Exception, e:
+    logging.exception("Logger could not be initialized", exc_info=e)
+    raise e
 
-from sqlalchemy import func, bindparam
+from sqlalchemy import func, bindparam, select
+
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+
 from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
-                          TheoreticalGlycanComposition, TheoreticalGlycopeptideComposition,
-                          InformedTheoreticalGlycopeptideComposition, SampleRun,
-                          TheoreticalCompositionMap, MassShift, HypothesisSampleMatch, DatabaseManager,
-                          PeakGroupDatabase, PeakGroupMatch)
+                          SampleRun,
+                          TheoreticalCompositionMap, MassShift, HypothesisSampleMatch,
+                          PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch)
 
 from ..utils.database_utils import get_or_create
 
 TDecon2LSPeakGroup = Decon2LSPeakGroup.__table__
+T_TempPeakGroupMatch = TempPeakGroupMatch.__table__
+TPeakGroupMatch = PeakGroupMatch.__table__
 
 
 class Decon2LSPeakGrouper(PipelineModule):
@@ -42,8 +48,9 @@ class Decon2LSPeakGrouper(PipelineModule):
         conn = session.connection()
         map_insert = Decon2LSPeakToPeakGroupMap.insert()
         group_insert = TDecon2LSPeakGroup.insert()
-        for count, row in enumerate(session.query(Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass).order_by(
-                Decon2LSPeak.intensity.desc()).filter(Decon2LSPeak.from_sample_run(self.sample_run_id))):
+        for count, row in enumerate(Decon2LSPeak.from_sample_run(session.query(
+                Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass).order_by(
+                Decon2LSPeak.intensity.desc()), self.sample_run_id)):
             peak_id, monoisotopic_mass = row
 
             # Calculate the window around which to group peaks
@@ -325,14 +332,6 @@ def centroid_scan_error_regression(session, minimum_abundance=250):
                  (Decon2LSPeakGroup.weighted_monoisotopic_mass - mean_weighted_mass))
             )).filter(Decon2LSPeakGroup.total_volume > minimum_abundance).first()[0])
     alpha = mean_centroid_scan_estimate - beta * mean_weighted_mass
-
-    # centroid_scan_estimate_sum_of_squares = session.query(
-    #     (func.sum(
-    #         (Decon2LSPeakGroup.centroid_scan_estimate - mean_centroid_scan_estimate) *
-    #         (Decon2LSPeakGroup.centroid_scan_estimate - mean_centroid_scan_estimate)))).first()[0]
-    # residuals = session.execute(select([func.abs(
-    #         Decon2LSPeakGroup.centroid_scan_estimate - (
-    #             alpha + Decon2LSPeakGroup.weighted_monoisotopic_mass * beta))]))
     return alpha, beta
 
 
@@ -372,7 +371,7 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
     try:
         search_target = session.query(search_type).get(search_id)
 
-        base_mass = search_target.mass
+        base_mass = search_target.calculated_mass
         matches = []
         for mass_shift, count_range in mass_shift_map.items():
             shift = mass_shift.mass
@@ -380,14 +379,14 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                 total_mass = base_mass + shift * shift_count
                 for mass_match in observed_ions_manager.ppm_match_tolerance_search(
                         total_mass, matching_tolerance, sample_run_id):
-                    mass_error = ppm_error(mass_match, total_mass)
-                    matches.append(mass_match, mass_error, mass_shift, shift_count)
+                    mass_error = ppm_error(mass_match.weighted_monoisotopic_mass, total_mass)
+                    matches.append((mass_match, mass_error, mass_shift, shift_count))
         params = []
         for mass_match, mass_error, mass_shift, shift_count in matches:
-
+            # logger.debug("Peak data: %r", mass_match.peak_data)
             case = {
                 "hypothesis_match_id": hypothesis_match_id,
-                "theoretical_match_type": search_type,
+                "theoretical_match_type": search_type.__name__,
                 "theoretical_match_id": search_id,
                 "charge_state_count": mass_match.charge_state_count,
                 "scan_count": mass_match.scan_count,
@@ -402,15 +401,13 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                 "centroid_scan_estimate": mass_match.centroid_scan_estimate,
                 "centroid_scan_error": mass_match.centroid_scan_error,
                 "average_signal_to_noise": mass_match.average_signal_to_noise,
-                "peak_ids": mass_match.peak_ids,
                 "peak_data": mass_match.peak_data,
                 "matched": True,
-                "mass_shift_type": mass_shift,
+                "mass_shift_type": mass_shift.name,
                 "mass_shift_count": shift_count,
                 "peak_group_id": mass_match.id
             }
             params.append(case)
-        observed_ions_manager.commit()
         session.bulk_insert_mappings(PeakGroupMatch, params)
         session.commit()
         return len(params)
@@ -425,20 +422,23 @@ class PeakGroupMatching(PipelineModule):
     def __init__(self, database_path, observed_ions_path, hypothesis_id,
                  sample_run_id=None, hypothesis_sample_match_id=None,
                  search_type="TheoreticalGlycanComposition",
-                 match_tolernace=2e-5, mass_shift_map=None,
+                 match_tolerance=2e-5, mass_shift_map=None,
                  n_processes=4):
         self.manager = self.manager_type(database_path)
         session = self.manager.session()
-        no_shift = get_or_create(session, MassShift, mass=0.0, name=u"NoShift")
+        no_shift, created = get_or_create(session, MassShift, mass=0.0, name=u"NoShift")
         session.expunge(no_shift)
         lcms_database = PeakGroupDatabase(observed_ions_path)
         lcms_session = lcms_database.session()
         sample_run = lcms_session.query(SampleRun).get(sample_run_id or 1)
 
-        hypothesis_sample_match = get_or_create(session, HypothesisSampleMatch,
-                                                id=hypothesis_sample_match_id,
-                                                target_hypothesis_id=hypothesis_id,
-                                                sample_run_name=sample_run.name)
+        hypothesis_sample_match, created = get_or_create(
+            session, HypothesisSampleMatch,
+            id=hypothesis_sample_match_id,
+            target_hypothesis_id=hypothesis_id)
+        hypothesis_sample_match.sample_run_name = sample_run.name
+        hypothesis_sample_match.parameters = {}
+        hypothesis_sample_match['mass_shift_map'] = mass_shift_map
         session.add(hypothesis_sample_match)
         session.commit()
 
@@ -447,9 +447,10 @@ class PeakGroupMatching(PipelineModule):
             mass_shift_map = {no_shift: 1}
         else:
             mass_shift_map[no_shift] = 1
-        self.hypothesis_id = self.hypothesis_id
+        self.hypothesis_id = hypothesis_id
+        self.sample_run_id = sample_run_id
         self.mass_shift_map = mass_shift_map
-        self.match_tolernace = match_tolernace
+        self.match_tolerance = match_tolerance
         self.n_processes = n_processes
         self.lcms_database = lcms_database
         self.search_type = TheoreticalCompositionMap[search_type]
@@ -471,23 +472,240 @@ class PeakGroupMatching(PipelineModule):
             search_type=self.search_type,
             database_manager=self.manager,
             observed_ions_manager=self.lcms_database,
-            matching_tolerance=self.match_tolernace,
+            matching_tolerance=self.match_tolerance,
             mass_shift_map=self.mass_shift_map,
             sample_run_id=self.sample_run_id,
-            hypothesis_match_id=self.hypothesis_match_id)
+            hypothesis_match_id=self.hypothesis_sample_match_id)
         return fn
 
     def run(self):
         session = self.manager.session()
 
         task_fn = self.prepare_task_fn()
-
+        counter = 0
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             for res in pool.imap_unordered(task_fn, self.stream_ids(), chunksize=500):
-                pass
+                counter += 1
+                if counter % 1000 == 0:
+                    logger.info("%d masses searched", counter)
         else:
             for res in itertools.imap(task_fn, self.stream_ids()):
-                pass
+                counter += 1
+                if counter % 1000 == 0:
+                    logger.info("%d masses searched", counter)
         session.commit()
         session.close()
+
+
+class PeakGroupClassification(PipelineModule):
+    def __init__(self, database_path, observed_ions_path, hypothesis_id,
+                 sample_run_id=None, hypothesis_sample_match_id=None,
+                 model_parameters=None):
+        self.database_manager = self.manager_type(database_path)
+        self.lcms_database = PeakGroupDatabase(observed_ions_path)
+        self.hypothesis_id = hypothesis_id
+        self.sample_run_id = sample_run_id
+        self.hypothesis_sample_match_id = hypothesis_sample_match_id
+        self.model_parameters = model_parameters
+        self.regression = None
+
+    def transfer_peak_groups(self):
+        """Copy Decon2LSPeakGroup entries from :attr:`observed_ions_manager`
+        into :attr:`database_manager` across database boundaries so that they
+        may be involved in the same table queries.
+
+        Replicate the TempPeakGroupMatch rows for groups that did not match any
+        database entries as full PeakGroupMatch rows with :attr:`PeakGroupMatch.matched` == `False`
+        for post-processing.
+        """
+        data_model_session = self.database_manager.session()
+        lcms_database_session = self.lcms_database.session()
+        labels = [
+            'id',
+            'sample_run_id',
+            'charge_state_count',
+            'scan_count',
+            'first_scan_id',
+            'last_scan_id',
+            'scan_density',
+            'weighted_monoisotopic_mass',
+            'total_volume',
+            'average_a_to_a_plus_2_ratio',
+            'a_peak_intensity_error',
+            'centroid_scan_estimate',
+            'centroid_scan_error',
+            'average_signal_to_noise',
+            'peak_ids',
+            'peak_data',
+            'ms1_score',
+            'matched'
+        ]
+        stmt = lcms_database_session.query(
+                Decon2LSPeakGroup).filter(
+                Decon2LSPeakGroup.sample_run_id == self.sample_run_id)
+        batch = lcms_database_session.connection().execute(stmt.selectable)
+
+        conn = data_model_session.connection()
+
+        # Move all Decon2LSPeakGroups, regardless of whether or not they matched to
+        # the temporary table.
+        while True:
+            items = batch.fetchmany(3000)
+            if len(items) == 0:
+                break
+            self.buffer = items[0]
+            conn.execute(T_TempPeakGroupMatch.insert(), [dict(zip(labels, row)) for row in items])
+        data_model_session.commit()
+
+        conn = data_model_session.connection()
+
+        id_stmt = data_model_session.query(
+            PeakGroupMatch.peak_group_id).filter(
+            PeakGroupMatch.hypothesis_match_id == self.hypothesis_sample_match_id,
+            PeakGroupMatch.matched == True).selectable
+
+        if not len(data_model_session.connection().execute(id_stmt).fetchmany(2)) == 2:
+            raise ValueError("Hypothesis-Sample Match ID matches maps no PeakGroupMatches")
+
+        # Use the presence of a PeakGroupMatch.matched == True row to indicate whether something was a match
+        # and fill out the :attr:`TempPeakGroupMatch.matched` column
+        update_stmt = T_TempPeakGroupMatch.update().where(
+            T_TempPeakGroupMatch.c.id.in_(id_stmt)).values(matched=True)
+        data_model_session.connection().execute(update_stmt)
+
+        update_stmt = T_TempPeakGroupMatch.update().where(
+            ~T_TempPeakGroupMatch.c.id.in_(id_stmt)).values(matched=False)
+        data_model_session.connection().execute(update_stmt)
+
+        # Copy the Decon2LSPeakGroups that did not match anything as PeakGroupMatches
+        # with null theoretical group matches
+        move_stmt = data_model_session.query(
+            TempPeakGroupMatch).filter(
+            TempPeakGroupMatch.matched == False).selectable
+
+        def transform(row):
+            out = dict(zip(labels, row))
+            out.pop('id')
+            out["theoretical_match_type"] = None
+            out['matched'] = False
+            out['hypothesis_match_id'] = self.hypothesis_sample_match_id
+            return out
+
+        conn = data_model_session.connection()
+        batch = conn.execute(move_stmt)
+        while True:
+            items = batch.fetchmany(3000)
+            if len(items) == 0:
+                break
+            conn.execute(TPeakGroupMatch.insert(), list(map(transform, items)))
+        data_model_session.commit()
+
+    def fit_regression(self):
+        """Fit the L2 Logistic Regression Model against the temporary peak group table.
+        Computes scores for each TempPeakGroupMatch and maps them to the referent PeakGroupMatch.
+
+        .. warning::
+            The regression operation is carried out **in memory**, however space used is proportional
+            to the number of |Decon2LSPeakGroup| records in this hypothesis-sample match, not the total
+            number of matches + unmatched groups, which is almost certainly going to be much larger.
+
+        Returns
+        -------
+        sklearn.linear_model.LogisticRegression : The fitted model
+        """
+        features = [
+            T_TempPeakGroupMatch.c.charge_state_count,
+            T_TempPeakGroupMatch.c.scan_density,
+            T_TempPeakGroupMatch.c.total_volume,
+            T_TempPeakGroupMatch.c.a_peak_intensity_error,
+            T_TempPeakGroupMatch.c.centroid_scan_error,
+            T_TempPeakGroupMatch.c.average_signal_to_noise
+        ]
+        label = [T_TempPeakGroupMatch.c.matched]
+        ids = [T_TempPeakGroupMatch.c.id]
+
+        data_model_session = self.database_manager.session()
+        conn = data_model_session.connection()
+        feature_matrix = np.array(conn.execute(select(features)).fetchall(), dtype=np.float64)
+        label_vector = np.array(conn.execute(select(label)).fetchall())
+        regression = LogisticRegression(penalty='l2')
+        if self.model_parameters is None:
+            regression.fit(feature_matrix, label_vector.ravel())
+        else:
+            regression.coefs_ = np.asarray(self.model_parameters)
+        probabilities = regression.predict_proba(feature_matrix)
+        i = 0
+        for group_id, in conn.execute(select(ids)):
+            conn.execute(
+                TPeakGroupMatch.update().where(
+                    TPeakGroupMatch.c.peak_group_id == group_id).values(
+                    ms1_score=probabilities[i, 0]))
+            i += 1
+        data_model_session.commit()
+        return regression
+
+    def clear_peak_groups(self):
+        """Delete all TempPeakGroupMatch rows.
+        """
+        data_model_session = self.database_manager.session()
+        data_model_session.query(TempPeakGroupMatch).delete()
+        data_model_session.commit()
+        data_model_session.close()
+
+    def run(self):
+        self.transfer_peak_groups()
+        self.regression = self.fit_regression()
+        self.clear_peak_groups()
+
+
+class LCMSPeakClusterSearch(PipelineModule):
+    def __init__(self, database_path, observed_ions_path, hypothesis_id,
+                 sample_run_id=1, grouping_error_tolerance=8e-5,
+                 minimum_scan_count=1, hypothesis_sample_match_id=None,
+                 search_type="TheoreticalGlycanComposition",
+                 match_tolerance=2e-5, mass_shift_map=None, regression_parameters=None,
+                 n_processes=4):
+        self.database_path = database_path
+        self.observed_ions_path = observed_ions_path
+        self.hypothesis_id = hypothesis_id
+        self.sample_run_id = sample_run_id
+        self.grouping_error_tolerance = grouping_error_tolerance
+        self.minimum_scan_count = minimum_scan_count
+        self.hypothesis_sample_match_id = hypothesis_sample_match_id
+        self.search_type = search_type
+        self.match_tolerance = match_tolerance
+        self.mass_shift_map = mass_shift_map
+        self.n_processes = n_processes
+        self.regression_parameters = regression_parameters
+
+    def run(self):
+        grouper = Decon2LSPeakGrouper(
+            self.observed_ions_path, self.sample_run_id, self.grouping_error_tolerance,
+            self.minimum_scan_count, self.n_processes)
+        grouper.start()
+
+        database_manager = self.manager_type(self.database_path)
+        session = database_manager.session()
+
+        hypothesis_sample_match, created = get_or_create(
+            session, HypothesisSampleMatch,
+            id=self.hypothesis_sample_match_id,
+            target_hypothesis_id=self.hypothesis_id)
+        session.add(hypothesis_sample_match)
+        session.commit()
+
+        self.hypothesis_sample_match_id = hypothesis_sample_match.id
+
+        matcher = PeakGroupMatching(
+            self.database_path, self.observed_ions_path, self.hypothesis_id,
+            self.sample_run_id, self.hypothesis_sample_match_id,
+            self.search_type, self.match_tolerance, self.mass_shift_map,
+            self.n_processes)
+        matcher.start()
+
+        classifier = PeakGroupClassification(
+            self.database_path, self.observed_ions_path, self.hypothesis_id,
+            self.sample_run_id, self.hypothesis_sample_match_id, self.model_parameters)
+
+        classifier.start()

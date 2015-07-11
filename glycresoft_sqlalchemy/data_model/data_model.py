@@ -32,9 +32,26 @@ class Hypothesis(Base):
     is_decoy = Column(Boolean, default=False)
     parameters = Column(MutableDict.as_mutable(PickleType), default={})
 
+    hypothesis_type = Column(Unicode(56), index=True)
+
     def __repr__(self):
         return "<Hypothesis {0} {1} {2} proteins {3} glycans>".format(
             self.id, self.name, len(self.proteins), len(self.glycans))
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'Hypothesis',
+        'polymorphic_on': hypothesis_type,
+    }
+
+
+class MS1GlycopeptideHypothesis(Hypothesis):
+    __tablename__ = "MS1GlycopeptideHypothesis"
+
+    id = Column(Integer, ForeignKey(Hypothesis.id), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'MS1GlycopeptideHypothesis',
+    }
 
 
 class Protein(Base):

@@ -131,8 +131,11 @@ class PeakGroupMatch(Base):
 
     @property
     def theoretical_match(self):
-        matched_type = TheoreticalCompositionMap[self.theoretical_match_type]
-        return object_session(self).query(matched_type).get(self.theoretical_match_id)
+        try:
+            matched_type = TheoreticalCompositionMap[self.theoretical_match_type]
+            return object_session(self).query(matched_type).get(self.theoretical_match_id)
+        except KeyError:
+            return None
 
     charge_state_count = Column(Integer)
     scan_count = Column(Integer)
@@ -161,6 +164,33 @@ class PeakGroupMatch(Base):
 
     mass_shift_count = Column(Integer)
 
+
+class TempPeakGroupMatch(Base):
+    __tablename__ = "TempPeakGroupMatch"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    sample_run_id = Column(Integer, index=True)
+
+    charge_state_count = Column(Integer)
+    scan_count = Column(Integer)
+    first_scan_id = Column(Integer)
+    last_scan_id = Column(Integer)
+
+    scan_density = Column(Numeric(10, 6, asdecimal=False))
+    weighted_monoisotopic_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+
+    total_volume = Column(Numeric(12, 6, asdecimal=False))
+    average_a_to_a_plus_2_ratio = Column(Numeric(12, 6, asdecimal=False))
+    a_peak_intensity_error = Column(Numeric(10, 6, asdecimal=False))
+    centroid_scan_estimate = Column(Numeric(12, 6, asdecimal=False))
+    centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
+    average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
+
+    peak_ids = Column(MutableList.as_mutable(PickleType))
+    peak_data = Column(MutableDict.as_mutable(PickleType))
+
+    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    matched = Column(Boolean, index=True)
 
 '''
 Citations

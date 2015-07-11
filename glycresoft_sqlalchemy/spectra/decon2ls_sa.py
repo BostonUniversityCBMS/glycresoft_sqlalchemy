@@ -36,13 +36,14 @@ class Decon2LSIsosParser(PipelineModule):
         sample_run = SampleRun(name=os.path.basename(self.file_path), parameters={"deconvoluted_by": 'decon2ls'})
         session.add(sample_run)
         session.commit()
+        sample_run_id = sample_run.id
         last = 0
         conn = session.connection()
         last_scan_id = -1
         for i, row in enumerate(csv.DictReader(open(self.file_path))):
             remap = {v: row[k] for k, v in isos_to_db_map.items()}
             if remap['scan_id'] != last_scan_id:
-                session.add(MSScan(id=remap['scan_id'], sample_run_id=sample_run.id))
+                session.add(MSScan(id=remap['scan_id'], sample_run_id=sample_run_id))
                 last_scan_id = remap['scan_id']
                 if last + self.interval == i:
                     session.commit()

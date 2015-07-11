@@ -92,13 +92,9 @@ class Peak(Base):
 
     scan_id = Column(Integer, ForeignKey("ScanBase.id"), index=True)
 
-    @hybrid_method
-    def from_sample_run(self, sample_run_id):
-        return self.scan.sample_run_id == sample_run_id
-
-    @from_sample_run.expression
-    def from_sample_run(self, sample_run_id):
-        return self.scan_id == ScanBase.id & ScanBase.sample_run_id == sample_run_id
+    @classmethod
+    def from_sample_run(self, query, sample_run_id):
+        return query.join(MSScan.peaks).filter(MSScan.sample_run_id == sample_run_id)
 
     def __repr__(self):
         return "<Peak {} {} {} {}>".format(self.id, self.neutral_mass, self.intensity, self.charge)
@@ -121,13 +117,9 @@ class Decon2LSPeak(Base):
     scan_id = Column(Integer, ForeignKey("ScanBase.id"), index=True)
     scan = relationship('ScanBase', backref=backref("decon2ls_peaks", lazy='dynamic'))
 
-    @hybrid_method
-    def from_sample_run(self, sample_run_id):
-        return self.scan.sample_run_id == sample_run_id
-
-    @from_sample_run.expression
-    def from_sample_run(self, sample_run_id):
-        return self.scan_id == ScanBase.id & ScanBase.sample_run_id == sample_run_id
+    @classmethod
+    def from_sample_run(self, query, sample_run_id):
+        return query.join(MSScan.decon2ls_peaks).filter(MSScan.sample_run_id == sample_run_id)
 
     def __repr__(self):
         return "<Decon2LSPeak {} {} {} {}>".format(self.id, self.monoisotopic_mass, self.intensity, self.charge)
@@ -180,13 +172,9 @@ class Decon2LSPeakGroup(Base):
         lo = mass - spread
         return cls.weighted_monoisotopic_mass.between(lo, hi)
 
-    @hybrid_method
-    def from_sample_run(self, sample_run_id):
-        return self.sample_run_id == sample_run_id
-
-    @from_sample_run.expression
-    def from_sample_run(self, sample_run_id):
-        return self.sample_run_id == sample_run_id
+    @classmethod
+    def from_sample_run(self, query, sample_run_id):
+        return query.filter(self.sample_run_id == sample_run_id)
 
 
 Decon2LSPeakToPeakGroupMap = Table(
