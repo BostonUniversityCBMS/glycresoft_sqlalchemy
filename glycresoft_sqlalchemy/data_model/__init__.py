@@ -7,3 +7,4 @@ from .glycomics import *
 
 from .connection import *
 from pipeline_module import PipelineModule
+from sqlalchemy import func

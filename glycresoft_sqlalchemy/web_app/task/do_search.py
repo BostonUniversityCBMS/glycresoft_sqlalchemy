@@ -55,7 +55,7 @@ def taskmain(
         hypothesis_id=target_hypothesis_id,
         observed_ions_path=observed_ions_path,
         observed_ions_type=observed_ions_type,
-        hypothesis_match_id=hsm_id,
+        hypothesis_sample_match_id=hsm_id,
         ms1_tolerance=ms1_tolerance,
         ms2_tolerance=ms2_tolerance,
         n_processes=kwargs.get("n_processes", 4))
@@ -71,7 +71,7 @@ def taskmain(
         hypothesis_id=decoy_hypothesis_id,
         observed_ions_path=observed_ions_path,
         observed_ions_type=observed_ions_type,
-        hypothesis_match_id=hsm_id,
+        hypothesis_sample_match_id=hsm_id,
         ms1_tolerance=ms1_tolerance,
         ms2_tolerance=ms2_tolerance,
         n_processes=kwargs.get("n_processes", 4))

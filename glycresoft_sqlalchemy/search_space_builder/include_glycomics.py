@@ -22,22 +22,24 @@ class MS1GlycanImporter(PipelineModule):
     def __init__(self, database_path, glycan_path, hypothesis_id, glycan_file_type="hypothesis"):
         self.manager = self.manager_type(database_path)
         self.glycan_file_type = glycan_file_type
-        self.glycan_reader = glycan_file_type_map[glycan_file_type](glycan_path)
         self.hypothesis_id = hypothesis_id
+        self.glycan_path = glycan_path
+
+    def run(self):
+        self.glycan_reader = glycan_file_type_map[self.glycan_file_type](self.glycan_path)
 
         session = self.manager.session()
-        hypothesis = session.query(Hypothesis).filter(Hypothesis.id == hypothesis_id).first()
+        hypothesis = session.query(Hypothesis).filter(Hypothesis.id == self.hypothesis_id).first()
         hypothesis.parameters['monosaccharide_identities'] = self.glycan_reader.glycan_identities
         session.add(hypothesis)
         session.commit()
-
-    def run(self):
         session = self.manager.session()
         try:
             for glycan in self.glycan_reader.glycans:
                 g = Glycan(composition=glycan_composition_string(glycan.composition),
                            mass=glycan.mass,  # other=glycan.data,
-                           hypothesis_id=self.hypothesis_id)
+                           hypothesis_id=self.hypothesis_id,
+                           monosaccaride_map=glycan.composition_dict)
                 session.add(g)
             session.commit()
         except Exception, e:

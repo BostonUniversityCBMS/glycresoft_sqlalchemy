@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import PickleType, Numeric, Unicode, Column, Integer, ForeignKey, Table
 
-from .data_model import Base, Glycan, TheoreticalGlycopeptide, PeptideBase, Protein
+from .data_model import Base, PeptideBase, Protein
 from .naive_proteomics import TheoreticalGlycopeptideComposition
 
 
@@ -22,17 +22,12 @@ class InformedPeptide(PeptideBase):
 InformedPeptideToTheoreticalGlycopeptide = Table(
     "InformedPeptideToTheoreticalGlycopeptide", Base.metadata,
     Column("informed_peptide", Integer, ForeignKey(InformedPeptide.id)),
-    Column("theoretical_glycopeptide", Integer, ForeignKey(TheoreticalGlycopeptide.id)))
-
-
-InformedTheoreticalGlycopeptideCompositionGlycanAssociation = Table(
-    "InformedTheoreticalGlycopeptideCompositionGlycanAssociation", Base.metadata,
-    Column("peptide_id", Integer, ForeignKey("InformedTheoreticalGlycopeptideComposition.id")),
-    Column("glycan_id", Integer, ForeignKey(Glycan.id)))
+    Column("theoretical_glycopeptide", Integer, ForeignKey(TheoreticalGlycopeptideComposition.id)))
 
 
 class InformedTheoreticalGlycopeptideComposition(TheoreticalGlycopeptideComposition):
     __tablename__ = "InformedTheoreticalGlycopeptideComposition"
+
     id = Column(Integer, ForeignKey(TheoreticalGlycopeptideComposition.id), primary_key=True)
 
     peptide_score = Column(Numeric(10, 6, asdecimal=False), index=True)

@@ -7,16 +7,19 @@ import logging
 
 import functools
 
-from glycresoft_ms2_classification.structure.modification import RestrictedModificationTable
-from glycresoft_ms2_classification.structure.modification import ModificationTable
-from glycresoft_ms2_classification.structure.sequence import Sequence
-from glycresoft_ms2_classification.structure.sequence_space import SequenceSpace
-from glycresoft_ms2_classification.structure.stub_glycopeptides import StubGlycopeptide
-from glycresoft_ms2_classification.structure import constants
-from glycresoft_ms2_classification.proteomics import get_enzyme, msdigest_xml_parser
+from ..structure.modification import RestrictedModificationTable
+from ..structure.modification import ModificationTable
+from ..structure.sequence import Sequence
+from ..structure.sequence_space import SequenceSpace
+from ..structure.stub_glycopeptides import StubGlycopeptide
+from ..structure import constants
+from ..proteomics import get_enzyme, msdigest_xml_parser
 
 from .. import data_model as model
 from ..data_model import PipelineModule
+
+TheoreticalGlycopeptideGlycanAssociation = model.TheoreticalGlycopeptideGlycanAssociation
+TheoreticalGlycopeptide = model.TheoreticalGlycopeptide
 
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)(\w+)')
@@ -79,12 +82,25 @@ class MS1GlycopeptideResult(object):
             ppm_error=ppm_error, volume=volume, start_pos=start_pos, end_pos=end_pos,
             glycan_composition_map=glycan_composition_map, protein_id=protein_id)
 
-    def __init__(self, score=None, calculated_mass=None,
-                 observed_mass=None, glycan_composition_str=None,
-                 base_peptide_sequence=None, peptide_modifications=None, count_missed_cleavages=None,
-                 count_glycosylation_sites=None, ppm_error=None, volume=None, start_pos=None,
-                 end_pos=None, glycan_composition_map=None, protein_id=None, fragments=None,
-                 oxonium_ions=None, id=None, glycopeptide_sequence=None, modified_peptide_sequence=None):
+    def __init__(self, score=None,
+                 calculated_mass=None,
+                 observed_mass=None,
+                 glycan_composition_str=None,
+                 base_peptide_sequence=None,
+                 peptide_modifications=None,
+                 count_missed_cleavages=None,
+                 count_glycosylation_sites=None,
+                 ppm_error=None,
+                 volume=None,
+                 start_pos=None,
+                 end_pos=None,
+                 glycan_composition_map=None,
+                 protein_id=None,
+                 fragments=None,
+                 oxonium_ions=None,
+                 id=None,
+                 glycopeptide_sequence=None,
+                 modified_peptide_sequence=None):
         self.ms1_score = score
         self.calculated_mass = calculated_mass
         self.observed_mass = observed_mass

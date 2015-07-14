@@ -22,6 +22,9 @@ class ConnectionManager(object):
     def clear(self):
         pass
 
+    def __repr__(self):
+        return '<{} {}{}>'.format(self.__class__.__name__, self.database_uri_prefix, self.database_uri)
+
 
 class SQLiteConnectionManager(ConnectionManager):
     connect_args = {"timeout": 300}
@@ -39,10 +42,21 @@ class SQLiteConnectionManager(ConnectionManager):
             pass
 
 
-class DatabaseManager(object):
+class LocalPostgresConnectionManager(ConnectionManager):
+    connect_args = {}
+    database_uri_prefix = "postgresql+psycopg2://"
 
-    def __init__(self, path, clear=False, connection_manager_type=SQLiteConnectionManager):
-        self.connection_manager = connection_manager_type(path)
+    def __init__(self, path, connect_args=None):
+        if connect_args is None:
+            connect_args = self.connect_args
+        super(LocalPostgresConnectionManager, self).__init__(path, self.database_uri_prefix, connect_args)
+
+
+class DatabaseManager(object):
+    connection_manager_type = SQLiteConnectionManager
+
+    def __init__(self, path, clear=False):
+        self.connection_manager = self.connection_manager_type(path)
         if clear:
             self.connection_manager.clear()
         self.path = path
@@ -59,6 +73,26 @@ class DatabaseManager(object):
         if connection is None:
             connection = self.connect()
         return sessionmaker(bind=connection)()
+
+    def __repr__(self):
+        return '<{} {}>'.format(self.__class__.__name__, self.connection_manager)
+
+
+class LocalPostgresDatabaseManager(DatabaseManager):
+    connection_manager_type = LocalPostgresConnectionManager
+
+    def __init__(self, path, clear=False, **kwargs):
+        super(LocalPostgresDatabaseManager, self).__init__(path, clear)
+
+
+def create_remote_manager(driver, user="", password="", host='localhost', port=5432):
+    database_uri_prefix = "{driver}://{user}:{password}@{host}:{port}".format(**locals())
+
+    class RemoteConnectionManager(ConnectionManager):
+        database_uri_prefix = database_uri_prefix
+
+        def __init__(self, path, connect_args):
+            super(RemoteConnectionManager, self).__init__(path, self.database_uri_prefix, connect_args)
 
 
 def initialize(database_path):

@@ -48,7 +48,7 @@ def ppm_error(x, y):
 
 
 def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
-                    database_manager, hypothesis_match_id, sample_run_id):
+                    database_manager, hypothesis_sample_match_id, sample_run_id):
     '''
     *Task Function*
 
@@ -62,7 +62,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
         ppm mass error tolerance for MS1 matching
     ms2_tolerance: float
         ppm mass error tolerance for MS2 matching
-    hypothesis_match_id: int
+    hypothesis_sample_match_id: int
         If set, associate all GlycopeptideMatches with the indicated HypothesisSampleMatch
     sample_run_id: int
         If set, only select ions from the indicated SampleRun
@@ -253,7 +253,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                 scan_id_range=scan_ids,
                 first_scan=first_scan,
                 last_scan=last_scan,
-                hypothesis_match_id=hypothesis_match_id
+                hypothesis_sample_match_id=hypothesis_sample_match_id
             )
             score_matches.apply(gpm, theoretical)
             session.add(gpm)
@@ -313,7 +313,7 @@ class IonMatching(PipelineModule):
                  observed_ions_path,
                  observed_ions_type='bupid_yaml',
                  sample_run_id=None,
-                 hypothesis_match_id=None,
+                 hypothesis_sample_match_id=None,
                  ms1_tolerance=ms1_tolerance_default,
                  ms2_tolerance=ms2_tolerance_default,
                  n_processes=4):
@@ -327,7 +327,7 @@ class IonMatching(PipelineModule):
         self.observed_ions_path = observed_ions_path
         self.observed_ions_type = observed_ions_type
 
-        self.hypothesis_match_id = hypothesis_match_id
+        self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.sample_run_id = sample_run_id
 
         if isinstance(observed_ions_path, str):
@@ -355,7 +355,7 @@ class IonMatching(PipelineModule):
                                     ms1_tolerance=self.ms1_tolerance,
                                     ms2_tolerance=self.ms2_tolerance,
                                     database_manager=self.manager,
-                                    hypothesis_match_id=self.hypothesis_match_id,
+                                    hypothesis_sample_match_id=self.hypothesis_sample_match_id,
                                     sample_run_id=self.sample_run_id)
         return task_fn
 

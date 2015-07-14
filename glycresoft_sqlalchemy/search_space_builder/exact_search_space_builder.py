@@ -7,17 +7,20 @@ import logging
 
 import functools
 
-from glycresoft_ms2_classification.structure.modification import ModificationTable
-from glycresoft_ms2_classification.structure.sequence import Sequence, strip_modifications
-from glycresoft_ms2_classification.structure.stub_glycopeptides import StubGlycopeptide
-from glycresoft_ms2_classification.structure import constants
-from glycresoft_ms2_classification.proteomics import get_enzyme, msdigest_xml_parser
+from ..structure.sequence import Sequence, strip_modifications
+from ..structure.stub_glycopeptides import StubGlycopeptide
+from ..structure import constants
+from ..proteomics import get_enzyme
 
-from .search_space_builder import MS1GlycopeptideResult, get_monosaccharide_identities, parse_site_file, MS1ResultsFile
+
+from .search_space_builder import MS1ResultsFile
 from .. import data_model as model
 from ..data_model import PipelineModule
 
+from sqlalchemy import func
+
 TheoreticalGlycopeptide = model.TheoreticalGlycopeptide
+TheoreticalGlycopeptideGlycanAssociation = model.TheoreticalGlycopeptideGlycanAssociation
 Protein = model.Protein
 
 logger = logging.getLogger("search_space_builder")
@@ -182,6 +185,21 @@ class ExactSearchSpaceBuilder(PipelineModule):
                 logger.info("%d records handled", cntr)
                 last = cntr
         id = self.hypothesis.id
+        session.commit()
+
+        ids = session.query(func.min(TheoreticalGlycopeptide.id)).filter(
+            TheoreticalGlycopeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis.id).group_by(
+            TheoreticalGlycopeptide.glycopeptide_sequence,
+            TheoreticalGlycopeptide.protein_id)
+        print ids.first()
+        q = session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis.id,
+            ~TheoreticalGlycopeptide.id.in_(ids.correlate(None)))
+        conn = session.connection()
+        conn.execute(TheoreticalGlycopeptide.__table__.delete(
+            TheoreticalGlycopeptide.__table__.c.id.in_(q.selectable)))
         session.commit()
         session.close()
         return id

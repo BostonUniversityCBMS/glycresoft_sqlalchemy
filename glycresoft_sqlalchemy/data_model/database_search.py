@@ -7,7 +7,7 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table,
 from sqlalchemy.orm.session import object_session
 
 from .generic import MutableDict, MutableList
-from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan
+from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan, Protein
 from .naive_proteomics import TheoreticalGlycopeptideComposition
 from .glycomics import TheoreticalGlycanComposition, MassShift
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
@@ -25,15 +25,24 @@ class HypothesisSampleMatch(Base):
 
     def results(self):
         if self.glycopeptide_matches.count() > 0:
-            yield GlycopeptideMatch, self.glycopeptide_matches
+            yield GlycopeptideMatch, self.glycopeptide_matches.filter(
+                GlycopeptideMatch.protein_id == Protein.id,
+                Protein.hypothesis_id == Hypothesis.id,
+                ~Hypothesis.is_decoy)
         if self.peak_group_matches.filter(
                 PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition").count() > 0:
             yield TheoreticalGlycanComposition, self.peak_group_matches.filter(
-                PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition")
+                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition") |
+                (PeakGroupMatch.theoretical_match_type == None))
         if self.peak_group_matches.filter(
                 PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition").count() > 0:
             yield TheoreticalGlycopeptideComposition, self.peak_group_matches.filter(
-                PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition")
+                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition") |
+                (PeakGroupMatch.theoretical_match_type == None))
+
+    def __repr__(self):
+        return "<{self.__class__.__name__} {self.id} {self.target_hypothesis_id} {self.sample_run_name} {matches}>".format(
+            self=self, matches=''.join('{0.__name__}:{1}'.format(result[0], result[1].count()) for result in self.results()))
 
 GlycopeptideMatchGlycanAssociation = Table(
     "GlycopeptideMatchGlycanAssociation", Base.metadata,
@@ -46,7 +55,7 @@ class GlycopeptideMatch(PeptideBase):
 
     id = Column(Integer, primary_key=True)
     theoretical_glycopeptide_id = (Integer, ForeignKey(TheoreticalGlycopeptide.id))
-    hypothesis_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
+    hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
     hypothesis_sample_match = relationship(
         HypothesisSampleMatch, backref=backref("glycopeptide_matches", lazy='dynamic'))
 
@@ -120,7 +129,7 @@ class PeakGroupMatch(Base):
     __tablename__ = "PeakGroupMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    hypothesis_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
+    hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
     hypothesis_sample_match = relationship(HypothesisSampleMatch, backref=backref("peak_group_matches", lazy='dynamic'))
 
     theoretical_match_type = Column(Unicode(128), index=True)
@@ -163,6 +172,10 @@ class PeakGroupMatch(Base):
     mass_shift_type = Column(Integer, ForeignKey(MassShift.id))
 
     mass_shift_count = Column(Integer)
+
+    def __repr__(self):
+        rep = "<PeakGroupMatch {id} {ms1_score} {weighted_monoisotopic_mass} {theoretical_match_type}>"
+        return rep.format(**self.__dict__)
 
 
 class TempPeakGroupMatch(Base):

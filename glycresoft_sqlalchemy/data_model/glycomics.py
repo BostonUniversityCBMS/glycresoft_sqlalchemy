@@ -1,9 +1,10 @@
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import AbstractConcreteBase, declared_attr
-from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table
+from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table, PickleType
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 
 from .base import Base
+from .generic import MutableDict
 
 
 class MassShift(Base):
@@ -30,6 +31,7 @@ class GlycanBase(AbstractConcreteBase, Base):
     derivatization = Column(Unicode(64), index=True)
 
     composition = Column(Unicode(128), index=True)
+    monosaccaride_map = Column(MutableDict.as_mutable(PickleType))
 
     @declared_attr
     def hypothesis_id(self):

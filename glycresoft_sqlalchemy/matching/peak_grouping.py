@@ -14,7 +14,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 
 from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
-                          SampleRun,
+                          SampleRun, Hypothesis,
                           TheoreticalCompositionMap, MassShift, HypothesisSampleMatch,
                           PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch)
 
@@ -48,6 +48,9 @@ class Decon2LSPeakGrouper(PipelineModule):
         conn = session.connection()
         map_insert = Decon2LSPeakToPeakGroupMap.insert()
         group_insert = TDecon2LSPeakGroup.insert()
+        group_count = 0
+        sample_run_id = self.sample_run_id
+        session.query(Decon2LSPeakGroup).filter(Decon2LSPeakGroup.sample_run_id == sample_run_id).delete(synchronize_session=False)
         for count, row in enumerate(Decon2LSPeak.from_sample_run(session.query(
                 Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass).order_by(
                 Decon2LSPeak.intensity.desc()), self.sample_run_id)):
@@ -60,11 +63,15 @@ class Decon2LSPeakGrouper(PipelineModule):
 
             group = session.query(Decon2LSPeakGroup.id).filter(
                 Decon2LSPeakGroup.weighted_monoisotopic_mass.between(
-                    window_min, window_max)).first()
+                    window_min, window_max), Decon2LSPeakGroup.sample_run_id == sample_run_id).first()
             # If no group is within the window of acceptable masses, create a new group
             # with this peak as the seed
             if group is None:
-                result = conn.execute(group_insert, {"weighted_monoisotopic_mass": monoisotopic_mass})
+                result = conn.execute(group_insert, {
+                    "weighted_monoisotopic_mass": monoisotopic_mass,
+                    "sample_run_id": sample_run_id
+                    })
+                group_count += 1
                 group_id = result.lastrowid
             # Otherwise take the first group that matched.
             else:
@@ -74,7 +81,7 @@ class Decon2LSPeakGrouper(PipelineModule):
             # Many-to-many relationship allows a
             conn.execute(map_insert, {"peak_id": peak_id, "group_id": group_id})
             if count % 1000 == 0:
-                logger.info("%d peaks clustered", count)
+                logger.info("%d peaks clustered, %d groups", count, group_count)
         session.commit()
         session.close()
 
@@ -111,7 +118,7 @@ class Decon2LSPeakGrouper(PipelineModule):
                 count += 1
                 if count % 1000 == 0:
                     logger.info("%d groups completed", count)
-
+            pool.terminate()
         else:
             for count, group_id in enumerate(session.query(Decon2LSPeakGroup.id)):
                 task_fn(group_id)
@@ -212,14 +219,14 @@ def update_fit(group_id, database_manager, cen_alpha, cen_beta, expected_a_alpha
             centroid_scan_error=abs(group[1] - (cen_alpha + cen_beta * group[3])),
             a_peak_intensity_error=abs(group[2] - (expected_a_alpha + expected_a_beta * group[3])),
             gid=group_id)
+        session.close()
         return update
     except Exception, e:
         logger.exception("An error occured. %r", locals(), exc_info=e)
-    finally:
         session.close()
 
 
-def fill_out_group(group_id, database_manager, minimum_scan_count=1):
+def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_density_penalty_term=33.0):
     """Calculate peak group statistics for a given uninitialized :class:`Decon2LSPeakGroup`.
 
     Parameters
@@ -233,7 +240,7 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1):
 
     Returns
     -------
-    TYPE : Description
+    int : 0 if the group did not pass criteria, 1 otherwise
     """
     session = database_manager.session()
     try:
@@ -248,22 +255,23 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1):
         signal_noises = []
         a_to_a_plus_2_ratios = []
         for peak in group.peaks:
-                charge_states.add(peak.charge)
-                scan_ids.add(peak.scan_id)
-                peak_ids.append(peak.id)
-                intensities.append(peak.intensity)
-                full_width_half_maxes.append(peak.full_width_half_max)
-                monoisotopic_masses.append(peak.monoisotopic_mass)
-                signal_noises.append(peak.signal_to_noise)
-                a_to_a_plus_2_ratios.append(
-                    peak.monoisotopic_intensity / float(peak.monoisotopic_plus_2_intensity)
-                    if peak.monoisotopic_plus_2_intensity > 0
-                    else 0
-                )
+            charge_states.add(peak.charge)
+            scan_ids.add(peak.scan_id)
+            peak_ids.append(peak.id)
+            intensities.append(peak.intensity)
+            full_width_half_maxes.append(peak.full_width_half_max)
+            monoisotopic_masses.append(peak.monoisotopic_mass)
+            signal_noises.append(peak.signal_to_noise)
+            a_to_a_plus_2_ratios.append(
+                peak.monoisotopic_intensity / float(peak.monoisotopic_plus_2_intensity)
+                if peak.monoisotopic_plus_2_intensity > 0
+                else 0
+            )
         scan_count = len(scan_ids)
         if scan_count < minimum_scan_count:
             logger.info("Deleting %r, with %d scans", group, scan_count)
             session.delete(group)
+            session.close()
             return 0
 
         scan_ids = list(scan_ids)
@@ -281,10 +289,11 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1):
         weighted_monoisotopic_mass = sum(m * i for m, i in zip(
             monoisotopic_masses, intensities)) / float(sum(intensities))
 
-        scan_density = scan_count / float(max_scan - min_scan) if scan_count > 1 else 0
+        scan_density = scan_count / (float(max_scan - min_scan) + 1. +
+                                     (7. / float(max_scan - min_scan)))\
+            if scan_count > 1 else 0
 
         group.scan_density = scan_density
-        group.most_abundant = True
         group.average_signal_to_noise = average_signal_to_noise
         group.average_a_to_a_plus_2_ratio = average_a_to_a_plus_2_ratio
         group.centroid_scan_estimate = sum(scan_ids) / fcount
@@ -304,10 +313,10 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1):
         }
         session.add(group)
         session.commit()
+        session.close()
         return 1
     except Exception, e:
         logger.exception("An error occured. %r", locals(), exc_info=e)
-    finally:
         session.close()
 
 
@@ -366,7 +375,7 @@ def ppm_error(x, y):
 
 
 def match_peak_group(search_id, search_type, database_manager, observed_ions_manager,
-                     matching_tolerance, mass_shift_map, sample_run_id, hypothesis_match_id):
+                     matching_tolerance, mass_shift_map, sample_run_id, hypothesis_sample_match_id):
     session = database_manager.session()
     try:
         search_target = session.query(search_type).get(search_id)
@@ -383,9 +392,9 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                     matches.append((mass_match, mass_error, mass_shift, shift_count))
         params = []
         for mass_match, mass_error, mass_shift, shift_count in matches:
-            # logger.debug("Peak data: %r", mass_match.peak_data)
+            logger.debug("Peak data: %r", mass_match.peak_data)
             case = {
-                "hypothesis_match_id": hypothesis_match_id,
+                "hypothesis_sample_match_id": hypothesis_sample_match_id,
                 "theoretical_match_type": search_type.__name__,
                 "theoretical_match_id": search_id,
                 "charge_state_count": mass_match.charge_state_count,
@@ -410,6 +419,7 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
             params.append(case)
         session.bulk_insert_mappings(PeakGroupMatch, params)
         session.commit()
+        session.close()
         return len(params)
     except Exception, e:
         logger.exception("An exception occurred in match_peak_group, %r", locals(), exc_info=e)
@@ -431,14 +441,12 @@ class PeakGroupMatching(PipelineModule):
         lcms_database = PeakGroupDatabase(observed_ions_path)
         lcms_session = lcms_database.session()
         sample_run = lcms_session.query(SampleRun).get(sample_run_id or 1)
+        self.hypothesis_sample_match_id = hypothesis_sample_match_id
 
-        hypothesis_sample_match, created = get_or_create(
-            session, HypothesisSampleMatch,
-            id=hypothesis_sample_match_id,
-            target_hypothesis_id=hypothesis_id)
+        hypothesis_sample_match = session.query(HypothesisSampleMatch).get(self.hypothesis_sample_match_id)
         hypothesis_sample_match.sample_run_name = sample_run.name
         hypothesis_sample_match.parameters = {}
-        hypothesis_sample_match['mass_shift_map'] = mass_shift_map
+        hypothesis_sample_match.parameters['mass_shift_map'] = mass_shift_map
         session.add(hypothesis_sample_match)
         session.commit()
 
@@ -475,7 +483,7 @@ class PeakGroupMatching(PipelineModule):
             matching_tolerance=self.match_tolerance,
             mass_shift_map=self.mass_shift_map,
             sample_run_id=self.sample_run_id,
-            hypothesis_match_id=self.hypothesis_sample_match_id)
+            hypothesis_sample_match_id=self.hypothesis_sample_match_id)
         return fn
 
     def run(self):
@@ -562,7 +570,7 @@ class PeakGroupClassification(PipelineModule):
 
         id_stmt = data_model_session.query(
             PeakGroupMatch.peak_group_id).filter(
-            PeakGroupMatch.hypothesis_match_id == self.hypothesis_sample_match_id,
+            PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
             PeakGroupMatch.matched == True).selectable
 
         if not len(data_model_session.connection().execute(id_stmt).fetchmany(2)) == 2:
@@ -586,10 +594,11 @@ class PeakGroupClassification(PipelineModule):
 
         def transform(row):
             out = dict(zip(labels, row))
-            out.pop('id')
+            peak_group_match_id = out.pop('id')
             out["theoretical_match_type"] = None
             out['matched'] = False
-            out['hypothesis_match_id'] = self.hypothesis_sample_match_id
+            out['hypothesis_sample_match_id'] = self.hypothesis_sample_match_id
+            out['peak_group_id'] = peak_group_match_id
             return out
 
         conn = data_model_session.connection()
@@ -617,6 +626,7 @@ class PeakGroupClassification(PipelineModule):
         features = [
             T_TempPeakGroupMatch.c.charge_state_count,
             T_TempPeakGroupMatch.c.scan_density,
+            T_TempPeakGroupMatch.c.scan_count,
             T_TempPeakGroupMatch.c.total_volume,
             T_TempPeakGroupMatch.c.a_peak_intensity_error,
             T_TempPeakGroupMatch.c.centroid_scan_error,
@@ -629,7 +639,7 @@ class PeakGroupClassification(PipelineModule):
         conn = data_model_session.connection()
         feature_matrix = np.array(conn.execute(select(features)).fetchall(), dtype=np.float64)
         label_vector = np.array(conn.execute(select(label)).fetchall())
-        regression = LogisticRegression(penalty='l2')
+        regression = LogisticRegression(C=1e5, penalty='l2')
         if self.model_parameters is None:
             regression.fit(feature_matrix, label_vector.ravel())
         else:
@@ -665,8 +675,8 @@ class LCMSPeakClusterSearch(PipelineModule):
                  minimum_scan_count=1, hypothesis_sample_match_id=None,
                  search_type="TheoreticalGlycanComposition",
                  match_tolerance=2e-5, mass_shift_map=None, regression_parameters=None,
-                 n_processes=4):
-        self.database_path = database_path
+                 n_processes=4, **kwargs):
+        self.manager = self.manager_type(database_path)
         self.observed_ions_path = observed_ions_path
         self.hypothesis_id = hypothesis_id
         self.sample_run_id = sample_run_id
@@ -678,20 +688,31 @@ class LCMSPeakClusterSearch(PipelineModule):
         self.mass_shift_map = mass_shift_map
         self.n_processes = n_processes
         self.regression_parameters = regression_parameters
+        self.options = kwargs
 
     def run(self):
         grouper = Decon2LSPeakGrouper(
             self.observed_ions_path, self.sample_run_id, self.grouping_error_tolerance,
             self.minimum_scan_count, self.n_processes)
-        grouper.start()
+        if not self.options.get("skip_grouping", False):
+            grouper.start()
 
-        database_manager = self.manager_type(self.database_path)
+        database_manager = self.manager
         session = database_manager.session()
-
+        sample_name = grouper.manager.session().query(SampleRun).get(self.sample_run_id).name
         hypothesis_sample_match, created = get_or_create(
             session, HypothesisSampleMatch,
             id=self.hypothesis_sample_match_id,
             target_hypothesis_id=self.hypothesis_id)
+        if self.hypothesis_sample_match_id is not None:
+            if self.options.get("skip_matching", False):
+                hypothesis_sample_match.peak_group_matches.delete()
+            else:
+                hypothesis_sample_match.peak_group_matches.filter(~PeakGroupMatch.matched).delete()
+            session.commit()
+        hypothesis_sample_match.name = "{}_on_{}_ms1".format(
+            session.query(Hypothesis).get(self.hypothesis_id).name,
+            sample_name)
         session.add(hypothesis_sample_match)
         session.commit()
 
@@ -702,10 +723,12 @@ class LCMSPeakClusterSearch(PipelineModule):
             self.sample_run_id, self.hypothesis_sample_match_id,
             self.search_type, self.match_tolerance, self.mass_shift_map,
             self.n_processes)
-        matcher.start()
+
+        if not self.options.get("skip_matching", False):
+            matcher.start()
 
         classifier = PeakGroupClassification(
             self.database_path, self.observed_ions_path, self.hypothesis_id,
-            self.sample_run_id, self.hypothesis_sample_match_id, self.model_parameters)
+            self.sample_run_id, self.hypothesis_sample_match_id, self.regression_parameters)
 
         classifier.start()

@@ -27,6 +27,7 @@ class ScanBase(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     scan_type = Column(Unicode(20), index=True)
     peaks = relationship("Peak", backref="scan", lazy="dynamic")
+    decon2ls_peaks = relationship("Decon2LSPeak", backref="scan", lazy='dynamic')
     sample_run_id = Column(Integer, ForeignKey(SampleRun.id), index=True)
 
     __mapper_args__ = {
@@ -94,7 +95,7 @@ class Peak(Base):
 
     @classmethod
     def from_sample_run(self, query, sample_run_id):
-        return query.join(MSScan.peaks).filter(MSScan.sample_run_id == sample_run_id)
+        return query.join(ScanBase.peaks).filter(ScanBase.sample_run_id == sample_run_id)
 
     def __repr__(self):
         return "<Peak {} {} {} {}>".format(self.id, self.neutral_mass, self.intensity, self.charge)
@@ -114,12 +115,11 @@ class Decon2LSPeak(Base):
     full_width_half_max = Column(Numeric(12, 6, asdecimal=False))
     signal_to_noise = Column(Numeric(12, 6, asdecimal=False))
 
-    scan_id = Column(Integer, ForeignKey("ScanBase.id"), index=True)
-    scan = relationship('ScanBase', backref=backref("decon2ls_peaks", lazy='dynamic'))
+    scan_id = Column(Integer, ForeignKey(ScanBase.id), index=True)
 
     @classmethod
     def from_sample_run(self, query, sample_run_id):
-        return query.join(MSScan.decon2ls_peaks).filter(MSScan.sample_run_id == sample_run_id)
+        return query.join(ScanBase.decon2ls_peaks).filter(ScanBase.sample_run_id == sample_run_id)
 
     def __repr__(self):
         return "<Decon2LSPeak {} {} {} {}>".format(self.id, self.monoisotopic_mass, self.intensity, self.charge)

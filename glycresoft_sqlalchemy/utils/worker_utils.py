@@ -20,8 +20,7 @@ def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None,
         result_callback = ResultCounter()
     work_queue = []
     work_loader = (work_queue.append(worker_pool.apply_async(task_fn, [item])) for item in work_stream)
-
-    work_left = True    
+    work_left = True
     for i in range(initial_load):
         try:
             work_loader.next()

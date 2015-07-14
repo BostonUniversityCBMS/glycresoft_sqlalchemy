@@ -1,5 +1,6 @@
 import logging
 import time
+import pprint
 
 from sqlalchemy import (PickleType, Numeric, Unicode, Table,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
@@ -76,7 +77,7 @@ class PipelineModule(object):
 
     def _begin(self, *args, **kwargs):
         self.start_time = time.time()
-        logger.info("Begin %s", self.__class__.__name__)
+        logger.info("Begin %s\n%s\n", self.__class__.__name__, pprint.pformat(self.__dict__))
 
     def set_runner(self, callable):
         self.run = callable

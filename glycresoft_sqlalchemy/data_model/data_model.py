@@ -34,6 +34,8 @@ class Hypothesis(Base):
 
     hypothesis_type = Column(Unicode(56), index=True)
 
+    sample_matches = relationship("HypothesisSampleMatch", foreign_keys='HypothesisSampleMatch.target_hypothesis_id')
+
     def __repr__(self):
         return "<Hypothesis {0} {1} {2} proteins {3} glycans>".format(
             self.id, self.name, len(self.proteins), len(self.glycans))
@@ -112,7 +114,7 @@ class PeptideBase(AbstractConcreteBase, Base):
 
     @from_hypothesis.expression
     def from_hypothesis(self, hypothesis_id):
-        return self.protein_id == Protein.id & Protein.hypothesis_id == hypothesis_id
+        return (self.protein_id == Protein.id) & (Protein.hypothesis_id == hypothesis_id)
 
     def __len__(self):
         if self.sequence_length is not None:

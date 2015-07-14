@@ -6,8 +6,9 @@ import functools
 import os
 from multiprocessing import Pool
 
-from ..data_model import Hypothesis, Protein, TheoreticalGlycopeptide, Glycan, DatabaseManager
-from ..data_model.informed_proteomics import InformedPeptide, InformedTheoreticalGlycopeptideComposition
+from ..data_model import (Hypothesis, MS1GlycopeptideHypothesis, Protein, TheoreticalGlycopeptide, 
+                          Glycan, DatabaseManager, TheoreticalGlycopeptideCompositionGlycanAssociation)
+from ..data_model.informed_proteomics import (InformedPeptide, InformedTheoreticalGlycopeptideComposition)
 from ..data_model import PipelineModule
 from ..utils.worker_utils import async_worker_pool
 from .include_glycomics import MS1GlycanImporter
@@ -15,11 +16,11 @@ from .include_proteomics import ProteomeImporter
 from .glycan_utilities import get_glycan_combinations, merge_compositions
 from .utils import flatten
 
-from glycresoft_ms2_classification.structure import sequence
-from glycresoft_ms2_classification.structure import modification
-from glycresoft_ms2_classification.structure import composition
-from glycresoft_ms2_classification.structure import constants
-from glycresoft_ms2_classification.structure.stub_glycopeptides import StubGlycopeptide
+from ..structure import sequence
+from ..structure import modification
+from ..structure import composition
+from ..structure import constants
+from ..structure.stub_glycopeptides import StubGlycopeptide
 
 logger = logging.getLogger(__name__)
 
@@ -65,15 +66,16 @@ def glycosylate_callback(peptide, session, hypothesis_id, position_selector):
                     glycan_composition.append(glycan.composition)
                 glycan_composition_string = merge_compositions(glycan_composition)
                 target.glycan = glycan_composition_string
-                result.append(target)
+                result.append((target, [g.id for g in glycans]))
     return result
 
 
 def make_theoretical_glycopeptide(peptide, position_selector, database_manager, hypothesis_id):
     try:
         session = database_manager.session()
+        conn = session.connection()
         glycoforms = glycosylate_callback(peptide, session, hypothesis_id, position_selector)
-        for glycoform in glycoforms:
+        for glycoform, glycan_ids in glycoforms:
             informed_glycopeptide = InformedTheoreticalGlycopeptideComposition(
                 protein_id=peptide.protein_id,
                 base_peptide_sequence=peptide.base_peptide_sequence,
@@ -87,6 +89,10 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
                 other=peptide.other,
                 glycan_composition_str=glycoform.glycan)
             session.add(informed_glycopeptide)
+            session.flush()
+            conn.execute(
+                TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
+                [{'peptide_id': informed_glycopeptide.id, 'glycan_id': gid} for gid in glycan_ids])
         if len(glycoforms) > 0:
             session.commit()
             session.close()
