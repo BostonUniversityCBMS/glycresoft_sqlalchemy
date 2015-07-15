@@ -6,14 +6,14 @@ except:
 from ..data_model import DatabaseManager, Glycan, TheoreticalGlycopeptide, Protein, GlycopeptideMatch, Hypothesis
 from ..data_model import PipelineModule
 
-from glycresoft_ms2_classification.structure import glycans as ms1_glycomics
+from ..structure import glycans as ms1_glycomics
 
 glycan_file_type_map = {
     "hypothesis": ms1_glycomics.GlycanHypothesis,
     "ms1_matches": ms1_glycomics.GlycanMS1Results
 }
 
-glycan_composition_string = ms1_glycomics.Glycan.glycan_composition_string
+glycan_composition_string = ms1_glycomics.SimpleGlycan.glycan_composition_string
 
 
 class MS1GlycanImporter(PipelineModule):

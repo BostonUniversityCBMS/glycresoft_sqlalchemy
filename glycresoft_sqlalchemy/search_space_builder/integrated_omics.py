@@ -6,7 +6,7 @@ import functools
 import os
 from multiprocessing import Pool
 
-from ..data_model import (Hypothesis, MS1GlycopeptideHypothesis, Protein, TheoreticalGlycopeptide, 
+from ..data_model import (Hypothesis, MS1GlycopeptideHypothesis, Protein, TheoreticalGlycopeptide,
                           Glycan, DatabaseManager, TheoreticalGlycopeptideCompositionGlycanAssociation)
 from ..data_model.informed_proteomics import (InformedPeptide, InformedTheoreticalGlycopeptideComposition)
 from ..data_model import PipelineModule
@@ -28,6 +28,8 @@ Sequence = sequence.Sequence
 Modification = modification.Modification
 ModificationTable = modification.ModificationTable
 Composition = composition.Composition
+
+water = Composition("H2O").mass
 
 
 def make_name(mzid_path, glycan_path):
@@ -60,8 +62,9 @@ def glycosylate_callback(peptide, session, hypothesis_id, position_selector):
                 for site in sites:
                     glycan = glycan_iter.next()
                     hexnac = Modification("HexNAc")
-                    hexnac.mass = glycan.mass
-
+                    hexnac.mass = glycan.mass - water
+                    for mod in target[site][1]:
+                        target.drop_modification(site, mod)
                     target.add_modification(site, hexnac)
                     glycan_composition.append(glycan.composition)
                 glycan_composition_string = merge_compositions(glycan_composition)

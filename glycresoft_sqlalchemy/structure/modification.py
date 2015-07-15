@@ -21,15 +21,17 @@ title_cleaner = re.compile(
 
 is_mass_delta = re.compile(r"^Delta:")
 
+
 def composition_delta_parser(formula):
     elemental_composition = {}
     components = re.findall(r"([A-Za-z0-9]+)\(([\-0-9]+)\)", formula)
     for element, amount in components:
-        parts =re.search(r"(?P<isotope>\d*)(?P<element>.*)", element).groupdict()
-        if parts['isotope'] !='':
+        parts = re.search(r"(?P<isotope>\d*)(?P<element>.*)", element).groupdict()
+        if parts['isotope'] != '':
             element = "{element}[{isotope}]".format(**parts)
         elemental_composition[element] = amount
     return elemental_composition
+
 
 def extract_targets_from_string(target_string):
     '''Parses the Protein Prospector modification name string to

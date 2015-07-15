@@ -5,13 +5,11 @@ try:
     logger = logging.getLogger("include_proteomics")
 except:
     pass
-from glycresoft_ms2_classification.proteomics import mzid
-from glycresoft_ms2_classification.structure.parser import strip_modifications
 
 from ..data_model import DatabaseManager, Hypothesis, Protein
-from ..data_model.informed_proteomics import InformedPeptide
 from ..data_model import PipelineModule
 from ..proteomics.mzid_sa import Proteome as MzIdentMLProteome
+
 
 class ProteomeImporter(PipelineModule):
     manager_type = DatabaseManager

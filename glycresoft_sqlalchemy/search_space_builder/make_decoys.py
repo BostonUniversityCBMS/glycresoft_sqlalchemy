@@ -4,8 +4,8 @@ import functools
 import itertools
 import logging
 
-from glycresoft_ms2_classification.structure import sequence
-from glycresoft_ms2_classification.structure.parser import sequence_tokenizer_respect_sequons, sequence_tokenizer
+from ..structure import sequence
+from ..structure.parser import sequence_tokenizer_respect_sequons, sequence_tokenizer
 
 from ..data_model import TheoreticalGlycopeptide, Hypothesis, Protein, DatabaseManager
 from ..data_model import PipelineModule

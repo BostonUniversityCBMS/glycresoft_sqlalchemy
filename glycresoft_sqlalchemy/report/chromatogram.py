@@ -28,13 +28,14 @@ import numpy as np
 from glycresoft_sqlalchemy.data_model import DatabaseManager, Decon2LSPeakGroup, PeakGroupMatch, Hypothesis
 
 
-def draw_chromatogram(peak_grouping, ax=None, **kwargs):
+def draw_chromatogram(peak_grouping, ax=None, set_bounds=True, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(1)
     intensity = peak_grouping.peak_data['intensities']
     scans = peak_grouping.peak_data['scan_ids']
     if len(intensity) != len(scans):
         # Don't try to collapse multiple peaks per scan yet
+        print "Multiple peaks per scan detected"
         return ax
     color = kwargs.get('color')
     intensity, scans = map(np.array, zip(*sorted(zip(intensity, scans), key=lambda x: x[1])))
@@ -43,4 +44,7 @@ def draw_chromatogram(peak_grouping, ax=None, **kwargs):
     points[scans] = intensity
     ax.fill_between(time, points, alpha=0.5, color=color)
     ax.plot(time, points, color=color, alpha=0.7)
+    if set_bounds:
+        ax.set_xlim(0, time.max() + 200)
+        ax.set_ylim(0, points.max() + 200)
     return ax

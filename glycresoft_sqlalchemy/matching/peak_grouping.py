@@ -12,6 +12,7 @@ from sqlalchemy import func, bindparam, select
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
 
 from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
                           SampleRun, Hypothesis,
@@ -289,9 +290,7 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_densit
         weighted_monoisotopic_mass = sum(m * i for m, i in zip(
             monoisotopic_masses, intensities)) / float(sum(intensities))
 
-        scan_density = scan_count / (float(max_scan - min_scan) + 1. +
-                                     (7. / float(max_scan - min_scan)))\
-            if scan_count > 1 else 0
+        scan_density = scan_count / (float(max_scan - min_scan) + 15.) if scan_count > 1 else 0
 
         group.scan_density = scan_density
         group.average_signal_to_noise = average_signal_to_noise
@@ -392,7 +391,7 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                     matches.append((mass_match, mass_error, mass_shift, shift_count))
         params = []
         for mass_match, mass_error, mass_shift, shift_count in matches:
-            logger.debug("Peak data: %r", mass_match.peak_data)
+            # logger.debug("Peak data: %r", mass_match.peak_data)
             case = {
                 "hypothesis_sample_match_id": hypothesis_sample_match_id,
                 "theoretical_match_type": search_type.__name__,
@@ -462,6 +461,7 @@ class PeakGroupMatching(PipelineModule):
         self.n_processes = n_processes
         self.lcms_database = lcms_database
         self.search_type = TheoreticalCompositionMap[search_type]
+        session.close()
 
     def stream_ids(self):
         session = self.manager.session()
@@ -506,17 +506,22 @@ class PeakGroupMatching(PipelineModule):
         session.close()
 
 
+ClassifierType = LogisticRegression
+
+
 class PeakGroupClassification(PipelineModule):
     def __init__(self, database_path, observed_ions_path, hypothesis_id,
                  sample_run_id=None, hypothesis_sample_match_id=None,
-                 model_parameters=None):
+                 model_parameters=None, minimum_mass=1500, maximum_mass=15000):
         self.database_manager = self.manager_type(database_path)
         self.lcms_database = PeakGroupDatabase(observed_ions_path)
         self.hypothesis_id = hypothesis_id
         self.sample_run_id = sample_run_id
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.model_parameters = model_parameters
-        self.regression = None
+        self.classifier = None
+        self.minimum_mass = minimum_mass
+        self.maximum_mass = maximum_mass
 
     def transfer_peak_groups(self):
         """Copy Decon2LSPeakGroup entries from :attr:`observed_ions_manager`
@@ -527,6 +532,7 @@ class PeakGroupClassification(PipelineModule):
         database entries as full PeakGroupMatch rows with :attr:`PeakGroupMatch.matched` == `False`
         for post-processing.
         """
+        self.clear_peak_groups()
         data_model_session = self.database_manager.session()
         lcms_database_session = self.lcms_database.session()
         labels = [
@@ -551,7 +557,8 @@ class PeakGroupClassification(PipelineModule):
         ]
         stmt = lcms_database_session.query(
                 Decon2LSPeakGroup).filter(
-                Decon2LSPeakGroup.sample_run_id == self.sample_run_id)
+                Decon2LSPeakGroup.sample_run_id == self.sample_run_id,
+                Decon2LSPeakGroup.weighted_monoisotopic_mass.between(self.minimum_mass, self.maximum_mass))
         batch = lcms_database_session.connection().execute(stmt.selectable)
 
         conn = data_model_session.connection()
@@ -639,21 +646,21 @@ class PeakGroupClassification(PipelineModule):
         conn = data_model_session.connection()
         feature_matrix = np.array(conn.execute(select(features)).fetchall(), dtype=np.float64)
         label_vector = np.array(conn.execute(select(label)).fetchall())
-        regression = LogisticRegression(C=1e5, penalty='l2')
+        classifier = ClassifierType()
         if self.model_parameters is None:
-            regression.fit(feature_matrix, label_vector.ravel())
+            classifier.fit(feature_matrix, label_vector.ravel())
         else:
-            regression.coefs_ = np.asarray(self.model_parameters)
-        probabilities = regression.predict_proba(feature_matrix)
+            classifier.coef_ = np.asarray(self.model_parameters)
+        scores = classifier.predict_proba(feature_matrix)[:, 1]
         i = 0
         for group_id, in conn.execute(select(ids)):
             conn.execute(
                 TPeakGroupMatch.update().where(
                     TPeakGroupMatch.c.peak_group_id == group_id).values(
-                    ms1_score=probabilities[i, 0]))
+                    ms1_score=scores[i]))
             i += 1
         data_model_session.commit()
-        return regression
+        return classifier
 
     def clear_peak_groups(self):
         """Delete all TempPeakGroupMatch rows.
@@ -665,7 +672,9 @@ class PeakGroupClassification(PipelineModule):
 
     def run(self):
         self.transfer_peak_groups()
-        self.regression = self.fit_regression()
+        self.classifier = self.fit_regression()
+        logger.info("Classes: %r", self.classifier.classes_)
+        logger.info("Coefficients: %r", self.classifier.coef_)
         self.clear_peak_groups()
 
 
@@ -705,10 +714,11 @@ class LCMSPeakClusterSearch(PipelineModule):
             id=self.hypothesis_sample_match_id,
             target_hypothesis_id=self.hypothesis_id)
         if self.hypothesis_sample_match_id is not None:
-            if self.options.get("skip_matching", False):
-                hypothesis_sample_match.peak_group_matches.delete()
+            if not self.options.get("skip_matching", False):
+                hypothesis_sample_match.peak_group_matches.delete(synchronize_session=False)
             else:
-                hypothesis_sample_match.peak_group_matches.filter(~PeakGroupMatch.matched).delete()
+                hypothesis_sample_match.peak_group_matches.filter(
+                    PeakGroupMatch.matched == False).delete(synchronize_session=False)
             session.commit()
         hypothesis_sample_match.name = "{}_on_{}_ms1".format(
             session.query(Hypothesis).get(self.hypothesis_id).name,

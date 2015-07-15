@@ -12,7 +12,7 @@ from .peptide_utilities import generate_peptidoforms, ProteinFastaFileParser, Si
 from .glycan_utilities import get_glycan_combinations, merge_compositions
 from .utils import flatten
 
-from glycresoft_ms2_classification.structure import composition
+from ..structure import composition
 
 Composition = composition.Composition
 
@@ -22,6 +22,8 @@ format_mapping = {
 }
 
 logger = logging.getLogger("naive_glycopeptide_hypothesis")
+
+water = Composition("H2O").mass
 
 
 def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id):
@@ -33,15 +35,16 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id)
         for glycan_set in get_glycan_combinations(
                 database_manager.session(), peptide.count_glycosylation_sites, hypothesis_id):
             glycan_composition_str = merge_compositions([(g.composition) for g in glycan_set])
-            glycan_mass = sum([(g.mass) for g in glycan_set]) - (Composition("H2O").mass * len(glycan_set))
+            glycan_mass = sum([(g.mass) for g in glycan_set]) - (water * len(glycan_set))
             glycoform = TheoreticalGlycopeptideComposition(
                 base_peptide_sequence=peptide.base_peptide_sequence,
+                modified_peptide_sequence=peptide.modified_peptide_sequence,
                 protein_id=peptide.protein_id,
                 start_position=peptide.start_position,
                 end_position=peptide.end_position,
                 peptide_modifications=peptide.peptide_modifications,
                 count_missed_cleavages=peptide.count_missed_cleavages,
-                count_glycosylation_sites=peptide.count_glycosylation_sites,
+                count_glycosylation_sites=len(glycan_set),
                 glycosylation_sites=peptide.glycosylation_sites,
                 sequence_length=peptide.sequence_length,
                 calculated_mass=peptide.calculated_mass + glycan_mass,
@@ -132,7 +135,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
             logger.info("Digested %s", protein)
             session.commit()
 
-        session.query(PeptideBase).filter(PeptideBase.count_glycosylation_sites == None).delete('fetch')
+        session.query(NaivePeptide).filter(NaivePeptide.count_glycosylation_sites == None).delete('fetch')
         session.commit()
 
         work_stream = self.stream_peptides()
@@ -188,7 +191,7 @@ class NaiveGlycopeptideHypothesiMS1LegacyCSV(PipelineModule):
 
         self.protein_ids = protein_ids
         if output_path is None:
-            output_path = os.path.splitext(database_path)[0] + '.glycopeptides.csv'
+            output_path = os.path.splitext(database_path)[0] + '.glycopeptides_compositions.csv'
         self.output_path = output_path
         hypothesis = session.query(Hypothesis).filter(Hypothesis.id == self.hypothesis_id).first()
         self.monosaccharide_identities = hypothesis.parameters['monosaccharide_identities']
@@ -229,6 +232,6 @@ def glycopeptide_to_columns(glycopeptide):
     r = [glycopeptide.calculated_mass, 0, glycopeptide.glycan_composition_str] +\
          glycopeptide.glycan_composition_str[1:-1].split(";") +\
         ["/0", 0,
-         glycopeptide.modified_peptide_sequence, "", 0, glycopeptide.glycopeptide_sequence.count("HexNAc"),
+         glycopeptide.modified_peptide_sequence, "", 0, glycopeptide.count_glycosylation_sitesnt,
          glycopeptide.start_position, glycopeptide.end_position, glycopeptide.protein_id]
     return r
