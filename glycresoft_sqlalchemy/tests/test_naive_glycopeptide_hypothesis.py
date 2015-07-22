@@ -17,7 +17,7 @@ def test_main():
     constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (Q)", "Deamidated (N)"])
     enzyme = 'trypsin'
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
-        "./datafiles/naive_glycopeptide.db", "test", "./datafiles/proteins.fasta",
+        "./datafiles/naive_glycopeptide.db", "test", "./datafiles/proteins_agp_only.fasta",
         None, "./datafiles/human_n_glycan.csv", 'csv', constant_mods,
         variable_mods, enzyme, n_processes=6)
     job.start()

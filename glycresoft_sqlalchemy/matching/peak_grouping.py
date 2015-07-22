@@ -4,6 +4,7 @@ import functools
 import itertools
 try:
     logger = logging.getLogger("peak_grouping")
+    logging.basicConfig(level='DEBUG')
 except Exception, e:
     logging.exception("Logger could not be initialized", exc_info=e)
     raise e
@@ -12,7 +13,6 @@ from sqlalchemy import func, bindparam, select
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import LinearSVC
 
 from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
                           SampleRun, Hypothesis,
@@ -32,12 +32,16 @@ class Decon2LSPeakGrouper(PipelineModule):
     and calculating trends across groups.
     '''
     def __init__(self, database_path, sample_run_id=1, grouping_error_tolerance=8e-5,
-                 minimum_scan_count=1, n_processes=4):
+                 minimum_scan_count=1, max_charge_state=8,
+                 minimum_abundance_ratio=0.01, minimum_mass=1200., n_processes=4):
         self.manager = self.manager_type(database_path)
         self.grouping_error_tolerance = grouping_error_tolerance
         self.minimum_scan_count = minimum_scan_count
         self.n_processes = n_processes
         self.sample_run_id = sample_run_id
+        self.max_charge_state = max_charge_state
+        self.minimum_mass = minimum_mass
+        self.minimum_abundance_ratio = minimum_abundance_ratio
 
     def group_peaks(self):
         '''
@@ -49,11 +53,17 @@ class Decon2LSPeakGrouper(PipelineModule):
         conn = session.connection()
         map_insert = Decon2LSPeakToPeakGroupMap.insert()
         group_insert = TDecon2LSPeakGroup.insert()
+
         group_count = 0
         sample_run_id = self.sample_run_id
-        session.query(Decon2LSPeakGroup).filter(Decon2LSPeakGroup.sample_run_id == sample_run_id).delete(synchronize_session=False)
+        session.query(Decon2LSPeakGroup).filter(
+            Decon2LSPeakGroup.sample_run_id == sample_run_id).delete(
+            synchronize_session=False)
         for count, row in enumerate(Decon2LSPeak.from_sample_run(session.query(
-                Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass).order_by(
+                Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass).filter(
+                Decon2LSPeak.charge < self.max_charge_state,
+                Decon2LSPeak.monoisotopic_mass > self.minimum_mass
+                ).order_by(
                 Decon2LSPeak.intensity.desc()), self.sample_run_id)):
             peak_id, monoisotopic_mass = row
 
@@ -114,8 +124,6 @@ class Decon2LSPeakGrouper(PipelineModule):
             pool = multiprocessing.Pool(self.n_processes)
             count = 0
             for group in pool.imap_unordered(task_fn, self.stream_group_ids(), chunksize=25):
-                # if group is not None:
-                #     session.add(group)
                 count += 1
                 if count % 1000 == 0:
                     logger.info("%d groups completed", count)
@@ -123,8 +131,6 @@ class Decon2LSPeakGrouper(PipelineModule):
         else:
             for count, group_id in enumerate(session.query(Decon2LSPeakGroup.id)):
                 task_fn(group_id)
-                # if group is not None:
-                #     session.add(group)
                 if count % 1000 == 0:
                     logger.info("%d groups completed", count)
 
@@ -227,7 +233,8 @@ def update_fit(group_id, database_manager, cen_alpha, cen_beta, expected_a_alpha
         session.close()
 
 
-def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_density_penalty_term=33.0):
+def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_density_penalty_term=33.0,
+                   minimum_abundance_ratio=0.01):
     """Calculate peak group statistics for a given uninitialized :class:`Decon2LSPeakGroup`.
 
     Parameters
@@ -255,7 +262,15 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_densit
         monoisotopic_masses = []
         signal_noises = []
         a_to_a_plus_2_ratios = []
+
+        max_intensity = float(max(p.intensity for p in group.peaks))
+
+        remove_peaks = {}
+
         for peak in group.peaks:
+            if minimum_abundance_ratio > peak.intensity / max_intensity:
+                remove_peaks.add(peak.id)
+                continue
             charge_states.add(peak.charge)
             scan_ids.add(peak.scan_id)
             peak_ids.append(peak.id)
@@ -275,6 +290,7 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_densit
             session.close()
             return 0
 
+        group.peaks = [p for p in group.peaks if p.id not in remove_peaks]
         scan_ids = list(scan_ids)
         count = len(monoisotopic_masses)
         fcount = float(count)
@@ -413,7 +429,8 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                 "matched": True,
                 "mass_shift_type": mass_shift.name,
                 "mass_shift_count": shift_count,
-                "peak_group_id": mass_match.id
+                "peak_group_id": mass_match.id,
+                "peak_ids": mass_match.peak_ids
             }
             params.append(case)
         session.bulk_insert_mappings(PeakGroupMatch, params)

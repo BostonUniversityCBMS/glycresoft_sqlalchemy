@@ -3,7 +3,7 @@
 from glycresoft_ms2_classification.structure import sequence
 
 
-from sqlalchemy.ext.declarative import declarative_base, AbstractConcreteBase, declared_attr
+from sqlalchemy.ext.declarative import AbstractConcreteBase, declared_attr
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.hybrid import hybrid_method
@@ -25,6 +25,7 @@ class Hypothesis(Base):
     name = Column(Unicode(128), default=u"")
     proteins = relationship("Protein", backref=backref("hypothesis", order_by=id),
                             collection_class=attribute_mapped_collection('name'))
+    proteins_query = relationship("Protein", lazy='dynamic')
 
     glycans = relationship(Glycan, backref=backref("hypothesis", order_by=id),
                            collection_class=attribute_mapped_collection('name'))

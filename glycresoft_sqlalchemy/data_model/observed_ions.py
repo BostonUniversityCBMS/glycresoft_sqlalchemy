@@ -56,6 +56,7 @@ class TandemScan(ScanBase):
     id = Column(Integer, ForeignKey(ScanBase.id), primary_key=True)
     precursor_id = Column(Integer, ForeignKey("Peak.id"), index=True)
     precursor_neutral_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+    precursor_charge_state = Column(Integer)
 
     def __repr__(self):
         return "<{} {} {} {}>".format(self.scan_type, self.id, self.precursor_neutral_mass, self.peaks.count())
@@ -149,7 +150,6 @@ class Decon2LSPeakGroup(Base):
     peak_ids = Column(MutableList.as_mutable(PickleType))
     peak_data = Column(MutableDict.as_mutable(PickleType))
 
-    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
     matched = Column(Boolean, index=True)
     peaks = relationship(Decon2LSPeak, secondary="Decon2LSPeakToPeakGroupMap", lazy='dynamic')
 

@@ -84,7 +84,7 @@ class Task(object):
         self.log_file_path = kwargs.get("log_file_path", "%s.log" % self.id)
 
     def start(self):
-        self.process = Process(target=configure_log, args=("", self.task_fn, self.args))
+        self.process = Process(target=configure_log, args=(self.log_file_path, self.task_fn, self.args))
         self.state = RUNNING
         self.process.start()
 

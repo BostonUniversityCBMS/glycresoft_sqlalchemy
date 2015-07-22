@@ -1,0 +1,7 @@
+{%- extends "layout.templ" %}
+
+{% block body %}
+    {% with protein = query(Protein).filter(Protein.id==1).first() %}
+        {% include "protein_view.templ" %}
+    {% endwith %}
+{% endblock %}

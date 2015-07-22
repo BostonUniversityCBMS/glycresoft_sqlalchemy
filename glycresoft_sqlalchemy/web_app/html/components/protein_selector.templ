@@ -1,0 +1,7 @@
+<div>
+    <select name="protein-chooser" class='protein-selection'>
+        {% for protein_name, protein in hypothesis.proteins.items() %}
+            <option value='{{protein.id}}'>{{protein_name}}</option>
+        {% endfor %}
+    </select>
+</div>

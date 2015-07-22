@@ -1,11 +1,22 @@
 import os
 import time
+import logging
+
+logger = logging.getLogger("web_app.report")
+
 
 from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch, DatabaseManager
-
+from glycresoft_sqlalchemy.report.plot_glycoforms import plot_glycoforms_svg
 from jinja2 import Environment, PackageLoader, Undefined, FileSystemLoader
 from jinja2 import nodes
 from jinja2.ext import Extension
+try:
+    from cStringIO import StringIO
+except:
+    from io import StringIO
+
+from matplotlib import rcParams as mpl_params
+from matplotlib import pyplot as plt
 
 
 def ms2_score_histogram(session, hypothesis_id):
@@ -14,17 +25,33 @@ def ms2_score_histogram(session, hypothesis_id):
         Protein.hypothesis_id == hypothesis_id)
 
 
-def group_glycoforms(query):
-    q = query.order_by(
-            GlycopeptideMatch.q_value.asc()).order_by(
-            GlycopeptideMatch.base_peptide_sequence,
-            GlycopeptideMatch.glycan_composition_str)
-    return q
-
-
 def q_value_below(query, threshold):
     q = query.filter(GlycopeptideMatch.q_value <= threshold)
     return q
+
+
+def svg_plot(figure, **kwargs):
+    figure.patch.set_visible(False)
+    buffer = StringIO()
+    plt.savefig(buffer, format="svg", **kwargs)
+    return buffer.getvalue()
+
+
+def mass_histogram(iterable, **kwargs):
+    figure = plt.figure()
+    plt.hist(iterable, normed=True, **kwargs)
+    ax = figure.axes[0]
+    ax.set_xlabel("Mass")
+    ax.set_ylabel("Frequency")
+    return svg_plot(figure)
+
+
+def plot_glycoforms(protein):
+    old_size = mpl_params['figure.figsize']
+    mpl_params['figure.figsize'] = 12, 8
+    svg = plot_glycoforms_svg(protein)
+    mpl_params['figure.figsize'] = old_size
+    return svg
 
 
 def prepare_environment(env=None):
@@ -38,9 +65,33 @@ def prepare_environment(env=None):
         env.loader = loader
         env.add_extension(FragmentCacheExtension)
     env.fragment_cache = dict()
-    env.filters["group_glycoforms"] = group_glycoforms
     env.filters["q_value_below"] = q_value_below
+    env.filters["n_per_row"] = n_per_row
+    env.filters['highlight_sequence_site'] = highlight_sequence_site
+    env.filters['plot_glycoforms'] = plot_glycoforms_svg
+    env.filters['mass_histogram'] = mass_histogram
+    env.globals
     return env
+
+
+def highlight_sequence_site(amino_acid_sequence, site_list, site_type_list):
+    if isinstance(site_type_list, basestring):
+        site_type_list = [site_type_list for i in site_list]
+    sequence = list(amino_acid_sequence)
+    for site, site_type in zip(site_list, site_type_list):
+        sequence[site] = "<span class='{}'>{}</span>".format(site_type, sequence[site])
+    return sequence
+
+
+def n_per_row(sequence, n=60):
+    row_buffer = []
+    i = 0
+    while i < len(sequence):
+        row_buffer.append(
+            ''.join(sequence[i:(i + n)])
+            )
+        i += n
+    return '<br>'.join(row_buffer)
 
 
 class FragmentCacheExtension(Extension):

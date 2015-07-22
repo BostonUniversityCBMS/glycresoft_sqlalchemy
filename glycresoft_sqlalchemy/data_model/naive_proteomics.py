@@ -43,4 +43,5 @@ class TheoreticalGlycopeptideComposition(PeptideBase):
 
     __mapper_args__ = {
         'polymorphic_identity': u'TheoreticalGlycopeptideComposition',
+        'concrete': True
     }

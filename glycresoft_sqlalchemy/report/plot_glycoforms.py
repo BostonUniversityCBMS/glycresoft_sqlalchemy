@@ -115,9 +115,10 @@ def draw_layers(layers, protein):
     figure, ax = plt.subplots(1, 1)
     i = 0
     id_mapper = IDMapper()
+    font_size = 4.
     for i, aa in enumerate(protein.protein_sequence):
-        ax.text(-0.2 + i, 5.5, aa, family="monospace", fontsize=4)
-    rect = mpatches.Rectangle((0, 0), i, 5, facecolor='red', alpha=0.5)
+        ax.text(-0.2 + i, 2.5, aa, family="monospace", fontsize=font_size)
+    rect = mpatches.Rectangle((0, 0), (i + 0.5), 2, facecolor='red', alpha=0.5)
     id_mapper.add("main-sequence-%d", rect, {'main-sequence': True})
     ax.add_patch(rect)
     if i != 0:
@@ -125,11 +126,14 @@ def draw_layers(layers, protein):
         ax.set_xlim(-10, i + 10)
     else:
         defer_x_bounds = True
-    layer_height = 6
+    layer_height = 2.8
     row_width = 80
-    y_step = -8
-    cur_y = -5
+    y_step = -3.5
+    cur_y = -3
     cur_position = 0
+    text_shift = 0.05
+    font_size = 5.
+    mod_width = 1.5
     next_row = cur_position + row_width
 
     # Track the most extreme sequence for guessing the plot bounds when the
@@ -156,12 +160,12 @@ def draw_layers(layers, protein):
                     color = get_color(pos[1][0].name)
                     facecolor, edgecolor = lighten(color), darken(color)
                     mod_patch = mpatches.Rectangle(
-                        (gpm.start_position + i, cur_y), width=1, height=layer_height,
+                        (gpm.start_position + i - 0.2, cur_y), width=mod_width, height=layer_height,
                         facecolor=facecolor, edgecolor=edgecolor,
                         alpha=min(max(gpm.ms2_score * 2, 0.4), 0.8))
                     id_mapper.add("modification-%d", mod_patch, {"modification-type": pos[1][0].name, "parent": label})
                     ax.add_patch(mod_patch)
-                    ax.text(gpm.start_position + i + .13, cur_y, str(pos[1][0])[0], fontsize=5., family='monospace')
+                    ax.text(gpm.start_position + i - text_shift, cur_y + 0.2, str(pos[1][0])[0], fontsize=font_size, family='monospace')
         cur_y += y_step
     ax.set_ylim(cur_y - 100, 50)
     if defer_x_bounds:
@@ -180,11 +184,13 @@ def plot_glycoforms(protein, filterfunc=lambda x: x.ms2_score > 0.2):
     return ax, id_mapper
 
 
-def plot_glycoforms_svg(protein, filterfunc=lambda x: x):
+def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch.ms2_score > 0.2)):
     ax, id_mapper = plot_glycoforms(protein, filterfunc)
 
     fig = ax.get_figure()
     fig.tight_layout(pad=0.2)
+    fig.patch.set_visible(False)
+    ax.patch.set_visible(False)
     buff = StringIO()
     fig.savefig(buff, format='svg')
     root, ids = ET.XMLID(buff.getvalue())
@@ -193,6 +199,16 @@ def plot_glycoforms_svg(protein, filterfunc=lambda x: x):
         element = ids[id]
         element.attrib.update({("data-" + k): str(v) for k, v in attributes.items()})
         element.attrib['class'] = id.rsplit('-')[0]
+    min_x, min_y, max_x, max_y = map(int, root.attrib["viewBox"].split(" "))
+    min_y += 100
+    min_x += 50
+    view_box = ' '.join(map(str, (min_x, min_y, max_x, max_y)))
+    root.attrib["viewBox"] = view_box
+    width = int(root.attrib["width"][:-2]) * 2
+    root.attrib["width"] = "%dpt" % width
+    height = int(root.attrib["height"][:-2]) * 2
+    root.attrib["height"] = "%dpt" % height
+
     svg = ET.tostring(root)
     plt.close()
     return svg

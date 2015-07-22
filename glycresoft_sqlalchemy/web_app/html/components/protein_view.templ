@@ -1,0 +1,31 @@
+<div class='row'>
+    <div class='col s5'>
+        <h4>>{{protein.name}}</h4>
+        <code>
+            {{
+            protein.protein_sequence | highlight_sequence_site(protein.glycosylation_sites, "glycosylation-site") | n_per_row(60)
+            }}
+        </code>
+    </div>
+    <div class='col s6'>
+    <h3>Glycosylation Sites Occupied</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Glycosylation Site</th>
+                <th>Microheterogeneity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for site in protein.glycosylation_sites %}
+            <tr>
+                <td>{{site}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+<div class='row'>
+    {{protein|plot_glycoforms}}    
+</div>

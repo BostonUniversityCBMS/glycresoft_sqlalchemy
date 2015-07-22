@@ -22,6 +22,8 @@ class HypothesisSampleMatch(Base):
     sample_run_name = Column(Unicode(128))
     target_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id))
     decoy_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id))
+    target_hypothesis = relationship(Hypothesis, foreign_keys=[target_hypothesis_id])
+    decoy_hypothesis = relationship(Hypothesis, foreign_keys=[decoy_hypothesis_id])
 
     def results(self):
         if self.glycopeptide_matches.count() > 0:

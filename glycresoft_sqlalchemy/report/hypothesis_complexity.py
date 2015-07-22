@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 
 matplotlib.rcParams['figure.figsize'] = 10, 8
 
+
 def fetch(database_path, hypothesis_id):
     session = DatabaseManager(database_path).session()
     qry = session.query(TheoreticalGlycopeptide.calculated_mass,

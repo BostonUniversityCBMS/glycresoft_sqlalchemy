@@ -4,7 +4,7 @@ import itertools
 import re
 import logging
 
-from ..data_model import DatabaseManager
+from ..data_model import DatabaseManager, PipelineModule
 from ..data_model.observed_ions import SampleRun, MSScan, TandemScan, Peak
 from . import neutral_mass
 from ..utils import sqlitedict
@@ -13,7 +13,7 @@ from .constants import constants as ms_constants
 try:
     logger = logging.getLogger("bupid_topdown_deconvoluter")
 except:
-    pass
+    print("Could not create logger for bupid_topdown_deconvoluter")
 
 try:
     raise Exception()
@@ -260,16 +260,21 @@ class StreamingYAMLRenderer(object):
                 elif isinstance(event, MappingEndEvent):
                     if len(scans) == 0:
                         continue
-                    precursor_neutral_mass = neutral_mass(scans[0]['mz'], scans[0]['z'])
+                    precursor_charge_state = scans[0]['z']
+                    precursor_neutral_mass = neutral_mass(scans[0]['mz'], precursor_charge_state)
+                    logger.info("Scan ID %d", scan_id)
                     scan = TandemScan(
-                        id=scan_id, precursor_neutral_mass=precursor_neutral_mass, sample_run_id=self.sample_run_id)
+                        id=scan_id,
+                        precursor_neutral_mass=precursor_neutral_mass, sample_run_id=self.sample_run_id)
                     session.add(scan)
 
-                    tandem_peaks = [None] * len(mass)
+                    tandem_peaks = []
                     for i in range(len(mass)):
-                        tandem_peaks[i] = dict(
+                        if charge[i] > precursor_charge_state:
+                            continue
+                        tandem_peaks.append(dict(
                             neutral_mass=mass[i], charge=charge[i],
-                            intensity=intensity[i], scan_id=scan_id)
+                            intensity=intensity[i], scan_id=scan_id))
                     session.bulk_insert_mappings(Peak, tandem_peaks)
                     mass = []
                     charge = []
@@ -306,7 +311,7 @@ class StreamingYAMLRenderer(object):
         session.commit()
 
 
-class BUPIDMSMSYamlParser(object):
+class BUPIDMSMSYamlParser(PipelineModule):
     def __init__(self, file_path, database_path=None):
         if database_path is None:
             database_path = os.path.splitext(file_path)[0] + '.db'
@@ -314,7 +319,6 @@ class BUPIDMSMSYamlParser(object):
         self.producer = None
         self.consumer = None
         self.queue = None
-        self.database_path = database_path
         self.manager = DatabaseManager(database_path)
         self.manager.initialize()
         if not self._is_in_database():
@@ -329,7 +333,7 @@ class BUPIDMSMSYamlParser(object):
         session.add(self.sample_run)
         session.commit()
         self.sample_run_id = self.sample_run.id
-        self.run()
+        self.start()
 
     def _is_in_database(self):
         """Check if this sample name is already present in the target database file.
@@ -351,3 +355,7 @@ class BUPIDMSMSYamlParser(object):
         event_stream = self.producer.parse()
         self.consumer = StreamingYAMLRenderer(self.database_path, event_stream, self.sample_run_id)
         self.consumer.run()
+
+
+def process_data_file(file_path, database_path=None):
+    job = BUPIDMSMSYamlParser(file_path, database_path)

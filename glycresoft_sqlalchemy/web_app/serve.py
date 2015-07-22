@@ -12,8 +12,8 @@ from flask import Flask, request, session, g, redirect, url_for, \
 
 from werkzeug import secure_filename
 import argparse
-
-from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch
+import random
+from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch, HypothesisSampleMatch
 from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
 
 from glycresoft_sqlalchemy.web_app.task.do_bupid_yaml_parse import BUPIDYamlParseTask
@@ -50,6 +50,7 @@ def message_queue_stream():
     payload = 'id: {id}\nevent: {event_name}\ndata: {data}\n\n'
     i = 0
     yield payload.format(id=i, event_name='begin-stream', data=json.dumps('Starting Stream'))
+    yield payload.format(id=i - 1, event_name='update', data=json.dumps('Initialized'))
     i += 1
     while True:
         try:
@@ -64,7 +65,8 @@ def message_queue_stream():
             break
         except QueueEmptyException, e:
             # Send a comment to keep the connection alive
-            yield ":no events\n\n"
+            if random.random() > 0.8:
+                yield payload.format(id=i, event_name='tick', data=json.dumps('Tick'))
         except Exception, e:
             logging.exception("An error occurred in message_queue_stream", exc_info=e)
 
@@ -72,6 +74,29 @@ def message_queue_stream():
 @app.route("/")
 def index():
     return render_template("index.templ")
+
+
+@app.route("/test")
+def test_page():
+    protein = g.db.query(Protein).get(1)
+    theoretical_glycopeptide_masses = g.db.query(
+        TheoreticalGlycopeptide.calculated_mass).filter(TheoreticalGlycopeptide.protein_id == protein.id)
+    return render_template(
+        "protein_view.templ", protein=protein,
+        theoretical_glycopeptide_masses=theoretical_glycopeptide_masses)
+
+
+@app.route("/view_database_search_results/<int:id>")
+def view_database_search_results(id):
+    hsm = g.db.query(HypothesisSampleMatch).get(id)
+    return render_template("view_database_search_results.templ", hsm=hsm)
+
+
+@app.route("/view_database_search_results/protein_view/<int:id>")
+def view_protein_results(id):
+    protein = g.db.query(Protein).get(id)
+    return render_template(
+        "components/protein_view.templ", protein=protein)
 
 
 @app.route("/tasks")
