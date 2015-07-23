@@ -3,7 +3,7 @@
 {% block body %}
     <div class='row'>
         <div class='col s6'>
-            {% with hypothesis=hsm.target_hypothesis %}
+            {% with proteins=hsm.target_hypothesis.proteins %}
                 {% include "components/protein_selector.templ" %}
             {% endwith %}
         </div>

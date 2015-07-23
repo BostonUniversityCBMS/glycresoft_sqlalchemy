@@ -265,7 +265,7 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_densit
 
         max_intensity = float(max(p.intensity for p in group.peaks))
 
-        remove_peaks = {}
+        remove_peaks = set()
 
         for peak in group.peaks:
             if minimum_abundance_ratio > peak.intensity / max_intensity:
@@ -290,7 +290,7 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_densit
             session.close()
             return 0
 
-        group.peaks = [p for p in group.peaks if p.id not in remove_peaks]
+        # group.peaks = [p for p in group.peaks if p.id not in remove_peaks]
         scan_ids = list(scan_ids)
         count = len(monoisotopic_masses)
         fcount = float(count)
