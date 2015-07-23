@@ -52,7 +52,7 @@ GlycopeptideMatchGlycanAssociation = Table(
     Column("glycan_id", Integer, ForeignKey(Glycan.id)))
 
 
-class GlycopeptideMatch(PeptideBase):
+class GlycopeptideMatch(PeptideBase, Base):
     __tablename__ = "GlycopeptideMatch"
 
     id = Column(Integer, primary_key=True)

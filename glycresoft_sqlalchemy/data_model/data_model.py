@@ -79,8 +79,7 @@ class Protein(Base):
             self.protein_sequence[:20] if self.protein_sequence is not None else "")
 
 
-class PeptideBase(AbstractConcreteBase, Base):
-    # __tablename__ = "PeptideBase"
+class PeptideBase(object):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     sequence_type = Column(Unicode(20))
@@ -148,11 +147,6 @@ class PeptideBase(AbstractConcreteBase, Base):
             pass
         return list(sites)
 
-    __mapper_args__ = {
-        'polymorphic_identity': u'PeptideBase',
-        'polymorphic_on': sequence_type,
-    }
-
 
 TheoreticalGlycopeptideGlycanAssociation = Table(
     "TheoreticalGlycopeptideGlycanAssociation", Base.metadata,
@@ -160,7 +154,7 @@ TheoreticalGlycopeptideGlycanAssociation = Table(
     Column("glycan_id", Integer, ForeignKey(Glycan.id)))
 
 
-class TheoreticalGlycopeptide(PeptideBase):
+class TheoreticalGlycopeptide(PeptideBase, Base):
     __tablename__ = "TheoreticalGlycopeptide"
 
     id = Column(Integer, primary_key=True)
@@ -220,11 +214,6 @@ class TheoreticalGlycopeptide(PeptideBase):
         if 'stub' in kind:
             for stub in self.stub_ions:
                 yield stub
-
-    __mapper_args__ = {
-        'polymorphic_identity': u'TheoreticalGlycopeptide',
-        "concrete": True
-    }
 
     def __repr__(self):
         rep = "<TheoreticalGlycopeptide {} {}>".format(self.glycopeptide_sequence, self.observed_mass)

@@ -5,7 +5,7 @@ from .data_model import Base, PeptideBase, Protein
 from .naive_proteomics import TheoreticalGlycopeptideComposition
 
 
-class InformedPeptide(PeptideBase):
+class InformedPeptide(PeptideBase, Base):
     __tablename__ = "InformedPeptide"
     id = Column(Integer, primary_key=True)
     peptide_score = Column(Numeric(10, 6, asdecimal=False), index=True)
