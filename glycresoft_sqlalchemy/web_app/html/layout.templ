@@ -9,19 +9,9 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='font/icons.css') }}">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
-    <script src="{{ url_for('static',filename='js/vendor/jquery.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/vendor/lodash.min.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/vendor/d3.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/vendor/EventEmitter.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/vendor/materialize.js') }}"></script>
-    
-    <script src="{{ url_for('static',filename='js/ajax-form.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/custom-tooltip.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/formatstring.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/material-shim.js') }}"></script>
-    
-    <script src="{{ url_for('static',filename='js/app/common.js') }}"></script>
-
+    <script src="{{ url_for('static',filename='js/dist/vendor-bundle.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/dist/lib-bundle.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/dist/app-bundle.js') }}"></script>
     <script>
 
 $(function() {
@@ -48,12 +38,11 @@ $(function() {
         </ul>
     </div>
     </div>
-    <div id='home-layer' class='container'>
-    {% block body %}
-    {% endblock %}
-    </div>
-    <div class='action-layer'>
-        
+    <div class='action-layer-container'>
+        <div id='home-layer' class='container'>
+        {% block body %}
+        {% endblock %}
+        </div>        
     </div>
     <div id="dialog-modal" class="modal wide">
         <div class="modal-content">

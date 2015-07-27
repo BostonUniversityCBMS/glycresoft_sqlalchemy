@@ -1,9 +1,6 @@
-{%- extends "layout.templ" %}
-
-{% block body %}
 <h4>Match Hypothesis Against Samples</h4>
 <div class='row'>
-    <form action="match_samples" class="col s12" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+    <form id='match-sample-form' action="match_samples" class="col s12" method="post" accept-charset="utf-8" enctype="multipart/form-data">
         <div class='col s6'>
         {% set samples = Manager.samples() %}
         {% if samples|length > 0 %}
@@ -45,6 +42,12 @@
 
         <button class='btn'>Submit</button>
     </form>
+<script>
+ajaxForm($("form#match-sample-form"), function(){
+    GlycReSoft.setShowingLayer("home-layer")
+}, function(err){
+    console.log(arguments)
+})
+materialFileInput()
+</script>    
 </div>
-
-{% endblock %}
