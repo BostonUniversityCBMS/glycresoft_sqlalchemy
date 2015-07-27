@@ -1,10 +1,11 @@
 import os
+import operator
 import time
 import logging
-
-logger = logging.getLogger("web_app.report")
-
-
+try:
+    logger = logging.getLogger("web_app.report")
+except:
+    pass
 from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch, DatabaseManager
 from glycresoft_sqlalchemy.report.plot_glycoforms import plot_glycoforms_svg
 from jinja2 import Environment, PackageLoader, Undefined, FileSystemLoader
@@ -17,6 +18,9 @@ except:
 
 from matplotlib import rcParams as mpl_params
 from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+import urllib
 
 
 def ms2_score_histogram(session, hypothesis_id):
@@ -30,11 +34,49 @@ def q_value_below(query, threshold):
     return q
 
 
+def _string_to_deep_getter(string):
+    parts = string.split(".")
+    chain = []
+    for p in parts:
+        if p[-2:] != '()':
+            link = operator.attrgetter(p)
+        else:
+            link = operator.methodcaller(p[:-2])
+        chain.append(link)
+
+    def unravel(obj):
+        last = obj
+        for link in chain:
+            last = link(last)
+        return last
+
+    return unravel
+
+
+def fsort(L, f):
+    if isinstance(f, basestring):
+        f = _string_to_deep_getter(f)
+    return sorted(L, key=f, reverse=True)
+
+
+def png_plot(figure, **kwargs):
+    buffer = render_plot(figure, format='png', **kwargs)
+    return "<img src='data:image/png;base64,%s'>" % urllib.quote(buffer.getvalue().encode("base64"))
+
+
 def svg_plot(figure, **kwargs):
-    figure.patch.set_visible(False)
-    buffer = StringIO()
-    plt.savefig(buffer, format="svg", **kwargs)
+    buffer = render_plot(figure, format='svg', **kwargs)
     return buffer.getvalue()
+
+
+def render_plot(figure, **kwargs):
+    if isinstance(figure, Axes):
+        figure = figure.get_figure()
+    if kwargs.get("bbox_inches") != 'tight':
+        figure.patch.set_visible(False)
+    buffer = StringIO()
+    figure.savefig(buffer, **kwargs)
+    return buffer
 
 
 def mass_histogram(iterable, **kwargs):
@@ -70,6 +112,9 @@ def prepare_environment(env=None):
     env.filters['highlight_sequence_site'] = highlight_sequence_site
     env.filters['plot_glycoforms'] = plot_glycoforms_svg
     env.filters['mass_histogram'] = mass_histogram
+    env.filters['svg_plot'] = svg_plot
+    env.filters['png_plot'] = png_plot
+    env.filters['fsort'] = fsort
     env.globals
     return env
 

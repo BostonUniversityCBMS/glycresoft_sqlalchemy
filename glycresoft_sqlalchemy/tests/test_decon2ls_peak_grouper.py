@@ -12,11 +12,11 @@ import os
 
 def test_main():
     try:
-        os.remove("datafiles/20141128_05_isos_AGP.db")
+        os.remove("datafiles/20140918_01_isos.db")
     except:
         pass
-    decon2ls_sa.Decon2LSIsosParser("datafiles/20141128_05_isos_AGP.csv")
-    job = peak_grouping.Decon2LSPeakGrouper("datafiles/20141128_05_isos_AGP.db", n_processes=6)
+    decon2ls_sa.Decon2LSIsosParser("datafiles/20140918_01_isos.csv")
+    job = peak_grouping.Decon2LSPeakGrouper("datafiles/20140918_01_isos.db", n_processes=6)
     job.start()
 
 

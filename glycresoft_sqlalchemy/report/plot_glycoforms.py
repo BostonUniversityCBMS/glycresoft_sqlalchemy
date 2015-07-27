@@ -136,11 +136,14 @@ def draw_layers(layers, protein):
     mod_width = 1.5
     next_row = cur_position + row_width
 
+    c = 0
+
     # Track the most extreme sequence for guessing the plot bounds when the
     # parent sequence is not available
     max_position = 0
     for layer in layers:
         for gpm in layer:
+            c += 1
             max_position = max(max_position, gpm.end_position)
             rect = mpatches.Rectangle(
                 (gpm.start_position, cur_y), width=gpm.sequence_length, height=layer_height,
@@ -171,14 +174,12 @@ def draw_layers(layers, protein):
     if defer_x_bounds:
         ax.set_xlim(-10, max_position + 10)
     ax.axis('off')
-
+    print c
     return ax, id_mapper
 
 
 def plot_glycoforms(protein, filterfunc=lambda x: x.ms2_score > 0.2):
     gpms = filterfunc(protein.glycopeptide_matches).all()
-    if len(gpms) == 0:
-        return None, None
     layers = layout_layers(gpms)
     ax, id_mapper = draw_layers(layers, protein)
     return ax, id_mapper

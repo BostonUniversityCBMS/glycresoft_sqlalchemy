@@ -10,6 +10,7 @@ except Exception, e:
     raise e
 
 from sqlalchemy import func, bindparam, select
+from sqlalchemy.orm import make_transient
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -20,6 +21,7 @@ from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGro
                           PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch)
 
 from ..utils.database_utils import get_or_create
+from ..report import chromatogram
 
 TDecon2LSPeakGroup = Decon2LSPeakGroup.__table__
 T_TempPeakGroupMatch = TempPeakGroupMatch.__table__
@@ -33,7 +35,8 @@ class Decon2LSPeakGrouper(PipelineModule):
     '''
     def __init__(self, database_path, sample_run_id=1, grouping_error_tolerance=8e-5,
                  minimum_scan_count=1, max_charge_state=8,
-                 minimum_abundance_ratio=0.01, minimum_mass=1200., n_processes=4):
+                 minimum_abundance_ratio=0.01, minimum_mass=1200., maximum_mass=15000.,
+                 n_processes=4):
         self.manager = self.manager_type(database_path)
         self.grouping_error_tolerance = grouping_error_tolerance
         self.minimum_scan_count = minimum_scan_count
@@ -41,6 +44,7 @@ class Decon2LSPeakGrouper(PipelineModule):
         self.sample_run_id = sample_run_id
         self.max_charge_state = max_charge_state
         self.minimum_mass = minimum_mass
+        self.maximum_mass = maximum_mass
         self.minimum_abundance_ratio = minimum_abundance_ratio
 
     def group_peaks(self):
@@ -50,19 +54,30 @@ class Decon2LSPeakGrouper(PipelineModule):
         '''
         logger.info("Grouping Peaks")
         session = self.manager.session()
-        conn = session.connection()
+
         map_insert = Decon2LSPeakToPeakGroupMap.insert()
         group_insert = TDecon2LSPeakGroup.insert()
 
         group_count = 0
         sample_run_id = self.sample_run_id
+        id_query = session.query(Decon2LSPeakGroup.id).filter(
+            Decon2LSPeakGroup.sample_run_id == sample_run_id).selectable
+
+        clear_relation_query = Decon2LSPeakToPeakGroupMap.delete().where(
+            Decon2LSPeakToPeakGroupMap.c.group_id.in_(id_query))
+
+        session.execute(clear_relation_query)
+        session.commit()
         session.query(Decon2LSPeakGroup).filter(
             Decon2LSPeakGroup.sample_run_id == sample_run_id).delete(
             synchronize_session=False)
+        session.commit()
+        logger.info("Cleared? %r", session.query(Decon2LSPeakGroup).count())
+        conn = session.connection()
         for count, row in enumerate(Decon2LSPeak.from_sample_run(session.query(
                 Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass).filter(
-                Decon2LSPeak.charge < self.max_charge_state,
-                Decon2LSPeak.monoisotopic_mass > self.minimum_mass
+                Decon2LSPeak.charge <= self.max_charge_state,
+                Decon2LSPeak.monoisotopic_mass.between(self.minimum_mass, self.maximum_mass)
                 ).order_by(
                 Decon2LSPeak.intensity.desc()), self.sample_run_id)):
             peak_id, monoisotopic_mass = row
@@ -119,21 +134,33 @@ class Decon2LSPeakGrouper(PipelineModule):
         session = self.manager.session()
         task_fn = functools.partial(
             fill_out_group, database_manager=self.manager, minimum_scan_count=self.minimum_scan_count)
+        accumulator = []
         if self.n_processes > 1:
             logger.info("Running concurrently")
             pool = multiprocessing.Pool(self.n_processes)
             count = 0
             for group in pool.imap_unordered(task_fn, self.stream_group_ids(), chunksize=25):
                 count += 1
-                if count % 1000 == 0:
+                if group is not None:
+                    accumulator.append(group)
+                if count % 10000 == 0:
+                    session.bulk_update_mappings(Decon2LSPeakGroup, accumulator)
+                    session.commit()
+                    accumulator = []
                     logger.info("%d groups completed", count)
             pool.terminate()
         else:
             for count, group_id in enumerate(session.query(Decon2LSPeakGroup.id)):
-                task_fn(group_id)
-                if count % 1000 == 0:
+                group = task_fn(group_id)
+                if group is not None:
+                    accumulator.append(group)
+                if count % 10000 == 0:
+                    session.bulk_update_mappings(Decon2LSPeakGroup, accumulator)
+                    session.commit()
+                    accumulator = []
                     logger.info("%d groups completed", count)
 
+        session.bulk_update_mappings(Decon2LSPeakGroup, accumulator)
         session.commit()
         session.close()
 
@@ -150,41 +177,26 @@ class Decon2LSPeakGrouper(PipelineModule):
         cen_alpha, cen_beta = centroid_scan_error_regression(session)
         expected_a_alpha, expected_a_beta = expected_a_peak_regression(session)
 
-        task_fn = functools.partial(
-            update_fit, database_manager=self.manager, cen_alpha=cen_alpha,
-            cen_beta=cen_beta, expected_a_alpha=expected_a_alpha,
-            expected_a_beta=expected_a_beta)
-        count = 0
-        accumulator = []
-        stmt = TDecon2LSPeakGroup.update().where(TDecon2LSPeakGroup.c.id == bindparam("gid")).\
-            values(centroid_scan_error=bindparam("centroid_scan_error"),
-                   a_peak_intensity_error=bindparam("a_peak_intensity_error"))
-        transaction = conn.begin()
-        if self.n_processes > 1:
-            logger.info("Updating peaks concurrently")
-            pool = multiprocessing.Pool(self.n_processes)
-            for update in pool.imap_unordered(task_fn, self.stream_group_ids(), chunksize=50):
-                accumulator.append(update)
-                count += 1
-                if count % 100000 == 0:
-                    conn.execute(stmt, accumulator)
-                    accumulator = []
-                    transaction.commit()
-                    transaction = conn.begin()
-            pool.close()
-        else:
-            logger.info("Updating peaks sequentially")
-            for gid in self.stream_group_ids():
-                update = task_fn(gid)
-                conn.execute(stmt, update)
-                count += 1
-                if count % 1000 == 0:
-                    pass
-                    # conn = session.connection()
-        conn.execute(stmt, accumulator)
-        accumulator = []
-        transaction.commit()
-        transaction.close()
+        update_expr = TDecon2LSPeakGroup.update().values(
+            centroid_scan_error=func.abs(
+                TDecon2LSPeakGroup.c.centroid_scan_estimate - (
+                    cen_alpha + cen_beta * TDecon2LSPeakGroup.c.weighted_monoisotopic_mass)),
+            a_peak_intensity_error=func.abs(
+                TDecon2LSPeakGroup.c.average_a_to_a_plus_2_ratio - (
+                    expected_a_alpha + expected_a_beta * TDecon2LSPeakGroup.c.weighted_monoisotopic_mass))
+                )
+        max_weight = conn.execute(select([func.max(TDecon2LSPeakGroup.c.weighted_monoisotopic_mass)])).scalar()
+        slices = [max_weight * float(i)/10. for i in range(1, 11)]
+        for i in range(1, len(slices)):
+            transaction = conn.begin()
+            lower = slices[i - 1]
+            upper = slices[i]
+            logger.info("Updating slice %f-%f", lower, upper)
+            step = update_expr.where(
+                TDecon2LSPeakGroup.c.weighted_monoisotopic_mass.between(
+                    lower, upper))
+            conn.execute(step)
+            transaction.commit()
         conn.close()
 
     def run(self):
@@ -233,7 +245,7 @@ def update_fit(group_id, database_manager, cen_alpha, cen_beta, expected_a_alpha
         session.close()
 
 
-def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_density_penalty_term=33.0,
+def fill_out_group(group_id, database_manager, minimum_scan_count=1,
                    minimum_abundance_ratio=0.01):
     """Calculate peak group statistics for a given uninitialized :class:`Decon2LSPeakGroup`.
 
@@ -254,8 +266,13 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_densit
     try:
         group = session.query(Decon2LSPeakGroup).get(group_id)
 
+        peaks = group.peaks.order_by(Decon2LSPeak.scan_id.asc()).all()
+        for peak in peaks:
+            peak.scan_time = peak.scan.time
+        make_transient(group)
+
         charge_states = set()
-        scan_ids = set()
+        scan_times = set()
         peak_ids = []
         intensities = []
         full_width_half_maxes = []
@@ -263,16 +280,16 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_densit
         signal_noises = []
         a_to_a_plus_2_ratios = []
 
-        max_intensity = float(max(p.intensity for p in group.peaks))
+        max_intensity = float(max(p.intensity for p in peaks))
 
         remove_peaks = set()
 
-        for peak in group.peaks:
+        for peak in peaks:
             if minimum_abundance_ratio > peak.intensity / max_intensity:
                 remove_peaks.add(peak.id)
                 continue
             charge_states.add(peak.charge)
-            scan_ids.add(peak.scan_id)
+            scan_times.add(peak.scan_time)
             peak_ids.append(peak.id)
             intensities.append(peak.intensity)
             full_width_half_maxes.append(peak.full_width_half_max)
@@ -283,20 +300,20 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_densit
                 if peak.monoisotopic_plus_2_intensity > 0
                 else 0
             )
-        scan_count = len(scan_ids)
+        scan_count = len(scan_times)
         if scan_count < minimum_scan_count:
             logger.info("Deleting %r, with %d scans", group, scan_count)
             session.delete(group)
-            session.close()
-            return 0
+            session.commit()
+            return None
 
-        # group.peaks = [p for p in group.peaks if p.id not in remove_peaks]
-        scan_ids = list(scan_ids)
+        peaks = [p for p in peaks if p.id not in remove_peaks]
+        scan_times = sorted(scan_times)
         count = len(monoisotopic_masses)
         fcount = float(count)
 
-        min_scan = min(scan_ids)
-        max_scan = max(scan_ids)
+        min_scan = min(scan_times)
+        max_scan = max(scan_times)
 
         average_signal_to_noise = sum(signal_noises) / fcount
         average_a_to_a_plus_2_ratio = sum(a_to_a_plus_2_ratios) / fcount
@@ -306,33 +323,60 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1, peak_densit
         weighted_monoisotopic_mass = sum(m * i for m, i in zip(
             monoisotopic_masses, intensities)) / float(sum(intensities))
 
-        scan_density = scan_count / (float(max_scan - min_scan) + 15.) if scan_count > 1 else 0
+        windows = expanding_window(scan_times)
+        window_densities = []
+        for window in windows:
+            window_max_scan = window[-1]
+            window_min_scan = window[0]
+            window_scan_count = len(window)
+            window_scan_density = window_scan_count / (
+                float(window_max_scan - window_min_scan) + 15.) if window_scan_count > 1 else 0
+            if window_scan_density != 0:
+                window_densities.append(window_scan_density)
+        if len(window_densities) != 0:
+            scan_density = sum(window_densities) / float(len(window_densities))
+        else:
+            scan_density = 0.
 
-        group.scan_density = scan_density
-        group.average_signal_to_noise = average_signal_to_noise
-        group.average_a_to_a_plus_2_ratio = average_a_to_a_plus_2_ratio
-        group.centroid_scan_estimate = sum(scan_ids) / fcount
-        group.total_volume = total_volume
-        group.weighted_monoisotopic_mass = weighted_monoisotopic_mass
-        group.scan_count = scan_count
-        group.first_scan_id = min_scan
-        group.last_scan_id = max_scan
-        group.charge_state_count = len(charge_states)
-        group.peak_data = {
-            "scan_ids": scan_ids,
-            "signal_to_noises": signal_noises,
-            "a_to_a_plus_2_ratios": a_to_a_plus_2_ratios,
-            "monoisotopic_masses": monoisotopic_masses,
-            "intensities": intensities,
-            "peak_ids": peak_ids
+        return {
+            "id": group.id,
+            "scan_density": scan_density,
+            "average_signal_to_noise": average_signal_to_noise,
+            "average_a_to_a_plus_2_ratio": average_a_to_a_plus_2_ratio,
+            "centroid_scan_estimate": sum(scan_times) / fcount,
+            "total_volume": total_volume,
+            "weighted_monoisotopic_mass": weighted_monoisotopic_mass,
+            "scan_count": scan_count,
+            "first_scan_id": min_scan,
+            "last_scan_id": max_scan,
+            "charge_state_count": len(charge_states),
+            "peak_data": {
+                "scan_times": [p.scan_time for p in peaks],
+                "intensities": [p.scan_id for p in peaks],
+                "peak_ids": [p.id for p in peaks],
+            }
         }
-        session.add(group)
-        session.commit()
-        session.close()
-        return 1
+        # session.close()
+        # return 1
     except Exception, e:
-        logger.exception("An error occured. %r", locals(), exc_info=e)
+        logger.exception("An error occured. %r", 1, exc_info=e)
         session.close()
+
+
+def expanding_window(series, threshold_gap_size=100):
+    windows = []
+    current_window = []
+    last_item = 0
+    for item in series:
+        if item - last_item > threshold_gap_size:
+            if len(current_window) > 0:
+                windows.append(current_window)
+            current_window = []
+        current_window.append(item)
+        last_item = item
+    if len(current_window) > 0:
+        windows.append(current_window)
+    return windows
 
 
 def centroid_scan_error_regression(session, minimum_abundance=250):
@@ -583,19 +627,21 @@ class PeakGroupClassification(PipelineModule):
         # Move all Decon2LSPeakGroups, regardless of whether or not they matched to
         # the temporary table.
         while True:
-            items = batch.fetchmany(3000)
+            items = batch.fetchmany(10000)
             if len(items) == 0:
                 break
             self.buffer = items[0]
             conn.execute(T_TempPeakGroupMatch.insert(), [dict(zip(labels, row)) for row in items])
-        data_model_session.commit()
+            data_model_session.commit()
+            conn = data_model_session.connection()
 
+        data_model_session.commit()
         conn = data_model_session.connection()
 
         id_stmt = data_model_session.query(
             PeakGroupMatch.peak_group_id).filter(
             PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-            PeakGroupMatch.matched == True).selectable
+            PeakGroupMatch.matched).selectable
 
         if not len(data_model_session.connection().execute(id_stmt).fetchmany(2)) == 2:
             raise ValueError("Hypothesis-Sample Match ID matches maps no PeakGroupMatches")
@@ -614,7 +660,7 @@ class PeakGroupClassification(PipelineModule):
         # with null theoretical group matches
         move_stmt = data_model_session.query(
             TempPeakGroupMatch).filter(
-            TempPeakGroupMatch.matched == False).selectable
+            ~TempPeakGroupMatch.matched).selectable
 
         def transform(row):
             out = dict(zip(labels, row))
@@ -628,7 +674,7 @@ class PeakGroupClassification(PipelineModule):
         conn = data_model_session.connection()
         batch = conn.execute(move_stmt)
         while True:
-            items = batch.fetchmany(3000)
+            items = batch.fetchmany(10000)
             if len(items) == 0:
                 break
             conn.execute(TPeakGroupMatch.insert(), list(map(transform, items)))
@@ -733,10 +779,14 @@ class LCMSPeakClusterSearch(PipelineModule):
         if self.hypothesis_sample_match_id is not None:
             if not self.options.get("skip_matching", False):
                 hypothesis_sample_match.peak_group_matches.delete(synchronize_session=False)
+                session.commit()
+                logger.info("Cleared? %r", hypothesis_sample_match.peak_group_matches.count())
             else:
                 hypothesis_sample_match.peak_group_matches.filter(
-                    PeakGroupMatch.matched == False).delete(synchronize_session=False)
-            session.commit()
+                    ~PeakGroupMatch.matched).delete(synchronize_session=False)
+                session.commit()
+                logger.info("Cleared? %r", hypothesis_sample_match.peak_group_matches.filter(
+                    ~PeakGroupMatch.matched).count())
         hypothesis_sample_match.name = "{}_on_{}_ms1".format(
             session.query(Hypothesis).get(self.hypothesis_id).name,
             sample_name)

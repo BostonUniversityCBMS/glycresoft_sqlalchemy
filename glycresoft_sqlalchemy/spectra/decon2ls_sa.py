@@ -3,7 +3,7 @@ import os
 
 from glycresoft_sqlalchemy.data_model import PipelineModule
 from glycresoft_sqlalchemy.data_model.observed_ions import (
-    SampleRun, MSScan, Decon2LSPeak, DatabaseManager)
+    Decon2LSLCMSSampleRun, MSScan, Decon2LSPeak, DatabaseManager)
 
 isos_to_db_map = {
     "abundance": "intensity",
@@ -33,23 +33,29 @@ class Decon2LSIsosParser(PipelineModule):
     def run(self):
         self.manager.initialize()
         session = self.manager.session()
-        sample_run = SampleRun(name=os.path.basename(self.file_path), parameters={"deconvoluted_by": 'decon2ls'})
+        sample_run = Decon2LSLCMSSampleRun(
+            name=os.path.basename(self.file_path), parameters={"deconvoluted_by": 'decon2ls'})
         session.add(sample_run)
         session.commit()
         sample_run_id = sample_run.id
         last = 0
         conn = session.connection()
         last_scan_id = -1
+        last_key = -1
         for i, row in enumerate(csv.DictReader(open(self.file_path))):
             remap = {v: row[k] for k, v in isos_to_db_map.items()}
             if remap['scan_id'] != last_scan_id:
-                session.add(MSScan(id=remap['scan_id'], sample_run_id=sample_run_id))
+                scan = MSScan(time=remap['scan_id'], sample_run_id=sample_run_id)
+                session.add(scan)
+                session.flush()
+                last_key = scan.id
                 last_scan_id = remap['scan_id']
                 if last + self.interval == i:
                     session.commit()
                     print "Commit!"
                     last = i
                     conn = session.connection()
+            remap['scan_id'] = last_key
             conn.execute(TDecon2LSPeak.insert().values(**remap))
         session.commit()
 
@@ -60,7 +66,7 @@ def parse_decon2ls(isos_path, database_path=None):
     dbm = DatabaseManager(database_path)
     dbm.initialize()
     session = dbm.session()
-    sample_run = SampleRun(name=os.path.basename(isos_path), parameters={"deconvoluted_by": 'decon2ls'})
+    sample_run = Decon2LSLCMSSampleRun(name=os.path.basename(isos_path), parameters={"deconvoluted_by": 'decon2ls'})
     session.add(sample_run)
     session.commit()
     interval = 100000

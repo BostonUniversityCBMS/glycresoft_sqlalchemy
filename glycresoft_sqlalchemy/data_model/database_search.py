@@ -100,11 +100,6 @@ class GlycopeptideMatch(PeptideBase, Base):
         rep = "<GlycopeptideMatch {} {} {}>".format(self.glycopeptide_sequence, self.ms2_score, self.observed_mass)
         return rep
 
-    __mapper_args__ = {
-        'polymorphic_identity': u'GlycopeptideMatch',
-        'concrete': True
-    }
-
 
 class SpectrumMatch(Base):
     __tablename__ = "SpectrumMatch"

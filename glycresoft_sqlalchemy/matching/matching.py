@@ -277,6 +277,17 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
 
 
 def merge_ion_matches(matches):
+    """Group multiple matches to the same fragment
+
+    Parameters
+    ----------
+    matches : list of dict
+        The list of ion matches to group
+
+    Returns
+    -------
+    list of dict: Merged ion matches
+    """
     groups = collectiontools.groupby(matches,
                                      key_getter)
     best_matches = []
@@ -290,19 +301,10 @@ def merge_ion_matches(matches):
             if fabs(match["ppm_error"]) < best_ppm:
                 best_match = match
                 best_ppm = fabs(match["ppm_error"])
+        best_match = best_match.copy()
         best_match["peak_map"] = peak_map
         best_matches.append(best_match)
     return best_matches
-
-
-def _chunk_iter(iterable, size=50):
-    results = []
-    for entry in iterable:
-        results.append(entry)
-        if len(results) == size:
-            yield results
-            results = []
-    yield results
 
 
 class IonMatching(PipelineModule):

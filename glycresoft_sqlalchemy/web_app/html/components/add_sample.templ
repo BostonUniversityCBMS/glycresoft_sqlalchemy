@@ -14,11 +14,19 @@
                     <span>Select File...</span>
                     <input name='observed-ions-file' type="file"/>
                 </div>
-                <input class="file-path validate" type="text" style="width: 60%;padding-left:5px;"/>
+                <input class="file-path validate" type="text"/>
             </div>
         </div>
-        <div class='col s4 help-text' id='observed-ions-file-help'>
-            <small>The file containing the LC-MS/MS data deconvoluted by <code>BUPID Top Down</code></small>
+        <div class='col s3'>
+            <label for='file-type'>File Type</label>
+            <select name="file-type" class='browser-default'>
+                <option value="decon2ls">Decon2LS</option>
+                <option value='bupid'>BUPID</option>
+            </select>
+        <div class='help-text' id='observed-ions-file-help'>
+            <small>For MS/MS: The YAML file containing the LC-MS/MS data deconvoluted by <code>BUPID Top Down</code></small><br>
+            <small>For MS: The CSV file containing the LC-MS data deconvoluted by <code>Decon2LS</code></small>
+        </div>
         </div>
     </div>
 </div>

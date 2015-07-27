@@ -1,7 +1,7 @@
 import logging
 from uuid import uuid4
 from multiprocessing import Process, Pipe
-from threading import Event, Thread
+from threading import Event, Thread, RLock
 from collections import deque
 from Queue import Queue, Empty as QueueEmptyException
 try:
@@ -82,6 +82,7 @@ class Task(object):
         self.args.append(child_conn)
         self.callback = callback
         self.log_file_path = kwargs.get("log_file_path", "%s.log" % self.id)
+        self.name = kwargs.get('name', self.id)
 
     def start(self):
         self.process = Process(target=configure_log, args=(self.log_file_path, self.task_fn, self.args))
@@ -103,7 +104,7 @@ class Task(object):
                 if exitcode == 0:
                     self.state = FINISHED
                 elif exitcode is None:
-                    pass
+                    self.state = ERROR
                 else:
                     self.state = ERROR
             return result
@@ -201,6 +202,7 @@ class TaskManager(object):
         self.timer = CallInterval(self.interval, self.tick)
         self.timer.start()
         self.messages = Queue()
+        self.running_lock = RLock()
 
     def add_task(self, task):
         """Add a `Task` object to the set of all tasks being managed
@@ -214,6 +216,7 @@ class TaskManager(object):
             The task to be scheduled
         """
         self.tasks[task.id] = task
+        self.messages.put(Message({"id": task.id, "name": task.name}, "task-queued"))
 
     def get_task_log_path(self, task):
         return path.join(self.task_dir, task.id + '.log')
@@ -233,28 +236,58 @@ class TaskManager(object):
     def check_state(self):
         """Iterate over all tasks in :attr:`TaskManager.tasks` and check their status.
         """
+        logger.info(
+            "Checking task manager state:\n %d tasks running\nRunning: %r\n%r",
+            self.n_running, self.currently_running, self.tasks)
         for task_id, task in list(self.tasks.items()):
-            task.update()
+            running = task.update()
             logger.info("Checking %r", task)
             for message in task.messages():
-                logger.info("%s", message)
                 self.messages.put(message)
 
             if task.state == NEW:
                 self.task_queue.put(task)
             elif task.state == FINISHED:
-                self.currently_running.pop(task.id)
-                self.tasks.pop(task.id)
-                self.n_running -= 1
-                task.callback()
+                if self.running_lock.acquire(0):
+                    self.currently_running.pop(task.id)
+                    self.tasks.pop(task.id)
+                    self.n_running -= 1
+                    task.callback()
+                    self.messages.put(Message({"id": task.id, "name": task.name}, "task-complete"))
+                    self.running_lock.release()
             elif task.state == ERROR:
                 if task.id in self.currently_running:
-                    self.currently_running.pop(task.id)
+                    if self.running_lock.acquire(0):
+                        self.currently_running.pop(task.id)
+                        self.tasks.pop(task.id)
+                        self.n_running -= 1
+                        self.running_lock.release()
             elif task.state == RUNNING:
-                continue
+                if running:
+                    continue
+                else:
+                    print task.id, running
+
+        for task_id, task in list(self.currently_running.items()):
+            running = task.update()
+            logger.info("Checking %r", task)
+            for message in task.messages():
+                self.messages.put(message)
+
+            if task.state == FINISHED:
+                self.currently_running.pop(task.id)
+                try:
+                    self.tasks.pop(task.id)
+                except KeyError:
+                    pass
+                self.n_running -= 1
+                task.callback()
+                self.messages.put(Message({"id": task.id, "name": task.name}, "task-complete"))
+            elif not running:
+                print task.id, "not running", task.state
 
     def launch_new_tasks(self):
-        while(self.n_running < self.max_running) and self.task_queue.qsize() > 0:
+        while((self.n_running < self.max_running) and (self.task_queue.qsize() > 0)):
             try:
                 task = self.task_queue.get(False)
                 self.run_task(task)
@@ -268,11 +301,10 @@ class TaskManager(object):
         ----------
         task : Task
         """
-        if self.n_running >= self.max_running:
-            self.task_queue.put(task)
-            return
-        else:
+        if self.running_lock.acquire(0):
             self.currently_running[task.id] = task
+            self.running_lock.release()
             task.log_file_path = self.get_task_log_path(task)
             self.n_running += 1
             task.start()
+            self.messages.put(Message({"id": task.id, "name": task.name}, 'task-start'))

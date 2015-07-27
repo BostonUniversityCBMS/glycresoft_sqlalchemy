@@ -16,15 +16,42 @@ class SampleRun(Base):
     parameters = Column(MutableDict.as_mutable(PickleType))
     ms_scans = relationship("MSScan", backref=backref("hypothesis_run"), lazy='dynamic')
     tandem_scans = relationship("TandemScan", backref=backref("hypothesis_run"), lazy='dynamic')
+    sample_type = Column(Unicode(128))
 
     def __repr__(self):
-        return "<SampleRun {} {} {} {}>".format(self.id, self.name, self.ms_scans.count(), self.tandem_scans.count())
+        return "<{} {} {} {} {}>".format(
+            self.__class__.__name__, self.id, self.name,
+            self.ms_scans.count(), self.tandem_scans.count())
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'SampleRun',
+        'polymorphic_on': sample_type,
+    }
+
+
+class BUPIDDeconvolutedLCMSMSSampleRun(SampleRun):
+    __tablename__ = "BUPIDDeconvolutedLCMSMSSampleRun"
+    id = Column(Integer, ForeignKey(SampleRun.id), primary_key=True, autoincrement=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": u"BUPIDDeconvolutedLCMSMSSampleRun"
+    }
+
+
+class Decon2LSLCMSSampleRun(SampleRun):
+    __tablename__ = "Decon2LSLCMSSampleRun"
+    id = Column(Integer, ForeignKey(SampleRun.id), primary_key=True, autoincrement=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": u"Decon2LSLCMSSampleRun"
+    }
 
 
 class ScanBase(Base):
     __tablename__ = "ScanBase"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    time = Column(Integer, index=True)
     scan_type = Column(Unicode(20), index=True)
     peaks = relationship("Peak", backref="scan", lazy="dynamic")
     decon2ls_peaks = relationship("Decon2LSPeak", backref="scan", lazy='dynamic')
@@ -33,7 +60,6 @@ class ScanBase(Base):
     __mapper_args__ = {
         'polymorphic_identity': u'Scan',
         'polymorphic_on': scan_type,
-        'concrete': True
     }
 
     def __repr__(self):
@@ -154,8 +180,9 @@ class Decon2LSPeakGroup(Base):
     peaks = relationship(Decon2LSPeak, secondary="Decon2LSPeakToPeakGroupMap", lazy='dynamic')
 
     def __repr__(self):
+        id = getattr(self, 'id', None)
         return "<Decon2LSPeakGroup {} {} {} {} {}>".format(
-            self.id, self.weighted_monoisotopic_mass,
+            id, self.weighted_monoisotopic_mass,
             self.total_volume, self.peaks.count(), self.charge_state_count)
 
     @hybrid_method

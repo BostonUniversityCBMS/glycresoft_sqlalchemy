@@ -60,7 +60,7 @@ def export_glycopeptide_ms2_matches(glycopeptides, output_path):
             "glycosylated_y_ion_coverage", "protein_name", "b_ions", "y_ions", 'stub_ions', 'oxonium_ions'
         ]
         writer.writerow(header)
-        for gpm in glycopeptides:
+        for gpm in glycopeptides.yield_per(1000):
             row = [
                 gpm.id, gpm.ms1_score, gpm.ms2_score, gpm.q_value, gpm.observed_mass, gpm.volume, gpm.ppm_error,
                 ';'.join(map(str, gpm.scan_id_range)), gpm.glycopeptide_sequence, gpm.sequence_length,
@@ -96,7 +96,7 @@ def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_id
             "StartAA", "EndAA", "ProteinID"
         ]
         writer.writerow(headers)
-        for pgm in peak_group_matches:
+        for pgm in peak_group_matches.yield_per(1000):
             theoretical_match = pgm.theoretical_match
             if theoretical_match is not None:
                 glycan_composition = theoretical_match.glycan_composition_str[1:-1].split(';')

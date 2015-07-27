@@ -13,11 +13,14 @@ from flask import Flask, request, session, g, redirect, url_for, \
 from werkzeug import secure_filename
 import argparse
 import random
-from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch, HypothesisSampleMatch
+from glycresoft_sqlalchemy.data_model import (Hypothesis, Protein, TheoreticalGlycopeptide,
+                                              GlycopeptideMatch, HypothesisSampleMatch, json_type)
+from glycresoft_sqlalchemy.report import microheterogeneity
 from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
 
 from glycresoft_sqlalchemy.web_app.task.do_bupid_yaml_parse import BUPIDYamlParseTask
 from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
+from glycresoft_sqlalchemy.web_app.task.dummy import DummyTask
 
 app = Flask(__name__)
 report.prepare_environment(app.jinja_env)
@@ -27,6 +30,9 @@ DEBUG = True
 SECRETKEY = 'TG9yZW0gaXBzdW0gZG90dW0'
 
 manager = None
+
+
+JSONEncoderType = json_type.new_alchemy_encoder()
 
 
 def connect_db():
@@ -76,14 +82,16 @@ def index():
     return render_template("index.templ")
 
 
+@app.route("/internal/update_settings", methods=["POST"])
+def update_settings():
+    settings = request.values
+    return jsonify(**settings)
+
+
 @app.route("/test")
 def test_page():
-    protein = g.db.query(Protein).get(1)
-    theoretical_glycopeptide_masses = g.db.query(
-        TheoreticalGlycopeptide.calculated_mass).filter(TheoreticalGlycopeptide.protein_id == protein.id)
-    return render_template(
-        "protein_view.templ", protein=protein,
-        theoretical_glycopeptide_masses=theoretical_glycopeptide_masses)
+    manager.add_task(DummyTask("Dummy"))
+    return jsonify(status='101')
 
 
 @app.route("/view_database_search_results/<int:id>")
@@ -95,18 +103,40 @@ def view_database_search_results(id):
 @app.route("/view_database_search_results/protein_view/<int:id>")
 def view_protein_results(id):
     protein = g.db.query(Protein).get(id)
+    site_summary = microheterogeneity.GlycoproteinMicroheterogeneitySummary(protein)
     return render_template(
-        "components/protein_view.templ", protein=protein)
+        "components/protein_view.templ", protein=protein, site_summary=site_summary)
+
+
+@app.route("/view_database_search_results/view_glycopeptide_details/<int:id>")
+def view_glycopeptide_details(id):
+    gpm = g.db.query(GlycopeptideMatch).get(id)
+    return render_template("components/glycopeptide_details.templ", glycopeptide=gpm)
+
+
+@app.route("/api/glycopeptide_matches/<int:id>")
+def get_glycopeptide_match_api(id):
+    gpm = g.db.query(GlycopeptideMatch).get(id)
+    return Response(JSONEncoderType().encode(gpm), mimetype="text/json")
+
+
+@app.route("/api/tasks")
+def get_tasks_api():
+    return jsonify(**{t.id: t.to_json() for t in manager.tasks.values()})
 
 
 @app.route("/tasks")
-def get_tasks(self):
-    return jsonify(**{t.id: t.to_json() for t in manager.tasks.values()})
+def get_tasks_rendered():
+    running_tasks = manager.currently_running
+    queued_tasks = {k: v for k, v in manager.tasks.items() if k not in running_tasks}
+    return render_template(
+        "components/task_list.templ",
+        running_tasks=running_tasks.values(),
+        queued_tasks=queued_tasks.values())
 
 
 @app.route('/stream')
 def message_stream():
-
     return Response(message_queue_stream(),
                     mimetype="text/event-stream")
 
@@ -114,6 +144,11 @@ def message_stream():
 @app.route("/hypothesis")
 def show_hypotheses():
     return render_template("show_hypotheses.templ", hypotheses=g.db.query(Hypothesis).all())
+
+
+@app.route("/view_hypothesis/<int:id>")
+def view_hypothesis(id):
+    return render_template("show_hypotheses.templ", hypotheses=[g.db.query(Hypothesis).get(id)])
 
 
 @app.route("/glycan_search_space")

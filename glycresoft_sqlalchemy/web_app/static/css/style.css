@@ -8,6 +8,10 @@
     top: 11px;
 }
 
+.add-sample{
+    cursor: hand;
+}
+
 .modification-selection {
     height: 100px;
 }
@@ -20,4 +24,98 @@
 .glycosylation-site {
     font-weight: 900;
     color: maroon;
+}
+
+/*
+
+Protein Match Table
+
+*/
+
+.protein-match-table th, .protein-match-table td {
+    width: 180px;
+    padding: 5px;
+}
+
+.protein-match-table thead, .protein-match-table tbody {
+    display: block;
+    overflow-y: auto;
+}
+
+.protein-match-table tbody tr{
+    cursor: hand;
+}
+
+.protein-match-cell {
+    text-align: left;
+    padding: 5px;
+}
+
+
+/*
+
+Glycopeptide Match Table
+
+*/
+
+.glycopeptide-match-table th, .glycopeptide-match-table td {
+    width: 90px;
+    padding: 3px;
+    border-left: 1px lightgrey solid;
+    font-size: 0.7em;
+    text-align: center;
+}
+
+.glycopeptide-match-table th.wide, .glycopeptide-match-table td.wide {
+    width: 150px;
+    word-break: break-all;
+}
+
+.glycopeptide-match-table thead, .glycopeptide-match-table tbody {
+    display: block;
+    overflow-y: auto;
+}
+
+.glycopeptide-match-table th.narrow, .glycopeptide-match-table td.narrow {
+    width: 70px;
+    word-break: break-all;
+}
+
+.glycopeptide-match-table td {
+
+}
+
+.modal.wide {
+    width: 85% !important;
+    height: 80% !important;
+}
+
+.modal .row{
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.fragment-ion-table td, .fragment-ion-table th {
+    font-size: .7em;
+    padding: 3px !important;
+    word-break: break-all;
+}
+
+/*
+
+Protein Overview Graphic
+
+*/
+
+.protein-view-tooltip {
+    background-color: white;
+    padding: 10px 20px;
+    margin-left: 40px;
+    border: 1px solid grey;
+    border-radius: 4px;
+    opacity: 0.8;
+}
+
+.side-nav.fixed {
+    padding-left: 5px;
 }

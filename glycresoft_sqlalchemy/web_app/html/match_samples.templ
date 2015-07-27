@@ -1,32 +1,31 @@
 {%- extends "layout.templ" %}
 
 {% block body %}
-<h2>Match Hypothesis Against Samples</h2>
+<h4>Match Hypothesis Against Samples</h4>
 <div class='row'>
-    <form action="match_samples_submit" class="col s12" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-        <div id='add-sample-container' class='row'>
-            <div class='col s1'>
-                &nbsp;
-            </div>
-            <div class='col s8'>
-            <h6>Add A New Sample... <i class='small material-icons inline-icon'>library_add</i></h6>
-            {% include "components/add_sample.templ" %}
-            {% set samples = Manager.samples() %}
-            {% if samples|length > 0 %}
-                <h6>Or Choose An Existing Sample</h6>
-                <select name="samples" multiple>
+    <form action="match_samples" class="col s12" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+        <div class='col s6'>
+        {% set samples = Manager.samples() %}
+        {% if samples|length > 0 %}
+            <label for="samples">Select one or more samples</label>
+            <select name="samples" class='browser-default' multiple style='height:150px;'>
                 {% for sample in Manager.samples() %}
                     <option value="{{sample.name}}">{{sample.name}}</option>
                 {% endfor %}
-                </select>
-            {% endif %}
+            </select>
+        {% endif %}
+        </div>
+        <div id='add-sample-container'>
+            <div class='col s6'>
+            Or add a new sample
+            {% include "components/add_sample.templ" %}
             </div>
         </div>
         <div class='row'>
             <div class='input-field col s6'>    
                 <label for="hypothesis_choice">Choose a Hypothesis</label>
                 <br>
-                <select id="hypothesis_choice" name="hypothesis_choice" class=''>
+                <select id="hypothesis_choice" name="hypothesis_choice" class='browser-default'>
                     {% for hypothesis in Manager.hypotheses().filter_by(is_decoy=False) %}
                     <option value={{hypothesis.id}}>{{hypothesis.name}}</option>
                     {% endfor %}
@@ -44,6 +43,7 @@
             </div>
         </div>
 
+        <button class='btn'>Submit</button>
     </form>
 </div>
 

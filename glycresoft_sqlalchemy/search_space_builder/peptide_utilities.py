@@ -138,6 +138,7 @@ def generate_peptidoforms(reference_protein, constant_modifications,
                                                                                    modtable):
             peptidoform = NaivePeptide(
                 base_peptide_sequence=peptide,
+                modified_peptide_sequence=modseq,
                 protein=reference_protein,
                 protein_id=reference_protein.id,
                 start_position=start,

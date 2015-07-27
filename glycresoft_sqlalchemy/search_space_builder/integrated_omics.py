@@ -187,7 +187,6 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
 
 
 class IntegratedOmicsMS1LegacyCSV(PipelineModule):
-    manager_type = DatabaseManager
 
     def __init__(self, database_path, hypothesis_id, protein_ids=None, output_path=None):
         self.manager = self.manager_type(database_path)
@@ -199,6 +198,7 @@ class IntegratedOmicsMS1LegacyCSV(PipelineModule):
         elif isinstance(protein_ids[0], basestring):
             protein_ids = flatten(session.query(Protein.id).filter(Protein.name == name).first()
                                   for name in protein_ids)
+        logger.info("Protein IDs %r", protein_ids)
 
         self.protein_ids = protein_ids
         if output_path is None:

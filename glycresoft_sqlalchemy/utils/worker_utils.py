@@ -31,7 +31,7 @@ def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None,
     begin_time = timer = time.time()
     elapsed = False
 
-    while len(work_queue) > 0 and work_left:
+    while len(work_queue) > 0 or work_left:
         next_round = []
         for i in range(len(work_queue)):
             task = work_queue[i]
@@ -56,7 +56,7 @@ def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None,
                 except StopIteration:
                     work_left = False
     end_time = time.time()
-    logger.info("Time elapsed: %0.2fs", (begin_time, end_time))
+    logger.info("Time elapsed: %0.2fs", (end_time - begin_time))
 
 
 class ResultCounter(object):

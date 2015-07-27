@@ -1,0 +1,22 @@
+<div class='fragment-ion-detial'>
+    <table class='bordered fragment-ion-table'>
+        <thead>
+            <tr>
+                <th>Key</th>
+                <th>Mass</th>
+                <th>PPM Error</th>
+                <th>Intensity</th>
+            </tr>
+        </thead>
+        <tbody>
+    {% for fragment in fragments|sort(attribute='observed_mass') %}
+        <tr>
+            <th>{{fragment.key}}</th>
+            <td>{{"%0.3f"|format(fragment.observed_mass)}}</td>
+            <td>{{"%0.3e"|format(fragment.ppm_error)}}</td>
+            <td>{{"%0.2f"|format(fragment.intensity)}}</td>
+        </tr>
+    {% endfor %}
+        </tbody>
+    </table>
+</div>

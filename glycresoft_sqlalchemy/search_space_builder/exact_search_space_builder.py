@@ -192,7 +192,7 @@ class ExactSearchSpaceBuilder(PipelineModule):
             Protein.hypothesis_id == self.hypothesis.id).group_by(
             TheoreticalGlycopeptide.glycopeptide_sequence,
             TheoreticalGlycopeptide.protein_id)
-        print ids.first()
+
         q = session.query(TheoreticalGlycopeptide.id).filter(
             TheoreticalGlycopeptide.protein_id == Protein.id,
             Protein.hypothesis_id == self.hypothesis.id,

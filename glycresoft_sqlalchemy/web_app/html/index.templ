@@ -64,7 +64,7 @@
         </div>  
         <div class='col s4'>
         <table id='sample-table' class='bordered'>
-            <caption>Samples Loaded <a href='/add_sample'><i class="small material-icons inline-icon">library_add</i></a></caption>
+        <caption>Samples Loaded <a class='add-sample'><b>+</b></a></caption>
             {% set samples = Manager.samples() %}
             {% if samples|length != 0 %}
                     {% for sample in  samples%}
@@ -73,9 +73,8 @@
                     </tr>
                     {% endfor %}
             {% else %}
-
                 <tr><td>No Samples have been added to this workspace.<br>
-                <a href='/add_sample'>Click To Add</a></td></tr>
+                <a class='add-sample'>Click To Add</a></td></tr>
             {% endif %}
         </table> 
         </div>      

@@ -5,7 +5,7 @@ import re
 import logging
 
 from ..data_model import DatabaseManager, PipelineModule
-from ..data_model.observed_ions import SampleRun, MSScan, TandemScan, Peak
+from ..data_model.observed_ions import BUPIDDeconvolutedLCMSMSSampleRun, TandemScan, Peak
 from . import neutral_mass
 from ..utils import sqlitedict
 from .constants import constants as ms_constants
@@ -206,7 +206,7 @@ class StreamingYAMLRenderer(object):
         source = self.source
         state = BEGIN
 
-        scan_id = None
+        scan_time = None
         scans = []
         tandem_peaks = []
         mass = []
@@ -262,12 +262,13 @@ class StreamingYAMLRenderer(object):
                         continue
                     precursor_charge_state = scans[0]['z']
                     precursor_neutral_mass = neutral_mass(scans[0]['mz'], precursor_charge_state)
-                    logger.info("Scan ID %d", scan_id)
+                    logger.info("Scan Time %d", scan_time)
                     scan = TandemScan(
-                        id=scan_id,
+                        time=scan_time,
                         precursor_neutral_mass=precursor_neutral_mass, sample_run_id=self.sample_run_id)
                     session.add(scan)
-
+                    session.flush()
+                    scan_id = scan.id
                     tandem_peaks = []
                     for i in range(len(mass)):
                         if charge[i] > precursor_charge_state:
@@ -298,7 +299,7 @@ class StreamingYAMLRenderer(object):
                         else:
                             value = float(event.value)
                         if current_key == 'id':
-                            scan_id = value
+                            scan_time = value
                         elif current_list is not None:
                             current_list(value)
 
@@ -325,7 +326,7 @@ class BUPIDMSMSYamlParser(PipelineModule):
             self.sample_run_name = os.path.basename(file_path)
             return
         session = self.manager.session()
-        self.sample_run = SampleRun(name=os.path.basename(file_path), parameters={
+        self.sample_run = BUPIDDeconvolutedLCMSMSSampleRun(name=os.path.basename(file_path), parameters={
             "file_path": file_path,
             "deconvoluted_with": "BUPID Top Down Deconvoluter"
             })
@@ -344,8 +345,8 @@ class BUPIDMSMSYamlParser(PipelineModule):
         """
         session = self.manager.session()
         result = session.query(
-            SampleRun.id).filter(
-            SampleRun.name == os.path.basename(
+            BUPIDDeconvolutedLCMSMSSampleRun.id).filter(
+            BUPIDDeconvolutedLCMSMSSampleRun.name == os.path.basename(
                 self.file_path)).count() == 0
         session.close()
         return result

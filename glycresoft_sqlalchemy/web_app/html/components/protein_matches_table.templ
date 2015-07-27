@@ -1,0 +1,38 @@
+<table class='bordered protein-match-table'>
+    <thead class='protein-match-header'>
+        <tr>
+        <th>
+            Protein Name
+        </th>
+        <th>
+            Glycopeptides Matched
+        </th>
+        <th>
+            Glycosylation Site Count
+        </th>
+        <th>
+            Glycopeptides Searched
+        </th>
+        <th></th>
+        </tr>
+    </thead>
+    <tbody class='protein-match-table-body' style='height:150px;'>
+    {% for protein in proteins.values()|fsort('theoretical_glycopeptides.count()') if protein.theoretical_glycopeptides.count() != 0 %}    
+        <tr class='protein-match-row' data-target="{{protein.id}}">
+            <td>
+                <small>{{protein.name}}</small>
+            </td>
+            <td>
+                {{protein.glycopeptide_matches.count()}}
+            </td>
+            <td>
+                {{protein.glycosylation_sites|length}}
+            </td>
+            <td>
+                {{protein.theoretical_glycopeptides.count()}}
+            </td>
+            <td></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

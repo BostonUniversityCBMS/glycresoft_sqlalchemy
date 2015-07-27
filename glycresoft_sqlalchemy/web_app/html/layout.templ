@@ -8,14 +8,28 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/materialize.css') }}">    
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='font/icons.css') }}">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script src="{{ url_for('static',filename='js/jquery.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/materialize.js') }}"></script>
+    
+    <script src="{{ url_for('static',filename='js/vendor/jquery.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/vendor/lodash.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/vendor/d3.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/vendor/EventEmitter.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/vendor/materialize.js') }}"></script>
+    
+    <script src="{{ url_for('static',filename='js/ajax-form.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/custom-tooltip.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/formatstring.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/material-shim.js') }}"></script>
+    
+    <script src="{{ url_for('static',filename='js/app/common.js') }}"></script>
+
     <script>
+
 $(function() {
     $('select').material_select();
-    var source = new EventSource('/stream');
-    source.addEventListener("update", function(event){
-        Materialize.toast(event.data, 4000)
+    $(".side-nav").css('top', $('.nav-wrapper').innerHeight())
+    $(".add-sample").click(function(event){
+        event.preventDefault()
+        setupAjaxForm("/add_sample", "#dialog-modal")
     })
 });
 
@@ -25,11 +39,30 @@ $(function() {
 </head>
 <body>
     {% include "header.templ" %}
-    <div class='container'>
+    <div class="side-nav fixed">
+    <div class='task-list-container'>
+        <h6>Tasks</h6>
+        <div class='divider'>
+        </div>
+        <ul>
+        </ul>
+    </div>
+    </div>
+    <div id='home-layer' class='container'>
     {% block body %}
     {% endblock %}
     </div>
-
+    <div class='action-layer'>
+        
+    </div>
+    <div id="dialog-modal" class="modal wide">
+        <div class="modal-content">
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class=" modal-action modal-close waves-effect waves-green btn-flat">Dismiss</a>
+        </div>
+    </div>
+    
     {% include "footer.templ" %}
 </body>
 </html>

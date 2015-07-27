@@ -8,3 +8,4 @@ from .glycomics import *
 from .connection import *
 from pipeline_module import PipelineModule
 from sqlalchemy import func
+from sqlalchemy.orm.session import object_session

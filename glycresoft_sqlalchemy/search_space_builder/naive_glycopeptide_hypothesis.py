@@ -5,15 +5,15 @@ import functools
 import itertools
 import multiprocessing
 
-from ..data_model import (DatabaseManager, Hypothesis, Protein, Glycan, NaivePeptide,
-                          TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase)
+from ..data_model import (DatabaseManager, Hypothesis, Protein, NaivePeptide,
+                          TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func)
 from .include_glycomics import MS1GlycanImporter
 from .peptide_utilities import generate_peptidoforms, ProteinFastaFileParser, SiteListFastaFileParser
 from .glycan_utilities import get_glycan_combinations, merge_compositions
 from .utils import flatten
 
 from ..structure import composition
-
+from ..utils.worker_utils import async_worker_pool
 Composition = composition.Composition
 
 format_mapping = {
@@ -39,6 +39,7 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id)
             glycoform = TheoreticalGlycopeptideComposition(
                 base_peptide_sequence=peptide.base_peptide_sequence,
                 modified_peptide_sequence=peptide.modified_peptide_sequence,
+                glycopeptide_sequence=peptide.modified_peptide_sequence + glycan_composition_str,
                 protein_id=peptide.protein_id,
                 start_position=peptide.start_position,
                 end_position=peptide.end_position,
@@ -144,34 +145,32 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
         cntr = 0
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
-            # apply_async gets around the block-wise batch wait that all of the *map* variants have
-            work_queue = []
-            for item in work_stream:
-                work_queue.append(pool.apply_async(task_fn, [item]))
-            last_length = len(work_queue)
-            while len(work_queue) > 0:
-                next_round = []
-                for i in range(len(work_queue)):
-                    task = work_queue[i]
-                    task.wait(0.1)
-                    if task.ready():
-                        cntr += task.get()
-                    else:
-                        next_round.append(task)
-                work_queue = next_round
-                if last_length != len(work_queue):
-                    last_length = len(work_queue)
-                    logger.info("%d tasks remaining", last_length)
-
+            async_worker_pool(pool, work_stream, task_fn)
         else:
             for item in work_stream:
                 cntr += task_fn(item)
                 logger.info("%d done", cntr)
+
+        session.commit()
+        ids = session.query(func.min(TheoreticalGlycopeptideComposition.id)).filter(
+            TheoreticalGlycopeptideComposition.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis.id).group_by(
+            TheoreticalGlycopeptideComposition.glycopeptide_sequence,
+            TheoreticalGlycopeptideComposition.peptide_modifications,
+            TheoreticalGlycopeptideComposition.protein_id)
+
+        q = session.query(TheoreticalGlycopeptideComposition.id).filter(
+            TheoreticalGlycopeptideComposition.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis.id,
+            ~TheoreticalGlycopeptideComposition.id.in_(ids.correlate(None)))
+        conn = session.connection()
+        conn.execute(TheoreticalGlycopeptideComposition.__table__.delete(
+            TheoreticalGlycopeptideComposition.__table__.c.id.in_(q.selectable)))
+        session.commit()
         logger.info("Naive Hypothesis Complete. %d theoretical glycopeptide compositions genreated.",
                     session.query(TheoreticalGlycopeptideComposition).filter(
                         TheoreticalGlycopeptideComposition.protein_id == Protein.id,
                         Protein.hypothesis_id == self.hypothesis.id).count())
-        session.commit()
         return self.hypothesis.id
 
 
