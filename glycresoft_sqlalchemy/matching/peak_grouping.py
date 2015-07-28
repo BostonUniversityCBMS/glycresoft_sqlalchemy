@@ -13,6 +13,7 @@ from sqlalchemy import func, bindparam, select
 from sqlalchemy.orm import make_transient
 
 import numpy as np
+
 from sklearn.linear_model import LogisticRegression
 
 from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
@@ -21,6 +22,7 @@ from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGro
                           PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch)
 
 from ..utils.database_utils import get_or_create
+from ..utils import pickle
 from ..report import chromatogram
 
 TDecon2LSPeakGroup = Decon2LSPeakGroup.__table__
@@ -477,10 +479,10 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                 "peak_ids": mass_match.peak_ids
             }
             params.append(case)
-        session.bulk_insert_mappings(PeakGroupMatch, params)
-        session.commit()
+        # session.bulk_insert_mappings(PeakGroupMatch, params)
+        # session.commit()
         session.close()
-        return len(params)
+        return params
     except Exception, e:
         logger.exception("An exception occurred in match_peak_group, %r", locals(), exc_info=e)
         raise e
@@ -552,17 +554,32 @@ class PeakGroupMatching(PipelineModule):
 
         task_fn = self.prepare_task_fn()
         counter = 0
+        accumulator = []
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             for res in pool.imap_unordered(task_fn, self.stream_ids(), chunksize=500):
                 counter += 1
+                if res is not None:
+                    accumulator.extend(res)
                 if counter % 1000 == 0:
                     logger.info("%d masses searched", counter)
+                if len(accumulator) > 1000:
+                    session.bulk_insert_mappings(PeakGroupMatch, accumulator)
+                    session.commit()
+                    accumulator = []
         else:
             for res in itertools.imap(task_fn, self.stream_ids()):
                 counter += 1
+                if res is not None:
+                    accumulator.extend(res)
                 if counter % 1000 == 0:
                     logger.info("%d masses searched", counter)
+                if len(accumulator) > 10000:
+                    session.bulk_insert_mappings(PeakGroupMatch, accumulator)
+                    session.commit()
+                    accumulator = []
+
+        session.bulk_insert_mappings(PeakGroupMatch, accumulator)
         session.commit()
         session.close()
 
@@ -809,3 +826,4 @@ class LCMSPeakClusterSearch(PipelineModule):
             self.sample_run_id, self.hypothesis_sample_match_id, self.regression_parameters)
 
         classifier.start()
+        hypothesis_sample_match.params['classifier'] = pickle.dumps(classifier.classifier)

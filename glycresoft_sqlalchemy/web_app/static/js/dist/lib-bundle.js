@@ -1,4 +1,4 @@
-var ActionLayer, ActionLayerManager,
+var ActionBook, ActionLayer, ActionLayerManager,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
 
@@ -60,8 +60,8 @@ ActionLayerManager = (function(superClass) {
     });
   };
 
-  ActionLayerManager.prototype.addLayer = function(options) {
-    return new ActionLayer(this, options);
+  ActionLayerManager.prototype.addLayer = function(options, params) {
+    return new ActionLayer(this, options, params);
   };
 
   ActionLayerManager.prototype.removeLayer = function(id) {
@@ -69,17 +69,34 @@ ActionLayerManager = (function(superClass) {
     return delete this.layers[id];
   };
 
+  ActionLayerManager.prototype.removeCurrentLayer = function(next) {
+    var current;
+    if (next == null) {
+      next = ActionLayerManager.HOME_LAYER;
+    }
+    current = this.getShowingLayer();
+    this.setShowingLayer(next);
+    return current.dispose();
+  };
+
   return ActionLayerManager;
 
 })(EventEmitter);
 
 ActionLayer = (function() {
-  function ActionLayer(manager, options) {
+  ActionLayer.actions = {};
+
+  function ActionLayer(manager, options, params) {
     this.manager = manager;
     this.options = options;
+    this.params = params;
     this.contentURL = options.contentURL;
     if (!options.container) {
-      this.id = options.name || 'action-layer-' + manager.incLayerCounter();
+      if (this.params != null) {
+        this.id = options.name + "-" + manager.incLayerCounter();
+      } else {
+        this.id = options.name || 'action-layer-' + manager.incLayerCounter();
+      }
       this.container = $('<div></div>').attr('id', this.id);
       this.setup();
     } else {
@@ -98,6 +115,10 @@ ActionLayer = (function() {
 
   ActionLayer.prototype.setup = function() {
     var self;
+    console.log("Setting up", this);
+    if (this.options.contentURLTemplate != null) {
+      this.contentURL = this.options.contentURLTemplate.format(this.params);
+    }
     self = this;
     return $.get(this.contentURL).success(function(doc) {
       self.container.hide();
@@ -106,10 +127,9 @@ ActionLayer = (function() {
         var srcURL;
         tag = $(tag);
         srcURL = tag.attr('src');
+        console.log("Setting up script", tag);
         if (srcURL !== void 0) {
           return $.getScript(srcURL);
-        } else {
-          return eval(tag.text());
         }
       });
     });
@@ -125,15 +145,47 @@ ActionLayer = (function() {
     this.showing = false;
   };
 
+  ActionLayer.prototype.dispose = function() {
+    this.container.remove();
+    return delete this.manager.layers[this.id];
+  };
+
   return ActionLayer;
 
 })();
+
+ActionBook = {
+  home: {
+    container: '#home-layer',
+    name: 'home-layer'
+  },
+  addSample: {
+    contentURL: '/add_sample',
+    name: 'add-sample'
+  },
+  matchSamples: {
+    contentURL: '/match_samples',
+    name: 'match-samples'
+  },
+  naiveGlycopeptideSearchSpace: {
+    contentURL: "/glycopeptide_search_space",
+    name: "glycopeptide-search-space"
+  },
+  naiveGlycanSearchSpace: {
+    contentURL: "/glycan_search_space",
+    name: "glycan-search-space"
+  },
+  viewDatabaseSearchResults: {
+    contentURLTemplate: "/view_database_search_results/{}",
+    name: "view-database-search-results"
+  }
+};
 
 //# sourceMappingURL=action-layer.js.map
 ;var ajaxForm, setupAjaxForm;
 
 ajaxForm = function(formHandle, success, error) {
-  $(formHandle).on('submit', function(event) {
+  return $(formHandle).on('submit', function(event) {
     var ajaxParams, data, encoding, handle, method, url;
     event.preventDefault();
     handle = $(this);
@@ -150,7 +202,7 @@ ajaxForm = function(formHandle, success, error) {
       'success': success,
       'error': error
     };
-    $.ajax(ajaxParams);
+    return $.ajax(ajaxParams);
   });
 };
 
@@ -162,21 +214,21 @@ setupAjaxForm = function(sourceUrl, container) {
     if (isModal) {
       container.find('.modal-content').html(doc);
       container.openModal();
-      container.find('form').submit(function(event) {
-        container.closeModal();
+      return container.find('form').submit(function(event) {
+        return container.closeModal();
       });
     } else {
-      container.html(doc);
+      return container.html(doc);
     }
   });
-  container.find('script').each(function(i, tag) {
+  return container.find('script').each(function(i, tag) {
     var srcURL;
     tag = $(tag);
     srcURL = tag.attr('src');
     if (srcURL !== void 0) {
-      $.getScript(srcURL);
+      return $.getScript(srcURL);
     } else {
-      eval(tag.text());
+      return eval(tag.text());
     }
   });
 };
@@ -234,13 +286,17 @@ setupAjaxForm = function(sourceUrl, container) {
       keys = Object.keys(arguments);
     }
     res = this.replace(/\{([^\}]*)\}/g, function(placeholder, name, position) {
-      var err;
+      var err, v;
       if (name === '') {
         name = keys[i];
         i++;
       }
       try {
-        return JSON.stringify(data[name]).slice(1, -1);
+        v = JSON.stringify(data[name]);
+        if (v.length > 1) {
+          v = v.slice(1, -1);
+        }
+        return v;
       } catch (_error) {
         err = _error;
         console.log(err, name, data);
@@ -262,8 +318,12 @@ This code is taken from https://github.com/Dogfalo/materialize/blob/master/js/fo
 var materialFileInput, materialRefresh;
 
 materialRefresh = function() {
-  materialFileInput();
-  Materialize.updateTextFields();
+  try {
+    materialFileInput();
+  } catch (_error) {}
+  try {
+    Materialize.updateTextFields();
+  } catch (_error) {}
 };
 
 materialFileInput = function() {

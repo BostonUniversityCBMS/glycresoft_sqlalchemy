@@ -1,7 +1,7 @@
 var ajaxForm, setupAjaxForm;
 
 ajaxForm = function(formHandle, success, error) {
-  $(formHandle).on('submit', function(event) {
+  return $(formHandle).on('submit', function(event) {
     var ajaxParams, data, encoding, handle, method, url;
     event.preventDefault();
     handle = $(this);
@@ -18,7 +18,7 @@ ajaxForm = function(formHandle, success, error) {
       'success': success,
       'error': error
     };
-    $.ajax(ajaxParams);
+    return $.ajax(ajaxParams);
   });
 };
 
@@ -30,21 +30,21 @@ setupAjaxForm = function(sourceUrl, container) {
     if (isModal) {
       container.find('.modal-content').html(doc);
       container.openModal();
-      container.find('form').submit(function(event) {
-        container.closeModal();
+      return container.find('form').submit(function(event) {
+        return container.closeModal();
       });
     } else {
-      container.html(doc);
+      return container.html(doc);
     }
   });
-  container.find('script').each(function(i, tag) {
+  return container.find('script').each(function(i, tag) {
     var srcURL;
     tag = $(tag);
     srcURL = tag.attr('src');
     if (srcURL !== void 0) {
-      $.getScript(srcURL);
+      return $.getScript(srcURL);
     } else {
-      eval(tag.text());
+      return eval(tag.text());
     }
   });
 };

@@ -8,8 +8,12 @@ This code is taken from https://github.com/Dogfalo/materialize/blob/master/js/fo
 var materialFileInput, materialRefresh;
 
 materialRefresh = function() {
-  materialFileInput();
-  Materialize.updateTextFields();
+  try {
+    materialFileInput();
+  } catch (_error) {}
+  try {
+    Materialize.updateTextFields();
+  } catch (_error) {}
 };
 
 materialFileInput = function() {

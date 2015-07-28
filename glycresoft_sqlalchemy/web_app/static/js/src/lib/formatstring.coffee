@@ -16,7 +16,10 @@ do ->
                 name = keys[i]
                 i++
             try
-                return JSON.stringify(data[name]).slice(1, -1)
+                v = JSON.stringify(data[name])
+                if v.length > 1
+                    v = v.slice(1, -1)
+                return v
             catch err
                 console.log err, name, data
                 return undefined

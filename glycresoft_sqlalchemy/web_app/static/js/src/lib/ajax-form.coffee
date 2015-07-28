@@ -15,8 +15,7 @@ ajaxForm = (formHandle, success, error) ->
             'success': success
             'error': error
         $.ajax ajaxParams
-        return
-    return
+
 
 setupAjaxForm = (sourceUrl, container) ->
     container = $(container)
@@ -27,10 +26,9 @@ setupAjaxForm = (sourceUrl, container) ->
             container.openModal()
             container.find('form').submit (event) ->
                 container.closeModal()
-                return
+    
         else
             container.html doc
-        return
     container.find('script').each (i, tag) ->
         tag = $(tag)
         srcURL = tag.attr('src')
@@ -38,5 +36,3 @@ setupAjaxForm = (sourceUrl, container) ->
             $.getScript srcURL
         else
             eval tag.text()
-        return
-    return

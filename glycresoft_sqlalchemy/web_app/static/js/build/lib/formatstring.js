@@ -13,13 +13,17 @@
       keys = Object.keys(arguments);
     }
     res = this.replace(/\{([^\}]*)\}/g, function(placeholder, name, position) {
-      var err;
+      var err, v;
       if (name === '') {
         name = keys[i];
         i++;
       }
       try {
-        return JSON.stringify(data[name]).slice(1, -1);
+        v = JSON.stringify(data[name]);
+        if (v.length > 1) {
+          v = v.slice(1, -1);
+        }
+        return v;
       } catch (_error) {
         err = _error;
         console.log(err, name, data);

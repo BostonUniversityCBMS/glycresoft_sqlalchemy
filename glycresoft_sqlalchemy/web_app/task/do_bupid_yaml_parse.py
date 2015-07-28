@@ -24,11 +24,6 @@ def taskmain(database_path, yaml_path, results_path, comm=None):
 class BUPIDYamlParseTask(Task):
     def __init__(self, database_path, yaml_path, results_path, callback, **kwargs):
         args = (database_path, yaml_path, results_path)
-        job_name = os.path.basename(results_path)
-        self.job_name = job_name
+        job_name = "BUPID " + os.path.basename(results_path)
+        kwargs.setdefault('name', job_name)
         super(BUPIDYamlParseTask, self).__init__(taskmain, args, callback, **kwargs)
-
-    def to_json(self):
-        d = Task.to_json(self)
-        d['name'] = self.job_name
-        return d

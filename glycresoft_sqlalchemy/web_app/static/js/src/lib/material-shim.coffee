@@ -6,8 +6,10 @@ This code is taken from https://github.com/Dogfalo/materialize/blob/master/js/fo
 ###
 
 materialRefresh = ->
-    materialFileInput()
-    Materialize.updateTextFields()
+    try
+        materialFileInput()
+    try
+        Materialize.updateTextFields()
     return
 
 materialFileInput = ->

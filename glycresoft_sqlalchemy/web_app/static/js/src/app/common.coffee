@@ -85,22 +85,11 @@ class Application extends ActionLayerManager
                 self.container = $(self.options.actionContainer)
                 console.log self.options.actionContainer
                 self.sideNav = $('.side-nav')
-                self.addLayer
-                    'container': '#home-layer'
-                    'name': 'home-layer'
-                self.addLayer
-                    'contentURL': '/add_sample'
-                    'name': 'add-sample'
-                self.addLayer
-                    'contentURL': '/match_samples'
-                    'name': 'match-samples'
+                self.addLayer ActionBook.home
     ]
 
 renderTask = (task) ->
     '<li data-id=\'{id}\' data-status=\'{status}\'><b>{name}</b> ({status})</li>'.format task
-
-
-
 
 
 window.GlycReSoft = new Application(options={actionContainer: ".action-layer-container"})

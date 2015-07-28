@@ -1,15 +1,15 @@
-class ViewDatabaseSearchResults extends EventEmitter
-    constructor: ->
+viewDatabaseSearchResults = ->
+    peptideDetailsModal = undefined
+
+    setup = ->
         $('.protein-match-table tbody tr').click updateProteinChoice
-        updateProteinChoice.apply $('.protein-match-table tbody tr'), null
-        return
+        updateProteinChoice.apply $('.protein-match-table tbody tr')
 
-    initGlycopeptideTooltip: ->
-        $('svg .glycopeptide').customTooltip @glycopeptideTooltipCallback, 'protein-view-tooltip'
-        $('svg .modification path').customTooltip @modificationTooltipCallback, 'protein-view-tooltip'
-        return
+    initGlycopeptideTooltip = ->
+        $('svg .glycopeptide').customTooltip glycopeptideTooltipCallback, 'protein-view-tooltip'
+        $('svg .modification path').customTooltip modificationTooltipCallback, 'protein-view-tooltip'
 
-    glycopeptideTooltipCallback: (handle) ->
+    glycopeptideTooltipCallback = (handle) ->
         template = '<div>
         <span><b>MS2 Score:</b> {ms2-score}</span><br>
         <span><b>q-value:</b> {q-value}</span><br>
@@ -20,7 +20,7 @@ class ViewDatabaseSearchResults extends EventEmitter
             'ms2-score': handle.attr('data-ms2-score')
             'q-value': handle.attr('data-q-value')
 
-    modificationTooltipCallback: (handle) ->
+    modificationTooltipCallback = (handle) ->
         template = '
         <div>
         <span>{value}</span>
@@ -31,39 +31,45 @@ class ViewDatabaseSearchResults extends EventEmitter
             value = 'HexNAc - Glycosylation: ' + sequence.split(/(\[|\{)/).slice(1).join('')
         template.format 'value': value
 
-peptideDetailsModal = undefined
+    updateProteinChoice = ->
+        handle = $(this)
+        id = handle.attr('data-target')
+        console.log id, "About to fadeOut"
+        $('#chosen-protein-container').fadeOut()
+        $.get('/view_database_search_results/protein_view/' + id).success((doc) ->
+            console.log("About to fadeIn", $('#chosen-protein-container'))
+            $('#chosen-protein-container').html(doc).fadeIn()
+            initGlycopeptideTooltip()
+            tabs = $('ul.tabs')
+            tabs.tabs()
+            if GlycReSoft.context['protein-view-active-tab'] != undefined
+                console.log GlycReSoft.context['protein-view-active-tab']
+                $('ul.tabs').tabs 'select_tab', GlycReSoft.context['protein-view-active-tab']
+            else
+                $('ul.tabs').tabs 'select_tab', 'protein-overview'
+            $('ul.tabs .tab a').click ->
+                GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1)
+                return
+            $('.indicator').addClass 'indigo'
+            $('.glycopeptide-match-row').click showGlycopeptideDetailsModal
+            peptideDetailsModal = $('#peptide-detail-modal')
+        ).error (error) ->
+            console.log arguments
 
-updateProteinChoice = ->
-    handle = $(this)
-    id = handle.attr('data-target')
-    console.log id
-    $('#chosen-protein-container').fadeOut()
-    $.get('/view_database_search_results/protein_view/' + id).success((doc) ->
-        $('#chosen-protein-container').html(doc).fadeIn()
-        initGlycopeptideTooltip()
-        tabs = $('ul.tabs')
-        tabs.tabs()
-        if GlycReSoft.context['protein-view-active-tab'] != undefined
-            console.log GlycReSoft.context['protein-view-active-tab']
-            $('ul.tabs').tabs 'select_tab', GlycReSoft.context['protein-view-active-tab']
-        else
-            $('ul.tabs').tabs 'select_tab', 'protein-overview'
-        $('ul.tabs .tab a').click ->
-            GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1)
-            return
-        $('.indicator').addClass 'indigo'
-        $('.glycopeptide-match-row').click showGlycopeptideDetailsModal
-        peptideDetailsModal = $('#peptide-detail-modal')
-    ).error (error) ->
-        console.log arguments
+    
 
-getGlycopeptideMatchDetails = (id, callback) ->
-    $.get '/api/glycopeptide_match/' + id, callback
-    return
+    getGlycopeptideMatchDetails = (id, callback) ->
+        $.get '/api/glycopeptide_match/' + id, callback
+        return
 
-showGlycopeptideDetailsModal = ->
-    handle = $(this)
-    id = handle.attr('data-target')
-    $.get('/view_database_search_results/view_glycopeptide_details/' + id).success (doc) ->
-        peptideDetailsModal.find('.modal-content').html doc
-        peptideDetailsModal.openModal()
+    showGlycopeptideDetailsModal = ->
+        handle = $(this)
+        id = handle.attr('data-target')
+        $.get('/view_database_search_results/view_glycopeptide_details/' + id).success (doc) ->
+            peptideDetailsModal.find('.modal-content').html doc
+            peptideDetailsModal.openModal()
+
+    unload = ->
+        GlycReSoft.removeCurrentLayer()
+
+    setup()

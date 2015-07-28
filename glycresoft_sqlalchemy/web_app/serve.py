@@ -84,11 +84,17 @@ def index():
 
 @app.route("/internal/update_settings", methods=["POST"])
 def update_settings():
+    '''
+    TODO
+    ----
+    Diff incoming settings with server-side settings and
+    send back the union of the settings to the client.
+    '''
     settings = request.values
     return jsonify(**settings)
 
 
-@app.route("/test")
+@app.route("/test/task-test")
 def test_page():
     manager.add_task(DummyTask("Dummy"))
     return jsonify(status='101')
@@ -111,7 +117,8 @@ def view_protein_results(id):
 @app.route("/view_database_search_results/view_glycopeptide_details/<int:id>")
 def view_glycopeptide_details(id):
     gpm = g.db.query(GlycopeptideMatch).get(id)
-    return render_template("components/glycopeptide_details.templ", glycopeptide=gpm)
+    return render_template(
+        "components/glycopeptide_details.templ", glycopeptide=gpm)
 
 
 @app.route("/api/glycopeptide_matches/<int:id>")

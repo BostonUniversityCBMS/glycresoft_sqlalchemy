@@ -44,7 +44,9 @@
     </form>
 <script>
 ajaxForm($("form#match-sample-form"), function(){
+    var currentAction = GlycReSoft.getShowingLayer()
     GlycReSoft.setShowingLayer("home-layer")
+    currentAction.dispose()
 }, function(err){
     console.log(arguments)
 })

@@ -1,16 +1,44 @@
+.dismiss-layer {
+    float: right;
+    cursor: hand;
+    margin-top: 10px;
+}
+
+.dismiss-layer:after{
+    content: "X";
+    font-weight: 900;
+
+}
+
+/*
+
+Modals
+
+*/
+
+.modal.wide {
+    width: 85% !important;
+    height: 80% !important;
+}
+
+.modal .row{
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+
+
+/*
+
+Form Elements
+
+*/
+
 .file-format-radio {
     position: relative !important;
     left: 80px !important;
 }
 
-.inline-icon{
-    position: relative;
-    top: 11px;
-}
-
-.add-sample{
-    cursor: hand;
-}
 
 .modification-selection {
     height: 100px;
@@ -20,6 +48,17 @@
     vertical-align: bottom;
 }
 
+
+.add-sample{
+    cursor: hand;
+}
+
+
+/*
+
+Sequence Highlights
+
+*/
 
 .glycosylation-site {
     font-weight: 900;
@@ -83,16 +122,6 @@ Glycopeptide Match Table
 
 .glycopeptide-match-table td {
 
-}
-
-.modal.wide {
-    width: 85% !important;
-    height: 80% !important;
-}
-
-.modal .row{
-    margin-left: auto !important;
-    margin-right: auto !important;
 }
 
 .fragment-ion-table td, .fragment-ion-table th {

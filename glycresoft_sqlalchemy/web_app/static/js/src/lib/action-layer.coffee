@@ -4,20 +4,21 @@ class ActionLayerManager extends EventEmitter
         @container = $(container)
         @options = options
         @layers = {}
+        @lastAdded = null
         @layerCounter = 0
         @on 'layer-change', (event) ->
             materialRefresh()
-            return
-        return
 
     incLayerCounter: ->
         @layerCounter++
-        @layerCounter
+        return @layerCounter
 
     add: (layer) ->
         @layers[layer.id] = layer
         @container.append layer.container
-        return
+        @emit "layer-added", "layer": layer
+        @lastAdded = layer.id
+        return @
 
     get: (id) ->
         @layers[id]
@@ -41,20 +42,35 @@ class ActionLayerManager extends EventEmitter
             @get(ActionLayerManager.HOME_LAYER).show()
         @emit 'layer-change', 'layer': next
 
-    addLayer: (options) ->
-        new ActionLayer(this, options)
+    addLayer: (options, params) ->
+        new ActionLayer(this, options, params)
+        return @
 
     removeLayer: (id) ->
         @layers[id].container.remove()
         delete @layers[id]
+        return @
+
+    removeCurrentLayer: (next=ActionLayerManager.HOME_LAYER) ->
+        current = @getShowingLayer()
+        @setShowingLayer next
+        current.dispose()
+        return @
+
+
 
 class ActionLayer
-    constructor: (manager, options) ->
+    @actions = {}
+    constructor: (manager, options, params) ->
         @manager = manager
         @options = options
+        @params = params
         @contentURL = options.contentURL
         if !options.container
-            @id = options.name or 'action-layer-' + manager.incLayerCounter()
+            if @params?
+                @id = options.name + "-" + manager.incLayerCounter()
+            else
+                @id = options.name or 'action-layer-' + manager.incLayerCounter()
             @container = $('<div></div>').attr('id', @id)
             @setup()
         else
@@ -68,8 +84,10 @@ class ActionLayer
         if @manager.getShowingLayer() == undefined
             @show()
 
-
     setup: ->
+        console.log("Setting up", @)
+        if @options.contentURLTemplate?
+            @contentURL = @options.contentURLTemplate.format @params
         self = this
         $.get(@contentURL).success (doc) ->
             self.container.hide()
@@ -77,10 +95,9 @@ class ActionLayer
             self.container.find('script').each (i, tag) ->
                 tag = $(tag)
                 srcURL = tag.attr('src')
+                console.log("Setting up script", tag)
                 if srcURL != undefined
                     $.getScript srcURL
-                else
-                    eval tag.text()
 
     show: ->
         @container.fadeIn 100
@@ -91,3 +108,27 @@ class ActionLayer
         @container.fadeOut 100
         @showing = false
         return
+
+    dispose: ->
+        @container.remove()
+        delete @manager.layers[@id]
+
+ActionBook =
+    home:
+        container: '#home-layer'
+        name: 'home-layer'
+    addSample:
+        contentURL: '/add_sample'
+        name: 'add-sample'
+    matchSamples:
+        contentURL: '/match_samples'
+        name: 'match-samples'
+    naiveGlycopeptideSearchSpace:
+        contentURL: "/glycopeptide_search_space"
+        name: "glycopeptide-search-space"
+    naiveGlycanSearchSpace:
+        contentURL: "/glycan_search_space"
+        name: "glycan-search-space"
+    viewDatabaseSearchResults:
+        contentURLTemplate: "/view_database_search_results/{}"
+        name: "view-database-search-results"

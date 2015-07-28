@@ -109,18 +109,7 @@ Application = (function(superClass) {
         self.container = $(self.options.actionContainer);
         console.log(self.options.actionContainer);
         self.sideNav = $('.side-nav');
-        self.addLayer({
-          'container': '#home-layer',
-          'name': 'home-layer'
-        });
-        self.addLayer({
-          'contentURL': '/add_sample',
-          'name': 'add-sample'
-        });
-        return self.addLayer({
-          'contentURL': '/match_samples',
-          'name': 'match-samples'
-        });
+        return self.addLayer(ActionBook.home);
       });
     }
   ];
