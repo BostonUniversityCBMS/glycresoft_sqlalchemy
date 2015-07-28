@@ -100,6 +100,19 @@ def test_page():
     return jsonify(status='101')
 
 
+@app.route("/hypothesis_sample_matches")
+def list_hypothesis_sample_matches():
+    hsms = g.db.query(HypothesisSampleMatch).all()
+    return jsonify(hypothesis_sample_matches=[
+        {
+            "name": h.name,
+            "target": h.target_hypothesis.name,
+            "sample": h.sample_run_name,
+            "id": h.id
+        }
+        for h in hsms])
+
+
 @app.route("/view_database_search_results/<int:id>")
 def view_database_search_results(id):
     hsm = g.db.query(HypothesisSampleMatch).get(id)

@@ -83,6 +83,7 @@ class Task(object):
         self.callback = callback
         self.log_file_path = kwargs.get("log_file_path", "%s.log" % self.id)
         self.name = kwargs.get('name', self.id)
+        self.message_buffer = []
 
     def start(self):
         self.process = Process(target=configure_log, args=(self.log_file_path, self.task_fn, self.args))
@@ -90,11 +91,18 @@ class Task(object):
         self.process.start()
 
     def get_message(self):
+        if len(self.message_buffer) > 0:
+            message = self.message_buffer.pop(0)
+            message.source = self
+            return message
         if self.pipe.poll():
             message = self.pipe.recv()
             message.source = self
             return message
         return None
+
+    def add_message(self, message):
+        self.message_buffer.append(message)
 
     def update(self):
         if self.process is not None:
@@ -103,6 +111,7 @@ class Task(object):
                 exitcode = self.process.exitcode
                 if exitcode == 0:
                     self.state = FINISHED
+                    self.on_complete()
                 elif exitcode is None:
                     self.state = ERROR
                 else:
@@ -141,6 +150,10 @@ class Task(object):
 
     def __repr__(self):
         return "<Task {} {}>".format(self.id, self.state)
+
+    def on_complete(self):
+        '''Implemented by subclass'''
+        pass
 
 
 class NullPipe(object):
@@ -308,3 +321,6 @@ class TaskManager(object):
             self.n_running += 1
             task.start()
             self.messages.put(Message({"id": task.id, "name": task.name}, 'task-start'))
+
+    def add_message(self, message):
+        self.messages.put(message)

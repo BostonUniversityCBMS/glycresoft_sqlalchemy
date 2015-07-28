@@ -11,11 +11,11 @@ ActionLayerManager = (function(superClass) {
     this.container = $(container);
     this.options = options;
     this.layers = {};
+    this.lastAdded = null;
     this.layerCounter = 0;
     this.on('layer-change', function(event) {
-      materialRefresh();
+      return materialRefresh();
     });
-    return;
   }
 
   ActionLayerManager.prototype.incLayerCounter = function() {
@@ -26,6 +26,11 @@ ActionLayerManager = (function(superClass) {
   ActionLayerManager.prototype.add = function(layer) {
     this.layers[layer.id] = layer;
     this.container.append(layer.container);
+    this.emit("layer-added", {
+      "layer": layer
+    });
+    this.lastAdded = layer.id;
+    return this;
   };
 
   ActionLayerManager.prototype.get = function(id) {
@@ -61,12 +66,14 @@ ActionLayerManager = (function(superClass) {
   };
 
   ActionLayerManager.prototype.addLayer = function(options, params) {
-    return new ActionLayer(this, options, params);
+    new ActionLayer(this, options, params);
+    return this;
   };
 
   ActionLayerManager.prototype.removeLayer = function(id) {
     this.layers[id].container.remove();
-    return delete this.layers[id];
+    delete this.layers[id];
+    return this;
   };
 
   ActionLayerManager.prototype.removeCurrentLayer = function(next) {
@@ -76,7 +83,8 @@ ActionLayerManager = (function(superClass) {
     }
     current = this.getShowingLayer();
     this.setShowingLayer(next);
-    return current.dispose();
+    current.dispose();
+    return this;
   };
 
   return ActionLayerManager;

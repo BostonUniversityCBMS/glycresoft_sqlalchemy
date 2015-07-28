@@ -826,4 +826,4 @@ class LCMSPeakClusterSearch(PipelineModule):
             self.sample_run_id, self.hypothesis_sample_match_id, self.regression_parameters)
 
         classifier.start()
-        hypothesis_sample_match.params['classifier'] = pickle.dumps(classifier.classifier)
+        hypothesis_sample_match.parameters['classifier'] = pickle.dumps(classifier.classifier)

@@ -18,44 +18,52 @@ Application = (function(superClass) {
     this.sideNav = $('.side-nav');
     self = this;
     this.eventStream = new EventSource('/stream');
-    this.eventStream.addEventListener('update', function(event) {
-      Materialize.toast(event.data.replace(/"/g, ''), 4000);
-    });
-    this.eventStream.addEventListener('task-queued', function(event) {
-      var data;
-      data = JSON.parse(event.data);
-      self.tasks[data.id] = {
-        'id': data.id,
-        'name': data.name,
-        'status': 'queued'
+    this.handleMessage('update', (function(_this) {
+      return function(data) {
+        Materialize.toast(data.replace(/"/g, ''), 4000);
       };
-      self.updateTaskList();
-    });
-    this.eventStream.addEventListener('task-start', function(event) {
-      var data;
-      data = JSON.parse(event.data);
-      self.tasks[data.id] = {
-        'id': data.id,
-        'name': data.name,
-        'status': 'running'
-      };
-      self.updateTaskList();
-    });
-    this.eventStream.addEventListener('task-complete', function(event) {
-      var data, err;
-      data = JSON.parse(event.data);
-      try {
-        self.tasks[data.id].status = 'finished';
-      } catch (_error) {
-        err = _error;
+    })(this));
+    this.handleMessage('task-queued', (function(_this) {
+      return function(data) {
         self.tasks[data.id] = {
           'id': data.id,
           'name': data.name,
-          'status': 'finished'
+          'status': 'queued'
         };
-      }
-      self.updateTaskList();
-    });
+        self.updateTaskList();
+      };
+    })(this));
+    this.handleMessage('task-start', (function(_this) {
+      return function(data) {
+        self.tasks[data.id] = {
+          'id': data.id,
+          'name': data.name,
+          'status': 'running'
+        };
+        self.updateTaskList();
+      };
+    })(this));
+    this.handleMessage('task-complete', (function(_this) {
+      return function(data) {
+        var err;
+        try {
+          self.tasks[data.id].status = 'finished';
+        } catch (_error) {
+          err = _error;
+          self.tasks[data.id] = {
+            'id': data.id,
+            'name': data.name,
+            'status': 'finished'
+          };
+        }
+        self.updateTaskList();
+      };
+    })(this));
+    this.handleMessage("new-sample", (function(_this) {
+      return function(data) {
+        return console.log(data);
+      };
+    })(this));
   }
 
   Application.prototype.runInitializers = function() {
@@ -99,6 +107,14 @@ Application = (function(superClass) {
     return taskListContainer.find('li').click(clickTask);
   };
 
+  Application.prototype.handleMessage = function(messageType, handler) {
+    return this.eventStream.addEventListener(messageType, function(event) {
+      var data;
+      data = JSON.parse(event.data);
+      return handler(data);
+    });
+  };
+
   Application.initializers = [
     function() {
       return console.log(this);
@@ -134,6 +150,32 @@ $(function() {
 });
 
 //# sourceMappingURL=common.js.map
+;var SampleManager;
+
+SampleManager = (function() {
+  function SampleManager(samples, listingContainer) {
+    this.samples = samples;
+    this.container = listingContainer;
+  }
+
+  SampleManager.prototype.renderSampleList = function() {
+    var chunks, i, len, ref, results, sample, template;
+    chunks = [];
+    template = "<tr> <td data-id={id}>{name} <small>{sample_type}</small></td> </tr>";
+    ref = this.samples;
+    results = [];
+    for (i = 0, len = ref.length; i < len; i++) {
+      sample = ref[i];
+      results.push(chunks.push(template.format(sample)));
+    }
+    return results;
+  };
+
+  return SampleManager;
+
+})();
+
+//# sourceMappingURL=sample_management.js.map
 ;var viewDatabaseSearchResults;
 
 viewDatabaseSearchResults = function() {

@@ -1,5 +1,4 @@
 import os
-from glycresoft_sqlalchemy.data_model import DatabaseManager
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 from .task_process import NullPipe, Message, Task
 
@@ -10,15 +9,16 @@ def taskmain(database_path, yaml_path, results_path, comm=None):
         comm = NullPipe()
     comm.send(Message("Begin conversion for %s." % yaml_path))
     try:
-        BUPIDMSMSYamlParser(yaml_path, results_path)
+        job = BUPIDMSMSYamlParser(yaml_path, results_path)
     except Exception, e:
         comm.send(Message(e, 'error'))
     else:
         comm.send(Message("Finished indexing %s" % os.path.basename(results_path), 'update'))
+        comm.send(Message(job.sample_run.to_json(), "new-sample"))
     try:
         os.remove(yaml_path)
-    except:
-        comm.send(Message("Could not remove yaml file"))
+    except Exception, e:
+        comm.send(Message(["Could not remove yaml file", e]))
 
 
 class BUPIDYamlParseTask(Task):

@@ -14,27 +14,25 @@ class Application extends ActionLayerManager
 
         self = this
         @eventStream = new EventSource('/stream')
-        @eventStream.addEventListener 'update', (event) ->
-            Materialize.toast event.data.replace(/"/g, ''), 4000
+        
+        @handleMessage 'update', (data) =>
+            Materialize.toast data.replace(/"/g, ''), 4000
             return
-        @eventStream.addEventListener 'task-queued', (event) ->
-            data = JSON.parse(event.data)
+        @handleMessage 'task-queued', (data) =>
             self.tasks[data.id] =
                 'id': data.id
                 'name': data.name
                 'status': 'queued'
             self.updateTaskList()
             return
-        @eventStream.addEventListener 'task-start', (event) ->
-            data = JSON.parse(event.data)
+        @handleMessage 'task-start', (data) =>
             self.tasks[data.id] =
                 'id': data.id
                 'name': data.name
                 'status': 'running'
             self.updateTaskList()
             return
-        @eventStream.addEventListener 'task-complete', (event) ->
-            data = JSON.parse(event.data)
+        @handleMessage 'task-complete', (data) =>
             try
                 self.tasks[data.id].status = 'finished'
             catch err
@@ -44,7 +42,8 @@ class Application extends ActionLayerManager
                     'status': 'finished'
             self.updateTaskList()
             return
-        
+        @handleMessage "new-sample", (data) =>
+            console.log(data)       
 
     runInitializers: ->
         console.log Application, Application.initializers
@@ -75,6 +74,11 @@ class Application extends ActionLayerManager
         taskListContainer.html _.map(@tasks, renderTask).join('')
         self = this
         taskListContainer.find('li').click clickTask
+
+    handleMessage: (messageType, handler) ->
+        @eventStream.addEventListener messageType, (event) ->
+            data = JSON.parse(event.data)
+            handler(data)
 
     @initializers = [
         ->
