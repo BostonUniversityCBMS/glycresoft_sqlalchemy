@@ -88,47 +88,30 @@ class ActionLayer
         console.log("Setting up", @)
         if @options.contentURLTemplate?
             @contentURL = @options.contentURLTemplate.format @params
-        self = this
-        $.get(@contentURL).success (doc) ->
-            self.container.hide()
-            self.container.html doc
-            self.container.find('script').each (i, tag) ->
+        $.get(@contentURL).success (doc) =>
+            if not @showing
+                @container.hide()
+            @container.html doc
+            @container.find('script').each (i, tag) ->
                 tag = $(tag)
                 srcURL = tag.attr('src')
                 console.log("Setting up script", tag)
                 if srcURL != undefined
                     $.getScript srcURL
+            materialRefresh()
+            @container.prepend("""
+    <div>
+        <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>
+    </div>""")
 
     show: ->
         @container.fadeIn 100
         @showing = true
-        return
 
     hide: ->
         @container.fadeOut 100
         @showing = false
-        return
 
     dispose: ->
         @container.remove()
         delete @manager.layers[@id]
-
-ActionBook =
-    home:
-        container: '#home-layer'
-        name: 'home-layer'
-    addSample:
-        contentURL: '/add_sample'
-        name: 'add-sample'
-    matchSamples:
-        contentURL: '/match_samples'
-        name: 'match-samples'
-    naiveGlycopeptideSearchSpace:
-        contentURL: "/glycopeptide_search_space"
-        name: "glycopeptide-search-space"
-    naiveGlycanSearchSpace:
-        contentURL: "/glycan_search_space"
-        name: "glycan-search-space"
-    viewDatabaseSearchResults:
-        contentURLTemplate: "/view_database_search_results/{}"
-        name: "view-database-search-results"

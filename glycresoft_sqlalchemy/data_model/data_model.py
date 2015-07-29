@@ -37,6 +37,20 @@ class Hypothesis(Base):
 
     sample_matches = relationship("HypothesisSampleMatch", foreign_keys='HypothesisSampleMatch.target_hypothesis_id')
 
+    def __init__(self, **kwargs):
+        kwargs.setdefault('parameters', {})
+        super(Hypothesis, self).__init__(**kwargs)
+
+    def to_json(self):
+        d = {
+            "id": self.id,
+            "name": self.name,
+            "parameters": self.parameters,
+            "hypothesis_type": self.hypothesis_type,
+            "is_decoy": self.is_decoy
+        }
+        return d
+
     def __repr__(self):
         return "<Hypothesis {0} {1} {2} proteins {3} glycans>".format(
             self.id, self.name, len(self.proteins), len(self.glycans))

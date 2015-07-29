@@ -42,13 +42,18 @@ class Application extends ActionLayerManager
                     'status': 'finished'
             self.updateTaskList()
             return
-        @handleMessage "new-sample", (data) =>
-            console.log(data)       
+        @handleMessage 'new-sample', (data) =>
+            @samples[data.id] = data
+            @emit "render-samples"
+        @handleMessage  'new-hypothesis', (data) =>
+            @hypotheses[data.id] = data
+            @emit "render-hypotheses"
+        @handleMessage 'new-hypothesis-sample-match', (data) =>
+            @hypothesisSampleMatches[data.id] = data
+            @emit "render-hypothesis-sample-matches"
 
     runInitializers: ->
-        console.log Application, Application.initializers
         for initializer in Application.initializers
-            console.log initializer
             initializer.apply this, null 
 
     updateSettings: ->
@@ -87,10 +92,31 @@ class Application extends ActionLayerManager
             self = this
             $ ->
                 self.container = $(self.options.actionContainer)
-                console.log self.options.actionContainer
                 self.sideNav = $('.side-nav')
                 self.addLayer ActionBook.home
+                $("#run-matching").click (event) ->
+                    self.addLayer ActionBook.tandemMatchSamples
+                    self.setShowingLayer self.lastAdded
+                $("#build-glycan-search-space").click (event) ->
+                    self.addLayer ActionBook.naiveGlycanSearchSpace
+                    self.setShowingLayer self.lastAdded
+                $("#build-glycopeptide-search-space").click (event) ->
+                    self.addLayer ActionBook.naiveGlycopeptideSearchSpace
+                    self.setShowingLayer self.lastAdded
+        ->
+            @loadData()
     ]
+
+    loadData: ->
+        DataSource.hypotheses (d) => 
+            @hypotheses = d
+            @emit "render-hypotheses"
+        DataSource.samples (d) =>
+            @samples = d
+            @emit "render-samples"
+        DataSource.hypothesisSampleMatches (d) =>
+            @hypothesisSampleMatches = d
+            @emit "render-hypothesis-sample-matches"
 
 renderTask = (task) ->
     '<li data-id=\'{id}\' data-status=\'{status}\'><b>{name}</b> ({status})</li>'.format task

@@ -264,6 +264,7 @@ class Proteome(object):
                 Protein(
                     name=protein['accession'],
                     protein_sequence=protein['Seq'],
+                    glycosylation_sites=sequence.find_n_glycosylation_sequons(protein['Seq']),
                     hypothesis_id=self.hypothesis_id))
         session.commit()
 

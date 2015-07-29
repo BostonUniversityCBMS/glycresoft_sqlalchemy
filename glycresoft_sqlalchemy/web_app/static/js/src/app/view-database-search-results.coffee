@@ -1,3 +1,10 @@
+doZoom = ->
+    svg = d3.select("svg g")
+    zoom = ()->
+        svg.attr("transform", "translate(#{d3.event.translate})scale(#{d3.event.scale})")
+    d3.select("svg g").call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom))
+
+
 viewDatabaseSearchResults = ->
     peptideDetailsModal = undefined
 
@@ -5,9 +12,10 @@ viewDatabaseSearchResults = ->
         $('.protein-match-table tbody tr').click updateProteinChoice
         updateProteinChoice.apply $('.protein-match-table tbody tr')
 
-    initGlycopeptideTooltip = ->
+    initGlycopeptideOverviewPlot = ->
         $('svg .glycopeptide').customTooltip glycopeptideTooltipCallback, 'protein-view-tooltip'
         $('svg .modification path').customTooltip modificationTooltipCallback, 'protein-view-tooltip'
+
 
     glycopeptideTooltipCallback = (handle) ->
         template = '<div>
@@ -34,12 +42,11 @@ viewDatabaseSearchResults = ->
     updateProteinChoice = ->
         handle = $(this)
         id = handle.attr('data-target')
-        console.log id, "About to fadeOut"
-        $('#chosen-protein-container').fadeOut()
+        $("#chosen-protein-container").html("""<div class="progress"><div class="indeterminate"></div></div>""").fadeIn()
         $.get('/view_database_search_results/protein_view/' + id).success((doc) ->
-            console.log("About to fadeIn", $('#chosen-protein-container'))
+            $('#chosen-protein-container').hide()
             $('#chosen-protein-container').html(doc).fadeIn()
-            initGlycopeptideTooltip()
+            initGlycopeptideOverviewPlot()
             tabs = $('ul.tabs')
             tabs.tabs()
             if GlycReSoft.context['protein-view-active-tab'] != undefined

@@ -1,96 +1,101 @@
-{%- extends "layout.templ" %}
-
-{% block body %}
-    <div class='row'>
-        <h2>Glycopeptide Search Space Building</h2>
-    </div>
-    <div class='row'>
-        <form method="post" class="col s12" accept-charset="utf-8" enctype="multipart/form-data">
-            <div class="row">
-                <div class="input-field col s8">
-                    <label for="hypothesis_name">Hypothesis Name</label>
-                    <br>
-                    <input id='hypothesis_name' name="hypothesis_name" type="text" class="validate">
-                </div>
+<div class='row'>
+    <h2>Glycopeptide Search Space Building</h2>
+</div>
+<div class='row'>
+    <form  id='glycopeptide-hypothesis-form' method="post" class="col s12" accept-charset="utf-8" enctype="multipart/form-data">
+        <div class="row">
+            <div class="input-field col s8">
+                <label for="hypothesis_name">Hypothesis Name</label>
+                <br>
+                <input id='hypothesis_name' name="hypothesis_name" type="text" class="validate">
             </div>
-            <div class='row'>
-                <div class='col s8'>
-                    <div class="file-field input-field">
-                        <h6>Protein List</h6>
-                        <div class="btn">
-                            <span>Select File...</span>
-                            <input name='protein-digset-file' type="file"/>
-                        </div>
-                        <input class="file-path validate" type="text" style="width: 60%;padding-left:5px;"/>
+        </div>
+        <div class='row'>
+            <div class='col s8'>
+                <div class="file-field input-field">
+                    <h6>Protein List</h6>
+                    <div class="btn">
+                        <span>Select File...</span>
+                        <input name='protein-digset-file' type="file"/>
                     </div>
+                    <input class="file-path validate" type="text" style="width: 60%;padding-left:5px;"/>
                 </div>
-                <small class='col s4' id='protein-list-file-help'>
-                A list of protein sequences to digest and glycosylate <em>in-silico</em>, provided in Fasta format. 
-                </small>
             </div>
-            <div class='row'>
-                <div class='col s8'>
-                    <div class="file-field input-field">
-                        <h6>Glycosylation Site List</h6>                    
-                        <div class="btn">
-                            <span>Select File...</span>
-                            <input name='glycosylation-site-list-file' type="file" />
-                        </div>
-                        <input class="file-path validate" type="text" style="width: 60%;padding-left:5px;"/>
+            <small class='col s4' id='protein-list-file-help'>
+            A list of protein sequences to digest and glycosylate <em>in-silico</em>, provided in Fasta format. 
+            </small>
+        </div>
+        <div class='row'>
+            <div class='col s8'>
+                <div class="file-field input-field">
+                    <h6>Glycosylation Site List</h6>                    
+                    <div class="btn">
+                        <span>Select File...</span>
+                        <input name='glycosylation-site-list-file' type="file" />
                     </div>
+                    <input class="file-path validate" type="text" style="width: 60%;padding-left:5px;"/>
                 </div>
-                <small class='col s4' id='sitelist-file-help'>
-                List of positions (counting starting at 1) for all glycosylation sites for each protein in Fasta format. Omit to use automatic <em>N</em>-glycan sequon pattern matching.
-                </small>
             </div>
+            <small class='col s4' id='sitelist-file-help'>
+            List of positions (counting starting at 1) for all glycosylation sites for each protein in Fasta format. Omit to use automatic <em>N</em>-glycan sequon pattern matching.
+            </small>
+        </div>
 
-            <div class='row'>
-                <div class='col s4'>
-                    <h6>Constant Modifications</h6>
-                {% with select_name='constant_modifications' %}
-                    {% include 'components/modification_selection.templ' %}        
-                {% endwith %}
-                </div>
-                <div class='col s4'>
-                    <h6>Variable Modifications</h6>
-                {% with select_name='variable_modifications' %}
-                    {% include 'components/modification_selection.templ' %}        
-                {% endwith %}
-                </div>
-                <div class='col s4'>
-                    <h6>Enzymatic Digest</h6>
-                {% with select_name='enzyme' %}
-                    {% include 'components/peptidase_selection.templ' %}        
-                {% endwith %}
-                <label for='missed_cleavages'>Missed Cleavages Allowed</label>
-                <input class='validate' type='number' min="0" id='missed_cleavages' name='missed_cleavages' value="2"/>
-                </div>
+        <div class='row'>
+            <div class='col s4'>
+                <h6>Constant Modifications</h6>
+            {% with select_name='constant_modifications' %}
+                {% include 'components/modification_selection.templ' %}        
+            {% endwith %}
             </div>
-            <div class='row'>
-                <div class='col s8'>
-                    <div class="file-field input-field">
-                        <h6>Glycan Definitions</h6>                    
-                        <div class="btn">
-                            <span>Select File...</span>
-                            <input name='glycan-definition-file' id='glycan-definition-file' type="file" />
-                        </div>
-                        <input class="file-path validate" type="text" style="width: 67%;padding-left:5px;"/>
-                        <span>
-                            <input class="file-format-radio" name="glycans-file-format" value='csv' type="radio" id="glycans-file-csv-radio-btn" checked />
-                            <label for='glycans-file-csv-radio-btn'>CSV File</label>
-                            <input class="file-format-radio" name="glycans-file-format" value='hypothesis' type="radio" id="glycans-file-hypothesis-radio-btn" />
-                            <label for='glycans-file-hypothesis-radio-btn'>Hypothesis Database</label>                            
-                        </span>
+            <div class='col s4'>
+                <h6>Variable Modifications</h6>
+            {% with select_name='variable_modifications' %}
+                {% include 'components/modification_selection.templ' %}        
+            {% endwith %}
+            </div>
+            <div class='col s4'>
+                <h6>Enzymatic Digest</h6>
+            {% with select_name='enzyme' %}
+                {% include 'components/peptidase_selection.templ' %}        
+            {% endwith %}
+            <label for='missed_cleavages'>Missed Cleavages Allowed</label>
+            <input class='validate' type='number' min="0" id='missed_cleavages' name='missed_cleavages' value="2"/>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col s8'>
+                <div class="file-field input-field">
+                    <h6>Glycan Definitions</h6>                    
+                    <div class="btn">
+                        <span>Select File...</span>
+                        <input name='glycan-definition-file' id='glycan-definition-file' type="file" />
                     </div>
+                    <input class="file-path validate" type="text" style="width: 67%;padding-left:5px;"/>
+                    <span>
+                        <input class="file-format-radio" name="glycans-file-format" value='csv' type="radio" id="glycans-file-csv-radio-btn" checked />
+                        <label for='glycans-file-csv-radio-btn'>CSV File</label>
+                        <input class="file-format-radio" name="glycans-file-format" value='hypothesis' type="radio" id="glycans-file-hypothesis-radio-btn" />
+                        <label for='glycans-file-hypothesis-radio-btn'>Hypothesis Database</label>                            
+                    </span>
                 </div>
-                <small class='col s4' id='sitelist-file-help'>
-                List of glycan structures/compositions to attach to each protein.
-                </small>
             </div>
-            <button class='btn wave-effect'>
-                Generate
-            </button>
-        </form>
-    </div>
-
-{% endblock %}
+            <small class='col s4' id='sitelist-file-help'>
+            List of glycan structures/compositions to attach to each protein.
+            </small>
+        </div>
+        <button class='btn wave-effect'>
+            Generate
+        </button>
+    </form>
+</div>
+<script>
+ajaxForm($("form#glycopeptide-hypothesis-form"), function(){
+    var currentAction = GlycReSoft.getShowingLayer()
+    GlycReSoft.setShowingLayer("home-layer")
+    currentAction.dispose()
+}, function(err){
+    console.log(arguments)
+})
+materialFileInput()
+</script>

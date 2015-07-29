@@ -1,13 +1,22 @@
-var viewDatabaseSearchResults;
+var doZoom, viewDatabaseSearchResults;
+
+doZoom = function() {
+  var svg, zoom;
+  svg = d3.select("svg g");
+  zoom = function() {
+    return svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+  };
+  return d3.select("svg g").call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom));
+};
 
 viewDatabaseSearchResults = function() {
-  var getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideTooltip, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
+  var getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
   peptideDetailsModal = void 0;
   setup = function() {
     $('.protein-match-table tbody tr').click(updateProteinChoice);
     return updateProteinChoice.apply($('.protein-match-table tbody tr'));
   };
-  initGlycopeptideTooltip = function() {
+  initGlycopeptideOverviewPlot = function() {
     $('svg .glycopeptide').customTooltip(glycopeptideTooltipCallback, 'protein-view-tooltip');
     return $('svg .modification path').customTooltip(modificationTooltipCallback, 'protein-view-tooltip');
   };
@@ -36,13 +45,12 @@ viewDatabaseSearchResults = function() {
     var handle, id;
     handle = $(this);
     id = handle.attr('data-target');
-    console.log(id, "About to fadeOut");
-    $('#chosen-protein-container').fadeOut();
+    $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
     return $.get('/view_database_search_results/protein_view/' + id).success(function(doc) {
       var tabs;
-      console.log("About to fadeIn", $('#chosen-protein-container'));
+      $('#chosen-protein-container').hide();
       $('#chosen-protein-container').html(doc).fadeIn();
-      initGlycopeptideTooltip();
+      initGlycopeptideOverviewPlot();
       tabs = $('ul.tabs');
       tabs.tabs();
       if (GlycReSoft.context['protein-view-active-tab'] !== void 0) {
@@ -79,4 +87,4 @@ viewDatabaseSearchResults = function() {
   return setup();
 };
 
-//# sourceMappingURL=view_database_search_results.js.map
+//# sourceMappingURL=view-database-search-results.js.map

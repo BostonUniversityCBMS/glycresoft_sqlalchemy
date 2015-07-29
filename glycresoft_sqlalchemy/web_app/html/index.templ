@@ -9,29 +9,29 @@
     </div>
     <div class='row'>
         <div class='col s4'>
-            <div class="card blue-grey darken-1">
+            <div class="card indigo lighten-1">
                 <div class="card-content white-text">
                     <span class="card-title">Search Space Building</span>
                 </div>
                 <div class="card-action">
-                    <a href="/glycan_search_space">Build a Glycan Search Space</a><br>
-                    <a href="/glycopeptide_search_space">Build a Glycopeptide Search Space</a>
+                    <a id="build-glycan-search-space" class='handle'  >Build a Glycan Search Space</a><br>
+                    <a id='build-glycopeptide-search-space' class="handle">Build a Glycopeptide Search Space</a>
                 </div>
             </div>
         </div>
         <div class='col s4'>
-            <div class="card blue-grey darken-1">
+            <div class="card indigo lighten-1">
                 <div class="card-content white-text">
                     <span class="card-title">Analyze</span>
                 </div>
                 <div class="card-action">
-                    <a href="/match_samples">Run Sample Matching</a><br>
+                    <a id='run-matching' class='handle'>Run Sample Matching</a><br>
                     <a href="#">Run Search Space Complexity Analysis</a>
                 </div>
             </div>
         </div>
         <div class='col s4'>
-            <div class="card blue-grey darken-1">
+            <div class="card indigo lighten-1">
                 <div class="card-content white-text">
                     <span class="card-title">Data Viewer</span>
                 </div>
@@ -43,40 +43,23 @@
         </div>
     </div>
     <div class='row'>
-        <div class='col s4'>
-        <table id='hypothesis-table' class='bordered'>
-            <caption>Search Space</caption>
-            {% set hypotheses = Manager.hypotheses().filter_by(is_decoy=False).all() %}
-            {% if hypotheses|length != 0 %}
-                {% for hypothesis in hypotheses %}
-                <tr>
-                    <td>{{hypothesis.name}}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td>
-                        No Search Space Hypotheses have been added to this workspace. See above to add one.
-                    </td>
-                </tr>
-            {% endif %}
-        </table>            
+        <div id='hypothesis-list-container' class='col s4'>
+        <div class='center-align'>Search Spaces <a class='mdi-content-add'></a></div>
+            <div class='divider'></div>
+            <div class='hypothesis-list'>
+            </div>           
         </div>  
-        <div class='col s4'>
-        <table id='sample-table' class='bordered'>
-        <caption>Samples Loaded <a class='add-sample'><b>+</b></a></caption>
-            {% set samples = Manager.samples() %}
-            {% if samples|length != 0 %}
-                    {% for sample in  samples%}
-                    <tr>
-                        <td>{{sample.name}}</td>
-                    </tr>
-                    {% endfor %}
-            {% else %}
-                <tr><td>No Samples have been added to this workspace.<br>
-                <a class='add-sample'>Click To Add</a></td></tr>
-            {% endif %}
-        </table> 
-        </div>      
+        <div id='sample-list-container' class='col s4'>
+            <div class='center-align'>Samples Loaded <a class='add-sample mdi-content-add'></a></div>
+            <div class='divider'></div>
+            <div class='sample-list'>
+            </div>
+        </div>
+        <div id='hypothesis-sample-match-list-container' class='col s4'>
+            <div class='center-align'>Hypothesis Sample Matches <a class='mdi-content-add'></a></div>
+            <div class='divider'></div>
+            <div class='hypothesis-sample-match-list'>
+            </div>
+        </div>
     </div>
 {% endblock %}

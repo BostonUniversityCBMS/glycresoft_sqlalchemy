@@ -4,11 +4,10 @@
     margin-top: 10px;
 }
 
-.dismiss-layer:after{
-    content: "X";
-    font-weight: 900;
-
+.handle {
+    cursor: hand;
 }
+
 
 /*
 
@@ -26,8 +25,6 @@ Modals
     margin-right: auto !important;
 }
 
-
-
 /*
 
 Form Elements
@@ -44,6 +41,7 @@ Form Elements
     height: 100px;
 }
 
+
 .help-text{
     vertical-align: bottom;
 }
@@ -52,7 +50,6 @@ Form Elements
 .add-sample{
     cursor: hand;
 }
-
 
 /*
 

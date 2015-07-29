@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from .data_model import Base
+from ..utils import database_utils
 
 
 class ConnectionManager(object):
@@ -14,13 +15,35 @@ class ConnectionManager(object):
         self.connect_args = connect_args or {}
 
     def connect(self):
+        url = self.construct_url()
         return create_engine(
-            "{}{}".format(self.database_uri_prefix, self.database_uri),
+            url,
             echo=self.echo,
             connect_args=self.connect_args)
 
+    def construct_url(self):
+        return "{}{}".format(self.database_uri_prefix, self.database_uri)
+
     def clear(self):
         pass
+
+    def bridge_address(self):
+        '''
+        When a ConnectionManager backend is reasonably able to be used for concurrent
+        reads and writes (assumed the default), and a new ConnectionManager will be needed
+        for another task, provide this interface to transparently share the database connection
+        information.
+
+        For backends which do not support concurrent read/write access cleanly (like SQLite),
+        override this method to return None and have the default policy on the new task control
+        how to create a new storage backend.
+        '''
+        return self
+
+    def ensure_database(self):
+        url = self.construct_url()
+        if not database_utils.database_exists(url):
+            database_utils.create_database(url)
 
     def __repr__(self):
         return '<{} {}{}>'.format(self.__class__.__name__, self.database_uri_prefix, self.database_uri)
@@ -41,6 +64,9 @@ class SQLiteConnectionManager(ConnectionManager):
         except:
             pass
 
+    def bridge_address(self):
+        return None
+
 
 class LocalPostgresConnectionManager(ConnectionManager):
     connect_args = {}
@@ -56,15 +82,22 @@ class DatabaseManager(object):
     connection_manager_type = SQLiteConnectionManager
 
     def __init__(self, path, clear=False):
-        self.connection_manager = self.connection_manager_type(path)
+        self.connection_manager = self.make_connection_manager(path)
         if clear:
             self.connection_manager.clear()
         self.path = path
+
+    def make_connection_manager(self, path):
+        if isinstance(path, ConnectionManager):
+            return path
+        else:
+            return self.connection_manager_type(path)
 
     def connect(self):
         return self.connection_manager.connect()
 
     def initialize(self, conn=None):
+        self.connection_manager.ensure_database()
         if conn is None:
             conn = self.connect()
         Base.metadata.create_all(conn)
@@ -73,6 +106,9 @@ class DatabaseManager(object):
         if connection is None:
             connection = self.connect()
         return sessionmaker(bind=connection)()
+
+    def bridge_address(self):
+        return self.connection_manager.bridge_address()
 
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self.connection_manager)

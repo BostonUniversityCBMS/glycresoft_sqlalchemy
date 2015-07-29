@@ -16,7 +16,7 @@
         <th></th>
         </tr>
     </thead>
-    <tbody class='protein-match-table-body' style='height:150px;'>
+    <tbody class='protein-match-table-body' style='max-height:150px;'>
     {% for protein in proteins.values()|fsort('theoretical_glycopeptides.count()') if protein.theoretical_glycopeptides.count() != 0 %}    
         <tr class='protein-match-row' data-target="{{protein.id}}">
             <td>

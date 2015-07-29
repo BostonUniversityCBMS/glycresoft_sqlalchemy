@@ -59,21 +59,32 @@ Application = (function(superClass) {
         self.updateTaskList();
       };
     })(this));
-    this.handleMessage("new-sample", (function(_this) {
+    this.handleMessage('new-sample', (function(_this) {
       return function(data) {
-        return console.log(data);
+        _this.samples[data.id] = data;
+        return _this.emit("render-samples");
+      };
+    })(this));
+    this.handleMessage('new-hypothesis', (function(_this) {
+      return function(data) {
+        _this.hypotheses[data.id] = data;
+        return _this.emit("render-hypotheses");
+      };
+    })(this));
+    this.handleMessage('new-hypothesis-sample-match', (function(_this) {
+      return function(data) {
+        _this.hypothesisSampleMatches[data.id] = data;
+        return _this.emit("render-hypothesis-sample-matches");
       };
     })(this));
   }
 
   Application.prototype.runInitializers = function() {
     var i, initializer, len, ref, results;
-    console.log(Application, Application.initializers);
     ref = Application.initializers;
     results = [];
     for (i = 0, len = ref.length; i < len; i++) {
       initializer = ref[i];
-      console.log(initializer);
       results.push(initializer.apply(this, null));
     }
     return results;
@@ -123,12 +134,46 @@ Application = (function(superClass) {
       self = this;
       return $(function() {
         self.container = $(self.options.actionContainer);
-        console.log(self.options.actionContainer);
         self.sideNav = $('.side-nav');
-        return self.addLayer(ActionBook.home);
+        self.addLayer(ActionBook.home);
+        $("#run-matching").click(function(event) {
+          self.addLayer(ActionBook.tandemMatchSamples);
+          return self.setShowingLayer(self.lastAdded);
+        });
+        $("#build-glycan-search-space").click(function(event) {
+          self.addLayer(ActionBook.naiveGlycanSearchSpace);
+          return self.setShowingLayer(self.lastAdded);
+        });
+        return $("#build-glycopeptide-search-space").click(function(event) {
+          self.addLayer(ActionBook.naiveGlycopeptideSearchSpace);
+          return self.setShowingLayer(self.lastAdded);
+        });
       });
+    }, function() {
+      return this.loadData();
     }
   ];
+
+  Application.prototype.loadData = function() {
+    DataSource.hypotheses((function(_this) {
+      return function(d) {
+        _this.hypotheses = d;
+        return _this.emit("render-hypotheses");
+      };
+    })(this));
+    DataSource.samples((function(_this) {
+      return function(d) {
+        _this.samples = d;
+        return _this.emit("render-samples");
+      };
+    })(this));
+    return DataSource.hypothesisSampleMatches((function(_this) {
+      return function(d) {
+        _this.hypothesisSampleMatches = d;
+        return _this.emit("render-hypothesis-sample-matches");
+      };
+    })(this));
+  };
 
   return Application;
 

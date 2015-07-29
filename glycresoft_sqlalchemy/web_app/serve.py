@@ -82,6 +82,12 @@ def index():
     return render_template("index.templ")
 
 
+@app.route('/stream')
+def message_stream():
+    return Response(message_queue_stream(),
+                    mimetype="text/event-stream")
+
+
 @app.route("/internal/update_settings", methods=["POST"])
 def update_settings():
     '''
@@ -100,17 +106,9 @@ def test_page():
     return jsonify(status='101')
 
 
-@app.route("/hypothesis_sample_matches")
-def list_hypothesis_sample_matches():
-    hsms = g.db.query(HypothesisSampleMatch).all()
-    return jsonify(hypothesis_sample_matches=[
-        {
-            "name": h.name,
-            "target": h.target_hypothesis.name,
-            "sample": h.sample_run_name,
-            "id": h.id
-        }
-        for h in hsms])
+# ----------------------------------------
+#           View Database Search Results
+# ----------------------------------------
 
 
 @app.route("/view_database_search_results/<int:id>")
@@ -134,6 +132,11 @@ def view_glycopeptide_details(id):
         "components/glycopeptide_details.templ", glycopeptide=gpm)
 
 
+# ----------------------------------------
+#           JSON Data API Calls
+# ----------------------------------------
+
+
 @app.route("/api/glycopeptide_matches/<int:id>")
 def get_glycopeptide_match_api(id):
     gpm = g.db.query(GlycopeptideMatch).get(id)
@@ -141,24 +144,34 @@ def get_glycopeptide_match_api(id):
 
 
 @app.route("/api/tasks")
-def get_tasks_api():
+def api_tasks():
     return jsonify(**{t.id: t.to_json() for t in manager.tasks.values()})
 
 
-@app.route("/tasks")
-def get_tasks_rendered():
-    running_tasks = manager.currently_running
-    queued_tasks = {k: v for k, v in manager.tasks.items() if k not in running_tasks}
-    return render_template(
-        "components/task_list.templ",
-        running_tasks=running_tasks.values(),
-        queued_tasks=queued_tasks.values())
+@app.route("/api/hypothesis_sample_matches")
+def api_hypothesis_sample_matches():
+    hsms = g.db.query(HypothesisSampleMatch).all()
+    d = {str(h.id): h.to_json() for h in hsms}
+    return jsonify(**d)
 
 
-@app.route('/stream')
-def message_stream():
-    return Response(message_queue_stream(),
-                    mimetype="text/event-stream")
+@app.route("/api/hypotheses")
+def api_hypothesis():
+    hypotheses = g.db.query(Hypothesis).all()
+    d = {str(h.id): h.to_json() for h in hypotheses}
+    return jsonify(**d)
+
+
+@app.route("/api/samples")
+def api_samples():
+    samples = manager.samples()
+    d = {str(h.name): h.to_json() for h in samples}
+    return jsonify(**d)
+
+
+# ----------------------------------------
+#
+# ----------------------------------------
 
 
 @app.route("/hypothesis")
@@ -171,9 +184,19 @@ def view_hypothesis(id):
     return render_template("show_hypotheses.templ", hypotheses=[g.db.query(Hypothesis).get(id)])
 
 
+# ----------------------------------------
+#
+# ----------------------------------------
+
+
 @app.route("/glycan_search_space")
 def build_naive_glycan_search():
     return render_template("glycan_search_space.templ")
+
+
+# ----------------------------------------
+#
+# ----------------------------------------
 
 
 @app.route("/glycan_search_space", methods=["POST"])
@@ -182,14 +205,34 @@ def build_naive_glycan_search_process():
     return jsonify(**dict(request.values))
 
 
+# ----------------------------------------
+#
+# ----------------------------------------
+
+
 @app.route("/glycopeptide_search_space")
 def build_naive_glycopeptide_search_space():
     return render_template("glycopeptide_search_space.templ")
 
 
-@app.route("/match_samples")
-def match_samples():
-    return render_template("match_samples.templ")
+# ----------------------------------------
+#
+# ----------------------------------------
+
+
+@app.route("/tandem_match_samples")
+def tandem_match_samples():
+    return render_template("tandem_match_samples.templ")
+
+
+@app.route("/tandem_match_samples", methods=["POST"])
+def tandem_match_samples_post():
+    print request.values
+    return jsonify(**dict(request.values))
+
+# ----------------------------------------
+#
+# ----------------------------------------
 
 
 @app.route("/add_sample", methods=["POST"])
@@ -219,6 +262,11 @@ def post_add_sample():
 @app.route("/add_sample")
 def add_sample():
     return render_template("add_sample_form.templ")
+
+
+# ----------------------------------------
+#
+# ----------------------------------------
 
 
 @app.before_request

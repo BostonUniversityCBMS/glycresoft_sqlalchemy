@@ -1,4 +1,4 @@
-var ActionBook, ActionLayer, ActionLayerManager,
+var ActionLayer, ActionLayerManager,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
 
@@ -122,35 +122,39 @@ ActionLayer = (function() {
   }
 
   ActionLayer.prototype.setup = function() {
-    var self;
     console.log("Setting up", this);
     if (this.options.contentURLTemplate != null) {
       this.contentURL = this.options.contentURLTemplate.format(this.params);
     }
-    self = this;
-    return $.get(this.contentURL).success(function(doc) {
-      self.container.hide();
-      self.container.html(doc);
-      return self.container.find('script').each(function(i, tag) {
-        var srcURL;
-        tag = $(tag);
-        srcURL = tag.attr('src');
-        console.log("Setting up script", tag);
-        if (srcURL !== void 0) {
-          return $.getScript(srcURL);
+    return $.get(this.contentURL).success((function(_this) {
+      return function(doc) {
+        if (!_this.showing) {
+          _this.container.hide();
         }
-      });
-    });
+        _this.container.html(doc);
+        _this.container.find('script').each(function(i, tag) {
+          var srcURL;
+          tag = $(tag);
+          srcURL = tag.attr('src');
+          console.log("Setting up script", tag);
+          if (srcURL !== void 0) {
+            return $.getScript(srcURL);
+          }
+        });
+        materialRefresh();
+        return _this.container.prepend("<div>\n    <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
+      };
+    })(this));
   };
 
   ActionLayer.prototype.show = function() {
     this.container.fadeIn(100);
-    this.showing = true;
+    return this.showing = true;
   };
 
   ActionLayer.prototype.hide = function() {
     this.container.fadeOut(100);
-    this.showing = false;
+    return this.showing = false;
   };
 
   ActionLayer.prototype.dispose = function() {
@@ -161,33 +165,6 @@ ActionLayer = (function() {
   return ActionLayer;
 
 })();
-
-ActionBook = {
-  home: {
-    container: '#home-layer',
-    name: 'home-layer'
-  },
-  addSample: {
-    contentURL: '/add_sample',
-    name: 'add-sample'
-  },
-  matchSamples: {
-    contentURL: '/match_samples',
-    name: 'match-samples'
-  },
-  naiveGlycopeptideSearchSpace: {
-    contentURL: "/glycopeptide_search_space",
-    name: "glycopeptide-search-space"
-  },
-  naiveGlycanSearchSpace: {
-    contentURL: "/glycan_search_space",
-    name: "glycan-search-space"
-  },
-  viewDatabaseSearchResults: {
-    contentURLTemplate: "/view_database_search_results/{}",
-    name: "view-database-search-results"
-  }
-};
 
 //# sourceMappingURL=action-layer.js.map
 ;var ajaxForm, setupAjaxForm;

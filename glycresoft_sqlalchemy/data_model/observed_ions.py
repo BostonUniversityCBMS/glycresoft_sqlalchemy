@@ -18,6 +18,10 @@ class SampleRun(Base):
     tandem_scans = relationship("TandemScan", backref=backref("hypothesis_run"), lazy='dynamic')
     sample_type = Column(Unicode(128))
 
+    def __init__(self, **kwargs):
+        kwargs.setdefault('parameters', {})
+        super(SampleRun, self).__init__(**kwargs)
+
     def to_json(self):
         d = {
             "name": self.name,

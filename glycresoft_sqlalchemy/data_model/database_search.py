@@ -25,19 +25,34 @@ class HypothesisSampleMatch(Base):
     target_hypothesis = relationship(Hypothesis, foreign_keys=[target_hypothesis_id])
     decoy_hypothesis = relationship(Hypothesis, foreign_keys=[decoy_hypothesis_id])
 
+    def __init__(self, **kwargs):
+        kwargs.setdefault('parameters', {})
+        super(HypothesisSampleMatch, self).__init__(**kwargs)
+
+    def to_json(self):
+        d = {
+            "id": self.id,
+            "parameters": self.parameters,
+            "name": self.name,
+            "sample_run_name": self.sample_run_name,
+            "target_hypothesis": self.target_hypothesis.to_json(),
+            "decoy_hypothesis": self.decoy_hypothesis.to_json()
+        }
+        return d
+
     def results(self):
-        if self.glycopeptide_matches.count() > 0:
+        if self.glycopeptide_matches.first() is not None:
             yield GlycopeptideMatch, self.glycopeptide_matches.filter(
                 GlycopeptideMatch.protein_id == Protein.id,
                 Protein.hypothesis_id == Hypothesis.id,
                 ~Hypothesis.is_decoy)
         if self.peak_group_matches.filter(
-                PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition").count() > 0:
+                PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition").first() is not None:
             yield TheoreticalGlycanComposition, self.peak_group_matches.filter(
                 (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition") |
                 (PeakGroupMatch.theoretical_match_type == None))
         if self.peak_group_matches.filter(
-                PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition").count() > 0:
+                PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition").first() is not None:
             yield TheoreticalGlycopeptideComposition, self.peak_group_matches.filter(
                 (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition") |
                 (PeakGroupMatch.theoretical_match_type == None))

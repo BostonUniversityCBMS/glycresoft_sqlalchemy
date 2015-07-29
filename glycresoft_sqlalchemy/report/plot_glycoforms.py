@@ -178,14 +178,90 @@ def draw_layers(layers, protein):
     return ax, id_mapper
 
 
-def plot_glycoforms(protein, filterfunc=lambda x: x.ms2_score > 0.2):
-    gpms = filterfunc(protein.glycopeptide_matches).all()
-    layers = layout_layers(gpms)
-    ax, id_mapper = draw_layers(layers, protein)
+def draw_layers2(layers, protein):
+    figure, ax = plt.subplots(1, 1)
+    id_mapper = IDMapper()
+    i = 0
+    row_width = 80
+    scale_factor = 2.
+    layer_height = 2.8 * scale_factor
+    y_step = -3.5 * scale_factor
+    cur_y = -3
+
+    cur_position = 0
+
+    text_shift = 0.07
+    sequence_font_size = 9.
+    mod_font_size = 4.
+    mod_width = 0.7
+    total_length = len(protein.protein_sequence or '')
+    protein_pad = -0.365
+    peptide_pad = -0.365 * (2./3.)
+    while cur_position < total_length:
+        next_row = cur_position + row_width
+        for i, aa in enumerate(protein.protein_sequence[cur_position:next_row]):
+            ax.text(protein_pad + i, layer_height + 2. + cur_y, aa, family="monospace", fontsize=sequence_font_size)
+        rect = mpatches.Rectangle((protein_pad, cur_y), (i + 0.5), layer_height, facecolor='red', alpha=0.5)
+        id_mapper.add("main-sequence-%d", rect, {'main-sequence': True})
+        ax.add_patch(rect)
+
+        cur_y += y_step
+
+        for layer in layers:
+            c = 0
+            for gpm in layer:
+                if gpm.start_position < cur_position:
+                    continue
+                elif gpm.start_position > next_row:
+                    break
+                c += 1
+                rect = mpatches.Rectangle(
+                    (peptide_pad + gpm.start_position - cur_position, cur_y), width=gpm.sequence_length, height=layer_height,
+                    facecolor='lightseagreen', edgecolor='darkseagreen',
+                    alpha=min(max(gpm.ms2_score * 2, 0.2), 0.8))
+                label = id_mapper.add("glycopeptide-%d", rect, {
+                    "sequence": gpm.glycopeptide_sequence,
+                    "start-position": gpm.start_position,
+                    "end-position": gpm.end_position,
+                    "ms2-score": gpm.ms2_score,
+                    "q-value": gpm.q_value
+                })
+                ax.add_patch(rect)
+                seq = sequence.Sequence(gpm.glycopeptide_sequence)
+                for i, pos in enumerate(seq):
+                    if len(pos[1]) > 0:
+                        color = get_color(pos[1][0].name)
+                        facecolor, edgecolor = lighten(color), darken(color)
+
+                        mod_patch = mpatches.Rectangle(
+                            (gpm.start_position - cur_position + i - 0.2, cur_y), width=mod_width, height=layer_height,
+                            facecolor=facecolor, edgecolor=edgecolor,
+                            alpha=min(max(gpm.ms2_score * 2, 0.4), 0.8))
+                        id_mapper.add("modification-%d", mod_patch,
+                                      {"modification-type": pos[1][0].name, "parent": label})
+                        ax.add_patch(mod_patch)
+
+                        ax.text(gpm.start_position - cur_position + i - text_shift, cur_y + 0.6,
+                                str(pos[1][0])[0], fontsize=mod_font_size, family='monospace')
+            if c > 0:
+                cur_y += y_step
+        cur_y += y_step * 3
+        cur_position = next_row
+
+    ax.set_ylim(cur_y - 100, 50)
+    ax.set_xlim(-10, row_width + 10)
+    ax.axis('off')
     return ax, id_mapper
 
 
-def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch.ms2_score > 0.2)):
+def plot_glycoforms(protein, filterfunc=lambda x: x.ms2_score > 0.2):
+    gpms = filterfunc(protein.glycopeptide_matches).all()
+    layers = layout_layers(gpms)
+    ax, id_mapper = draw_layers2(layers, protein)
+    return ax, id_mapper
+
+
+def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch.ms2_score > 0.0)):
     ax, id_mapper = plot_glycoforms(protein, filterfunc)
 
     fig = ax.get_figure()
@@ -201,15 +277,14 @@ def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch
         element.attrib.update({("data-" + k): str(v) for k, v in attributes.items()})
         element.attrib['class'] = id.rsplit('-')[0]
     min_x, min_y, max_x, max_y = map(int, root.attrib["viewBox"].split(" "))
-    min_y += 100
-    min_x += 50
+    min_x += 100
     view_box = ' '.join(map(str, (min_x, min_y, max_x, max_y)))
     root.attrib["viewBox"] = view_box
     width = int(root.attrib["width"][:-2]) * 2
     root.attrib["width"] = "%dpt" % width
     height = int(root.attrib["height"][:-2]) * 2
     root.attrib["height"] = "%dpt" % height
-
+    root[1].attrib["transform"] = "scale(1.3)"
     svg = ET.tostring(root)
     plt.close()
     return svg
