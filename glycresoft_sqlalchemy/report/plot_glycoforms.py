@@ -197,10 +197,18 @@ def draw_layers2(layers, protein):
     total_length = len(protein.protein_sequence or '')
     protein_pad = -0.365
     peptide_pad = -0.365 * (2./3.)
+
+    glycosites = set(protein.glycosylation_sites)
+
     while cur_position < total_length:
         next_row = cur_position + row_width
         for i, aa in enumerate(protein.protein_sequence[cur_position:next_row]):
-            ax.text(protein_pad + i, layer_height + 2. + cur_y, aa, family="monospace", fontsize=sequence_font_size)
+            ax.text(
+                protein_pad + i, layer_height + 2. + cur_y, aa,
+                family="monospace", fontsize=sequence_font_size,
+                color='red' if any((((i + cur_position) in glycosites),
+                                    ((i + cur_position - 1) in glycosites),
+                                    ((i + cur_position - 2) in glycosites))) else 'black')
         rect = mpatches.Rectangle((protein_pad, cur_y), (i + 0.5), layer_height, facecolor='red', alpha=0.5)
         id_mapper.add("main-sequence-%d", rect, {'main-sequence': True})
         ax.add_patch(rect)

@@ -7,7 +7,8 @@ import os
 from multiprocessing import Pool
 
 from ..data_model import (Hypothesis, MS1GlycopeptideHypothesis, Protein, TheoreticalGlycopeptide,
-                          Glycan, DatabaseManager, TheoreticalGlycopeptideCompositionGlycanAssociation)
+                          Glycan, DatabaseManager, TheoreticalGlycopeptideCompositionGlycanAssociation,
+                          func)
 from ..data_model.informed_proteomics import (InformedPeptide, InformedTheoreticalGlycopeptideComposition)
 from ..data_model import PipelineModule
 from ..utils.worker_utils import async_worker_pool
@@ -174,15 +175,34 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
         cntr = 0
         if self.n_processes > 1:
             pool = Pool(self.n_processes)
-            for res in pool.imap_unordered(task_fn, self.stream_peptides(), chunksize=500):
-                cntr += res
-                logger.info("Completed %d sequences", cntr)
-            # async_worker_pool(pool, self.stream_peptides(), task_fn)
+            # for res in pool.imap_unordered(task_fn, self.stream_peptides(), chunksize=500):
+            #     cntr += res
+            #     logger.info("Completed %d sequences", cntr)
+            async_worker_pool(pool, self.stream_peptides(), task_fn)
             pool.terminate()
         else:
             for peptide in self.stream_peptides():
                 cntr += task_fn(peptide)
                 logger.info("Completed %d sequences", cntr)
+
+        session = self.manager.session()
+        ids = session.query(
+            func.min(
+                InformedTheoreticalGlycopeptideComposition.id)).filter(
+            InformedTheoreticalGlycopeptideComposition.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis_id).group_by(
+            InformedTheoreticalGlycopeptideComposition.glycopeptide_sequence,
+            InformedTheoreticalGlycopeptideComposition.protein_id)
+
+        q = session.query(InformedTheoreticalGlycopeptideComposition.id).filter(
+            InformedTheoreticalGlycopeptideComposition.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis_id,
+            ~InformedTheoreticalGlycopeptideComposition.id.in_(ids.correlate(None)))
+        conn = session.connection()
+        conn.execute(InformedTheoreticalGlycopeptideComposition.__table__.delete(
+            InformedTheoreticalGlycopeptideComposition.__table__.c.id.in_(q.selectable)))
+        session.commit()
+        session.close()
         return self.hypothesis_id
 
 
