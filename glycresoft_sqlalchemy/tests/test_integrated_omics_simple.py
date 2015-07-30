@@ -7,6 +7,7 @@ try:
 except:
     pass
 from glycresoft_sqlalchemy.search_space_builder import integrated_omics
+from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptideComposition, func
 
 
 def test_main():
@@ -19,6 +20,12 @@ def test_main():
     job.start()
     job = integrated_omics.IntegratedOmicsMS1LegacyCSV("datafiles/integrated_omics_simple.db", i)
     job.start()
-
+    db = job.manager.session()
+    dups = db.query(
+        TheoreticalGlycopeptideComposition.glycopeptide_sequence,
+        func.count(TheoreticalGlycopeptideComposition.glycopeptide_sequence)).group_by(
+        TheoreticalGlycopeptideComposition.glycopeptide_sequence).having(
+        func.count(TheoreticalGlycopeptideComposition.glycopeptide_sequence) > 1).all()
+    assert len(dups) == 0, "Duplicate Sequences Found"
 if __name__ == '__main__':
     test_main()

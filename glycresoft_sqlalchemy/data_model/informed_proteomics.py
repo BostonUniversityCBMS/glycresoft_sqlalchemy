@@ -28,7 +28,7 @@ InformedPeptideToTheoreticalGlycopeptide = Table(
 class InformedTheoreticalGlycopeptideComposition(TheoreticalGlycopeptideComposition):
     __tablename__ = "InformedTheoreticalGlycopeptideComposition"
 
-    id = Column(Integer, ForeignKey(TheoreticalGlycopeptideComposition.id), primary_key=True)
+    id = Column(Integer, ForeignKey(TheoreticalGlycopeptideComposition.id, ondelete="CASCADE"), primary_key=True)
 
     peptide_score = Column(Numeric(10, 6, asdecimal=False), index=True)
     other = Column(PickleType)

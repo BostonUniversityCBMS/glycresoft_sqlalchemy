@@ -8,7 +8,7 @@ from multiprocessing import Pool
 
 from ..data_model import (Hypothesis, MS1GlycopeptideHypothesis, Protein, TheoreticalGlycopeptide,
                           Glycan, DatabaseManager, TheoreticalGlycopeptideCompositionGlycanAssociation,
-                          func)
+                          func, TheoreticalGlycopeptideComposition)
 from ..data_model.informed_proteomics import (InformedPeptide, InformedTheoreticalGlycopeptideComposition)
 from ..data_model import PipelineModule
 from ..utils.worker_utils import async_worker_pool
@@ -188,19 +188,22 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
         session = self.manager.session()
         ids = session.query(
             func.min(
-                InformedTheoreticalGlycopeptideComposition.id)).filter(
-            InformedTheoreticalGlycopeptideComposition.protein_id == Protein.id,
+                TheoreticalGlycopeptideComposition.id)).filter(
+            TheoreticalGlycopeptideComposition.protein_id == Protein.id,
             Protein.hypothesis_id == self.hypothesis_id).group_by(
-            InformedTheoreticalGlycopeptideComposition.glycopeptide_sequence,
-            InformedTheoreticalGlycopeptideComposition.protein_id)
+            TheoreticalGlycopeptideComposition.glycopeptide_sequence,
+            TheoreticalGlycopeptideComposition.protein_id)
 
-        q = session.query(InformedTheoreticalGlycopeptideComposition.id).filter(
-            InformedTheoreticalGlycopeptideComposition.protein_id == Protein.id,
+        q = session.query(TheoreticalGlycopeptideComposition.id).filter(
+            TheoreticalGlycopeptideComposition.protein_id == Protein.id,
             Protein.hypothesis_id == self.hypothesis_id,
-            ~InformedTheoreticalGlycopeptideComposition.id.in_(ids.correlate(None)))
+            ~TheoreticalGlycopeptideComposition.id.in_(ids.correlate(None)))
+
+        # Delete the base class, and let the cascade through the foreign key delete
+        # the subclass.
         conn = session.connection()
-        conn.execute(InformedTheoreticalGlycopeptideComposition.__table__.delete(
-            InformedTheoreticalGlycopeptideComposition.__table__.c.id.in_(q.selectable)))
+        conn.execute(TheoreticalGlycopeptideComposition.__table__.delete(
+            TheoreticalGlycopeptideComposition.__table__.c.id.in_(q.selectable)))
         session.commit()
         session.close()
         return self.hypothesis_id

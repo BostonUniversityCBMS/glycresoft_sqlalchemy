@@ -19,8 +19,9 @@ from glycresoft_sqlalchemy.report import microheterogeneity
 from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
 
 from glycresoft_sqlalchemy.web_app.task.do_bupid_yaml_parse import BUPIDYamlParseTask
-from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
 from glycresoft_sqlalchemy.web_app.task.dummy import DummyTask
+from glycresoft_sqlalchemy.web_app.task.do_ms2_search import TandemMSGlycoproteomicsSearchTask
+from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
 
 app = Flask(__name__)
 report.prepare_environment(app.jinja_env)
@@ -227,7 +228,17 @@ def tandem_match_samples():
 
 @app.route("/tandem_match_samples", methods=["POST"])
 def tandem_match_samples_post():
-    print request.values
+    user_parameters = request.values
+    job_parameters = {
+        "ms1_tolerance": user_parameters["ms1-tolerance"],
+        "ms2_tolerance": user_parameters["ms2-tolerance"],
+        "target_hypothesis_id": user_parameters["hypothesis_choice"],
+        "database_path": manager.path
+
+    }
+    session = manager.session()
+    session.query(Hypothesis)
+
     return jsonify(**dict(request.values))
 
 # ----------------------------------------

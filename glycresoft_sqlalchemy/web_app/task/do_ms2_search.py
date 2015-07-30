@@ -6,7 +6,9 @@ from glycresoft_sqlalchemy.matching.matching import IonMatching, ms1_tolerance_d
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 from glycresoft_sqlalchemy.scoring import target_decoy
 
-from .task_process import NullPipe, Message
+import os
+
+from .task_process import NullPipe, Message, Task
 
 
 def taskmain(
@@ -49,7 +51,7 @@ def taskmain(
         comm.send(Message("No HypothesisSampleMatch used"))
         hsm_id = None
 
-    comm.send(Message("Begin Matching for target %d" % target_hypothesis_id))
+    comm.send(Message("Begin Matching for target %d" % target_hypothesis_id, "update"))
     job = IonMatching(
         database_path,
         hypothesis_id=target_hypothesis_id,
@@ -65,7 +67,7 @@ def taskmain(
         comm.send(Message(job.error, 'error'))
     if decoy_hypothesis_id is None:
         return
-    comm.send(Message("Begin Matching for decoy %d" % decoy_hypothesis_id))
+    comm.send(Message("Begin Matching for decoy %d" % decoy_hypothesis_id, "update"))
     job = IonMatching(
         database_path,
         hypothesis_id=decoy_hypothesis_id,
@@ -76,8 +78,21 @@ def taskmain(
         ms2_tolerance=ms2_tolerance,
         n_processes=kwargs.get("n_processes", 4))
     job.start()
-    comm.send(Message("Begin Matching for decoy %d" % decoy_hypothesis_id))
-
+    comm.send(Message("Begin TDA", "update"))
     job = target_decoy.TargetDecoyAnalyzer(database_path, target_hypothesis_id, decoy_hypothesis_id)
     job.start()
     return
+
+
+class TandemMSGlycoproteomicsSearchTask(Task):
+    def __init__(
+            self, database_path, observed_ions_path, target_hypothesis_id,
+            decoy_hypothesis_id, observed_ions_type, sample_run_id,
+            ms1_tolerance, ms2_tolerance, callback, **kwargs):
+        args = (
+            database_path, observed_ions_path, target_hypothesis_id,
+            decoy_hypothesis_id, observed_ions_type, sample_run_id,
+            ms1_tolerance, ms2_tolerance)
+        name = "Tandem MS Glycoproteomics Search %d @ %s" % (target_hypothesis_id, os.path.basename(observed_ions_path))
+        kwargs.setdefault('name', name)
+        super(TandemMSGlycoproteomicsSearchTask, self).__init__(taskmain, args, callback, **kwargs)
