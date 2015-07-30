@@ -16,6 +16,7 @@ from ..structure import constants
 from ..proteomics import get_enzyme, msdigest_xml_parser
 
 from .. import data_model as model
+from .peptide_utilities import SiteListFastaFileParser
 from ..data_model import PipelineModule
 
 TheoreticalGlycopeptideGlycanAssociation = model.TheoreticalGlycopeptideGlycanAssociation
@@ -28,14 +29,8 @@ g_colon_prefix = "G:"
 
 def parse_site_file(site_lists):
     site_list_map = {}
-    last_name = None
-    for line in site_lists:
-        if len(line) == 0:
-            continue
-        elif ">" == line[0]:
-            last_name = line[1:].strip()
-        else:
-            site_list_map[last_name] = map(int, re.findall(r"(\d+)\s+", line))
+    for entry in SiteListFastaFileParser(site_lists):
+        site_list_map[entry['name']] = list(entry["glycosylation_sites"])
     return site_list_map
 
 
@@ -310,8 +305,7 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map,
         List of each theoretical sequence and its fragment ions
     """
     try:
-        ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
-
+        ms1_result = row
         if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
             return 0
 
@@ -385,7 +379,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         logger.info("Building %r", self.hypothesis)
 
         try:
-            site_list_map = parse_site_file(open(site_list))
+            site_list_map = parse_site_file(site_list)
         except IOError, e:
             if isinstance(site_list, dict):
                 site_list_map = site_list
@@ -397,11 +391,11 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
             modification_table = ModificationTable.bootstrap()
         self.modification_table = modification_table
         self.glycosylation_site_map = site_list_map
-        self.ms1_results_reader = csv.DictReader(open(self.ms1_results_file))
+        self.ms1_results_reader = MS1ResultsFile(self.ms1_results_file)
 
         self.n_processes = n_processes
 
-        self.monosaccharide_identities = get_monosaccharide_identities(self.ms1_results_reader.fieldnames)
+        self.monosaccharide_identities = self.ms1_results_reader.monosaccharide_identities
         enzyme = map(get_enzyme, enzyme)
 
         self.hypothesis.parameters = {
@@ -462,8 +456,14 @@ class MS1ResultsFile(object):
 
     def __iter__(self):
         for row in self.reader:
-            if row.get("Hypothesis MW") != "":
-                yield MS1GlycopeptideResult.from_csvdict(self.monosaccharide_identities, **row)
-
+            try:
+                if row["Compound Key"] != "":
+                    yield MS1GlycopeptideResult.from_csvdict(self.monosaccharide_identities, **row)
+            except:
+                print
+                print
+                print row
+                raise
 
 parse_digest = msdigest_xml_parser.MSDigestParameters.parse
+MS1ResultsFile

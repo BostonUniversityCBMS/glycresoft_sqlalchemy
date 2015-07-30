@@ -16,7 +16,7 @@ def test_main():
     i = integrated_omics.load_proteomics("datafiles/integrated_omics_simple.db", "datafiles/AGP_Proteomics2.mzid")
     integrated_omics.load_glycomics_naive("datafiles/integrated_omics_simple.db", "datafiles/human_n_glycan.csv", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
-        "./datafiles/integrated_omics_simple.db", i, n_processes=1)
+        "./datafiles/integrated_omics_simple.db", i, n_processes=4)
     job.start()
     job = integrated_omics.IntegratedOmicsMS1LegacyCSV("datafiles/integrated_omics_simple.db", i)
     job.start()

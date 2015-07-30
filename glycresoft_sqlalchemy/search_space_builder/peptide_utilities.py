@@ -207,5 +207,5 @@ class SiteListFastaFileParser(FastaFileParser):
 
     def process_result(self, d):
         v = d.pop("protein_sequence")
-        d['glycosylation_sites'] = set(map(int, v))
+        d['glycosylation_sites'] = set(map(int, v.split(" ")))
         return d

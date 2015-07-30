@@ -234,7 +234,7 @@ def convert_dict_to_sequence(sequence_dict, session):
             glycosites = set(match.n_glycan_sequon_sites) | set(sequence.find_n_glycosylation_sequons(
                 peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
             match.count_glycosylation_sites = len(glycosites)
-            match.glycosites = list(glycosites)
+            match.glycosylation_sites = list(glycosites)
             session.add(match)
             counter += 1
         except:

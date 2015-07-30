@@ -11,6 +11,9 @@ from .data_model import Base
 logger = logging.getLogger("pipeline_module")
 
 
+debug = True
+
+
 class JobState(Base):
     __tablename__ = "JobState"
     id = Column(Integer, primary_key=True)
@@ -64,7 +67,7 @@ class PipelineModule(object):
         self._begin(*args, **kwargs)
         try:
             out = self.run()
-        except Exception, e:
+        except KeyboardInterrupt if debug else Exception, e:
             logger.exception("An error occurred: %r", e, exc_info=e)
             out = self.error = e
             self.status = -1
