@@ -8,26 +8,25 @@ from glycresoft_sqlalchemy.data_model import (Hypothesis, Protein, GlycopeptideM
 
 
 class GlycoproteinMicroheterogeneitySummary(object):
-    def __init__(self, protein, score_threshold=0.2):
+    def __init__(self, protein, filter_fn):
         self.protein = protein
         self.site_list = protein.glycosylation_sites
         self.site_to_glycan_map = {}
-        self.score_threshold = score_threshold
+        self.filter_fn = filter_fn
         self.build_site_to_glycan_map()
 
     def build_site_to_glycan_map(self):
         site_map = {}
         for site in self.site_list:
             species = defaultdict(list)
-            for start, end, glycan_composition, volume, ms2_score in object_session(
+            for start, end, glycan_composition, volume, ms2_score in self.filter_fn(object_session(
                     self.protein).query(GlycopeptideMatch.start_position,
                                         GlycopeptideMatch.end_position,
                                         GlycopeptideMatch.glycan_composition_str,
                                         GlycopeptideMatch.volume,
                                         GlycopeptideMatch.ms2_score).filter(
                     GlycopeptideMatch.spans(site),
-                    GlycopeptideMatch.ms2_score > self.score_threshold,
-                    GlycopeptideMatch.protein_id == self.protein.id):
+                    GlycopeptideMatch.protein_id == self.protein.id)):
                 species[glycan_composition].append(volume)
             site_map[site] = {k: sum(v)/float(len(v)) for k, v in species.items()}
         self.site_to_glycan_map = site_map
@@ -58,10 +57,10 @@ class GlycoproteinMicroheterogeneitySummary(object):
         peptide_bundles = []
         current_peptide = None
         current_bundle = []
-        for row in self.protein.glycopeptide_matches.filter(
+        for row in self.filter_fn(self.protein.glycopeptide_matches.filter(
                 GlycopeptideMatch.ms2_score > self.score_threshold).group_by(
                 GlycopeptideMatch.base_peptide_sequence,
-                GlycopeptideMatch.glycan_composition_str):
+                GlycopeptideMatch.glycan_composition_str)):
             if row[0] != current_peptide:
                 if current_peptide is not None:
                     peptide_bundles.append((current_peptide, current_bundle))

@@ -88,10 +88,10 @@ def mass_histogram(iterable, **kwargs):
     return svg_plot(figure)
 
 
-def plot_glycoforms(protein):
+def plot_glycoforms(protein, filter_context):
     old_size = mpl_params['figure.figsize']
     mpl_params['figure.figsize'] = 16, 10
-    svg = plot_glycoforms_svg(protein)
+    svg = plot_glycoforms_svg(protein, filterfunc=filter_context)
     mpl_params['figure.figsize'] = old_size
     return svg
 

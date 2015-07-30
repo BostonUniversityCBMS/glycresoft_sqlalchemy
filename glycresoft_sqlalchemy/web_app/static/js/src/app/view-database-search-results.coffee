@@ -43,7 +43,7 @@ viewDatabaseSearchResults = ->
         handle = $(this)
         id = handle.attr('data-target')
         $("#chosen-protein-container").html("""<div class="progress"><div class="indeterminate"></div></div>""").fadeIn()
-        $.get('/view_database_search_results/protein_view/' + id).success((doc) ->
+        $.post('/view_database_search_results/protein_view/' + id, GlycReSoft.context).success((doc) ->
             $('#chosen-protein-container').hide()
             $('#chosen-protein-container').html(doc).fadeIn()
             initGlycopeptideOverviewPlot()
@@ -56,18 +56,14 @@ viewDatabaseSearchResults = ->
                 $('ul.tabs').tabs 'select_tab', 'protein-overview'
             $('ul.tabs .tab a').click ->
                 GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1)
-                return
             $('.indicator').addClass 'indigo'
             $('.glycopeptide-match-row').click showGlycopeptideDetailsModal
             peptideDetailsModal = $('#peptide-detail-modal')
         ).error (error) ->
             console.log arguments
 
-    
-
     getGlycopeptideMatchDetails = (id, callback) ->
         $.get '/api/glycopeptide_match/' + id, callback
-        return
 
     showGlycopeptideDetailsModal = ->
         handle = $(this)

@@ -192,6 +192,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
             TheoreticalGlycopeptideComposition.protein_id == Protein.id,
             Protein.hypothesis_id == self.hypothesis_id).group_by(
             TheoreticalGlycopeptideComposition.glycopeptide_sequence,
+            TheoreticalGlycopeptideComposition.start_position,
             TheoreticalGlycopeptideComposition.protein_id)
 
         q = session.query(TheoreticalGlycopeptideComposition.id).filter(

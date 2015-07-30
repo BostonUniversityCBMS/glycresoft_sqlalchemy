@@ -22,7 +22,7 @@ ActionBook = {
     name: "glycan-search-space"
   },
   viewDatabaseSearchResults: {
-    contentURLTemplate: "/view_database_search_results/{}",
+    contentURLTemplate: "/view_database_search_results/{hypothesis_sample_match_id}",
     name: "view-database-search-results"
   }
 };
@@ -256,9 +256,12 @@ $(function() {
         var handle, id;
         handle = $(this);
         id = handle.attr('data-id');
-        self.addLayer(ActionBook.viewDatabaseSearchResults, [id]);
+        self.addLayer(ActionBook.viewDatabaseSearchResults, {
+          hypothesis_sample_match_id: id
+        });
         console.log(self.layers);
         console.log(self.lastAdded);
+        self.context["hypothesis_sample_match_id"] = id;
         return self.setShowingLayer(self.lastAdded);
       });
       results.push(row.find(".remove-hsm").click(function(event) {
@@ -392,7 +395,7 @@ viewDatabaseSearchResults = function() {
     handle = $(this);
     id = handle.attr('data-target');
     $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
-    return $.get('/view_database_search_results/protein_view/' + id).success(function(doc) {
+    return $.post('/view_database_search_results/protein_view/' + id, GlycReSoft.context).success(function(doc) {
       var tabs;
       $('#chosen-protein-container').hide();
       $('#chosen-protein-container').html(doc).fadeIn();
@@ -406,7 +409,7 @@ viewDatabaseSearchResults = function() {
         $('ul.tabs').tabs('select_tab', 'protein-overview');
       }
       $('ul.tabs .tab a').click(function() {
-        GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1);
+        return GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1);
       });
       $('.indicator').addClass('indigo');
       $('.glycopeptide-match-row').click(showGlycopeptideDetailsModal);
@@ -416,7 +419,7 @@ viewDatabaseSearchResults = function() {
     });
   };
   getGlycopeptideMatchDetails = function(id, callback) {
-    $.get('/api/glycopeptide_match/' + id, callback);
+    return $.get('/api/glycopeptide_match/' + id, callback);
   };
   showGlycopeptideDetailsModal = function() {
     var handle, id;

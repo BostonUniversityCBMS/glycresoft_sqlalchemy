@@ -94,11 +94,15 @@ ActionLayerManager = (function(superClass) {
 ActionLayer = (function() {
   ActionLayer.actions = {};
 
-  function ActionLayer(manager, options, params) {
+  function ActionLayer(manager, options, params, method) {
+    if (method == null) {
+      method = 'get';
+    }
     this.manager = manager;
     this.options = options;
     this.params = params;
     this.contentURL = options.contentURL;
+    this.method = method;
     if (!options.container) {
       if (this.params != null) {
         this.id = options.name + "-" + manager.incLayerCounter();
@@ -122,11 +126,12 @@ ActionLayer = (function() {
   }
 
   ActionLayer.prototype.setup = function() {
+    var callback;
     console.log("Setting up", this);
     if (this.options.contentURLTemplate != null) {
       this.contentURL = this.options.contentURLTemplate.format(this.params);
     }
-    return $.get(this.contentURL).success((function(_this) {
+    callback = (function(_this) {
       return function(doc) {
         if (!_this.showing) {
           _this.container.hide();
@@ -144,7 +149,12 @@ ActionLayer = (function() {
         materialRefresh();
         return _this.container.prepend("<div>\n    <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
       };
-    })(this));
+    })(this);
+    if (this.method === "get") {
+      return $.get(this.contentURL).success(callback);
+    } else if (this.method === "post") {
+      return $.post(this.contentURL, this.params).success(callback);
+    }
   };
 
   ActionLayer.prototype.show = function() {
@@ -170,8 +180,10 @@ ActionLayer = (function() {
 ;var ajaxForm, setupAjaxForm;
 
 ajaxForm = function(formHandle, success, error) {
+  console.log("Ajaxifying ", formHandle);
   return $(formHandle).on('submit', function(event) {
     var ajaxParams, data, encoding, handle, method, url;
+    console.log(formHandle, "submitting...");
     event.preventDefault();
     handle = $(this);
     url = handle.attr('action');

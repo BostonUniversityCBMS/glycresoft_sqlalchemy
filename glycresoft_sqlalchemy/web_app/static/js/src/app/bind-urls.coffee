@@ -15,7 +15,7 @@ ActionBook =
         contentURL: "/glycan_search_space"
         name: "glycan-search-space"
     viewDatabaseSearchResults:
-        contentURLTemplate: "/view_database_search_results/{}"
+        contentURLTemplate: "/view_database_search_results/{hypothesis_sample_match_id}"
         name: "view-database-search-results"
 
 makeAPIGet = (url) -> (callback) -> $.get(url).success(callback)

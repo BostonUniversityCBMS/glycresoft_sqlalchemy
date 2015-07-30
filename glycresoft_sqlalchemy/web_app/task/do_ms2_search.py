@@ -37,8 +37,11 @@ def taskmain(
     else:
         sample_name = ','.join(x[0] for x in DatabaseManager(observed_ions_path).session().query(SampleRun.name).all())
     session = manager.session()
+    target_name = manager.session().query(
+                Hypothesis).get(target_hypothesis_id).name
     if decoy_hypothesis_id is not None:
         hsm = HypothesisSampleMatch(
+            name="{} @ {}".format(target_name, sample_name),
             target_hypothesis_id=target_hypothesis_id,
             decoy_hypothesis_id=decoy_hypothesis_id,
             sample_run_name=sample_name
@@ -81,6 +84,8 @@ def taskmain(
     comm.send(Message("Begin TDA", "update"))
     job = target_decoy.TargetDecoyAnalyzer(database_path, target_hypothesis_id, decoy_hypothesis_id)
     job.start()
+    if hsm_id is not None:
+        comm.send(Message(hsm.to_json(), "new-hypothesis-sample-match"))
     return
 
 
@@ -93,6 +98,6 @@ class TandemMSGlycoproteomicsSearchTask(Task):
             database_path, observed_ions_path, target_hypothesis_id,
             decoy_hypothesis_id, observed_ions_type, sample_run_id,
             ms1_tolerance, ms2_tolerance)
-        name = "Tandem MS Glycoproteomics Search %d @ %s" % (target_hypothesis_id, os.path.basename(observed_ions_path))
+        name = "Tandem MS Glycoproteomics Search {} @ {}".format(target_hypothesis_id, os.path.basename(observed_ions_path))
         kwargs.setdefault('name', name)
         super(TandemMSGlycoproteomicsSearchTask, self).__init__(taskmain, args, callback, **kwargs)

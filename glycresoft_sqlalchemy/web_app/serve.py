@@ -115,15 +115,38 @@ def test_page():
 @app.route("/view_database_search_results/<int:id>")
 def view_database_search_results(id):
     hsm = g.db.query(HypothesisSampleMatch).get(id)
-    return render_template("view_database_search_results.templ", hsm=hsm)
+    hypothesis_sample_match_id = id
 
+    def filter_context(q):
+        return q.filter_by(
+            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
+            GlycopeptideMatch.ms2_score > 0.2)
 
-@app.route("/view_database_search_results/protein_view/<int:id>")
-def view_protein_results(id):
-    protein = g.db.query(Protein).get(id)
-    site_summary = microheterogeneity.GlycoproteinMicroheterogeneitySummary(protein)
     return render_template(
-        "components/protein_view.templ", protein=protein, site_summary=site_summary)
+        "view_database_search_results.templ",
+        hsm=hsm,
+        filter_context=filter_context)
+
+
+@app.route("/view_database_search_results/protein_view/<int:id>", methods=["POST"])
+def view_protein_results(id):
+    print request.values
+    hypothesis_sample_match_id = request.values["hypothesis_sample_match_id"]
+    protein = g.db.query(Protein).get(id)
+
+    def filter_context(q):
+        return q.filter_by(
+            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
+            GlycopeptideMatch.ms2_score > 0.2)
+
+    site_summary = microheterogeneity.GlycoproteinMicroheterogeneitySummary(
+        protein, filter_context)
+
+    return render_template(
+        "components/protein_view.templ",
+        protein=protein,
+        site_summary=site_summary,
+        filter_context=filter_context)
 
 
 @app.route("/view_database_search_results/view_glycopeptide_details/<int:id>")
@@ -230,15 +253,29 @@ def tandem_match_samples():
 def tandem_match_samples_post():
     user_parameters = request.values
     job_parameters = {
-        "ms1_tolerance": user_parameters["ms1-tolerance"],
-        "ms2_tolerance": user_parameters["ms2-tolerance"],
-        "target_hypothesis_id": user_parameters["hypothesis_choice"],
+        "ms1_tolerance": float(user_parameters["ms1-tolerance"]) * 1e-6,
+        "ms2_tolerance": float(user_parameters["ms2-tolerance"]) * 1e-6,
+        "target_hypothesis_id": int(user_parameters["hypothesis_choice"]),
         "database_path": manager.path
 
     }
-    session = manager.session()
-    session.query(Hypothesis)
+    db = manager.session()
+    target_hypothesis = db.query(Hypothesis).get(user_parameters["hypothesis_choice"])
+    decoy_id = target_hypothesis.parameters["decoys"][0]["hypothesis_id"]
+    job_parameters['decoy_hypothesis_id'] = decoy_id
 
+    print request.values.__dict__
+
+    for sample_name in request.values.getlist('samples'):
+        instance_parameters = job_parameters.copy()
+        sample_run, sample_manager = manager.find_sample(sample_name)
+        instance_parameters["observed_ions_path"] = sample_manager.path
+        instance_parameters["sample_run_id"] = sample_run.id
+        instance_parameters['callback'] = lambda: 0
+        instance_parameters['observed_ions_type'] = 'db'
+        print instance_parameters
+        task = TandemMSGlycoproteomicsSearchTask(**instance_parameters)
+        manager.add_task(task)
     return jsonify(**dict(request.values))
 
 # ----------------------------------------

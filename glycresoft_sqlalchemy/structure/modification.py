@@ -684,9 +684,7 @@ class Modification(ModificationBase):
     def find_valid_sites(self, sequence):
         return self.rule.find_valid_sites(sequence)
 
-    def __repr__(self):
-        rep = "{name}{{{number}}}".format(**self.__dict__)
-        return rep
+    __repr__ = serialize
 
     def __hash__(self):
         return hash(str(self))

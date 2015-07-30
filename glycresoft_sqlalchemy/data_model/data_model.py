@@ -64,7 +64,7 @@ class Hypothesis(Base):
 class MS1GlycopeptideHypothesis(Hypothesis):
     __tablename__ = "MS1GlycopeptideHypothesis"
 
-    id = Column(Integer, ForeignKey(Hypothesis.id), primary_key=True)
+    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
 
     __mapper_args__ = {
         'polymorphic_identity': u'MS1GlycopeptideHypothesis',
@@ -78,7 +78,7 @@ class Protein(Base):
     protein_sequence = Column(UnicodeText, default=u"")
     name = Column(Unicode(128), default=u"", index=True)
     other = Column(MutableDict.as_mutable(PickleType))
-    hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id"))
+    hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id", ondelete="CASCADE"))
     glycosylation_sites = Column(MutableList.as_mutable(PickleType))
 
     theoretical_glycopeptides = relationship(
@@ -164,8 +164,8 @@ class PeptideBase(object):
 
 TheoreticalGlycopeptideGlycanAssociation = Table(
     "TheoreticalGlycopeptideGlycanAssociation", Base.metadata,
-    Column("peptide_id", Integer, ForeignKey("TheoreticalGlycopeptide.id")),
-    Column("glycan_id", Integer, ForeignKey(Glycan.id)))
+    Column("peptide_id", Integer, ForeignKey("TheoreticalGlycopeptide.id", ondelete="CASCADE")),
+    Column("glycan_id", Integer, ForeignKey(Glycan.id, ondelete="CASCADE")))
 
 
 class TheoreticalGlycopeptide(PeptideBase, Base):

@@ -183,7 +183,7 @@ def draw_layers2(layers, protein):
     id_mapper = IDMapper()
     i = 0
     row_width = 80
-    scale_factor = 2.
+    scale_factor = 1.7
     layer_height = 2.8 * scale_factor
     y_step = -3.5 * scale_factor
     cur_y = -3

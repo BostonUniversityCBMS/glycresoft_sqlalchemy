@@ -61,11 +61,12 @@ class ActionLayerManager extends EventEmitter
 
 class ActionLayer
     @actions = {}
-    constructor: (manager, options, params) ->
+    constructor: (manager, options, params, method='get') ->
         @manager = manager
         @options = options
         @params = params
         @contentURL = options.contentURL
+        @method = method
         if !options.container
             if @params?
                 @id = options.name + "-" + manager.incLayerCounter()
@@ -88,7 +89,8 @@ class ActionLayer
         console.log("Setting up", @)
         if @options.contentURLTemplate?
             @contentURL = @options.contentURLTemplate.format @params
-        $.get(@contentURL).success (doc) =>
+        
+        callback = (doc) =>
             if not @showing
                 @container.hide()
             @container.html doc
@@ -103,6 +105,11 @@ class ActionLayer
     <div>
         <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>
     </div>""")
+        if @method == "get"
+            $.get(@contentURL).success callback
+        else if @method == "post"
+            $.post(@contentURL, @params).success callback
+        
 
     show: ->
         @container.fadeIn 100

@@ -217,22 +217,24 @@ def convert_dict_to_sequence(sequence_dict, session):
             start = found
             end = start + len(base_sequence)
         try:
-            glycosites = list(sequence.find_n_glycosylation_sequons(peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
             match = InformedPeptide(
                 calculated_mass=peptide_sequence.mass,
                 base_peptide_sequence=base_sequence,
                 modified_peptide_sequence=str(peptide_sequence),
-                count_glycosylation_sites=len(glycosites),
+                count_glycosylation_sites=None,
                 start_position=start,
                 end_position=end,
                 peptide_score=score,
                 peptide_score_type=score_type,
                 sequence_length=end - start,
                 protein_id=parent_protein.id,
-                glycosylation_sites=glycosites,
+                glycosylation_sites=None,
                 other={k: v for k, v in sequence_dict.items() if k not in
                        exclude_keys_from_sequence_dict})
-            # logger.debug("Produce: %r", match)
+            glycosites = set(match.n_glycan_sequon_sites) | set(sequence.find_n_glycosylation_sequons(
+                peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
+            match.count_glycosylation_sites = len(glycosites)
+            match.glycosites = list(glycosites)
             session.add(match)
             counter += 1
         except:

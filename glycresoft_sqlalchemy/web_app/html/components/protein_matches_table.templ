@@ -23,7 +23,7 @@
                 <small>{{protein.name}}</small>
             </td>
             <td>
-                {{protein.glycopeptide_matches.count()}}
+                {{filter_context(protein.glycopeptide_matches).count()}}
             </td>
             <td>
                 {{protein.glycosylation_sites|length}}

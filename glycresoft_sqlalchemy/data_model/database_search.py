@@ -25,6 +25,8 @@ class HypothesisSampleMatch(Base):
     target_hypothesis = relationship(Hypothesis, foreign_keys=[target_hypothesis_id])
     decoy_hypothesis = relationship(Hypothesis, foreign_keys=[decoy_hypothesis_id])
 
+    hypothesis_sample_match_type = Column(Unicode(56))
+
     def __init__(self, **kwargs):
         kwargs.setdefault('parameters', {})
         super(HypothesisSampleMatch, self).__init__(**kwargs)
@@ -59,12 +61,19 @@ class HypothesisSampleMatch(Base):
 
     def __repr__(self):
         return "<{self.__class__.__name__} {self.id} {self.target_hypothesis_id} {self.sample_run_name} {matches}>".format(
-            self=self, matches=''.join('{0.__name__}:{1}'.format(result[0], result[1].count()) for result in self.results()))
+            self=self, matches=''.join('{0.__name__}:{1}'.format(
+                result[0], result[1].count()) for result in self.results()))
+
+    __mapper_args__ = {
+        "polymorphic_identity": u"HypothesisSampleMatch",
+        "polymorphic_on": hypothesis_sample_match_type
+    }
+
 
 GlycopeptideMatchGlycanAssociation = Table(
     "GlycopeptideMatchGlycanAssociation", Base.metadata,
-    Column("peptide_id", Integer, ForeignKey("GlycopeptideMatch.id")),
-    Column("glycan_id", Integer, ForeignKey(Glycan.id)))
+    Column("peptide_id", Integer, ForeignKey("GlycopeptideMatch.id", ondelete="CASCADE")),
+    Column("glycan_id", Integer, ForeignKey(Glycan.id, ondelete="CASCADE")))
 
 
 class GlycopeptideMatch(PeptideBase, Base):

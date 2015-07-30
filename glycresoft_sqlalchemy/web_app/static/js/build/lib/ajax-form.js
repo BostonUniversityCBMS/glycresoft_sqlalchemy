@@ -1,8 +1,10 @@
 var ajaxForm, setupAjaxForm;
 
 ajaxForm = function(formHandle, success, error) {
+  console.log("Ajaxifying ", formHandle);
   return $(formHandle).on('submit', function(event) {
     var ajaxParams, data, encoding, handle, method, url;
+    console.log(formHandle, "submitting...");
     event.preventDefault();
     handle = $(this);
     url = handle.attr('action');

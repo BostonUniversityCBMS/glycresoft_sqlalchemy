@@ -462,7 +462,8 @@ class MS1ResultsFile(object):
 
     def __iter__(self):
         for row in self.reader:
-            yield MS1GlycopeptideResult.from_csvdict(self.monosaccharide_identities, **row)
+            if row.get("Hypothesis MW") != "":
+                yield MS1GlycopeptideResult.from_csvdict(self.monosaccharide_identities, **row)
 
 
 parse_digest = msdigest_xml_parser.MSDigestParameters.parse

@@ -1,5 +1,7 @@
 ajaxForm = (formHandle, success, error) ->
+    console.log "Ajaxifying ", formHandle
     $(formHandle).on 'submit', (event) ->
+        console.log formHandle, "submitting..."
         event.preventDefault()
         handle = $(this)
         url = handle.attr('action')

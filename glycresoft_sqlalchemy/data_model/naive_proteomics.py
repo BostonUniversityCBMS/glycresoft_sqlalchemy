@@ -18,8 +18,8 @@ class NaivePeptide(PeptideBase, Base):
 
 TheoreticalGlycopeptideCompositionGlycanAssociation = Table(
     "TheoreticalGlycopeptideCompositionGlycanAssociation", Base.metadata,
-    Column("peptide_id", Integer, ForeignKey("TheoreticalGlycopeptideComposition.id")),
-    Column("glycan_id", Integer, ForeignKey(Glycan.id)))
+    Column("peptide_id", Integer, ForeignKey("TheoreticalGlycopeptideComposition.id", ondelete="CASCADE")),
+    Column("glycan_id", Integer, ForeignKey(Glycan.id, ondelete="CASCADE")))
 
 
 class TheoreticalGlycopeptideComposition(PeptideBase, Base):

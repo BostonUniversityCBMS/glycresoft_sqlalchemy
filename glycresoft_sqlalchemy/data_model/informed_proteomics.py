@@ -21,8 +21,8 @@ class InformedPeptide(PeptideBase, Base):
 
 InformedPeptideToTheoreticalGlycopeptide = Table(
     "InformedPeptideToTheoreticalGlycopeptide", Base.metadata,
-    Column("informed_peptide", Integer, ForeignKey(InformedPeptide.id)),
-    Column("theoretical_glycopeptide", Integer, ForeignKey(TheoreticalGlycopeptideComposition.id)))
+    Column("informed_peptide", Integer, ForeignKey(InformedPeptide.id, ondelete="CASCADE")),
+    Column("theoretical_glycopeptide", Integer, ForeignKey(TheoreticalGlycopeptideComposition.id, ondelete="CASCADE")))
 
 
 class InformedTheoreticalGlycopeptideComposition(TheoreticalGlycopeptideComposition):

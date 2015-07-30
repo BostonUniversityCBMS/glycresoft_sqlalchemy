@@ -43,10 +43,10 @@
                 </tbody>
             </table>
         </div>
-        {{protein|plot_glycoforms}} 
+        {{protein|plot_glycoforms(filter_context)}} 
     </div>
     <div id='glycopeptide-table'>
-        {% with glycopeptides=protein.glycopeptide_matches.filter(GlycopeptideMatch.ms2_score > 0).order_by(GlycopeptideMatch.ms2_score.desc()) %}
+        {% with glycopeptides=filter_context(protein.glycopeptide_matches.filter(GlycopeptideMatch.ms2_score > 0).order_by(GlycopeptideMatch.ms2_score.desc())) %}
             {% include "components/glycopeptide_match_table.templ" %}
         {% endwith %}
     </div>

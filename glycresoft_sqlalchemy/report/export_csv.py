@@ -92,7 +92,7 @@ def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_id
             "A:A+2 Ratio", "Total Volume", "Signal to Noise Ratio", "Centroid Scan Error",
             "Centroid Scan", "MaxScanNumber", "MinScanNumber", "Hypothesis MW",
         ] + monosaccharide_identities + [
-            "PeptideModification", "PeptideMissedCleavage#", "#ofGlycanAttachmentToPeptide"
+            "Adduct/Replacement", "PeptideModification", "PeptideMissedCleavage#", "#ofGlycanAttachmentToPeptide",
             "StartAA", "EndAA", "ProteinID"
         ]
         writer.writerow(headers)
@@ -113,12 +113,12 @@ def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_id
                 pgm.centroid_scan_error, pgm.first_scan_id, pgm.last_scan_id,
                 theoretical_match.calculated_mass if pgm.matched else ""
             ] + glycan_composition + [
-                theoretical_match.peptide_modifications if pgm.matched else "",
+                "/", theoretical_match.peptide_modifications if pgm.matched else "",
                 theoretical_match.count_missed_cleavages if pgm.matched else "",
                 theoretical_match.count_glycosylation_sites if pgm.matched else "",
                 theoretical_match.start_position if pgm.matched else "",
                 theoretical_match.end_position if pgm.matched else "",
-                theoretical_match.protein_id if pgm.matched else "",
+                theoretical_match.protein.name if pgm.matched else "",
             ]
             writer.writerow(row)
         return output_path

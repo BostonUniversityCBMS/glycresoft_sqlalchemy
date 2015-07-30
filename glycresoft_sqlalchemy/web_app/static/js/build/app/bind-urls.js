@@ -22,7 +22,7 @@ ActionBook = {
     name: "glycan-search-space"
   },
   viewDatabaseSearchResults: {
-    contentURLTemplate: "/view_database_search_results/{}",
+    contentURLTemplate: "/view_database_search_results/{hypothesis_sample_match_id}",
     name: "view-database-search-results"
   }
 };

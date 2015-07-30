@@ -12,10 +12,10 @@ Application::renderHypothesisSampleMatchListAt = (container)->
         row.click (event) ->
             handle = $(@)
             id = handle.attr('data-id')
-            self.addLayer ActionBook.viewDatabaseSearchResults, [id]
+            self.addLayer ActionBook.viewDatabaseSearchResults, {hypothesis_sample_match_id: id}
             console.log self.layers
             console.log self.lastAdded
-
+            self.context["hypothesis_sample_match_id"] = id
             self.setShowingLayer self.lastAdded
 
         row.find(".remove-hsm").click (event) -> 
