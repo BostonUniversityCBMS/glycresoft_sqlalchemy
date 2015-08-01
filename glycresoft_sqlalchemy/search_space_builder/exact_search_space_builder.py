@@ -13,7 +13,7 @@ from ..structure import constants
 from ..proteomics import get_enzyme
 
 
-from .search_space_builder import MS1ResultsFile, MS1ResultsFacade
+from .search_space_builder import MS1ResultsFile, MS1ResultsFacade, TheoreticalSearchSpaceBuilder, RENDER_MAP
 from .. import data_model as model
 from ..data_model import PipelineModule
 
@@ -90,12 +90,12 @@ def generate_fragments(seq, ms1_result):
         stub_ions=stub_ions,
         glycosylated_b_ions=b_ions_hexnac,
         glycosylated_y_ions=y_ions_hexnac,
-        protein_id=ms1_result.protein_id
+        protein_id=ms1_result.protein_name
         )
     return theoretical_glycopeptide
 
 
-def from_sequence(ms1_result, protein_map):
+def from_sequence(ms1_result, database_manager, protein_map, source_type):
     try:
         if len(ms1_result.base_peptide_sequence) == 0:
             return None
@@ -112,44 +112,18 @@ def from_sequence(ms1_result, protein_map):
         raise
 
 
-class ExactSearchSpaceBuilder(PipelineModule):
-    manager_type = model.DatabaseManager
+class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
 
-    def __init__(self, ms1_results_file, db_file_name, hypothesis_id,
-                 enzyme=None, n_processes=4, **kwargs):
-        self.db_file_name = db_file_name
-
-        self.hypothesis_id = hypothesis_id
-        self.manager = self.manager_type(db_file_name)
-        self.session = self.manager.session()
-
-        self.ms1_results_file = ms1_results_file
-
-        tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
-
-        self.hypothesis = self.session.query(model.Hypothesis).get(hypothesis_id)
-
-        self.ms1_results_reader = MS1ResultsFile(self.ms1_results_file)
-
-        self.n_processes = n_processes
-
-        self.monosaccharide_identities = self.ms1_results_reader.monosaccharide_identities
-        enzyme = map(get_enzyme, enzyme)
-
-        self.hypothesis.parameters = {
-            "monosaccharide_identities": self.monosaccharide_identities,
-            "ms1_output_file": ms1_results_file,
-            "enzyme": enzyme,
-            "tag": tag,
-            "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS
-        }
-        self.session.add(self.hypothesis)
-
-        self.session.commit()
+    def __init__(self, ms1_results_file, db_file_name, enzyme, site_list=None,
+                 n_processes=4, **kwargs):
+        super(ExactSearchSpaceBuilder, self).__init__(ms1_results_file, db_file_name,
+            constant_modifications=[], variable_modifications=[], enzyme=enzyme,
+            site_list=site_list, n_processes=n_processes, **kwargs)
 
     def prepare_task_fn(self):
         protein_map = dict(self.session.query(Protein.name, Protein.id).filter(Protein.hypothesis_id == self.hypothesis.id))
-        return functools.partial(from_sequence, protein_map=protein_map)
+        return functools.partial(
+            from_sequence, database_manager=self.manager, protein_map=protein_map, source_type=self.ms1_format)
 
     def run(self):
         session = self.session
@@ -157,15 +131,18 @@ class ExactSearchSpaceBuilder(PipelineModule):
         last = 0
         commit_interval = 1000
         task_fn = self.prepare_task_fn()
+        accumulator = []
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             for theoretical in pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=500):
                 if theoretical is None:
                     continue
-                session.add(theoretical)
+                accumulator.append(theoretical)
                 cntr += 1
                 if cntr > last + commit_interval == 0:
+                    session.bulk_save_objects(accumulator)
                     session.commit()
+                    accumulator = []
                     logger.info("%d records handled", cntr)
                     last = cntr
             pool.terminate()
@@ -173,15 +150,20 @@ class ExactSearchSpaceBuilder(PipelineModule):
             theoretical = task_fn(ms1_result)
             if theoretical is None:
                 continue
-            session.add(theoretical)
+            accumulator.append(theoretical)
             cntr += 1
             if cntr > last + commit_interval == 0:
+                session.bulk_save_objects(accumulator)
                 session.commit()
+                accumulator = []
                 logger.info("%d records handled", cntr)
                 last = cntr
         id = self.hypothesis.id
+
+        session.bulk_save_objects(accumulator)
         session.commit()
 
+        # Remove duplicates
         ids = session.query(func.min(TheoreticalGlycopeptide.id)).filter(
             TheoreticalGlycopeptide.protein_id == Protein.id,
             Protein.hypothesis_id == self.hypothesis.id).group_by(
@@ -196,5 +178,11 @@ class ExactSearchSpaceBuilder(PipelineModule):
         conn.execute(TheoreticalGlycopeptide.__table__.delete(
             TheoreticalGlycopeptide.__table__.c.id.in_(q.selectable)))
         session.commit()
+        final_count = session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis.id).count()
+
+        logger.info("%d Theoretical Glycopeptides created", final_count)
+
         session.close()
         return id

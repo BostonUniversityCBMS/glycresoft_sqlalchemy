@@ -406,7 +406,6 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
                  constant_modifications=None,
                  variable_modifications=None, n_processes=4,
                  **kwargs):
-
         self.ms1_format = kwargs.get("ms1_format", MS1ResultsFile)
 
         if db_file_name is None:
@@ -544,6 +543,10 @@ class MS1ResultsFile(object):
         self.reader = csv.DictReader(self.file_handle)
         self.monosaccharide_identities = get_monosaccharide_identities(self.reader.fieldnames)
 
+    @staticmethod
+    def render(session, obj):
+        return obj
+
     @classmethod
     def get_renderer(self):
         return lambda session, obj: obj
@@ -572,6 +575,11 @@ class MS1ResultsFacade(object):
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.hypothesis_parameters = session.query(Hypothesis).get(hypothesis_id).parameters
         self.monosaccharide_identities = self.hypothesis_parameters["monosaccharide_identities"]
+
+    @staticmethod
+    def render(session, obj):
+        return MS1GlycopeptideResult.from_peak_group_match(
+            session.query(PeakGroupMatch).get(obj))
 
     @classmethod
     def get_renderer(self):

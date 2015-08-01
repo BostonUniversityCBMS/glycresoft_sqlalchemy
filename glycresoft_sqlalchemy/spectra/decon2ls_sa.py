@@ -38,6 +38,8 @@ class Decon2LSIsosParser(PipelineModule):
         session.add(sample_run)
         session.commit()
         sample_run_id = sample_run.id
+        self.sample_run = sample_run
+
         last = 0
         conn = session.connection()
         last_scan_id = -1
@@ -60,29 +62,29 @@ class Decon2LSIsosParser(PipelineModule):
         session.commit()
 
 
-def parse_decon2ls(isos_path, database_path=None):
-    if database_path is None:
-        database_path = os.path.splitext(isos_path)[0] + '.db'
-    dbm = DatabaseManager(database_path)
-    dbm.initialize()
-    session = dbm.session()
-    sample_run = Decon2LSLCMSSampleRun(name=os.path.basename(isos_path), parameters={"deconvoluted_by": 'decon2ls'})
-    session.add(sample_run)
-    session.commit()
-    interval = 100000
-    last = 0
-    conn = session.connection()
-    last_scan_id = -1
-    for i, row in enumerate(csv.DictReader(open(isos_path))):
-        remap = {v: row[k] for k, v in isos_to_db_map.items()}
-        if remap['scan_id'] != last_scan_id:
-            session.add(MSScan(id=remap['scan_id'], sample_run_id=sample_run.id))
-            last_scan_id = remap['scan_id']
-            if last + interval == i:
-                session.commit()
-                print "Commit!"
-                last = i
-                conn = session.connection()
-        conn.execute(TDecon2LSPeak.insert().values(**remap))
-    session.commit()
-    return dbm
+# def parse_decon2ls(isos_path, database_path=None):
+#     if database_path is None:
+#         database_path = os.path.splitext(isos_path)[0] + '.db'
+#     dbm = DatabaseManager(database_path)
+#     dbm.initialize()
+#     session = dbm.session()
+#     sample_run = Decon2LSLCMSSampleRun(name=os.path.basename(isos_path), parameters={"deconvoluted_by": 'decon2ls'})
+#     session.add(sample_run)
+#     session.commit()
+#     interval = 100000
+#     last = 0
+#     conn = session.connection()
+#     last_scan_id = -1
+#     for i, row in enumerate(csv.DictReader(open(isos_path))):
+#         remap = {v: row[k] for k, v in isos_to_db_map.items()}
+#         if remap['scan_id'] != last_scan_id:
+#             session.add(MSScan(id=remap['scan_id'], sample_run_id=sample_run.id))
+#             last_scan_id = remap['scan_id']
+#             if last + interval == i:
+#                 session.commit()
+#                 print "Commit!"
+#                 last = i
+#                 conn = session.connection()
+#         conn.execute(TDecon2LSPeak.insert().values(**remap))
+#     session.commit()
+#     return dbm

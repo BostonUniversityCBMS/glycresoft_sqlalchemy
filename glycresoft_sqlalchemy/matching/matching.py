@@ -307,9 +307,6 @@ def merge_ion_matches(matches):
 
 
 class IonMatching(PipelineModule):
-
-    manager_type = model.DatabaseManager
-
     def __init__(self, database_path, hypothesis_id,
                  observed_ions_path,
                  observed_ions_type='bupid_yaml',

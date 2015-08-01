@@ -18,7 +18,7 @@ from .search_space_builder import (MS1GlycopeptideResult, parse_digest,
 logger = logging.getLogger("search_space_builder")
 
 
-def process_predicted_ms1_ion(row, database_manager, modification_table, site_list_map, renderer, proteins, source_type):
+def process_predicted_ms1_ion(row, database_manager, modification_table, site_list_map, proteins, source_type):
     """Multiprocessing dispatch function to generate all theoretical sequences and their
     respective fragments from a given MS1 result
 
@@ -40,7 +40,7 @@ def process_predicted_ms1_ion(row, database_manager, modification_table, site_li
     """
     try:
         session = database_manager.session()
-        ms1_result = RENDER_MAP[renderer](session, row)
+        ms1_result = source_type.render(session, row)
 
         if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
             return []
@@ -105,7 +105,6 @@ class PoolingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
                                     database_manager=self.manager,
                                     modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map,
-                                    renderer=self.ms1_results_reader.renderer_id,
                                     source_type=self.ms1_format,
                                     proteins={k: v.id for k, v in self.hypothesis.proteins.items()})
         return task_fn
