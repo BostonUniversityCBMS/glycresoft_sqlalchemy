@@ -447,6 +447,9 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
             shift = mass_shift.mass
             for shift_count in range(count_range):
                 total_mass = base_mass + shift * shift_count
+                # This query is recompiled every time, using up the majority of the time spent
+                # per call. Look into cached compilation with bind parameters and the BakedQuery
+                # pattern.
                 for mass_match in observed_ions_manager.ppm_match_tolerance_search(
                         total_mass, matching_tolerance, sample_run_id):
                     mass_error = ppm_error(mass_match.weighted_monoisotopic_mass, total_mass)

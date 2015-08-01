@@ -74,8 +74,8 @@ def get_color(name):
 
 
 def span_overlap(a, b):
-    return a.spans(b.start_position) or a.spans(b.end_position) or\
-           b.spans(a.start_position) or b.spans(a.end_position)
+    return a.spans(b.start_position) or a.spans(b.end_position - 1) or\
+           b.spans(a.start_position) or b.spans(a.end_position - 1)
 
 
 def layout_layers(gpms):
@@ -269,7 +269,7 @@ def plot_glycoforms(protein, filterfunc=lambda x: x.ms2_score > 0.2):
     return ax, id_mapper
 
 
-def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch.ms2_score > 0.0)):
+def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch.ms2_score > 0.0), scale=1.0):
     ax, id_mapper = plot_glycoforms(protein, filterfunc)
 
     fig = ax.get_figure()
@@ -285,14 +285,14 @@ def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch
         element.attrib.update({("data-" + k): str(v) for k, v in attributes.items()})
         element.attrib['class'] = id.rsplit('-')[0]
     min_x, min_y, max_x, max_y = map(int, root.attrib["viewBox"].split(" "))
-    min_x += 100
+    min_x += 85
     view_box = ' '.join(map(str, (min_x, min_y, max_x, max_y)))
     root.attrib["viewBox"] = view_box
     width = int(root.attrib["width"][:-2]) * 2
     root.attrib["width"] = "%dpt" % width
     height = int(root.attrib["height"][:-2]) * 2
     root.attrib["height"] = "%dpt" % height
-    root[1].attrib["transform"] = "scale(1.3)"
+    root[1].attrib["transform"] = "scale(%f)" % scale
     svg = ET.tostring(root)
     plt.close()
     return svg

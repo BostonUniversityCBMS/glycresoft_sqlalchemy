@@ -1,11 +1,15 @@
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.ext.baked import bakery
 from sqlalchemy.ext.hybrid import hybrid_method
-from sqlalchemy import (PickleType, Numeric, Unicode, Table,
+from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 
 from .data_model import Base
 from .connection import DatabaseManager
 from .generic import MutableDict, MutableList
+
+
+observed_ions_bakery = bakery()
 
 
 class SampleRun(Base):
@@ -225,20 +229,34 @@ Decon2LSPeakToPeakGroupMap = Table(
 
 
 class PeakGroupDatabase(DatabaseManager):
+    def _baked_ppm_match_tolerance_query(self):
+        build = observed_ions_bakery(lambda session: session.query(Decon2LSPeakGroup))
+        build += lambda q: q.filter(Decon2LSPeakGroup.weighted_monoisotopic_mass.between(
+            bindparam("lower"), bindparam("upper")))
+        build += lambda q: q.filter(Decon2LSPeakGroup.sample_run_id == bindparam("sample_run_id"))
+        return build
+
     def ppm_match_tolerance_search(self, mass, tolerance, sample_run_id=None):
         session = self.session()
-        query = session.query(Decon2LSPeakGroup).filter(
-            Decon2LSPeakGroup.ppm_match_tolerance_search(mass, tolerance))
-        if sample_run_id is not None:
-            query = query.filter(Decon2LSPeakGroup.sample_run_id == sample_run_id)
-        return query
+        width = (mass * tolerance)
+        lower = mass - width
+        upper = mass + width
+        return self._baked_ppm_match_tolerance_query()(session).params(
+            lower=lower, upper=upper, sample_run_id=sample_run_id)
 
 
 class MSMSSqlDB(DatabaseManager):
+    def _baked_ppm_match_tolerance_query(self):
+        build = observed_ions_bakery(lambda session: session.query(TandemScan))
+        build += lambda q: q.filter(TandemScan.precursor_neutral_mass.between(
+            bindparam("lower"), bindparam("upper")))
+        build += lambda q: q.filter(TandemScan.sample_run_id == bindparam("sample_run_id"))
+        return build
+
     def ppm_match_tolerance_search(self, mass, tolerance, sample_run_id=None):
         session = self.session()
-        query = session.query(TandemScan).filter(
-            TandemScan.ppm_match_tolerance_search(mass, tolerance))
-        if sample_run_id is not None:
-            query = query.filter(TandemScan.sample_run_id == sample_run_id)
-        return query
+        width = (mass * tolerance)
+        lower = mass - width
+        upper = mass + width
+        return self._baked_ppm_match_tolerance_query()(session).params(
+            lower=lower, upper=upper, sample_run_id=sample_run_id)

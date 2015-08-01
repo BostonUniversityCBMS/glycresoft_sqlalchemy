@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from glycresoft_ms2_classification.structure import sequence
-
 
 from sqlalchemy.ext.declarative import AbstractConcreteBase, declared_attr
 from sqlalchemy.orm import relationship, backref
@@ -13,6 +11,8 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table,
 from .generic import MutableDict, MutableList
 from .base import Base
 from .glycomics import TheoreticalGlycanComposition as Glycan
+
+from ..structure import sequence
 
 
 class Hypothesis(Base):

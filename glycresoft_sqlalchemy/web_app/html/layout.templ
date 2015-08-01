@@ -21,6 +21,22 @@ $(function() {
         event.preventDefault()
         setupAjaxForm("/add_sample", "#dialog-modal")
     })
+    $(".toggle-sidebar").click(function(event){
+        var handle = $(this)
+        if(handle.attr('data-state') == 'open'){
+            handle.removeClass("mdi-navigation-chevron-left")
+            handle.addClass("mdi-navigation-chevron-right")
+            $("#sidebar-content").hide()
+            $("#left-sidebar").css("width", "40px")
+            handle.attr('data-state', 'closed')
+        } else {
+            handle.removeClass("mdi-navigation-chevron-right")
+            handle.addClass("mdi-navigation-chevron-left")
+            $("#left-sidebar").css("width", "240px")            
+            $("#sidebar-content").show()
+            handle.attr('data-state', 'open')
+        }
+    })
 });
 
 
@@ -29,13 +45,16 @@ $(function() {
 </head>
 <body>
     {% include "header.templ" %}
-    <div class="side-nav fixed">
-    <div class='task-list-container'>
-        <h6>Tasks</h6>
-        <div class='divider'>
+    <div id='left-sidebar' class="side-nav fixed">
+    <a class='toggle-sidebar mdi-navigation-chevron-left right' data-state='open'></a>
+    <div id='sidebar-content'>    
+        <div class='task-list-container'>
+            <h6>Tasks</h6>
+            <div class='divider'>
+            </div>
+            <ul>
+            </ul>
         </div>
-        <ul>
-        </ul>
     </div>
     </div>
     <div class='action-layer-container'>

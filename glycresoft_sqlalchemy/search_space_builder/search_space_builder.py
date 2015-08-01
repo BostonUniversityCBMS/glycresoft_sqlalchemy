@@ -3,6 +3,7 @@ import os
 import re
 import datetime
 import multiprocessing
+import threading
 import logging
 
 import functools
@@ -17,10 +18,10 @@ from ..proteomics import get_enzyme, msdigest_xml_parser
 
 from .. import data_model as model
 from .peptide_utilities import SiteListFastaFileParser
-from ..data_model import PipelineModule
-
-TheoreticalGlycopeptideGlycanAssociation = model.TheoreticalGlycopeptideGlycanAssociation
-TheoreticalGlycopeptide = model.TheoreticalGlycopeptide
+from ..data_model import (PipelineModule, DatabaseManager, Hypothesis,
+                          HypothesisSampleMatch, PeakGroupMatch, Protein,
+                          TheoreticalGlycopeptideGlycanAssociation,
+                          TheoreticalGlycopeptide)
 
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)(\w+)')
@@ -51,6 +52,14 @@ class MS1GlycopeptideResult(object):
     Describes a row ofthe MS1 Results with format-agnostic basic
     construction and a CSV specific mapping
     '''
+
+    @classmethod
+    def interpolate(cls, source_type, monosaccharide_identities, *args, **kwargs):
+        if source_type is MS1ResultsFile:
+            return cls.from_csvdict(monosaccharide_identities, *args, **kwargs)
+        elif source_type is MS1ResultsFacade:
+            return cls.from_peak_group_match(*args, **kwargs)
+
     @classmethod
     def from_csvdict(cls, glycan_identities=None, **kwargs):
         if glycan_identities is None:
@@ -67,7 +76,7 @@ class MS1GlycopeptideResult(object):
         volume = float(kwargs.get("Total Volume"))
         start_pos = int(kwargs.get("StartAA"))
         end_pos = int(kwargs.get("EndAA"))
-        protein_id = kwargs.get("ProteinID", None)
+        protein_name = kwargs.get("ProteinID", None)
         glycan_composition_map = _get_glycan_composition(kwargs, glycan_identities)
         return cls(
             score=score, calculated_mass=calculated_mass,
@@ -75,7 +84,23 @@ class MS1GlycopeptideResult(object):
             base_peptide_sequence=base_peptide_sequence, peptide_modifications=peptide_modifications,
             count_missed_cleavages=count_missed_cleavages, count_glycosylation_sites=count_glycosylation_sites,
             ppm_error=ppm_error, volume=volume, start_pos=start_pos, end_pos=end_pos,
-            glycan_composition_map=glycan_composition_map, protein_id=protein_id)
+            glycan_composition_map=glycan_composition_map, protein_name=protein_name)
+
+    @classmethod
+    def from_peak_group_match(cls, peak_group_match=None, theoretical=None):
+        pgm = peak_group_match
+        theoretical = pgm.theoretical_match if theoretical is None else theoretical
+        return cls(
+            score=pgm.ms1_score, calculated_mass=theoretical.calculated_mass,
+            observed_mass=pgm.weighted_monoisotopic_mass,
+            glycan_composition_str=theoretical.glycan_composition_str,
+            base_peptide_sequence=theoretical.base_peptide_sequence,
+            peptide_modifications=theoretical.peptide_modifications,
+            count_missed_cleavages=theoretical.count_missed_cleavages,
+            count_glycosylation_sites=theoretical.count_glycosylation_sites,
+            ppm_error=pgm.ppm_error, volume=pgm.total_volume,
+            start_pos=theoretical.start_position, end_pos=theoretical.end_position,
+            protein_name=theoretical.protein.name)
 
     def __init__(self, score=None,
                  calculated_mass=None,
@@ -90,7 +115,7 @@ class MS1GlycopeptideResult(object):
                  start_pos=None,
                  end_pos=None,
                  glycan_composition_map=None,
-                 protein_id=None,
+                 protein_name=None,
                  fragments=None,
                  oxonium_ions=None,
                  id=None,
@@ -109,7 +134,7 @@ class MS1GlycopeptideResult(object):
         self.start_position = start_pos
         self.end_position = end_pos
         self.glycan_composition_map = glycan_composition_map
-        self.protein_id = protein_id
+        self.protein_name = protein_name
         self.id = id
         self.glycopeptide_sequence = glycopeptide_sequence
         self.modified_peptide_sequence = modified_peptide_sequence
@@ -284,7 +309,7 @@ def generate_fragments(seq, ms1_result):
 
 
 def process_predicted_ms1_ion(row, modification_table, site_list_map,
-                              monosaccharide_identities, database_manager, proteins):
+                              renderer, database_manager, proteins):
     """Multiprocessing dispatch function to generate all theoretical sequences and their
     respective fragments from a given MS1 result
 
@@ -305,17 +330,17 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map,
         List of each theoretical sequence and its fragment ions
     """
     try:
-        ms1_result = row
+        session = database_manager.session()
+        ms1_result = RENDER_MAP[renderer](session, row)
         if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
             return 0
 
-        session = database_manager.session()
         # Compute the set of modifications that can occur.
         mod_list = get_peptide_modifications(
             ms1_result.peptide_modifications, modification_table)
 
         # Get the start and end positions of fragment relative to the
-        glycan_sites = set(site_list_map.get(ms1_result.protein_id, [])).intersection(
+        glycan_sites = set(site_list_map.get(ms1_result.protein_name, [])).intersection(
             range(ms1_result.start_position, ms1_result.end_position + 1))
 
         # No recorded sites, skip this component.
@@ -331,7 +356,7 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map,
                      for seq in seq_list]
         i = 0
         for sequence in fragments:
-            sequence.protein_id = proteins[ms1_result.protein_id].id
+            sequence.protein_id = proteins[ms1_result.protein_name].id
             session.add(sequence)
             i += 1
         session.commit()
@@ -355,11 +380,35 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
 
     manager_type = model.DatabaseManager
 
+    @classmethod
+    def from_hypothesis(cls, database_path, hypothesis_sample_match_id, n_processes=4):
+        dbm = DatabaseManager(database_path)
+        session = dbm.session()
+        source_hypothesis_sample_match = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+        source_hypothesis = source_hypothesis_sample_match.target_hypothesis
+        hypothesis_id = source_hypothesis.id
+        variable_modifications = source_hypothesis.parameters["variable_modifications"]
+        constant_modifications = source_hypothesis.parameters["constant_modifications"]
+        enzyme = source_hypothesis.parameters["enzyme"]
+        inst = cls(
+            database_path, database_path, enzyme=[enzyme], site_list=None,
+            constant_modifications=constant_modifications,
+            variable_modifications=variable_modifications,
+            n_processes=n_processes, ms1_format=MS1ResultsFacade,
+            source_hypothesis_id=hypothesis_id,
+            source_hypothesis_sample_match_id=hypothesis_sample_match_id)
+
+        return inst
+
     def __init__(self, ms1_results_file, db_file_name=None,
                  enzyme=None,
                  site_list=None,
                  constant_modifications=None,
-                 variable_modifications=None, n_processes=4, **kwargs):
+                 variable_modifications=None, n_processes=4,
+                 **kwargs):
+
+        self.ms1_format = kwargs.get("ms1_format", MS1ResultsFile)
+
         if db_file_name is None:
             db_file_name = os.path.splitext(ms1_results_file)[0] + '.db'
         self.db_file_name = db_file_name
@@ -378,20 +427,30 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         self.hypothesis_id = self.hypothesis.id
         logger.info("Building %r", self.hypothesis)
 
-        try:
-            site_list_map = parse_site_file(site_list)
-        except IOError, e:
-            if isinstance(site_list, dict):
-                site_list_map = site_list
-            else:
-                raise e
+        # We are reading data from separate files
+        if self.ms1_format is MS1ResultsFile:
+            try:
+                site_list_map = parse_site_file(site_list)
+            except IOError, e:
+                if isinstance(site_list, dict):
+                    site_list_map = site_list
+                else:
+                    raise e
+            self.glycosylation_site_map = site_list_map
+            self.load_protein_from_sitelist(site_list_map)
+            self.ms1_results_reader = self.ms1_format(self.ms1_results_file)
+        # We are reading data from another hypothesis in the database
+        else:
+            source_hypothesis_id = kwargs['source_hypothesis_id']
+            source_hypothesis_sample_match_id = kwargs['source_hypothesis_sample_match_id']
+            self.load_protein_from_hypothesis(source_hypothesis_id)
+            self.ms1_results_reader = self.ms1_format(
+                self.manager,
+                source_hypothesis_id,
+                source_hypothesis_sample_match_id)
+            site_list_map = self.glycosylation_site_map
 
-        modification_table = RestrictedModificationTable.bootstrap(constant_modifications, variable_modifications)
-        if constant_modifications is None and variable_modifications is None:
-            modification_table = ModificationTable.bootstrap()
-        self.modification_table = modification_table
-        self.glycosylation_site_map = site_list_map
-        self.ms1_results_reader = MS1ResultsFile(self.ms1_results_file)
+        self.create_restricted_modification_table(constant_modifications, variable_modifications)
 
         self.n_processes = n_processes
 
@@ -407,20 +466,49 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
             "ms1_output_file": ms1_results_file,
             "enzyme": enzyme,
             "tag": tag,
-            "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS
+            "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS,
+            "source_hypothesis_id": kwargs.get("source_hypothesis_id"),
+            "source_hypothesis_sample_match_id": kwargs.get("source_hypothesis_sample_match_id")
         }
         self.session.add(self.hypothesis)
 
+    def load_protein_from_sitelist(self, glycosylation_site_map):
         for name, sites in self.glycosylation_site_map.items():
             self.session.add(model.Protein(name=name, glycosylation_sites=sites, hypothesis_id=self.hypothesis.id))
 
         self.session.commit()
 
+    def load_protein_from_hypothesis(self, hypothesis_id):
+        session = self.session
+        site_list_map = {}
+        hid = self.hypothesis.id
+        for protein in session.query(Protein).filter(Protein.hypothesis_id == hypothesis_id):
+            self.session.add(model.Protein(
+                name=protein.name,
+                protein_sequence=protein.protein_sequence,
+                glycosylation_sites=protein.glycosylation_sites,
+                hypothesis_id=hid))
+            site_list_map[protein.name] = protein.glycosylation_sites
+        session.add(self.hypothesis)
+        session.commit()
+        self.glycosylation_site_map = site_list_map
+
+    def create_restricted_modification_table(self, constant_modifications, variable_modifications):
+        modification_table = RestrictedModificationTable.bootstrap(constant_modifications, variable_modifications)
+        if constant_modifications is None and variable_modifications is None:
+            modification_table = ModificationTable.bootstrap()
+        self.modification_table = modification_table
+
     def prepare_task_fn(self):
         task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
-                                    site_list_map=self.glycosylation_site_map, monosaccharide_identities=self.monosaccharide_identities,
+                                    site_list_map=self.glycosylation_site_map,
+                                    renderer=self.ms1_results_reader.renderer_id,
                                     database_manager=self.manager, proteins=self.hypothesis.proteins)
         return task_fn
+
+    def stream_results(self):
+        for obj in self.ms1_results_reader:
+            yield obj
 
     def run(self):
         '''
@@ -431,7 +519,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
-            for res in worker_pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=25):
+            for res in worker_pool.imap_unordered(task_fn, self.stream_results(), chunksize=25):
                 cntr += res
                 if (cntr % 1000) == 0:
                     logger.info("Committing, %d records made", cntr)
@@ -448,11 +536,17 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
 
 
 class MS1ResultsFile(object):
+    renderer_id = "MS1ResultsFile"
+
     def __init__(self, file_path):
         self.file_path = file_path
         self.file_handle = open(file_path, 'rb')
         self.reader = csv.DictReader(self.file_handle)
         self.monosaccharide_identities = get_monosaccharide_identities(self.reader.fieldnames)
+
+    @classmethod
+    def get_renderer(self):
+        return lambda session, obj: obj
 
     def __iter__(self):
         for row in self.reader:
@@ -460,10 +554,46 @@ class MS1ResultsFile(object):
                 if row["Compound Key"] != "":
                     yield MS1GlycopeptideResult.from_csvdict(self.monosaccharide_identities, **row)
             except:
-                print
-                print
                 print row
                 raise
 
+
+class MS1ResultsFacade(object):
+    renderer_id = "MS1ResultsFacade"
+    '''
+    A facade that behaves the same way MS1ResultsFile does, but uses a
+    HypothesisSampleMatch and its target Hypothesis to construct input to produce
+    new theoretical MS2 glycopeptides.
+    '''
+    def __init__(self, conn, hypothesis_id, hypothesis_sample_match_id):
+        self.manager = conn
+        session = self.manager.session()
+        self.hypothesis_id = hypothesis_id
+        self.hypothesis_sample_match_id = hypothesis_sample_match_id
+        self.hypothesis_parameters = session.query(Hypothesis).get(hypothesis_id).parameters
+        self.monosaccharide_identities = self.hypothesis_parameters["monosaccharide_identities"]
+
+    @classmethod
+    def get_renderer(self):
+        def render(session, obj):
+            return MS1GlycopeptideResult.from_peak_group_match(
+                session.query(PeakGroupMatch).get(obj))
+        return render
+
+    def __iter__(self):
+        session = self.manager.session()
+        with session.no_autoflush:
+            for pgm_id in session.query(PeakGroupMatch.id).filter(
+                    PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
+                    PeakGroupMatch.matched):
+                yield pgm_id[0]
+        session.close()
+
+
+RENDER_MAP = {
+    MS1ResultsFile.renderer_id: MS1ResultsFile.get_renderer(),
+    MS1ResultsFacade.renderer_id: MS1ResultsFacade.get_renderer()
+}
+
+
 parse_digest = msdigest_xml_parser.MSDigestParameters.parse
-MS1ResultsFile

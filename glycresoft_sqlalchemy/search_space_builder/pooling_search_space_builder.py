@@ -4,19 +4,21 @@ import os
 import re
 import datetime
 import multiprocessing
+import threading
 import logging
-
+#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 import functools
 
 from ..data_model import TheoreticalGlycopeptide
 from .search_space_builder import (MS1GlycopeptideResult, parse_digest,
                                    get_peptide_modifications, get_search_space,
-                                   generate_fragments, TheoreticalSearchSpaceBuilder)
+                                   generate_fragments, TheoreticalSearchSpaceBuilder,
+                                   RENDER_MAP)
 
 logger = logging.getLogger("search_space_builder")
 
 
-def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccharide_identities, proteins):
+def process_predicted_ms1_ion(row, database_manager, modification_table, site_list_map, renderer, proteins, source_type):
     """Multiprocessing dispatch function to generate all theoretical sequences and their
     respective fragments from a given MS1 result
 
@@ -37,7 +39,8 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccha
         List of each theoretical sequence and its fragment ions
     """
     try:
-        ms1_result = MS1GlycopeptideResult.from_csvdict(monosaccharide_identities, **row)
+        session = database_manager.session()
+        ms1_result = RENDER_MAP[renderer](session, row)
 
         if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
             return []
@@ -47,7 +50,7 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccha
             ms1_result.peptide_modifications, modification_table)
 
         # Get the start and end positions of fragment relative to the
-        glycan_sites = set(site_list_map.get(ms1_result.protein_id, [])).intersection(
+        glycan_sites = set(site_list_map.get(ms1_result.protein_name, [])).intersection(
             range(ms1_result.start_position, ms1_result.end_position + 1))
 
         # No recorded sites, skip this component.
@@ -63,7 +66,7 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map, monosaccha
                      for seq in seq_list]
 
         for sequence in fragments:
-            sequence.protein_id = proteins[ms1_result.protein_id]
+            sequence.protein_id = proteins[ms1_result.protein_name]
 
         return fragments
     except Exception, e:
@@ -98,10 +101,13 @@ class PoolingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         self.commit_checkpoint = commit_checkpoint
 
     def prepare_task_fn(self):
-        task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
+        task_fn = functools.partial(process_predicted_ms1_ion,
+                                    database_manager=self.manager,
+                                    modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map,
-                                    monosaccharide_identities=self.monosaccharide_identities,
-                                    proteins={protein.name: protein.id for protein in self.hypothesis.proteins.values()})
+                                    renderer=self.ms1_results_reader.renderer_id,
+                                    source_type=self.ms1_format,
+                                    proteins={k: v.id for k, v in self.hypothesis.proteins.items()})
         return task_fn
 
     def run(self):
@@ -116,29 +122,31 @@ class PoolingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         task_fn = self.prepare_task_fn()
         cntr = 0
         checkpoint = 0
-
+        accumulator = []
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
-            for res in worker_pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=500):
-                # self.session.add_all(res)
-                self.session.bulk_save_objects(res, update_changed_only=False)
+            for res in worker_pool.imap_unordered(task_fn, self.stream_results(), chunksize=500):
+                accumulator.extend(res)
                 cntr += len(res)
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
+                    self.session.bulk_save_objects(accumulator, update_changed_only=False)
                     self.session.commit()
+                    accumulator = []
                     checkpoint = cntr + self.commit_checkpoint
             worker_pool.terminate()
         else:
             logger.debug("Building theoretical sequences sequentially")
             for row in self.ms1_results_reader:
                 res = task_fn(row)
-                self.session.bulk_save_objects(res)
+                accumulator.extend(res)
                 cntr += len(res)
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
+                    self.session.bulk_save_objects(accumulator, update_changed_only=False)
                     self.session.commit()
-                    # self.session.expunge_all()
+                    accumulator = []
                     checkpoint = cntr + self.commit_checkpoint
         self.session.commit()
         return self.hypothesis_id

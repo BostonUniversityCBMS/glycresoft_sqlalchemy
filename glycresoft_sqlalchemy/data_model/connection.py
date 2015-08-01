@@ -67,6 +67,11 @@ class SQLiteConnectionManager(ConnectionManager):
     def bridge_address(self):
         return None
 
+    def connect(self):
+        engine = super(SQLiteConnectionManager, self).connect()
+        engine.execute("PRAGMA journal_mode=WAL;")
+        return engine
+
 
 class LocalPostgresConnectionManager(ConnectionManager):
     connect_args = {}

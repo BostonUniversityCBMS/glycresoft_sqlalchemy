@@ -25,6 +25,13 @@ class JSONType(sqlalchemy.types.PickleType):
         sqlalchemy.types.PickleType.__init__(self, pickler=json)
 
 
+def tryjson(obj):
+    try:
+        return obj.to_json()
+    except:
+        return None
+
+
 def new_alchemy_encoder():
     class AlchemyEncoder(json.JSONEncoder):
         def default(self, obj):

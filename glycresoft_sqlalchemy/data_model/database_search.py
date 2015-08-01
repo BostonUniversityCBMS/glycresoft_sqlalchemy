@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from sqlalchemy.ext.baked import bakery
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import (PickleType, Numeric, Unicode, Table,
+from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 from sqlalchemy.orm.session import object_session
 
@@ -11,6 +12,7 @@ from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, 
 from .naive_proteomics import TheoreticalGlycopeptideComposition
 from .glycomics import TheoreticalGlycanComposition, MassShift
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
+from .json_type import tryjson
 
 
 class HypothesisSampleMatch(Base):
@@ -35,10 +37,11 @@ class HypothesisSampleMatch(Base):
         d = {
             "id": self.id,
             "parameters": self.parameters,
+            "hypothesis_sample_match_type": self.hypothesis_sample_match_type,
             "name": self.name,
             "sample_run_name": self.sample_run_name,
-            "target_hypothesis": self.target_hypothesis.to_json(),
-            "decoy_hypothesis": self.decoy_hypothesis.to_json()
+            "target_hypothesis": tryjson(self.target_hypothesis),
+            "decoy_hypothesis": tryjson(self.decoy_hypothesis)
         }
         return d
 
