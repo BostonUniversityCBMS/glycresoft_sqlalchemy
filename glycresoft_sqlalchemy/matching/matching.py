@@ -11,8 +11,7 @@ except:
 from os.path import splitext
 from collections import defaultdict
 
-from glycresoft_ms2_classification.error_code_interface import NoIonsMatchedException
-from glycresoft_ms2_classification.utils import collectiontools
+from ..utils import collectiontools
 from ..spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 
 from ..scoring import score_matches

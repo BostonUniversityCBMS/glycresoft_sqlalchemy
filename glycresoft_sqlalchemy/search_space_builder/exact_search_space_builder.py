@@ -13,7 +13,7 @@ from ..structure import constants
 from ..proteomics import get_enzyme
 
 
-from .search_space_builder import MS1ResultsFile
+from .search_space_builder import MS1ResultsFile, MS1ResultsFacade
 from .. import data_model as model
 from ..data_model import PipelineModule
 
@@ -116,9 +116,7 @@ class ExactSearchSpaceBuilder(PipelineModule):
     manager_type = model.DatabaseManager
 
     def __init__(self, ms1_results_file, db_file_name, hypothesis_id,
-                 enzyme=None,
-                 constant_modifications=None,
-                 variable_modifications=None, n_processes=4, **kwargs):
+                 enzyme=None, n_processes=4, **kwargs):
         self.db_file_name = db_file_name
 
         self.hypothesis_id = hypothesis_id
@@ -140,9 +138,6 @@ class ExactSearchSpaceBuilder(PipelineModule):
 
         self.hypothesis.parameters = {
             "monosaccharide_identities": self.monosaccharide_identities,
-            "enzyme": enzyme,
-            "constant_modification_list": constant_modifications,
-            "variable_modification_list": variable_modifications,
             "ms1_output_file": ms1_results_file,
             "enzyme": enzyme,
             "tag": tag,

@@ -2,7 +2,13 @@ try:
     import urllib2 as url_parser  # python 2
 except ImportError:
     import urllib.parse as url_parser  # python 3
-from glycresoft_ms2_classification.utils.xml_utils import ET
+try:  # pragma: no cover
+    from lxml import etree as ET
+except ImportError:  # pragma: no cover
+    try:
+        from xml.etree import cElementTree as ET
+    except:
+        from xml.etree import ElementTree as ET
 import json
 
 
@@ -17,7 +23,7 @@ def uri_decode_list(uri_list=None):
 
 
 class MSDigestParameters(object):
-    '''A port of our quick and dirty Protein Prospector MSDigest parser for just
+    '''A quick and dirty Protein Prospector MSDigest parser for just
     modifications'''
     @classmethod
     def parse(cls, xml_path):

@@ -23,8 +23,8 @@ from matplotlib import patches as mpatches
 from matplotlib.path import Path
 from matplotlib.colors import cnames, hex2color
 
-from glycresoft_sqlalchemy.data_model import DatabaseManager, GlycopeptideMatch, Protein, Hypothesis
-from glycresoft_ms2_classification.structure import sequence
+from ..data_model import DatabaseManager, GlycopeptideMatch, Protein, Hypothesis
+from ..structure import sequence
 
 
 def clean_file_name(file_name):

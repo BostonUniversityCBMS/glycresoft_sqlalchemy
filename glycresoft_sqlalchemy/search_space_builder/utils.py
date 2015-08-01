@@ -2,8 +2,8 @@ import re
 import csv
 import itertools
 
-from glycresoft_ms2_classification.structure import sequence, constants
-from glycresoft_ms2_classification.structure import stub_glycopeptides
+from ..structure import sequence, constants
+from ..structure import stub_glycopeptides
 
 Sequence = sequence.Sequence
 StubGlycopeptide = stub_glycopeptides.StubGlycopeptide

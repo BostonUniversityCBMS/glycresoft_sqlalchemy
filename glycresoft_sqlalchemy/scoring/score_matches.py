@@ -3,10 +3,10 @@ import itertools
 import operator
 
 from ..data_model import GlycopeptideMatch, TheoreticalGlycopeptide, DatabaseManager
-from glycresoft_ms2_classification.utils import collectiontools
+from ..utils import collectiontools
 
-from glycresoft_ms2_classification.structure.sequence import Sequence
-from glycresoft_ms2_classification.structure.stub_glycopeptides import StubGlycopeptide
+from ..structure.sequence import Sequence
+from ..structure.stub_glycopeptides import StubGlycopeptide
 
 
 imap = itertools.imap

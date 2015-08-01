@@ -3,7 +3,7 @@ import itertools
 from collections import Counter
 
 from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, NaivePeptide
-from glycresoft_ms2_classification.structure import sequence, modification, parser
+from glycresoft_sqlalchemy.structure import sequence, modification, parser
 
 Sequence = sequence.Sequence
 RestrictedModificationTable = modification.RestrictedModificationTable
