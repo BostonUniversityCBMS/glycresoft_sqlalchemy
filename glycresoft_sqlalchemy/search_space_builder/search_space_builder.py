@@ -429,7 +429,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
             db_file_name = os.path.splitext(ms1_results_file)[0] + '.db'
         self.db_file_name = db_file_name
 
-        self.manager = self.manager_type(db_file_name, clear=True)
+        self.manager = self.manager_type(db_file_name)
         self.manager.initialize()
         self.session = self.manager.session()
 
