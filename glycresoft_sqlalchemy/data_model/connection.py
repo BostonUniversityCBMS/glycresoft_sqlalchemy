@@ -6,6 +6,10 @@ from sqlalchemy.exc import OperationalError
 from .data_model import Base
 from ..utils import database_utils
 
+import logging
+
+logger = logging.getLogger("database_manager")
+
 
 class ConnectionManager(object):
     echo = False
@@ -43,7 +47,9 @@ class ConnectionManager(object):
 
     def ensure_database(self):
         url = self.construct_url()
+        logger.info("Checking %s for database", url)
         if not database_utils.database_exists(url):
+            logger.info("No database exists at %s", url)
             database_utils.create_database(url)
 
     def __repr__(self):
@@ -108,7 +114,8 @@ class DatabaseManager(object):
             conn = self.connect()
         try:
             conn.execute("SELECT id FROM Hypothesis LIMIT 1;")
-        except:
+        except Exception, e:
+            logger.exception("Database requires initialization", exc_info=e)
             self.connection_manager.ensure_database()
             Base.metadata.create_all(conn)
 
