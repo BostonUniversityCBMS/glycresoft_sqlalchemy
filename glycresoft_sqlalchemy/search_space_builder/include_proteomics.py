@@ -18,7 +18,6 @@ from ..structure.sequence import find_n_glycosylation_sequons
 
 
 class ProteomeImporter(PipelineModule):
-    manager_type = DatabaseManager
 
     def __init__(self, database_path, mzid_path, glycosylation_sites_file=None, hypothesis_id=None):
         self.manager = self.manager_type(database_path)

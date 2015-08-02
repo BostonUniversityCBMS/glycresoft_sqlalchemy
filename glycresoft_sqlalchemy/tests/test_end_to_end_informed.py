@@ -23,7 +23,7 @@ def test_main():
     integrated_omics.load_glycomics_naive("datafiles/integrated_omics_simple.db", "datafiles/human_n_glycan.csv", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         "./datafiles/integrated_omics_simple.db", i,
-        protein_ids=["P02763|A1AG1_HUMAN"], n_processes=4) # "P19652|A1AG2_HUMAN", 
+        protein_ids=["P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"], n_processes=4) # "P19652|A1AG2_HUMAN", 
     job.start()
 
     ec = os.system(

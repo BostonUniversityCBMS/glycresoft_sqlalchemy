@@ -71,7 +71,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
 
     def __init__(self, database_path, hypothesis_name, protein_file, site_list_file,
                  glycan_file, glycan_file_type, constant_modifications, variable_modifications,
-                 enzyme, max_missed_cleavages=1, n_processes=4):
+                 enzyme, max_missed_cleavages=1, n_processes=4, **kwargs):
         self.manager = self.manager_type(database_path)
         self.manager.initialize()
         self.protein_file = protein_file

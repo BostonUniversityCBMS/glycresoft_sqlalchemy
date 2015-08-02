@@ -140,6 +140,7 @@ def load_glycomics_naive(database_path, glycan_path, hypothesis_id):
 
 
 class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
+    HypothesisType = MS1GlycopeptideHypothesis
 
     def __init__(self, database_path, hypothesis_id, protein_ids=None, n_processes=4):
         self.manager = self.manager_type(database_path)
@@ -149,18 +150,15 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
 
         session = self.manager.session()
         hypothesis = session.query(Hypothesis).filter(Hypothesis.id == hypothesis_id).first()
-        session.close()
+        hypothesis.hypothesis_type = self.HypothesisType.__name__
 
         self.hypothesis_id = hypothesis.id
         if protein_ids is None:
-            session = self.manager.session()
             protein_ids = flatten(session.query(Protein.id).filter(Protein.hypothesis_id == hypothesis_id))
-            session.close()
         elif isinstance(protein_ids[0], basestring):
-            session = self.manager.session()
             protein_ids = flatten(session.query(Protein.id).filter(Protein.name == name).first()
                                   for name in protein_ids)
-            session.close()
+        session.close()
 
         self.protein_ids = protein_ids
 
@@ -195,9 +193,6 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
         cntr = 0
         if self.n_processes > 1:
             pool = Pool(self.n_processes)
-            # for res in pool.imap_unordered(task_fn, self.stream_peptides(), chunksize=500):
-            #     cntr += res
-            #     logger.info("Completed %d sequences", cntr)
             async_worker_pool(pool, self.stream_peptides(), task_fn)
             pool.terminate()
         else:

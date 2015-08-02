@@ -1,6 +1,7 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import OperationalError
 
 from .data_model import Base
 from ..utils import database_utils
@@ -102,10 +103,14 @@ class DatabaseManager(object):
         return self.connection_manager.connect()
 
     def initialize(self, conn=None):
-        self.connection_manager.ensure_database()
+
         if conn is None:
             conn = self.connect()
-        Base.metadata.create_all(conn)
+        try:
+            conn.execute("SELECT id FROM Hypothesis LIMIT 1;")
+        except:
+            self.connection_manager.ensure_database()
+            Base.metadata.create_all(conn)
 
     def session(self, connection=None):
         if connection is None:

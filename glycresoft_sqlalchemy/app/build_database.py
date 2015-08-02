@@ -1,7 +1,11 @@
 import argparse
 import os
 from glycresoft_sqlalchemy.search_space_builder import (
-    pooling_search_space_builder, pooling_make_decoys, exact_search_space_builder)
+    pooling_search_space_builder,
+    pooling_make_decoys,
+    exact_search_space_builder,
+    naive_glycopeptide_hypothesis,
+    integrated_omics)
 import summarize
 
 commit_checkpoint = os.environ.get("GLYCRESOFT_COMMIT_INTERVAL", 1000)
@@ -55,6 +59,24 @@ def build_informed_search_space_existing(glycopeptide_csv, hypothesis_id, db_fil
     return target, decoy
 
 
+def build_naive_ms1_glycopeptide(database_path, protein_file, site_list_file, glycan_file,
+                                 glycan_file_type, constant_modifications, variable_modifications,
+                                 enzyme, max_missed_cleavages=1, **kwargs):
+    hypothesis_name = kwargs.get("hypothesis_name", None)
+    if hypothesis_name is None:
+        hypothesis_name = "NaiveGlycopeptideHypothesis-%s@%s" % (
+            os.path.basename(protein_file), os.path.basename(glycan_file))
+    else:
+        kwargs.pop("hypothesis_name")
+    kwargs.setdefault("n_processes", 4)
+
+    job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
+                 database_path, hypothesis_name, protein_file, site_list_file,
+                 glycan_file, glycan_file_type, constant_modifications,
+                 variable_modifications, enzyme, max_missed_cleavages, **kwargs)
+    job.start()
+
+
 app = argparse.ArgumentParser("build-database")
 app.add_argument("-n", "--n-processes", default=4, type=int, help='Number of processes to run on')
 subparsers = app.add_subparsers()
@@ -75,6 +97,8 @@ build_naive_simple.add_argument(
     help="Path to project database. If omitted, it will be constructed from <glycopeptide_csv>")
 build_naive_simple.set_defaults(task=build_naive_search_space_simple)
 
+
+c = build_naive_ms1_glycopeptide_app = subparsers.add_subparsers.add_parser("naive-glycopeptide-ms1")
 
 def main():
     args = app.parse_args()
