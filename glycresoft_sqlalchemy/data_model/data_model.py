@@ -52,7 +52,8 @@ class Hypothesis(Base):
         return d
 
     def __repr__(self):
-        return "<Hypothesis {0} {1} {2} proteins {3} glycans>".format(
+        return "<{} {} {} {} proteins {} glycans>".format(
+            self.__class__.__name__,
             self.id, self.name, len(self.proteins), len(self.glycans))
 
     __mapper_args__ = {
@@ -68,6 +69,17 @@ class MS1GlycopeptideHypothesis(Hypothesis):
 
     __mapper_args__ = {
         'polymorphic_identity': u'MS1GlycopeptideHypothesis',
+    }
+
+
+class MS2GlycopeptideHypothesis(Hypothesis):
+    __tablename__ = "MS2GlycopeptideHypothesis"
+
+    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
+    ms1_source_hypothesis_id = Column(Integer, ForeignKey(MS1GlycopeptideHypothesis.id))
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'MS2GlycopeptideHypothesis',
     }
 
 

@@ -90,9 +90,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
 
         spectrum_matches = []
 
-        query = msmsdb.ppm_match_tolerance_search(theoretical.calculated_mass, ms1_tolerance)
-        if sample_run_id is not None:
-            query.filter(TandemScan.sample_run_id == sample_run_id)
+        query = msmsdb.ppm_match_tolerance_search(theoretical.calculated_mass, ms1_tolerance, sample_run_id)
 
         for spectrum in query:
             peak_list = spectrum.tandem_data

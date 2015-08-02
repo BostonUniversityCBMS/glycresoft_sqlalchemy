@@ -22,16 +22,17 @@ def test_main():
     i = integrated_omics.load_proteomics("datafiles/integrated_omics_simple.db", "datafiles/AGP_Proteomics2.mzid")
     integrated_omics.load_glycomics_naive("datafiles/integrated_omics_simple.db", "datafiles/human_n_glycan.csv", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
-        "./datafiles/integrated_omics_simple.db", i, n_processes=4)
+        "./datafiles/integrated_omics_simple.db", i,
+        protein_ids=["P02763|A1AG1_HUMAN"], n_processes=4) # "P19652|A1AG2_HUMAN", 
     job.start()
 
     ec = os.system(
-        r"glycresoft-database-search ms1 -n 6 -i datafiles\20140918_01_isos.db {db_file_name}\
-         -p db -g 2e-5 --skip-grouping".format(db_file_name=db_file_name))
+        "glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db -p db -g 2e-5 --skip-grouping {db_file_name} 1".format(db_file_name=db_file_name))
     assert ec == 0
     job = exact_search_space_builder.ExactSearchSpaceBuilder.from_hypothesis(
-        "datafiles/naive_glycopeptide.db", 1, 6)
+        db_file_name, 1, 4)
     hypothesis_id = job.start()
+    print hypothesis_id
     job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id])
     decoy_hypothesis_id = job.start()[0]
     manager = data_model.DatabaseManager(db_file_name)

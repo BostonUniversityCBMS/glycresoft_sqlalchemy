@@ -19,6 +19,8 @@ from glycresoft_sqlalchemy.report import microheterogeneity
 from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
 
 from glycresoft_sqlalchemy.web_app.task.do_bupid_yaml_parse import BUPIDYamlParseTask
+from glycresoft_sqlalchemy.web_app.task.do_decon2ls_parse import Decon2LSIsosParseTask
+
 from glycresoft_sqlalchemy.web_app.task.dummy import DummyTask
 from glycresoft_sqlalchemy.web_app.task.do_ms2_search import TandemMSGlycoproteomicsSearchTask
 from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
@@ -291,18 +293,28 @@ def post_add_sample():
     -------
     TYPE : Description
     """
+    print request.values
     run_name = request.values['sample_name']
     secure_name = secure_filename(run_name)
+
+    secure_name += ".%s" % request.values["file-type"]
     path = manager.get_temp_path(secure_name)
     request.files['observed-ions-file'].save(path)
     dest = manager.get_sample_path(run_name)
     # Construct the task with a callback to add the processed sample
     # to the set of project samples
-    task = BUPIDYamlParseTask(
+    callback = functools.partial(manager.add_sample, path=dest)
+    task_type = None
+    print request.values["file-type"], type(request.values["file-type"])
+    if request.values["file-type"] == "decon2ls":
+        task_type = Decon2LSIsosParseTask
+    elif request.values["file-type"] == "bupid":
+        task_type = BUPIDYamlParseTask
+    task = task_type(
         manager.path,
         path,
         dest,
-        functools.partial(manager.add_sample, path=dest))
+        callback)
     manager.add_task(task)
     return redirect("/")
 

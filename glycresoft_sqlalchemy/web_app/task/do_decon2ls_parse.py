@@ -25,6 +25,6 @@ def taskmain(database_path, isos_path, results_path, comm=None):
 class Decon2LSIsosParseTask(Task):
     def __init__(self, database_path, isos_path, results_path, callback, **kwargs):
         args = (database_path, isos_path, results_path)
-        job_name = "BUPID " + os.path.basename(results_path)
+        job_name = "Decon2LS " + os.path.basename(results_path)
         kwargs.setdefault('name', job_name)
         super(Decon2LSIsosParseTask, self).__init__(taskmain, args, callback, **kwargs)

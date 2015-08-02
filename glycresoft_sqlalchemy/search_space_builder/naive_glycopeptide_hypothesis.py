@@ -5,7 +5,7 @@ import functools
 import itertools
 import multiprocessing
 
-from ..data_model import (DatabaseManager, Hypothesis, Protein, NaivePeptide,
+from ..data_model import (DatabaseManager, MS1GlycopeptideHypothesis, Protein, NaivePeptide,
                           TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func)
 from .include_glycomics import MS1GlycanImporter
 from .peptide_utilities import generate_peptidoforms, ProteinFastaFileParser, SiteListFastaFileParser
@@ -67,6 +67,8 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id)
 
 
 class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
+    HypothesisType = MS1GlycopeptideHypothesis
+
     def __init__(self, database_path, hypothesis_name, protein_file, site_list_file,
                  glycan_file, glycan_file_type, constant_modifications, variable_modifications,
                  enzyme, max_missed_cleavages=1, n_processes=4):
@@ -77,7 +79,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
         self.glycan_file = glycan_file
         self.glycan_file_type = glycan_file_type
         self.session = session = self.manager.session()
-        self.hypothesis = Hypothesis(name=hypothesis_name)
+        self.hypothesis = self.HypothesisType(name=hypothesis_name)
         self.constant_modifications = constant_modifications
         self.variable_modifications = variable_modifications
         self.enzyme = enzyme
@@ -175,7 +177,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
 
 
 class NaiveGlycopeptideHypothesiMS1LegacyCSV(PipelineModule):
-    manager_type = DatabaseManager
+    HypothesisType = MS1GlycopeptideHypothesis
 
     def __init__(self, database_path, hypothesis_id, protein_ids=None, output_path=None):
         self.manager = self.manager_type(database_path)
@@ -192,7 +194,7 @@ class NaiveGlycopeptideHypothesiMS1LegacyCSV(PipelineModule):
         if output_path is None:
             output_path = os.path.splitext(database_path)[0] + '.glycopeptides_compositions.csv'
         self.output_path = output_path
-        hypothesis = session.query(Hypothesis).filter(Hypothesis.id == self.hypothesis_id).first()
+        hypothesis = session.query(self.Hypothesis).filter(self.Hypothesis.id == self.hypothesis_id).first()
         self.monosaccharide_identities = hypothesis.parameters['monosaccharide_identities']
 
         session.close()

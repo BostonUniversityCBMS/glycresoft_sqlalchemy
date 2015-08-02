@@ -75,6 +75,25 @@ def glycosylate_callback(peptide, session, hypothesis_id, position_selector):
 
 
 def make_theoretical_glycopeptide(peptide, position_selector, database_manager, hypothesis_id):
+    """Multiprocessing task to create exact glycopeptides from `peptide`. An exact glycopeptide
+    has all of its non-glycan modifications positioned and unambiguous.
+
+    Parameters
+    ----------
+    peptide : InformedPeptide
+        The template peptide onto which glycans are added
+    position_selector : function
+        A function that controls the manner in which combinations or
+        permutations of glycans are added to the template
+    database_manager : DatabaseManager
+        The manager of database connections
+    hypothesis_id : int
+        The hypothesis to look up information in.
+
+    Returns
+    -------
+    int: The number  of glycopeptides produced.
+    """
     try:
         session = database_manager.session()
         conn = session.connection()
@@ -90,8 +109,10 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
                 peptide_score=peptide.peptide_score,
                 start_position=peptide.start_position,
                 end_position=peptide.end_position,
+                count_glycosylation_sites=peptide.count_glycosylation_sites,
                 other=peptide.other,
-                glycan_composition_str=glycoform.glycan)
+                glycan_composition_str=glycoform.glycan,
+                base_peptide_id=peptide.id)
             session.add(informed_glycopeptide)
             session.flush()
             conn.execute(
@@ -119,7 +140,6 @@ def load_glycomics_naive(database_path, glycan_path, hypothesis_id):
 
 
 class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
-    manager_type = DatabaseManager
 
     def __init__(self, database_path, hypothesis_id, protein_ids=None, n_processes=4):
         self.manager = self.manager_type(database_path)
@@ -206,6 +226,12 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
         conn.execute(TheoreticalGlycopeptideComposition.__table__.delete(
             TheoreticalGlycopeptideComposition.__table__.c.id.in_(q.selectable)))
         session.commit()
+
+        logger.info("%d TheoreticalGlycopeptideCompositions created", session.query(
+            TheoreticalGlycopeptideComposition).filter(
+            TheoreticalGlycopeptideComposition.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis_id).count())
+
         session.close()
         return self.hypothesis_id
 

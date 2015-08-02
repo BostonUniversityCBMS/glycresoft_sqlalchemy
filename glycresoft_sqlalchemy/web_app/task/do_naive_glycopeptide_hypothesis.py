@@ -1,3 +1,4 @@
+from glycresoft_sqlalchemy.data_model import DatabaseManager, Hypothesis
 from glycresoft_sqlalchemy.search_space_builder import naive_glycopeptide_hypothesis
 from .task_process import NullPipe, Message, Task
 
@@ -8,31 +9,29 @@ def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
              output_path=None, n_processes=4, comm=None):
     if comm is None:
         comm = NullPipe()
-
-    task = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
-        database_path=database_path,
-        hypothesis_name=hypothesis_name,
-        protein_file=protein_file,
-        site_list_file=site_list_file,
-        glycan_file=glycan_file,
-        glycan_file_type=glycan_file_type,
-        constant_modifications=constant_modifications,
-        variable_modifications=variable_modifications,
-        enzyme=enzyme,
-        max_missed_cleavages=max_missed_cleavages,
-        n_processes=n_processes
-        )
-    hypothesis_id = task.start()
-    if task.status != 0:
-        raise task.error
-    task = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesiMS1LegacyCSV(
-        database_path=database_path,
-        hypothesis_id=hypothesis_id,
-        output_path=output_path
-        )
-    task.start()
-    if task.status != 0:
-        raise task.error
+    manager = DatabaseManager(database_path)
+    try:
+        task = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
+            database_path=database_path,
+            hypothesis_name=hypothesis_name,
+            protein_file=protein_file,
+            site_list_file=site_list_file,
+            glycan_file=glycan_file,
+            glycan_file_type=glycan_file_type,
+            constant_modifications=constant_modifications,
+            variable_modifications=variable_modifications,
+            enzyme=enzyme,
+            max_missed_cleavages=max_missed_cleavages,
+            n_processes=n_processes
+            )
+        hypothesis_id = task.start()
+        if task.status != 0:
+            raise task.error
+        session = manager.session()
+        hypothesis = session.query(Hypothesis).get(hypothesis_id)
+        comm.send(Message(hypothesis.to_json(), "new-hypothesis"))
+    except Exception, e:
+        comm.send(Message(e, 'error'))
     return hypothesis_id
 
 

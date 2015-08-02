@@ -44,7 +44,7 @@ class GlycoproteinMicroheterogeneitySummary(object):
             ax.bar(indices + bar_width, volumes, bar_width, alpha=0.45)
             ax.set_ylabel("Relative Intensity")
             ax.set_xticks(indices + bar_width * 1.5)
-            ax.set_xticklabels(compositions, rotation=40, ha='center')
+            ax.set_xticklabels(compositions, rotation=90, ha='center')
             ax.set_title("%s at %d" % (self.protein.name, site))
             axes[site] = ax
 
@@ -79,7 +79,7 @@ class GlycoproteinMicroheterogeneitySummary(object):
             ax.bar(indices + bar_width, volumes, bar_width, alpha=0.45)
             ax.set_ylabel("Relative Intensity")
             ax.set_xticks(indices + bar_width * 1.5)
-            ax.set_xticklabels(glycans, rotation=40, ha='center')
+            ax.set_xticklabels(glycans, rotation=90, ha='center')
             ax.set_title(peptide)
             axes.append(ax)
         return axes

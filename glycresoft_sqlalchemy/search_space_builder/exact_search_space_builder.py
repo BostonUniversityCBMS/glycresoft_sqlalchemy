@@ -13,7 +13,7 @@ from ..structure import constants
 from ..proteomics import get_enzyme
 
 
-from .search_space_builder import MS1ResultsFile, MS1ResultsFacade, TheoreticalSearchSpaceBuilder, RENDER_MAP
+from .search_space_builder import MS1ResultsFile, MS1ResultsFacade, TheoreticalSearchSpaceBuilder
 from .. import data_model as model
 from ..data_model import PipelineModule
 
@@ -97,15 +97,16 @@ def generate_fragments(seq, ms1_result):
 
 def from_sequence(ms1_result, database_manager, protein_map, source_type):
     try:
+        session = database_manager.session()
+        ms1_result = source_type.render(session, ms1_result)
         if len(ms1_result.base_peptide_sequence) == 0:
             return None
-        if ms1_result.modified_peptide_sequence is None:
-            ms1_result.modified_peptide_sequence = ms1_result.base_peptide_sequence
-        seq = Sequence(ms1_result.modified_peptide_sequence)
+        seq = Sequence(ms1_result.most_detailed_sequence)
         seq.glycan = ''
         product = generate_fragments(seq, ms1_result)
         if not isinstance(product.protein_id, int):
             product.protein_id = protein_map[product.protein_id]
+        session.close()
         return product
     except Exception, e:
         logger.exception("An error occurred, %r", locals(), exc_info=e)
@@ -116,7 +117,14 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
 
     def __init__(self, ms1_results_file, db_file_name, enzyme, site_list=None,
                  n_processes=4, **kwargs):
-        super(ExactSearchSpaceBuilder, self).__init__(ms1_results_file, db_file_name,
+        try:
+            kwargs.pop("variable_modifications")
+            kwargs.pop("constant_modifications")
+        except:
+            pass
+
+        super(ExactSearchSpaceBuilder, self).__init__(
+            ms1_results_file, db_file_name,
             constant_modifications=[], variable_modifications=[], enzyme=enzyme,
             site_list=site_list, n_processes=n_processes, **kwargs)
 
@@ -132,6 +140,8 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         commit_interval = 1000
         task_fn = self.prepare_task_fn()
         accumulator = []
+        session.add(self.hypothesis)
+        session.commit()
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             for theoretical in pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=500):
@@ -161,8 +171,9 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         id = self.hypothesis.id
 
         session.bulk_save_objects(accumulator)
+        session.add(self.hypothesis)
         session.commit()
-
+        logger.info("Checking integrity")
         # Remove duplicates
         ids = session.query(func.min(TheoreticalGlycopeptide.id)).filter(
             TheoreticalGlycopeptide.protein_id == Protein.id,

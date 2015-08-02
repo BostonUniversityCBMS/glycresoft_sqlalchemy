@@ -18,7 +18,8 @@ from ..proteomics import get_enzyme, msdigest_xml_parser
 
 from .. import data_model as model
 from .peptide_utilities import SiteListFastaFileParser
-from ..data_model import (PipelineModule, DatabaseManager, Hypothesis,
+from ..data_model import (PipelineModule, Hypothesis,
+                          MS2GlycopeptideHypothesis,
                           HypothesisSampleMatch, PeakGroupMatch, Protein,
                           TheoreticalGlycopeptideGlycanAssociation,
                           TheoreticalGlycopeptide)
@@ -95,6 +96,8 @@ class MS1GlycopeptideResult(object):
             observed_mass=pgm.weighted_monoisotopic_mass,
             glycan_composition_str=theoretical.glycan_composition_str,
             base_peptide_sequence=theoretical.base_peptide_sequence,
+            modified_peptide_sequence=theoretical.modified_peptide_sequence,
+            glycopeptide_sequence=theoretical.glycopeptide_sequence,
             peptide_modifications=theoretical.peptide_modifications,
             count_missed_cleavages=theoretical.count_missed_cleavages,
             count_glycosylation_sites=theoretical.count_glycosylation_sites,
@@ -138,6 +141,20 @@ class MS1GlycopeptideResult(object):
         self.id = id
         self.glycopeptide_sequence = glycopeptide_sequence
         self.modified_peptide_sequence = modified_peptide_sequence
+
+    @property
+    def most_detailed_sequence(self):
+        try:
+            s = self.glycopeptide_sequence
+            if s is not None and s != "":
+                return s
+        except:
+            try:
+                s = self.modified_peptide_sequence
+                if s is not None and s != "":
+                    return s
+            except:
+                return self.base_peptide_sequence
 
     def __repr__(self):
         return "MS1GlycopeptideResult(%s)" % str((self.base_peptide_sequence, self.peptide_modifications, self.glycan_composition_str))
@@ -331,7 +348,7 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map,
     """
     try:
         session = database_manager.session()
-        ms1_result = RENDER_MAP[renderer](session, row)
+        ms1_result = renderer.render(session, row)
         if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
             return 0
 
@@ -378,18 +395,18 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
     the more memory must be allocated to buffer results.
     '''
 
-    manager_type = model.DatabaseManager
+    HypothesisType = MS2GlycopeptideHypothesis
 
     @classmethod
     def from_hypothesis(cls, database_path, hypothesis_sample_match_id, n_processes=4):
-        dbm = DatabaseManager(database_path)
+        dbm = cls.manager_type(database_path)
         session = dbm.session()
         source_hypothesis_sample_match = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
         source_hypothesis = source_hypothesis_sample_match.target_hypothesis
         hypothesis_id = source_hypothesis.id
-        variable_modifications = source_hypothesis.parameters["variable_modifications"]
-        constant_modifications = source_hypothesis.parameters["constant_modifications"]
-        enzyme = source_hypothesis.parameters["enzyme"]
+        variable_modifications = source_hypothesis.parameters.get("variable_modifications", [])
+        constant_modifications = source_hypothesis.parameters.get("constant_modifications", [])
+        enzyme = source_hypothesis.parameters.get("enzyme", [])
         inst = cls(
             database_path, database_path, enzyme=[enzyme], site_list=None,
             constant_modifications=constant_modifications,
@@ -420,7 +437,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
 
         tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
 
-        self.hypothesis = model.Hypothesis(name=u"target-{}".format(tag))
+        self.hypothesis = self.HypothesisType(name=u"target-{}".format(tag))
         self.session.add(self.hypothesis)
         self.session.commit()
         self.hypothesis_id = self.hypothesis.id
@@ -501,7 +518,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
     def prepare_task_fn(self):
         task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map,
-                                    renderer=self.ms1_results_reader.renderer_id,
+                                    renderer=self.ms1_format,
                                     database_manager=self.manager, proteins=self.hypothesis.proteins)
         return task_fn
 
@@ -596,12 +613,6 @@ class MS1ResultsFacade(object):
                     PeakGroupMatch.matched):
                 yield pgm_id[0]
         session.close()
-
-
-RENDER_MAP = {
-    MS1ResultsFile.renderer_id: MS1ResultsFile.get_renderer(),
-    MS1ResultsFacade.renderer_id: MS1ResultsFacade.get_renderer()
-}
 
 
 parse_digest = msdigest_xml_parser.MSDigestParameters.parse
