@@ -263,6 +263,32 @@ def build_naive_glycopeptide_search_space():
     return render_template("glycopeptide_search_space.templ")
 
 
+@app.route("/glycopeptide_search_space", methods=["POST"])
+def build_naive_glycopeptide_search_space_post():
+    print request.values.__dict__
+    print request.files
+    values = request.values
+    constant_modifications = values.getlist("constant_modifications")
+    variable_modifications = values.getlist("variable_modifications")
+    enzyme = values.getlist("enzyme")
+    hypothesis_name = values.get("hypothesis_name")
+    protein_fasta = request.files["protein-fasta-file"]
+    site_list = request.files["glycosylation-site-list-file"]
+    glycan_file = request.files["glycan-definition-file"]
+    glycan_file_type = values.get("glycans-file-format")
+
+    print(constant_modifications,
+          variable_modifications,
+          enzyme,
+          hypothesis_name,
+          protein_fasta,
+          site_list,
+          glycan_file,
+          glycan_file_type,)
+
+    return jsonify(status=202)
+
+
 # ----------------------------------------
 #
 # ----------------------------------------

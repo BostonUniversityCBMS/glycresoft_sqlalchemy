@@ -200,6 +200,8 @@ def draw_layers2(layers, protein):
     peptide_pad = -0.365 * (2./3.)
 
     glycosites = set(protein.glycosylation_sites)
+    for layer in layers:
+        layer.sort(key=lambda x: x.start_position)
 
     while cur_position < total_length:
         next_row = cur_position + row_width

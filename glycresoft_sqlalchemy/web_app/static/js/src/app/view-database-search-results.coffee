@@ -70,6 +70,8 @@ viewDatabaseSearchResults = ->
         id = handle.attr('data-target')
         $.get('/view_database_search_results/view_glycopeptide_details/' + id).success (doc) ->
             peptideDetailsModal.find('.modal-content').html doc
+            # Remove any straggler overlays from rapid re-opening of modal
+            $(".lean-overlay").remove()
             peptideDetailsModal.openModal()
 
     unload = ->

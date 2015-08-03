@@ -2,7 +2,7 @@
     <h2>Glycopeptide Search Space Building</h2>
 </div>
 <div class='row'>
-    <form  id='glycopeptide-hypothesis-form' method="post" class="col s12" accept-charset="utf-8" enctype="multipart/form-data">
+    <form  id='glycopeptide-hypothesis-form' action="glycopeptide_search_space" method="post" class="col s12" accept-charset="utf-8" enctype="multipart/form-data">
         <div class="row">
             <div class="input-field col s8">
                 <label for="hypothesis_name">Hypothesis Name</label>
@@ -16,7 +16,7 @@
                     <h6>Protein List</h6>
                     <div class="btn">
                         <span>Select File...</span>
-                        <input name='protein-digset-file' type="file"/>
+                        <input name='protein-fasta-file' type="file"/>
                     </div>
                     <input class="file-path validate" type="text" style="width: 60%;padding-left:5px;"/>
                 </div>

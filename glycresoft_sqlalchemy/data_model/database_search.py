@@ -64,8 +64,7 @@ class HypothesisSampleMatch(Base):
 
     def __repr__(self):
         return "<{self.__class__.__name__} {self.id} {self.target_hypothesis_id} {self.sample_run_name} {matches}>".format(
-            self=self, matches=''.join('{0.__name__}:{1}'.format(
-                result[0], result[1].count()) for result in self.results()))
+            self=self, matches=','.join(res[0].__name__ for res in self.results()))
 
     __mapper_args__ = {
         "polymorphic_identity": u"HypothesisSampleMatch",

@@ -72,7 +72,7 @@ def run_ms2_glycoproteomics_search(
         n_processes=kwargs.get("n_processes", 4))
     job.start()
 
-    job = target_decoy.TargetDecoyAnalyzer(database_path, target_hypothesis_id, decoy_hypothesis_id)
+    job = target_decoy.TargetDecoyAnalyzer(database_path, target_hypothesis_id, decoy_hypothesis_id, hsm_id)
     job.start()
 
     summarize.main(database_path)

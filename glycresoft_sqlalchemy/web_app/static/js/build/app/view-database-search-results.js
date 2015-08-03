@@ -78,6 +78,7 @@ viewDatabaseSearchResults = function() {
     id = handle.attr('data-target');
     return $.get('/view_database_search_results/view_glycopeptide_details/' + id).success(function(doc) {
       peptideDetailsModal.find('.modal-content').html(doc);
+      $(".lean-overlay").remove();
       return peptideDetailsModal.openModal();
     });
   };

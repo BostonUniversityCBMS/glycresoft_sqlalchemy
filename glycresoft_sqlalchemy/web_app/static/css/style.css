@@ -9,6 +9,10 @@
 }
 
 
+.lean-overlay {
+    visibility: none !important;
+}
+
 /*
 
 Modals

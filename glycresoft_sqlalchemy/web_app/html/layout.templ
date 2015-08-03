@@ -16,7 +16,7 @@
 
 $(function() {
     $('select').material_select();
-    $(".side-nav").css('top', $('.nav-wrapper').innerHeight())
+    $(".side-nav").css('top', $('.nav-wrapper').innerHeight()).css("z-index", 3)
     $(".add-sample").click(function(event){
         event.preventDefault()
         setupAjaxForm("/add_sample", "#dialog-modal")

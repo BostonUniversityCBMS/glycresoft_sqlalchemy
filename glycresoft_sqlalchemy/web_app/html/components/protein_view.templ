@@ -46,14 +46,14 @@
         {{protein|plot_glycoforms(filter_context)}}
     </div>
     <div id='glycopeptide-table'>
-        {% with glycopeptides=filter_context(protein.glycopeptide_matches.filter(GlycopeptideMatch.ms2_score > 0).order_by(GlycopeptideMatch.ms2_score.desc())) %}
+        {% with glycopeptides=filter_context(protein.glycopeptide_matches).order_by(GlycopeptideMatch.ms2_score.desc()) %}
             {% include "components/glycopeptide_match_table.templ" %}
         {% endwith %}
     </div>
     <div id='site-distribution'>
         {% for site, plot in site_summary.glycan_site_specific_abundance_plot() | dictsort %}
             <div>
-                <h5>Site {{site}}</h5>
+                <h5>Site {{site}}, {{protein.protein_sequence[site-1:site+5]}}</h5>
                 {{plot|svg_plot(pad_inches=0.5, bbox_inches='tight')}}
             </div>
         {% endfor %}

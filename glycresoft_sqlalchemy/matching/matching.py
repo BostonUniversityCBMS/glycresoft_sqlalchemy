@@ -225,6 +225,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
 
             gpm = GlycopeptideMatch(
                 protein_id=theoretical.protein_id,
+                theoretical_glycopeptide_id=theoretical.id,
                 ms1_score=theoretical.ms1_score,
                 observed_mass=theoretical.observed_mass,
                 calculated_mass=theoretical.calculated_mass,

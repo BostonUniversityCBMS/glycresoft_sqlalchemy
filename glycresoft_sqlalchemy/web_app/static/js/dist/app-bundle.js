@@ -331,7 +331,8 @@ Application.initializers.push(function() {
       chunks.push(row);
       results.push(row.find(".remove-sample").click(function(event) {
         var handle;
-        return handle = $(this);
+        handle = $(this);
+        return console.log(handle);
       }));
     }
     return results;
@@ -428,6 +429,7 @@ viewDatabaseSearchResults = function() {
     id = handle.attr('data-target');
     return $.get('/view_database_search_results/view_glycopeptide_details/' + id).success(function(doc) {
       peptideDetailsModal.find('.modal-content').html(doc);
+      $(".lean-overlay").remove();
       return peptideDetailsModal.openModal();
     });
   };

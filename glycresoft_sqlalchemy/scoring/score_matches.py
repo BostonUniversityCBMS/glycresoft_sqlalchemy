@@ -24,10 +24,10 @@ def apply(matched, theoretical, **parameters):
     calculate_score(matched, **parameters)
 
 
-def calculate_score(matched, backbone_weight=0.5, hexnac_weight=0.5):
+def calculate_score(matched, backbone_weight=0.5, hexnac_weight=0.5, stub_weight=0.2):
     matched.ms2_score = (((matched.mean_coverage * backbone_weight) +
-                          (matched.mean_hexnac_coverage * hexnac_weight)) * 0.8) +\
-                         (observed_vs_enumerated_stub(matched) * 0.2)
+                          (matched.mean_hexnac_coverage * hexnac_weight)) * 1 - stub_weight) +\
+                         (observed_vs_enumerated_stub(matched) * stub_weight)
     return matched
 
 

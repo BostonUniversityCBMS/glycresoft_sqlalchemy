@@ -14,7 +14,7 @@ logger = logging.getLogger("database_manager")
 class ConnectionManager(object):
     echo = False
 
-    def __init__(self, database_uri, database_uri_prefix, connect_args=None):
+    def __init__(self, database_uri, database_uri_prefix="", connect_args=None):
         self.database_uri = database_uri
         self.database_uri_prefix = database_uri_prefix
         self.connect_args = connect_args or {}
@@ -93,7 +93,9 @@ class LocalPostgresConnectionManager(ConnectionManager):
 class DatabaseManager(object):
     connection_manager_type = SQLiteConnectionManager
 
-    def __init__(self, path, clear=False):
+    def __init__(self, path, clear=False, connection_manager_type=None):
+        if connection_manager_type is not None:
+            self.connection_manager_type = connection_manager_type
         self.connection_manager = self.make_connection_manager(path)
         if clear:
             self.connection_manager.clear()
@@ -114,8 +116,8 @@ class DatabaseManager(object):
             conn = self.connect()
         try:
             conn.execute("SELECT id FROM Hypothesis LIMIT 1;")
-        except Exception:
-            logger.exception("Database requires initialization")
+        except OperationalError:
+            logger.info("Database requires initialization")
             self.connection_manager.ensure_database()
             Base.metadata.create_all(conn)
 

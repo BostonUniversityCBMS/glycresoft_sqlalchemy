@@ -32,8 +32,10 @@ class RangeCounter(Counter):
 class TargetDecoyAnalyzer(PipelineModule):
     manager_type = DatabaseManager
 
-    def __init__(self, database_path, target_hypothesis_id=None, decoy_hypothesis_id=None):
+    def __init__(self, database_path, target_hypothesis_id=None, decoy_hypothesis_id=None,
+                 hypothesis_sample_match_id=None):
         self.manager = self.manager_type(database_path)
+        self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.target_id = target_hypothesis_id
         self.decoy_id = decoy_hypothesis_id
 
@@ -53,16 +55,59 @@ class TargetDecoyAnalyzer(PipelineModule):
         self.n_targets_at = {}
         self.n_decoys_at = {}
 
+    def calculate_thresholds(self):
+        session = self.manager.session()
+        targets = session.query(GlycopeptideMatch.ms2_score, func.count(GlycopeptideMatch.ms2_score)).group_by(
+            GlycopeptideMatch.ms2_score).order_by(
+            GlycopeptideMatch.ms2_score.asc()).filter(
+            (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
+            self.hypothesis_sample_match_id is not None else True,
+            GlycopeptideMatch.protein_id == Protein.id,
+            Protein.hypothesis_id == self.target_hypothesis_id).all()
+
+        running_total = 0
+        targets_above = {}
+        for score, at in targets:
+            targets_above[score] = running_total
+            running_total += at
+
+        for score, at in list(targets_above.items()):
+            targets_above[score] = running_total - targets_above[score]
+
+        decoys = session.query(GlycopeptideMatch.ms2_score, func.count(GlycopeptideMatch.ms2_score)).group_by(
+            GlycopeptideMatch.ms2_score).order_by(
+            GlycopeptideMatch.ms2_score.asc()).filter(
+            (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
+            self.hypothesis_sample_match_id is not None else True,
+            GlycopeptideMatch.protein_id == Protein.id,
+            Protein.hypothesis_id == self.decoy_hypothesis_id).all()
+
+        running_total = 0
+        decoys_above = {}
+        for score, at in decoys:
+            decoys_above[score] = running_total
+            running_total += at
+
+        for score, at in list(decoys_above.items()):
+            decoys_above[score] = running_total - decoys_above[score]
+
+        self.n_targets_at = targets_above
+        self.n_decoys_at = decoys_above
+
+        return targets_above, decoys_above
+
     def calculate_n_decoys_at(self, threshold):
         if threshold in self.n_decoys_at:
             return self.n_decoys_at[threshold]
         else:
             session = self.manager.session()
             self.n_decoys_at[threshold] = session.query(
-            GlycopeptideMatch).filter(
-            GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.decoy_id).filter(
-            GlycopeptideMatch.ms2_score >= threshold).count()
+                GlycopeptideMatch).filter(
+                GlycopeptideMatch.protein_id == Protein.id,
+                Protein.hypothesis_id == self.decoy_id).filter(
+                GlycopeptideMatch.ms2_score >= threshold,
+                (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
+                self.hypothesis_sample_match_id is not None else True).count()
             return self.n_decoys_at[threshold]
 
     def calculate_n_targets_at(self, threshold):
@@ -71,15 +116,15 @@ class TargetDecoyAnalyzer(PipelineModule):
         else:
             session = self.manager.session()
             self.n_targets_at[threshold] = session.query(
-            GlycopeptideMatch).filter(
-            GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.target_id).filter(
-            GlycopeptideMatch.ms2_score >= threshold).count()
+                GlycopeptideMatch).filter(
+                GlycopeptideMatch.protein_id == Protein.id,
+                Protein.hypothesis_id == self.target_id).filter(
+                GlycopeptideMatch.ms2_score >= threshold,
+                (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
+                self.hypothesis_sample_match_id is not None else True).count()
             return self.n_targets_at[threshold]
 
-
     def target_decoy_ratio(self, cutoff, score=ms2_score):
-        session = self.manager.session()
 
         decoys_at = self.calculate_n_decoys_at(cutoff)
         targets_at = self.calculate_n_targets_at(cutoff)
@@ -142,9 +187,7 @@ class TargetDecoyAnalyzer(PipelineModule):
     def estimate_percent_incorrect_targets(self, cutoff, score=ms2_score):
         session = self.manager.session()
 
-        # target_cut = tq.filter(score >= 0, score < cutoff).count()
         target_cut = self.target_count - self.calculate_n_targets_at(cutoff)
-        # decoy_cut = dq.filter(score >= 0, score < cutoff).count()
         decoy_cut = self.decoy_count - self.calculate_n_decoys_at(cutoff)
         percent_incorrect_targets = target_cut / float(decoy_cut)
         session.close()
@@ -183,10 +226,6 @@ class TargetDecoyAnalyzer(PipelineModule):
         logger.info("Computing q-values")
         session = self.manager.session()
 
-        tq = session.query(GlycopeptideMatch).filter(
-            GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.target_id)
-
         q_map = self._calculate_q_values()
         for k in q_map:
             logger.info("Updating entries with score %f -> %f", k, q_map[k])
@@ -194,14 +233,9 @@ class TargetDecoyAnalyzer(PipelineModule):
                 GlycopeptideMatch.ms2_score == k).update(
                 {"q_value": q_map[k]}, synchronize_session=False)
 
-        # for target in tq:
-        #     target.q_value = q_map[target.ms2_score]
-        #     session.add(target)
         session.commit()
         session.close()
 
     def run(self):
-        # thresholds = self.global_thresholds()
-        # self.p_values()
+        self.calculate_thresholds()
         self.q_values()
-        # return thresholds

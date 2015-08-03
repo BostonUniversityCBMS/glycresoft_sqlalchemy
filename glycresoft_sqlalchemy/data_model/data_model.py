@@ -24,18 +24,21 @@ class Hypothesis(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Unicode(128), default=u"")
     proteins = relationship("Protein", backref=backref("hypothesis", order_by=id),
-                            collection_class=attribute_mapped_collection('name'))
+                            collection_class=attribute_mapped_collection('name'),
+                            cascade="delete")
     proteins_query = relationship("Protein", lazy='dynamic')
 
     glycans = relationship(Glycan, backref=backref("hypothesis", order_by=id),
-                           collection_class=attribute_mapped_collection('name'))
+                           collection_class=attribute_mapped_collection('name'),
+                           cascade="delete")
 
     is_decoy = Column(Boolean, default=False)
     parameters = Column(MutableDict.as_mutable(PickleType), default={})
 
     hypothesis_type = Column(Unicode(56), index=True)
 
-    sample_matches = relationship("HypothesisSampleMatch", foreign_keys='HypothesisSampleMatch.target_hypothesis_id')
+    sample_matches = relationship(
+        "HypothesisSampleMatch", foreign_keys='HypothesisSampleMatch.target_hypothesis_id')
 
     def __init__(self, **kwargs):
         kwargs.setdefault('parameters', {})
@@ -112,7 +115,7 @@ class PeptideBase(object):
 
     @declared_attr
     def protein_id(self):
-        return Column(Integer, ForeignKey(Protein.id), index=True)
+        return Column(Integer, ForeignKey(Protein.id, ondelete="CASCADE"), index=True)
 
     calculated_mass = Column(Numeric(10, 6, asdecimal=False), index=True)
 
@@ -185,8 +188,11 @@ class TheoreticalGlycopeptide(PeptideBase, Base):
 
     id = Column(Integer, primary_key=True)
     glycans = relationship(Glycan, secondary=TheoreticalGlycopeptideGlycanAssociation,
-                           backref='glycopeptides', lazy='dynamic')
+                           backref='glycopeptides', lazy='dynamic',
+                           cascade="delete")
     ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+
+    base_composition = Column(Integer, ForeignKey("TheoreticalGlycopeptideComposition.id"))
 
     observed_mass = Column(Numeric(10, 6, asdecimal=False))
     glycan_mass = Column(Numeric(10, 6, asdecimal=False))

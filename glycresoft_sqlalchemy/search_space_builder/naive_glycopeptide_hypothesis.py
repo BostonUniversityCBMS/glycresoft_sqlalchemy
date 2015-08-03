@@ -154,6 +154,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
                 logger.info("%d done", cntr)
 
         session.commit()
+        logger.info("Checking integrity")
         ids = session.query(func.min(TheoreticalGlycopeptideComposition.id)).filter(
             TheoreticalGlycopeptideComposition.protein_id == Protein.id,
             Protein.hypothesis_id == self.hypothesis.id).group_by(

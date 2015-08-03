@@ -13,7 +13,8 @@ Application.prototype.renderSampleListAt = function(container) {
       chunks.push(row);
       results.push(row.find(".remove-sample").click(function(event) {
         var handle;
-        return handle = $(this);
+        handle = $(this);
+        return console.log(handle);
       }));
     }
     return results;
