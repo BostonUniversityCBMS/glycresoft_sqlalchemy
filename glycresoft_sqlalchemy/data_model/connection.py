@@ -114,8 +114,8 @@ class DatabaseManager(object):
             conn = self.connect()
         try:
             conn.execute("SELECT id FROM Hypothesis LIMIT 1;")
-        except Exception, e:
-            logger.exception("Database requires initialization", exc_info=e)
+        except Exception:
+            logger.exception("Database requires initialization")
             self.connection_manager.ensure_database()
             Base.metadata.create_all(conn)
 
@@ -148,8 +148,8 @@ def create_remote_manager(driver, user="", password="", host='localhost', port=5
             super(RemoteConnectionManager, self).__init__(path, self.database_uri_prefix, connect_args)
 
 
-def initialize(database_path):
-    manager = DatabaseManager(database_path, clear=True)
+def initialize(database_path, clear=False):
+    manager = DatabaseManager(database_path, clear=clear)
     manager.initialize()
     return manager
 

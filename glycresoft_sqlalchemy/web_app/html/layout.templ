@@ -21,6 +21,10 @@ $(function() {
         event.preventDefault()
         setupAjaxForm("/add_sample", "#dialog-modal")
     })
+    $("#preferences-link").click(function(event){
+        event.preventDefault()
+        setupAjaxForm("/preferences", "#dialog-modal")
+    })
     $(".toggle-sidebar").click(function(event){
         var handle = $(this)
         if(handle.attr('data-state') == 'open'){

@@ -2,6 +2,7 @@ Application::renderHypothesisSampleMatchListAt = (container)->
     chunks = []
     template = 
     for hsm in _.sortBy(_.values(@hypothesisSampleMatches), (o) -> o.name)
+        hsm.name = if hsm.name? then hsm.name else "HypothesisSampleMatch:#{hsm.target_hypothesis.name}@#{hsm.sample_run_name}"
         row = $("
     <div data-id=#{hsm.id} class=''>
         <span class='handle'>#{hsm.name.replace('_', ' ')}</span> <small class='right'>#{}

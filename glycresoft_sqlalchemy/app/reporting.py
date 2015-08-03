@@ -6,12 +6,14 @@ from glycresoft_sqlalchemy.report import export_csv
 from glycresoft_sqlalchemy.report import plot_glycoforms
 from glycresoft_sqlalchemy.report import plot_scores
 from . import summarize
+from glycresoft_sqlalchemy.web_app.serve import main as webmain
 
 task_map = {
     "export-csv": export_csv.taskmain,
     "plot-glycoforms": plot_glycoforms.taskmain,
     "plot-scores": plot_scores.taskmain,
-    "summarize": summarize.taskmain
+    "summarize": summarize.taskmain,
+    "web": webmain
 }
 
 

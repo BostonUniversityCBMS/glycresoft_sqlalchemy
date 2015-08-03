@@ -25,13 +25,13 @@
             <td class='wide'><span>{{gpm.modified_peptide_sequence}}</span></td>
             <td class='wide'>{{gpm.glycan_composition_str}}</td>
             <td>{{"%0.4f"|format(gpm.ms2_score)}}</td>
-            <td class='narrow'>{{"%0.3e"|format(gpm.q_value) if gpm.q_value != 0.0 else 0.0}}</td>
+            <td class='narrow'>{{"%0.3f"|format(gpm.q_value) if gpm.q_value != 0.0 else 0.0}}</td>
             <td>{{"%0.4f"|format(gpm.ms1_score)}}</td>
             <td>{{"%0.5e"|format(gpm.volume)}}</td>
             <td class='narrow' data-start="{{gpm.start_position}}" data-end="{{gpm.end_position}}">
                 {{gpm.start_position}} - {{gpm.end_position}}
             </td>
-            <td>{{gpm.scan_id_range|sort|join(", ")}}</td>
+            <td>{{gpm.scan_id_range|length}}</td>
             <td>{{"%0.4f"|format(gpm.mean_coverage)}}</td>
             <td>{{"%0.4f"|format(gpm.mean_hexnac_coverage)}}</td>
             <td class='narrow'>{{gpm.stub_ions|length}}</td>
@@ -44,7 +44,7 @@
     </tbody>
 </table>    
 </div>
-
+<!-- On narrow screens, the above table may appear to have two horizontal scroll bars -->
 <div id="peptide-detail-modal" class="modal modal-fixed-footer wide">
     <div class="modal-content">
     </div>

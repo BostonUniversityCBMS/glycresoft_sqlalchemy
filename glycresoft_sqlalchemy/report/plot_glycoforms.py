@@ -18,6 +18,7 @@ except ImportError:  # pragma: no cover
         from xml.etree import ElementTree as ET
 
 from itertools import cycle
+import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import patches as mpatches
 from matplotlib.path import Path
@@ -183,16 +184,16 @@ def draw_layers2(layers, protein):
     id_mapper = IDMapper()
     i = 0
     row_width = 80
-    scale_factor = 1.7
+    scale_factor = 1.0
     layer_height = 2.8 * scale_factor
-    y_step = -3.5 * scale_factor
+    y_step = (layer_height + 0.7) * -scale_factor
     cur_y = -3
 
     cur_position = 0
 
-    text_shift = 0.07
-    sequence_font_size = 9.
-    mod_font_size = 4.
+    text_shift = 0.05
+    sequence_font_size = 6.
+    mod_font_size = 3.
     mod_width = 0.7
     total_length = len(protein.protein_sequence or '')
     protein_pad = -0.365
@@ -249,15 +250,15 @@ def draw_layers2(layers, protein):
                                       {"modification-type": pos[1][0].name, "parent": label})
                         ax.add_patch(mod_patch)
 
-                        ax.text(gpm.start_position - cur_position + i - text_shift, cur_y + 0.6,
+                        ax.text(gpm.start_position - cur_position + i - text_shift, cur_y + 0.3,
                                 str(pos[1][0])[0], fontsize=mod_font_size, family='monospace')
             if c > 0:
                 cur_y += y_step
-        cur_y += y_step * 3
+        cur_y += y_step * 12
         cur_position = next_row
 
     ax.set_ylim(cur_y - 100, 50)
-    ax.set_xlim(-10, row_width + 10)
+    ax.set_xlim(-30, row_width + 30)
     ax.axis('off')
     return ax, id_mapper
 
@@ -271,7 +272,6 @@ def plot_glycoforms(protein, filterfunc=lambda x: x.ms2_score > 0.2):
 
 def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch.ms2_score > 0.0), scale=1.0):
     ax, id_mapper = plot_glycoforms(protein, filterfunc)
-
     fig = ax.get_figure()
     fig.tight_layout(pad=0.2)
     fig.patch.set_visible(False)
@@ -285,7 +285,7 @@ def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch
         element.attrib.update({("data-" + k): str(v) for k, v in attributes.items()})
         element.attrib['class'] = id.rsplit('-')[0]
     min_x, min_y, max_x, max_y = map(int, root.attrib["viewBox"].split(" "))
-    min_x += 85
+    min_x += 165
     view_box = ' '.join(map(str, (min_x, min_y, max_x, max_y)))
     root.attrib["viewBox"] = view_box
     width = int(root.attrib["width"][:-2]) * 2

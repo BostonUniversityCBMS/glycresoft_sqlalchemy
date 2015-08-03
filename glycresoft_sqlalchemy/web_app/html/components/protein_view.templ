@@ -43,7 +43,7 @@
                 </tbody>
             </table>
         </div>
-        {{protein|plot_glycoforms(filter_context)}} 
+        {{protein|plot_glycoforms(filter_context)}}
     </div>
     <div id='glycopeptide-table'>
         {% with glycopeptides=filter_context(protein.glycopeptide_matches.filter(GlycopeptideMatch.ms2_score > 0).order_by(GlycopeptideMatch.ms2_score.desc())) %}
@@ -51,15 +51,11 @@
         {% endwith %}
     </div>
     <div id='site-distribution'>
-        {% for site, plot in site_summary.glycan_site_specific_abundance_plot().items() %}
+        {% for site, plot in site_summary.glycan_site_specific_abundance_plot() | dictsort %}
             <div>
                 <h5>Site {{site}}</h5>
                 {{plot|svg_plot(pad_inches=0.5, bbox_inches='tight')}}
             </div>
         {% endfor %}
     </div>
-</div>
-<div class='row'>
-       
-</div>
 </div>

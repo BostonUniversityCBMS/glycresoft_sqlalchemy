@@ -1,5 +1,7 @@
 $(function() {
-  var $body, $tooltip, closeTooltip, openTooltip;
+  var $body, $tooltip, closeTooltip, openTooltip, xOffset, yOffset;
+  yOffset = -3;
+  xOffset = 3;
   $body = $('body');
   $tooltip = $('<div></div>').hide().css({
     'position': 'absolute',
@@ -13,7 +15,7 @@ $(function() {
       content = content(handle);
     }
     content = content === void 0 ? 'This is a simple tooltip' : content;
-    $tooltip.html(content).addClass(handle.data('tooltip-css-class')).css('top', event.pageY - 10 + 'px').css('left', event.pageX + 10 + 'px').show();
+    $tooltip.html(content).addClass(handle.data('tooltip-css-class')).css('top', event.pageY + yOffset + 'px').css('left', event.pageX + xOffset + 'px').show();
   };
   closeTooltip = function(event) {
     var handle;

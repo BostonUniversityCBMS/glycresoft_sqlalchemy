@@ -20,8 +20,6 @@ from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
 
 from glycresoft_sqlalchemy.web_app.task.do_bupid_yaml_parse import BUPIDYamlParseTask
 from glycresoft_sqlalchemy.web_app.task.do_decon2ls_parse import Decon2LSIsosParseTask
-
-from glycresoft_sqlalchemy.web_app.task.dummy import DummyTask
 from glycresoft_sqlalchemy.web_app.task.do_ms2_search import TandemMSGlycoproteomicsSearchTask
 from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
 
@@ -91,6 +89,25 @@ def message_stream():
                     mimetype="text/event-stream")
 
 
+# ----------------------------------------
+#           Settings and Preferences
+# ----------------------------------------
+
+
+@app.route("/preferences")
+def show_preferences():
+    preferences = request.values
+    return render_template("components/preferences.templ", **preferences)
+
+
+@app.route("/preferences", methods=["POST"])
+def update_preferences():
+    preferences = request.values
+    print "Minimum Score:", preferences["minimum_score"]
+    print request.values
+    return jsonify(**preferences)
+
+
 @app.route("/internal/update_settings", methods=["POST"])
 def update_settings():
     '''
@@ -105,8 +122,13 @@ def update_settings():
 
 @app.route("/test/task-test")
 def test_page():
-    manager.add_task(DummyTask("Dummy"))
-    return jsonify(status='101')
+    protein = g.db.query(Protein).join(GlycopeptideMatch).first()
+
+    def filter_context(q):
+        return q.filter(
+            GlycopeptideMatch.ms2_score > 0.2)
+
+    return render_template("test.templ", protein=protein, filter_context=filter_context)
 
 
 # ----------------------------------------
@@ -362,7 +384,9 @@ parser = argparse.ArgumentParser('view-results')
 parser.add_argument("results_database")
 
 
-def main(results_database):
+def main():
+    args = parser.parse_args()
+    results_database = args.results_database
     global DATABASE, manager
     DATABASE = results_database
     manager = ProjectManager(DATABASE)
@@ -371,5 +395,4 @@ def main(results_database):
     app.run(use_reloader=False, threaded=True)
 
 if __name__ == "__main__":
-    args = parser.parse_args()
-    main(args.results_database)
+    main()

@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib
 from matplotlib import pyplot as plt
 
-matplotlib.rcParams['figure.figsize'] = 10, 8
+# matplotlib.rcParams['figure.figsize'] = 10, 8
 
 
 def fetch(database_path, hypothesis_id):

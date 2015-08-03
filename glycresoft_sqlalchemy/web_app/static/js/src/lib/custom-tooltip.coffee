@@ -1,4 +1,6 @@
 $ ->
+    yOffset = -3
+    xOffset = 3
     $body = $('body')
     $tooltip = $('<div></div>').hide().css(
         'position': 'absolute'
@@ -10,7 +12,10 @@ $ ->
         if typeof content == 'function'
             content = content(handle)
         content = if content == undefined then 'This is a simple tooltip' else content
-        $tooltip.html(content).addClass(handle.data('tooltip-css-class')).css('top', event.pageY - 10 + 'px').css('left', event.pageX + 10 + 'px').show()
+        $tooltip.html(content).addClass(
+            handle.data('tooltip-css-class')).css(
+                'top', event.pageY + yOffset + 'px').css(
+                'left', event.pageX + xOffset + 'px').show()
         return
 
     closeTooltip = (event) ->

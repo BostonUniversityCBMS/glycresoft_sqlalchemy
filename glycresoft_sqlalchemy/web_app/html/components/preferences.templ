@@ -1,0 +1,19 @@
+<div class='preferences-container row'>
+    <form id="preferences-form" action='preferences' method="post" accept-charset="utf-8" class="col s12">
+        <div class='row'>
+            <div class='col s4 input-field'>
+                <label for='minimum-score'>Minimum MS2 Score Filter</label>
+                <input placeholder='Minimum Score Threshold' type='number' min="0.0" max="1.0"
+                 name='minimum-score' id='minimum-score' class="validate" step="0.01"
+                 value="{{ms2_score_threshold or 0.2}}">
+            </div>
+        </div>
+        <button class='btn wave-effect'>
+            Okay
+        </button>
+    </form>
+    <script>
+materialRefresh()
+ajaxForm("#preferences-form")
+    </script>
+</div>

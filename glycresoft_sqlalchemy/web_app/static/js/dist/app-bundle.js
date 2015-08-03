@@ -249,6 +249,7 @@ $(function() {
     results = [];
     for (i = 0, len = ref.length; i < len; i++) {
       hsm = ref[i];
+      hsm.name = hsm.name != null ? hsm.name : "HypothesisSampleMatch:" + hsm.target_hypothesis.name + "@" + hsm.sample_run_name;
       row = $("<div data-id=" + hsm.id + " class=''> <span class='handle'>" + (hsm.name.replace('_', ' ')) + "</span> <small class='right'>" + " <a class='remove-hsm mdi-content-clear'></a></small></div>");
       chunks.push(row);
       self = this;

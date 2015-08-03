@@ -2,6 +2,7 @@ import os
 import operator
 import time
 import logging
+import json
 try:
     logger = logging.getLogger("web_app.report")
 except:
@@ -16,11 +17,21 @@ try:
 except:
     from io import StringIO
 
+import matplotlib
 from matplotlib import rcParams as mpl_params
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 import urllib
+
+mpl_params.update({'figure.facecolor': 'white',
+    'figure.edgecolor': 'white',
+    # 12pt labels get cutoff on 6x4 logplots, so use 10pt.
+    'font.size': 10,
+    # 72 dpi matches SVG/qtconsole
+    # this only affects PNG export, as SVG has no dpi setting
+    'savefig.dpi': 72,
+    # 10pt still needs a little more room on the xlabel:
+    'figure.subplot.bottom': .125})
 
 
 def ms2_score_histogram(session, hypothesis_id):
@@ -79,20 +90,13 @@ def render_plot(figure, **kwargs):
     return buffer
 
 
-def mass_histogram(iterable, **kwargs):
-    figure = plt.figure()
-    plt.hist(iterable, normed=True, **kwargs)
-    ax = figure.axes[0]
-    ax.set_xlabel("Mass")
-    ax.set_ylabel("Frequency")
-    return svg_plot(figure)
-
-
 def plot_glycoforms(protein, filter_context):
-    old_size = mpl_params['figure.figsize']
-    mpl_params['figure.figsize'] = 16, 10
+    old_size = matplotlib.rcParams['figure.figsize']
+    matplotlib.rcParams['figure.figsize'] = 10, 16
+
     svg = plot_glycoforms_svg(protein, filterfunc=filter_context)
-    mpl_params['figure.figsize'] = old_size
+
+    matplotlib.rcParams['figure.figsize'] = old_size
     return svg
 
 
@@ -110,8 +114,7 @@ def prepare_environment(env=None):
     env.filters["q_value_below"] = q_value_below
     env.filters["n_per_row"] = n_per_row
     env.filters['highlight_sequence_site'] = highlight_sequence_site
-    env.filters['plot_glycoforms'] = plot_glycoforms_svg
-    env.filters['mass_histogram'] = mass_histogram
+    env.filters['plot_glycoforms'] = plot_glycoforms
     env.filters['svg_plot'] = svg_plot
     env.filters['png_plot'] = png_plot
     env.filters['fsort'] = fsort

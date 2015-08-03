@@ -1,19 +1,11 @@
-import time
-import csv
-import os
-import re
-import datetime
 import multiprocessing
-import threading
 import logging
-#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 import functools
 
 from ..data_model import TheoreticalGlycopeptide
-from .search_space_builder import (MS1GlycopeptideResult, parse_digest,
+from .search_space_builder import (MS1GlycopeptideResult,
                                    get_peptide_modifications, get_search_space,
-                                   generate_fragments, TheoreticalSearchSpaceBuilder,
-                                   RENDER_MAP)
+                                   generate_fragments, TheoreticalSearchSpaceBuilder)
 
 logger = logging.getLogger("search_space_builder")
 

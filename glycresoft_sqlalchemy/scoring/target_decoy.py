@@ -130,15 +130,14 @@ class TargetDecoyAnalyzer(PipelineModule):
                 session.add(target)
             else:
                 session.commit()
-                decoys_at = dq.filter(GlycopeptideMatch.ms2_score >= target.ms2_score).count()
+                decoys_at = self.calculate_n_decoys_at(target.ms2_score)
                 last_score = target.ms2_score
-                
+
                 last_p_value = decoys_at / total_decoys
                 target.p_value = last_p_value
                 session.add(target)
         session.commit()
         session.close()
-
 
     def estimate_percent_incorrect_targets(self, cutoff, score=ms2_score):
         session = self.manager.session()
@@ -190,6 +189,7 @@ class TargetDecoyAnalyzer(PipelineModule):
 
         q_map = self._calculate_q_values()
         for k in q_map:
+            logger.info("Updating entries with score %f -> %f", k, q_map[k])
             session.query(GlycopeptideMatch).filter(
                 GlycopeptideMatch.ms2_score == k).update(
                 {"q_value": q_map[k]}, synchronize_session=False)

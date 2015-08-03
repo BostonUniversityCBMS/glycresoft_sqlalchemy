@@ -10,6 +10,7 @@ Application::renderSampleListAt = (container)->
         chunks.push row
         row.find(".remove-sample").click (event) -> 
             handle = $ @
+            console.log handle
 
     $(container).html chunks
 
