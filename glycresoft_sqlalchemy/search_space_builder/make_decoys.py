@@ -7,7 +7,7 @@ import logging
 from ..structure import sequence
 from ..structure.parser import sequence_tokenizer_respect_sequons, sequence_tokenizer
 
-from ..data_model import TheoreticalGlycopeptide, Hypothesis, Protein, DatabaseManager
+from ..data_model import TheoreticalGlycopeptide, Hypothesis, MS2GlycopeptideHypothesis, Protein, DatabaseManager
 from ..data_model import PipelineModule
 
 from .utils import fragments
@@ -152,12 +152,13 @@ class DecoySearchSpaceBuilder(PipelineModule):
     A pipeline step that builds 
     '''
 
-    manager_type = DatabaseManager
+    HypothesisType = MS2GlycopeptideHypothesis
 
     def __init__(self, database_path, prefix_len=0, suffix_len=1,
                  hypothesis_ids=None, n_processes=4, decoy_type=0):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
+        HypothesisType = self.HypothesisType
         if hypothesis_ids is None:
             hypothesis_ids = [eid for hypothesis in self.session.query(Hypothesis.id)
                               for eid in hypothesis]
@@ -176,7 +177,7 @@ class DecoySearchSpaceBuilder(PipelineModule):
             if name is None:
                 name = 'decoy-{}'.format(datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S"))
 
-            decoy_hypothesis = Hypothesis(name=name.replace("target", "decoy"), is_decoy=True)
+            decoy_hypothesis = HypothesisType(name=name.replace("target", "decoy"), is_decoy=True)
             decoy_hypothesis.parameters = {"mirror": reference_hypothesis.id}
             self.session.add(decoy_hypothesis)
             self.session.commit()
