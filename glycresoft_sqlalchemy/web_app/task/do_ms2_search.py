@@ -82,7 +82,7 @@ def taskmain(
         n_processes=kwargs.get("n_processes", 4))
     job.start()
     comm.send(Message("Begin TDA", "update"))
-    job = target_decoy.TargetDecoyAnalyzer(database_path, target_hypothesis_id, decoy_hypothesis_id)
+    job = target_decoy.TargetDecoyAnalyzer(database_path, target_hypothesis_id, decoy_hypothesis_id, hsm_id)
     job.start()
     if hsm_id is not None:
         comm.send(Message(hsm.to_json(), "new-hypothesis-sample-match"))
