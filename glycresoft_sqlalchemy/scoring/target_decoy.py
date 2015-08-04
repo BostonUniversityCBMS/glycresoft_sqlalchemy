@@ -63,7 +63,7 @@ class TargetDecoyAnalyzer(PipelineModule):
             (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
             self.hypothesis_sample_match_id is not None else True,
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.target_hypothesis_id).all()
+            Protein.hypothesis_id == self.target_id).all()
 
         running_total = 0
         targets_above = {}
@@ -80,7 +80,7 @@ class TargetDecoyAnalyzer(PipelineModule):
             (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
             self.hypothesis_sample_match_id is not None else True,
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.decoy_hypothesis_id).all()
+            Protein.hypothesis_id == self.decoy_id).all()
 
         running_total = 0
         decoys_above = {}
