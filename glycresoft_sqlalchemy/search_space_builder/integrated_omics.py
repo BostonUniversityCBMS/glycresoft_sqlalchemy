@@ -51,10 +51,10 @@ def make_name(mzid_path, glycan_path):
     return "integrated_omics-{}-{}-{}".format(mzid_part, glycan_part, tag)
 
 
-def glycosylate_callback(peptide, session, hypothesis_id, position_selector):
+def glycosylate_callback(peptide, session, hypothesis_id, position_selector, max_sites=2):
     n_sites = len(peptide.glycosylation_sites)
     result = []
-    for glycan_count in range(1, n_sites + 1):
+    for glycan_count in range(1, min(n_sites + 1, max_sites)):
         for glycans in get_glycan_combinations(session, glycan_count, hypothesis_id):
             for sites in position_selector(peptide.glycosylation_sites, glycan_count):
                 target = Sequence(peptide.modified_peptide_sequence)

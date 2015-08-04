@@ -253,7 +253,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                 last_scan=last_scan,
                 hypothesis_sample_match_id=hypothesis_sample_match_id
             )
-            score_matches.apply(gpm, theoretical)
+            score_matches.evaluate(gpm, theoretical)
             session.add(gpm)
             session.commit()
             for spectrum, peak_match_map in spectrum_matches:

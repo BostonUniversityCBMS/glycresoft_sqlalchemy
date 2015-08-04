@@ -408,13 +408,15 @@ def inject_functions():
 
 parser = argparse.ArgumentParser('view-results')
 parser.add_argument("results_database")
+parser.add_argument("-n", "--no-execute-tasks", action="store_true", required=False, default=False)
 
 
 def main():
     args = parser.parse_args()
     results_database = args.results_database
-    global DATABASE, manager
+    global DATABASE, manager, CAN_EXECUTE
     DATABASE = results_database
+    CAN_EXECUTE = not args.no_execute_tasks
     manager = ProjectManager(DATABASE)
     app.debug = DEBUG
     app.secret_key = SECRETKEY

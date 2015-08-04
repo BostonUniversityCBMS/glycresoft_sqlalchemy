@@ -26,14 +26,14 @@ logger = logging.getLogger("naive_glycopeptide_hypothesis")
 water = Composition("H2O").mass
 
 
-def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id):
+def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id, max_sites=2):
     try:
         session = database_manager.session()
         peptide = session.query(NaivePeptide).get(peptide[0])
         # logger.info("Working on %r", peptide)
         i = 0
         for glycan_set in get_glycan_combinations(
-                database_manager.session(), peptide.count_glycosylation_sites, hypothesis_id):
+                database_manager.session(), min(peptide.count_glycosylation_sites, max_sites), hypothesis_id):
             glycan_composition_str = merge_compositions([(g.composition) for g in glycan_set])
             glycan_mass = sum([(g.mass) for g in glycan_set]) - (water * len(glycan_set))
             glycoform = TheoreticalGlycopeptideComposition(

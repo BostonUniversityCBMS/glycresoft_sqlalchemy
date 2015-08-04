@@ -26,7 +26,7 @@ def run_ms2_glycoproteomics_search(
     manager = DatabaseManager(database_path)
     manager.initialize()
     if observed_ions_type == 'bupid_yaml' and observed_ions_path[-3:] != '.db':
-        parser = BUPIDMSMSYamlParser(observed_ions_path)
+        parser = BUPIDMSMSYamlParser(observed_ions_path, manager.bridge_address())
         observed_ions_path = parser.manager.path
         observed_ions_type = 'db'
         sample_name = parser.sample_run_name
@@ -88,8 +88,10 @@ def run_ms1_search(
         "glycan": "TheoreticalGlycanComposition"
     }[search_type]
 
+    manager = DatabaseManager(database_path)
+
     if observed_ions_type == 'isos':
-        parser = Decon2LSIsosParser(observed_ions_path)
+        parser = Decon2LSIsosParser(observed_ions_path, manager.bridge_address())
         observed_ions_path = parser.manager.path
 
     # mass_shift converted to dictionary for mass_shift_map

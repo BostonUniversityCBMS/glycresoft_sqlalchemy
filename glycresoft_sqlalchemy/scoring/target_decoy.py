@@ -30,7 +30,10 @@ class RangeCounter(Counter):
 
 
 class TargetDecoyAnalyzer(PipelineModule):
-    manager_type = DatabaseManager
+
+    @classmethod
+    def from_hypothesis_sample_match(cls, database_path, hsm):
+        return cls(database_path, hsm.target_hypothesis_id, hsm.decoy_hypothesis_id, hsm.id)
 
     def __init__(self, database_path, target_hypothesis_id=None, decoy_hypothesis_id=None,
                  hypothesis_sample_match_id=None):

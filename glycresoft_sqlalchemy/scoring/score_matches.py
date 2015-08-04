@@ -18,7 +18,7 @@ bare_ion_pattern = re.compile(r"[czby](\d+)")
 glycosylated_ion_pattern = re.compile(r"[czby](\d+)\+(.+)")
 
 
-def apply(matched, theoretical, **parameters):
+def evaluate(matched, theoretical, **parameters):
     matched.mean_coverage = mean_coverage(matched)
     matched.mean_hexnac_coverage = mean_hexnac_coverage(matched, theoretical)
     calculate_score(matched, **parameters)
