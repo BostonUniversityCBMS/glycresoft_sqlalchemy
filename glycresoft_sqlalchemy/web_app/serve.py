@@ -409,7 +409,7 @@ def inject_functions():
 parser = argparse.ArgumentParser('view-results')
 parser.add_argument("results_database")
 parser.add_argument("-n", "--no-execute-tasks", action="store_true", required=False, default=False)
-parser.add_argument("--external", action='store_true', requied=False, default=False, help='Let non-host machines connect to the server')
+parser.add_argument("--external", action='store_true', required=False, default=False, help='Let non-host machines connect to the server')
 
 
 def main():
