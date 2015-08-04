@@ -160,7 +160,7 @@ class CSVExportDriver(PipelineModule):
                     os.path.splitext(hsm.name)[0])
                 export_glycopeptide_ms1_matches_legacy(
                     query,
-                    self.hypothesis.parameters['monosaccharide_identities'],
+                    hsm.target_hypothesis.parameters['monosaccharide_identities'],
                     output_path)
             else:
                 raise NotImplementedError(res_type)
