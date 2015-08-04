@@ -13,8 +13,9 @@
         <div class='col s6'>
             <h6>Scans</h6>
             {% for spectrum_match in glycopeptide.spectrum_matches %}
-                <div>
-                {{spectrum_match.spectrum_id}}<br>{{spectrum_match.peak_match_map|length}}
+                <div style='float:left;border:1px solid grey;padding:3px;margin:2px;text-align:center;'>
+                    <div style='border-bottom:1px solid grey;border-collapse:collapse;box-model:border-box;'>{{spectrum_match.spectrum_id}}</div>
+                    {{spectrum_match.peak_match_map|length}}
                 </div>
             {% endfor %}
         </div>

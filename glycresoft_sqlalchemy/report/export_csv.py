@@ -147,17 +147,21 @@ class CSVExportDriver(PipelineModule):
     def dispatch_export(self, hypothesis_sample_match_id):
         session = self.session
         hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+
+        def getname(hsm):
+            try:
+                return os.path.splitext(hsm.name)[0]
+            except:
+                return str(hsm.target_hypothesis.name) + "_on_" + str(hsm.sample_run_name)
         for res_type, query in hsm.results():
             if res_type == GlycopeptideMatch:
-                output_path = self.output_path + '.{}.glycopeptide_matches.csv'.format(
-                    os.path.splitext(hsm.name)[0])
+                output_path = self.output_path + '.{}.glycopeptide_matches.csv'.format(getname(hsm))
                 # Only export target hypothesis
                 export_glycopeptide_ms2_matches(query.filter(
                     GlycopeptideMatch.protein_id == Protein.id,
                     Protein.hypothesis_id == hsm.target_hypothesis_id), output_path)
             elif res_type == TheoreticalGlycopeptideComposition:
-                output_path = self.output_path + '.{}.glycopeptide_compositions.csv'.format(
-                    os.path.splitext(hsm.name)[0])
+                output_path = self.output_path + '.{}.glycopeptide_compositions.csv'.format(getname(hsm))
                 export_glycopeptide_ms1_matches_legacy(
                     query,
                     hsm.target_hypothesis.parameters['monosaccharide_identities'],
