@@ -149,7 +149,7 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
                     continue
                 accumulator.append(theoretical)
                 cntr += 1
-                if cntr > last + commit_interval == 0:
+                if cntr > (last + commit_interval):
                     session.bulk_save_objects(accumulator)
                     session.commit()
                     accumulator = []
@@ -162,7 +162,7 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
                 continue
             accumulator.append(theoretical)
             cntr += 1
-            if cntr > last + commit_interval == 0:
+            if cntr > last + commit_interval:
                 session.bulk_save_objects(accumulator)
                 session.commit()
                 accumulator = []

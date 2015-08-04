@@ -27,7 +27,7 @@ app = Flask(__name__)
 report.prepare_environment(app.jinja_env)
 
 DATABASE = None
-DEBUG = True
+DEBUG = False
 SECRETKEY = 'TG9yZW0gaXBzdW0gZG90dW0'
 
 manager = None
@@ -409,18 +409,22 @@ def inject_functions():
 parser = argparse.ArgumentParser('view-results')
 parser.add_argument("results_database")
 parser.add_argument("-n", "--no-execute-tasks", action="store_true", required=False, default=False)
+parser.add_argument("--external", action='store_true', requied=False, default=False, help='Let non-host machines connect to the server')
 
 
 def main():
     args = parser.parse_args()
     results_database = args.results_database
     global DATABASE, manager, CAN_EXECUTE
+    host = None
+    if args.external:
+        host = "0.0.0.0"
     DATABASE = results_database
     CAN_EXECUTE = not args.no_execute_tasks
     manager = ProjectManager(DATABASE)
     app.debug = DEBUG
     app.secret_key = SECRETKEY
-    app.run(use_reloader=False, threaded=True)
+    app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG)
 
 if __name__ == "__main__":
     main()

@@ -30,7 +30,7 @@ def taskmain(
 
     if observed_ions_type == 'bupid_yaml' and observed_ions_path[-3:] != '.db':
         comm.send(Message("Converting %s to db" % observed_ions_path))
-        parser = BUPIDMSMSYamlParser(observed_ions_path)
+        parser = BUPIDMSMSYamlParser(observed_ions_path, manager.bridge_address())
         observed_ions_path = parser.manager.path
         observed_ions_type = 'db'
         sample_name = parser.sample_run_name
