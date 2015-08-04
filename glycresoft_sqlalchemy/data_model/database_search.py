@@ -82,7 +82,7 @@ class GlycopeptideMatch(PeptideBase, Base):
     __tablename__ = "GlycopeptideMatch"
 
     id = Column(Integer, primary_key=True)
-    theoretical_glycopeptide_id = (Integer, ForeignKey(TheoreticalGlycopeptide.id))
+    theoretical_glycopeptide_id = Column(Integer, ForeignKey(TheoreticalGlycopeptide.id))
     hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
     hypothesis_sample_match = relationship(
         HypothesisSampleMatch, backref=backref("glycopeptide_matches", lazy='dynamic'))

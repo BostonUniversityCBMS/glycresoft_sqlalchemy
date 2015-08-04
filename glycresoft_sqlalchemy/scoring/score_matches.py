@@ -26,7 +26,7 @@ def apply(matched, theoretical, **parameters):
 
 def calculate_score(matched, backbone_weight=0.5, hexnac_weight=0.5, stub_weight=0.2):
     matched.ms2_score = (((matched.mean_coverage * backbone_weight) +
-                          (matched.mean_hexnac_coverage * hexnac_weight)) * 1 - stub_weight) +\
+                          (matched.mean_hexnac_coverage * hexnac_weight)) * (1 - stub_weight)) +\
                          (observed_vs_enumerated_stub(matched) * stub_weight)
     return matched
 
@@ -118,9 +118,9 @@ def mean_hexnac_coverage(matched, theoretical):
 
 def observed_vs_enumerated_stub(matched):
     obs = len({stub['key'].split(':')[0] for stub in matched.stub_ions})
-    expected = len(StubGlycopeptide.from_sequence(
-        Sequence(matched.glycopeptide_sequence)).get_stubs())
-    return obs/float(expected)
+    # expected = len(StubGlycopeptide.from_sequence(
+    #    Sequence(matched.glycopeptide_sequence)).get_stubs())
+    return min(obs / 3., 1.0)
 
 
 def bad_oxonium(matched, theoretical):
