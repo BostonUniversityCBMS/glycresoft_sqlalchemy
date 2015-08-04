@@ -125,14 +125,21 @@ def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_id
 
 
 class CSVExportDriver(PipelineModule):
-    def __init__(self, database_path, hypothesis_id, hypothesis_sample_match_ids=None, output_path=None):
+    def __init__(self, database_path, hypothesis_sample_match_ids=None, output_path=None):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
-        self.hypothesis_id = hypothesis_id
-        self.hypothesis = self.session.query(Hypothesis).get(self.hypothesis_id)
+
         if hypothesis_sample_match_ids is None:
-            hypothesis_sample_match_ids = [hsm.id for hsm in self.hypothesis.sample_matches]
-        self.hypothesis_sample_match_ids = hypothesis_sample_match_ids
+            hypothesis_sample_match_ids = [hsm.id for hsm in self.session.query(
+                HypothesisSampleMatch.id)]
+            self.hypothesis_sample_match_ids = hypothesis_sample_match_ids
+        else:
+            try:
+                iter(hypothesis_sample_match_ids)
+                self.hypothesis_sample_match_ids = hypothesis_sample_match_ids
+            except:
+                self.hypothesis_sample_match_ids = [hypothesis_sample_match_ids]
+
         if output_path is None:
             output_path = os.path.splitext(database_path)[0]
         self.output_path = output_path
@@ -142,10 +149,15 @@ class CSVExportDriver(PipelineModule):
         hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
         for res_type, query in hsm.results():
             if res_type == GlycopeptideMatch:
-                output_path = self.output_path + '.{}.glycopeptide_matches.csv'.format(os.path.splitext(hsm.name)[0])
-                export_glycopeptide_ms2_matches(query, output_path)
+                output_path = self.output_path + '.{}.glycopeptide_matches.csv'.format(
+                    os.path.splitext(hsm.name)[0])
+                # Only export target hypothesis
+                export_glycopeptide_ms2_matches(query.filter(
+                    GlycopeptideMatch.protein_id == Protein.id,
+                    Protein.hypothesis_id == hsm.target_hypothesis_id), output_path)
             elif res_type == TheoreticalGlycopeptideComposition:
-                output_path = self.output_path + '.{}.glycopeptide_compositions.csv'.format(os.path.splitext(hsm.name)[0])
+                output_path = self.output_path + '.{}.glycopeptide_compositions.csv'.format(
+                    os.path.splitext(hsm.name)[0])
                 export_glycopeptide_ms1_matches_legacy(
                     query,
                     self.hypothesis.parameters['monosaccharide_identities'],
@@ -158,31 +170,18 @@ class CSVExportDriver(PipelineModule):
 
 app = argparse.ArgumentParser("export-csv")
 
-app.add_argument("database_path", help="path to the database file to analyze")
-app.add_argument("-e", "--hypothesis-id", default=None, help="The hypothesis to analyze.")
+app.add_argument("database_path", help="path to the database file to export")
+app.add_argument("-e", "--hypothesis-sample-match-id", default=None, help="The hypothesis sample match to export.")
 app.add_argument("-o", "--out", default=None, help="Where to save the result")
 
 
 def main(database_path, hypothesis_id, out, include_ions_matched=True):
-    return export_matches_as_csv(database_path, hypothesis_id, out, include_ions_matched)
+    return CSVExportDriver(database_path, hypothesis_id, out, include_ions_matched).start()
 
 
 def taskmain():
     args = app.parse_args()
-    dbm = DatabaseManager(args.database_path)
-    session = dbm.session()
-    if args.hypothesis_id is None:
-        hypothesis_ids = [x[0] for x in session.query(Hypothesis.id).all()]
-    else:
-        hypothesis_ids = [args.hypothesis_id]
-    for hypothesis_id in hypothesis_ids:
-        if args.out is not None and len(hypothesis_ids) > 1:
-            parts = os.path.splitext(args.out)
-            name = session.query(Hypothesis.name).get(hypothesis_id)[0]
-            out = parts[0] + "_" + name + parts[1]
-        else:
-            out = args.out
-        main(args.database_path, hypothesis_id, out)
+    main(args.database_path, args.hypothesis_sample_match_id, args.out)
 
 
 if __name__ == '__main__':

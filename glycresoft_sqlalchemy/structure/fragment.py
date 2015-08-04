@@ -6,46 +6,32 @@ from ..utils.collectiontools import descending_combination_counter
 
 fragment_pairing = {
     "a": "x",
-    "A": "X",
     "b": "y",
-    "B": "Y",
     "c": "z",
-    "C": "Z",
     "x": "a",
-    "X": "A",
     "y": "b",
-    "Y": "B",
     "z": "c",
-    "Z": "C",
 }
 
-fragment_shift ={
+fragment_shift = {
     'b': Composition('H+').mass,
-    'B': Composition('H+').mass,
     'y': Composition('H2O').mass + Composition('H+').mass,
-    'Y': Composition('H2O').mass + Composition('H+').mass
 }
 
 fragment_direction = {
     "a": 1,
-    "A": 1,
     "b": 1,
-    "B": 1,
     "c": 1,
-    "C": 1,
     "x": -1,
-    "X": -1,
     "y": -1,
-    "Y": -1,
     "z": -1,
-    "Z": -1,
 }
 
 
 class Fragment(object):
     """Glycopeptide Fragment"""
 
-    parser = re.compile("(?P<kind>[abcxyzABCXYZ])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
+    parser = re.compile("(?P<kind>[abcxyz])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
 
     @classmethod
     def parse(cls, frag_name):
@@ -85,7 +71,7 @@ class Fragment(object):
         self.golden_pairs = golden_pairs
 
     def get(self):
-        """Simply return string like B2, Y3 with no modificaiton information."""
+        """Simply return string like b2, y3 with no modificaiton information."""
         fragment_name = []
         fragment_name.append(self.type)
         fragment_name.append(str(self.pos))

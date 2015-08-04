@@ -211,7 +211,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
             scan_ids = []
             # session = database_manager.session()
             for spectrum, peak_match_map in spectrum_matches:
-                scan_ids.append(spectrum.id)
+                scan_ids.append(spectrum.time)
 
             first_scan = min(scan_ids)
             last_scan = max(scan_ids)

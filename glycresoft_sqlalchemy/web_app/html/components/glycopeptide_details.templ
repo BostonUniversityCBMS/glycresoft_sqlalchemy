@@ -6,7 +6,17 @@
         </div>
         <div class='col s4'>
             <h6>Observed Mass</h6>
-            <span>{{glycopeptide.observed_mass}} ({{"%0.3e"|format(glycopeptide.ppm_error * 1.0/(1000000.0))}})</span>
+            <span>{{glycopeptide.observed_mass}} ({{"%0.3e"|format(glycopeptide.ppm_error)}})</span>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col s6'>
+            <h6>Scans</h6>
+            {% for spectrum_match in glycopeptide.spectrum_matches %}
+                <div>
+                {{spectrum_match.spectrum_id}}<br>{{spectrum_match.peak_match_map|length}}
+                </div>
+            {% endfor %}
         </div>
     </div>
     {% macro fragment_list(series) -%}

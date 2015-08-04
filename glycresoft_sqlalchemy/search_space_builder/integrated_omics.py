@@ -21,7 +21,7 @@ from ..structure import sequence
 from ..structure import modification
 from ..structure import composition
 from ..structure import constants
-from ..structure.stub_glycopeptides import StubGlycopeptide
+
 
 logger = logging.getLogger(__name__)
 
