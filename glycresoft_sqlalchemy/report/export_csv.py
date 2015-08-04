@@ -175,8 +175,8 @@ app.add_argument("-e", "--hypothesis-sample-match-id", default=None, help="The h
 app.add_argument("-o", "--out", default=None, help="Where to save the result")
 
 
-def main(database_path, hypothesis_id, out, include_ions_matched=True):
-    return CSVExportDriver(database_path, hypothesis_id, out, include_ions_matched).start()
+def main(database_path, hypothesis_id, out):
+    return CSVExportDriver(database_path, hypothesis_id, out).start()
 
 
 def taskmain():
