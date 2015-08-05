@@ -188,7 +188,7 @@ class Decon2LSPeakGrouper(PipelineModule):
                     expected_a_alpha + expected_a_beta * TDecon2LSPeakGroup.c.weighted_monoisotopic_mass))
                 )
         max_weight = conn.execute(select([func.max(TDecon2LSPeakGroup.c.weighted_monoisotopic_mass)])).scalar()
-        slices = [max_weight * float(i)/10. for i in range(1, 11)]
+        slices = [0] + [max_weight * float(i)/10. for i in range(1, 11)]
         for i in range(1, len(slices)):
             transaction = conn.begin()
             lower = slices[i - 1]
@@ -199,6 +199,14 @@ class Decon2LSPeakGrouper(PipelineModule):
                     lower, upper))
             conn.execute(step)
             transaction.commit()
+
+        transaction = conn.begin()
+        lower = slices[len(slices) - 1]
+        step = update_expr.where(
+            TDecon2LSPeakGroup.c.weighted_monoisotopic_mass >= lower)
+        conn.execute(step)
+        transaction.commit()
+
         conn.close()
 
     def run(self):
@@ -728,7 +736,10 @@ class PeakGroupClassification(PipelineModule):
         data_model_session = self.database_manager.session()
         conn = data_model_session.connection()
         feature_matrix = np.array(conn.execute(select(features)).fetchall(), dtype=np.float64)
-        label_vector = np.array(conn.execute(select(label)).fetchall())
+        # Drop all rows containing nan
+        mask = ~np.isnan(feature_matrix).any(axis=1)
+        feature_matrix = feature_matrix[mask]
+        label_vector = np.array(conn.execute(select(label)).fetchall())[mask]
         classifier = ClassifierType()
         if self.model_parameters is None:
             classifier.fit(feature_matrix, label_vector.ravel())

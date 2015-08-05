@@ -231,7 +231,10 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                 calculated_mass=theoretical.calculated_mass,
                 volume=theoretical.volume,
                 ppm_error=theoretical.ppm_error,
+
                 glycan_composition_str=theoretical.glycan_composition_str,
+                glycans=theoretical.glycans,
+
                 base_peptide_sequence=theoretical.base_peptide_sequence,
                 modified_peptide_sequence=theoretical.modified_peptide_sequence,
                 glycopeptide_sequence=theoretical.glycopeptide_sequence,

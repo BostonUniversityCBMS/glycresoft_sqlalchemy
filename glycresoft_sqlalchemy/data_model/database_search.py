@@ -83,6 +83,7 @@ class GlycopeptideMatch(PeptideBase, Base):
 
     id = Column(Integer, primary_key=True)
     theoretical_glycopeptide_id = Column(Integer, ForeignKey(TheoreticalGlycopeptide.id))
+    theoretical_reference = relationship(TheoreticalGlycopeptide)
     hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
     hypothesis_sample_match = relationship(
         HypothesisSampleMatch, backref=backref("glycopeptide_matches", lazy='dynamic'))
@@ -133,7 +134,7 @@ class SpectrumMatch(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     spectrum_id = Column(Integer)
     glycopeptide_match_id = Column(Integer, ForeignKey(GlycopeptideMatch.id), index=True)
-    peak_match_map = Column(PickleType)
+    peak_match_map = Column(MutableDict.as_mutable(PickleType))
 
     def __repr__(self):
         return "<SpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
