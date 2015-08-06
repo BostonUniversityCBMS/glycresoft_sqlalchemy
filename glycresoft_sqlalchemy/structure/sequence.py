@@ -285,32 +285,6 @@ class Sequence(PeptideSequenceBase):
             for mod in mods:
                 self.drop_modification(i, mod)
 
-    def break_golden_pair(self, frag):
-        if isinstance(frag, Fragment):
-            kind = frag.type
-            pos = frag.pos
-        else:
-            frag = Fragment.parse(frag)
-            kind = frag['kind']
-            pos = int(frag['position'])
-        length = len(self)
-        golden_pair_pos = length - pos
-        golden_pair_kind = fragment_pairing[kind]
-        golden_pair_direction = fragment_direction[golden_pair_kind]
-
-        mod_dict = defaultdict(int)
-        if fragment_direction[kind] > 0:
-            walk_path = range(pos, length)
-        else:
-            walk_path = range(golden_pair_pos - 1, 0, -1)
-        for i in walk_path:
-            for mod in self[i][1]:
-                mod_dict[mod.name] += 1
-
-        modification_block = Fragment.modification_name_block(mod_dict)
-        golden_pair_name = "{golden_pair_kind}{golden_pair_pos}{modification_block}".format(**locals())
-        return golden_pair_name
-
     def break_at(self, idx):
         b_shift = fragment_shift['b']
         y_shift = fragment_shift['y']
@@ -329,7 +303,7 @@ class Sequence(PeptideSequenceBase):
             residues_in_b.append(self.seq[pos][0].symbol)
             mass_b += self.seq[pos][0].mass
 
-        b_frag = Fragment("B", pos + structure_constants.FRAG_OFFSET, mod_b, mass_b + b_shift)
+        b_frag = Fragment("b", pos + structure_constants.FRAG_OFFSET, mod_b, mass_b + b_shift)
 
         break_point = pos + 1
         residues_in_y = []
@@ -340,7 +314,7 @@ class Sequence(PeptideSequenceBase):
             mass_y += self.seq[pos][0].mass
 
         y_frag = Fragment(
-            "Y", len(self) - (break_point - 1 + structure_constants.FRAG_OFFSET), mod_y, mass_y + y_shift)
+            "y", len(self) - (break_point - 1 + structure_constants.FRAG_OFFSET), mod_y, mass_y + y_shift)
         if structure_constants.PARTIAL_HEXNAC_LOSS:
             b_frag.golden_pairs = [frag.name for frag in y_frag.partial_loss()]
             y_frag.golden_pairs = [frag.name for frag in b_frag.partial_loss()]
@@ -364,12 +338,12 @@ class Sequence(PeptideSequenceBase):
         # And the first element is always bare fragment.
         # The total number of HexNAc on the fragment should be recorded.
 
-        if kind == 'B' or kind == "b":
+        if kind == "b":
             seq_list = self.seq
             # Hydrogen ionized is from terminal modification
             mass_shift = fragment_shift['b']
 
-        elif kind == 'Y' or kind == "y":
+        elif kind == "y":
             # y ions abstract a proton from the precursor
             mass_shift = fragment_shift['y']
             seq_list = list(reversed(self.seq))
@@ -401,12 +375,6 @@ class Sequence(PeptideSequenceBase):
             else:
                 frag = Fragment(kind, idx + structure_constants.FRAG_OFFSET, copy.copy(mod_dict), current_mass)
                 frag_dri.extend(frag.partial_loss())
-                # for num in range(0, hn_num + 1):
-                #     new_dict = copy.copy(mod_dict)
-                #     if num != 0:
-                #         new_dict['HexNAc'] = num
-                #     frag = Fragment(kind, idx + structure_constants.FRAG_OFFSET, new_dict, current_mass)
-                #     frag_dri.append(frag)
             yield frag_dri
 
     def drop_modification(self, pos, mod_type):

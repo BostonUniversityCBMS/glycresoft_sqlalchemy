@@ -22,6 +22,7 @@ from glycresoft_sqlalchemy.web_app.task.do_bupid_yaml_parse import BUPIDYamlPars
 from glycresoft_sqlalchemy.web_app.task.do_decon2ls_parse import Decon2LSIsosParseTask
 from glycresoft_sqlalchemy.web_app.task.do_ms2_search import TandemMSGlycoproteomicsSearchTask
 from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
+from glycresoft_sqlalchemy.web_app.task.dummy import DummyTask
 
 app = Flask(__name__)
 report.prepare_environment(app.jinja_env)
@@ -180,6 +181,19 @@ def view_glycopeptide_details(id):
         "components/glycopeptide_details.templ", glycopeptide=gpm)
 
 
+@app.route("/view_database_search_results/export_csv/<int:id>")
+def export_csv_task(id):
+    hypothesis_sample_match = g.db.query(HypothesisSampleMatch).get(id)
+
+    ## Architecture
+    # Launch CSV writer task in a separate process. Have it emit files
+    # to a known location, and when it completes, send an event to prompt
+    # the client to download those files.
+    task = DummyTask()
+
+    manager.add_task(task)
+    return jsonify(target=hypothesis_sample_match.to_json())
+
 # ----------------------------------------
 #           JSON Data API Calls
 # ----------------------------------------
@@ -240,11 +254,6 @@ def view_hypothesis(id):
 @app.route("/glycan_search_space")
 def build_naive_glycan_search():
     return render_template("glycan_search_space.templ")
-
-
-# ----------------------------------------
-#
-# ----------------------------------------
 
 
 @app.route("/glycan_search_space", methods=["POST"])

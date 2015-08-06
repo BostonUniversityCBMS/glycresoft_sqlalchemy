@@ -18,7 +18,7 @@ glycan_losses = {
 }
 
 
-class StubGlycopeptide:
+class StubGlycopeptide(object):
 
     """Calculates peptide and stub glycopeptide ions, also returns oxonium ions based on glycan composition"""
 

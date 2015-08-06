@@ -141,7 +141,7 @@ class ModificationTargetPattern(ModificationTarget):
             return False
         if(isinstance(sequence, PeptideSequenceBase)):
             target_slice = ''.join(
-                [pos for pos in sequence.getSequence((position - self.offset))])
+                [pos for pos in sequence.get_sequence((position - self.offset))])
         else:
             target_slice = sequence[(position - self.offset):]
         matched = self.pattern.search(target_slice)
@@ -371,6 +371,39 @@ class AminoAcidSubstitution(AnonymousModificationRule):
         return "{name}:{delta}".format(**self.__dict__)
 
 
+class Glycosylation(ModificationRule):
+    parser = re.compile(r"@(?P<glycan_composition>\{[^\}]+\})")
+
+    def __init__(self, glycan_composition):
+        self.name = "@" + glycan_composition.serialize()
+        self.mass = glycan_composition.mass()
+
+    def losses(self):
+        for i in []:
+            yield i
+
+
+class NGlycanCoreGlycosylation(Glycosylation):
+    mass_ladder = {
+        "{HexpNAc:1}": 203.079372,
+        "{HexpNAc:2}": 406.158745,
+        "{HexpNAc:2, Hexp:1}": 586.222133,
+        "{HexpNAc:2, Hexp:2}": 730.264391,
+        "{HexpNAc:2, Hexp:3}": 892.317215
+    }
+
+    def __init__(self, base_mass=203.07937):
+        self.name = "HexNAc"
+        self.mass = base_mass
+        self.title = "NGlycanCoreGlycosylation"
+        self.unimod_name = "HexNAc"
+        self.targets = ModificationTarget("N")
+
+    def losses(self):
+        for label_loss in self.mass_ladder.items():
+            yield label_loss
+
+
 def load_from_csv(stream):
     modification_definitions = []
     parser = csv.DictReader(stream)
@@ -401,7 +434,7 @@ class ModificationTable(dict):
     # Other objects that are described as Modifications that don't appear in
     # Protein Prospector output
     other_modifications = {
-        "HexNAc": ModificationRule("N", "HexNAc", "HexNAc", 203.07937),
+        "HexNAc": NGlycanCoreGlycosylation(),
         #"pyroGlu": ModificationRule("Q", "pyroGlu", "pyroGlu", -17.02655),
         "H": ModificationRule("N-term", "H", "H", composition_to_mass("H")),
         "OH": ModificationRule("C-term", "OH", "OH", composition_to_mass("OH")),

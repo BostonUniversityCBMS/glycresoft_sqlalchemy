@@ -74,7 +74,6 @@ def merge_compositions(composition_list):
     ]))))
 
 
-
 def _glycan_product_coreblock(session, group, n, hypothesis_id, uniqueness_cache=None):
     for glycan in session.execute(select(
             [GlycanTable.c.id, GlycanTable.c.mass, GlycanTable.c.composition]).where(

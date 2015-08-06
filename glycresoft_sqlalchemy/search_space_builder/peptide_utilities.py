@@ -74,7 +74,6 @@ def unpositioned_isoforms(
     try:
         sequons = theoretical_peptide.n_glycan_sequon_sites
     except:
-        print 'ding', theoretical_peptide
         sequons = n_glycan_sequon_sites(theoretical_peptide)
     variable_modifications = {
         modification_table[mod] for mod in variable_modifications}

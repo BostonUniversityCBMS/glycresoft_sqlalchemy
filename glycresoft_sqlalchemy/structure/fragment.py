@@ -97,8 +97,7 @@ class Fragment(object):
         fragment_name.append(str(self.pos))
 
         # Only concerned modifications are reported.
-        concerned_mod = ['HexNAc']
-        for mod_name in concerned_mod:
+        for mod_name in self.concerned_mod:
             if mod_name in self.mod_dict:
                 if self.mod_dict[mod_name] > 1:
                     fragment_name.extend(['+', str(self.mod_dict[mod_name]), mod_name])

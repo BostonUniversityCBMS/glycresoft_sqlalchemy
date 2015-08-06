@@ -19,14 +19,20 @@ class GlycoproteinMicroheterogeneitySummary(object):
         site_map = {}
         for site in self.site_list:
             species = defaultdict(list)
-            for start, end, glycan_composition, volume, ms2_score in self.filter_fn(object_session(
+            scan_id_ranges = set()
+            for start, end, glycan_composition, volume, ms2_score, scan_id_range in self.filter_fn(object_session(
                     self.protein).query(GlycopeptideMatch.start_position,
                                         GlycopeptideMatch.end_position,
                                         GlycopeptideMatch.glycan_composition_str,
                                         GlycopeptideMatch.volume,
-                                        GlycopeptideMatch.ms2_score).filter(
+                                        GlycopeptideMatch.ms2_score,
+                                        GlycopeptideMatch.scan_id_range).filter(
                     GlycopeptideMatch.spans(site),
                     GlycopeptideMatch.protein_id == self.protein.id)):
+                scan_id_range = tuple(scan_id_range)
+                if scan_id_range in scan_id_ranges:
+                    continue
+                scan_id_ranges.add(scan_id_range)
                 species[glycan_composition].append(volume)
             site_map[site] = {k: sum(v)/float(len(v)) for k, v in species.items()}
         self.site_to_glycan_map = site_map
