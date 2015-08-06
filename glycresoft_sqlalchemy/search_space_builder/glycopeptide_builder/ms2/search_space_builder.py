@@ -121,7 +121,8 @@ class MS1GlycopeptideResult(object):
                  oxonium_ions=None,
                  id=None,
                  glycopeptide_sequence=None,
-                 modified_peptide_sequence=None):
+                 modified_peptide_sequence=None,
+                 composition_id=None):
         self.ms1_score = score
         self.calculated_mass = calculated_mass
         self.observed_mass = observed_mass
@@ -139,6 +140,7 @@ class MS1GlycopeptideResult(object):
         self.id = id
         self.glycopeptide_sequence = glycopeptide_sequence
         self.modified_peptide_sequence = modified_peptide_sequence
+        self.composition_id = composition_id
 
     @property
     def most_detailed_sequence(self):
