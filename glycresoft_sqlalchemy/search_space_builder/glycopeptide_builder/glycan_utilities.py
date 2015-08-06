@@ -4,7 +4,7 @@ from collections import deque
 
 from sqlalchemy.sql import select
 
-from ..data_model import Glycan
+from glycresoft_sqlalchemy.data_model import Glycan
 
 logger = logging.getLogger("glycan_utilities")
 

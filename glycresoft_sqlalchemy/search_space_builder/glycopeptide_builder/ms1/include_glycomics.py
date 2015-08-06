@@ -3,10 +3,10 @@ try:
     logger = logging.getLogger("include_glycomics")
 except:
     pass
-from ..data_model import DatabaseManager, Glycan, TheoreticalGlycopeptide, Protein, GlycopeptideMatch, Hypothesis
-from ..data_model import PipelineModule
+from glycresoft_sqlalchemy.data_model import DatabaseManager, Glycan, TheoreticalGlycopeptide, Protein, GlycopeptideMatch, Hypothesis
+from glycresoft_sqlalchemy.data_model import PipelineModule
 
-from ..structure import glycans as ms1_glycomics
+from glycresoft_sqlalchemy.structure import glycans as ms1_glycomics
 
 glycan_file_type_map = {
     "hypothesis": ms1_glycomics.GlycanHypothesis,

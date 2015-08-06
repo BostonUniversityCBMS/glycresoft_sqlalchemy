@@ -32,6 +32,7 @@ class Fragment(object):
     """Glycopeptide Fragment"""
 
     parser = re.compile("(?P<kind>[abcxyz])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
+    concerned_mods = ['HexNAc']
 
     @classmethod
     def parse(cls, frag_name):
@@ -50,8 +51,6 @@ class Fragment(object):
                     name_block.extend(['+', mod_name])
 
         return "".join(name_block)
-
-    concerned_mods = ['HexNAc']
 
     def __init__(self, frag_type, pos, mod_dict, mass, golden_pairs=None):
         if golden_pairs is None:

@@ -34,7 +34,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for site, composition_volumes in site_summary %}
+                    {% for site, composition_volumes in site_summary | sort%}
                     <tr>
                         <td>{{site}}</td>
                         <td>{{composition_volumes|length}}</td>

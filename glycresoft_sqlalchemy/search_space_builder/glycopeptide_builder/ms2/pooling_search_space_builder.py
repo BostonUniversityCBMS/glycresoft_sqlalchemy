@@ -2,7 +2,6 @@ import multiprocessing
 import logging
 import functools
 
-from ..data_model import TheoreticalGlycopeptide
 from .search_space_builder import (MS1GlycopeptideResult,
                                    get_peptide_modifications, get_search_space,
                                    generate_fragments, TheoreticalSearchSpaceBuilder)

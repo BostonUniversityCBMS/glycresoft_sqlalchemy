@@ -7,14 +7,14 @@ except:
     pass
 
 
-from .peptide_utilities import SiteListFastaFileParser
+from ..peptide_utilities import SiteListFastaFileParser
 
-from ..data_model import DatabaseManager, Hypothesis, Protein
-from ..data_model import PipelineModule
+from glycresoft_sqlalchemy.data_model import DatabaseManager, Hypothesis, Protein
+from glycresoft_sqlalchemy.data_model import PipelineModule
 
-from ..proteomics.mzid_sa import Proteome as MzIdentMLProteome
+from glycresoft_sqlalchemy.proteomics.mzid_sa import Proteome as MzIdentMLProteome
 
-from ..structure.sequence import find_n_glycosylation_sequons
+from glycresoft_sqlalchemy.structure.sequence import find_n_glycosylation_sequons
 
 
 class ProteomeImporter(PipelineModule):

@@ -2,8 +2,8 @@ import re
 import csv
 import itertools
 
-from ..structure import sequence, constants
-from ..structure import stub_glycopeptides
+from glycresoft_sqlalchemy.structure import sequence, constants
+from glycresoft_sqlalchemy.structure import stub_glycopeptides
 
 Sequence = sequence.Sequence
 StubGlycopeptide = stub_glycopeptides.StubGlycopeptide

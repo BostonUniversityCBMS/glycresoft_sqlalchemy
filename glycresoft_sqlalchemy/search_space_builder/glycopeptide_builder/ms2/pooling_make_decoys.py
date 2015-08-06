@@ -3,7 +3,7 @@ import functools
 import itertools
 import logging
 
-from ..data_model import TheoreticalGlycopeptide
+from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide
 
 from .make_decoys import (DecoySearchSpaceBuilder, strip_modifications, decoy_type_map,
                           reverse_preserve_sequon, fragments)

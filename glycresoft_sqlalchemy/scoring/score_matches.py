@@ -1,6 +1,7 @@
 import re
 import itertools
 import operator
+import math
 
 from ..data_model import GlycopeptideMatch, TheoreticalGlycopeptide, DatabaseManager
 from ..utils import collectiontools
@@ -19,7 +20,7 @@ glycosylated_ion_pattern = re.compile(r"[czby](\d+)\+(.+)")
 
 
 def evaluate(matched, theoretical, **parameters):
-    matched.mean_coverage = mean_coverage(matched)
+    matched.mean_coverage = mean_coverage2(matched)
     matched.mean_hexnac_coverage = mean_hexnac_coverage(matched, theoretical)
     calculate_score(matched, **parameters)
 
@@ -58,25 +59,25 @@ def vsum(a, b):
     return [x + y for x, y in zip(a, b)]
 
 
-def compute_backbone_vectors(matched):
+def compute_backbone_vectors(matched, incvec=incvec_spread):
     sequence = Sequence(matched.glycopeptide_sequence)
     sequence_length = len(sequence)
 
     b_ions = [0.] * sequence_length
     for b_ion in stream_backbone_coordinate(matched.bare_b_ions):
-        incvec_spread(b_ions, b_ion)
+        incvec(b_ions, b_ion)
 
     glycosylated_b_ions = [0.] * sequence_length
     for b_ion in stream_backbone_coordinate(matched.glycosylated_b_ions):
-        incvec_spread(glycosylated_b_ions, b_ion)
+        incvec(glycosylated_b_ions, b_ion)
 
     y_ions = [0.] * sequence_length
     for y_ion in stream_backbone_coordinate(matched.bare_y_ions):
-        incvec_spread(y_ions, sequence_length - y_ion, sequence_length)
+        incvec(y_ions, sequence_length - y_ion, sequence_length)
 
     glycosylated_y_ions = [0.] * sequence_length
     for y_ion in stream_backbone_coordinate(matched.glycosylated_y_ions):
-        incvec_spread(glycosylated_y_ions, sequence_length - y_ion, sequence_length)
+        incvec(glycosylated_y_ions, sequence_length - y_ion, sequence_length)
 
     return b_ions, glycosylated_b_ions, y_ions, glycosylated_y_ions
 
@@ -104,6 +105,14 @@ def mean_coverage(matched):
     coverage = mean(vsum(bitwise_or(b_ions, glycosylated_b_ions), bitwise_or(y_ions, glycosylated_y_ions)))
     coverage /= 1. * sequence_length
 
+    return coverage
+
+
+def mean_coverage2(matched):
+    b_ions, glycosylated_b_ions, y_ions, glycosylated_y_ions = compute_backbone_vectors(matched, incvec_spot)
+    coverage = vsum(bitwise_or(b_ions, glycosylated_b_ions), bitwise_or(y_ions, glycosylated_y_ions))
+    # This normalization constant keeps the sum very close to 1.0 in a perfect case.
+    coverage = sum([math.log(1 + i, 2)/(1.584962500723) for i in coverage]) / (1. * len(coverage))
     return coverage
 
 

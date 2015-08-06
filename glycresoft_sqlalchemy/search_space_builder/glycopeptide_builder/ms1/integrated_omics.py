@@ -6,21 +6,21 @@ import functools
 import os
 from multiprocessing import Pool
 
-from ..data_model import (Hypothesis, MS1GlycopeptideHypothesis, Protein, TheoreticalGlycopeptide,
+from glycresoft_sqlalchemy.data_model import (Hypothesis, MS1GlycopeptideHypothesis, Protein, TheoreticalGlycopeptide,
                           Glycan, DatabaseManager, TheoreticalGlycopeptideCompositionGlycanAssociation,
                           func, TheoreticalGlycopeptideComposition)
-from ..data_model.informed_proteomics import (InformedPeptide, InformedTheoreticalGlycopeptideComposition)
-from ..data_model import PipelineModule
-from ..utils.worker_utils import async_worker_pool
+from glycresoft_sqlalchemy.data_model.informed_proteomics import (InformedPeptide, InformedTheoreticalGlycopeptideComposition)
+from glycresoft_sqlalchemy.data_model import PipelineModule
+from glycresoft_sqlalchemy.utils.worker_utils import async_worker_pool
 from .include_glycomics import MS1GlycanImporter
 from .include_proteomics import ProteomeImporter
-from .glycan_utilities import get_glycan_combinations, merge_compositions
-from .utils import flatten
+from ..glycan_utilities import get_glycan_combinations, merge_compositions
+from ..utils import flatten
 
-from ..structure import sequence
-from ..structure import modification
-from ..structure import composition
-from ..structure import constants
+from glycresoft_sqlalchemy.structure import sequence
+from glycresoft_sqlalchemy.structure import modification
+from glycresoft_sqlalchemy.structure import composition
+from glycresoft_sqlalchemy.structure import constants
 
 
 logger = logging.getLogger(__name__)

@@ -4,13 +4,13 @@ import functools
 import itertools
 import logging
 
-from ..structure import sequence
-from ..structure.parser import sequence_tokenizer_respect_sequons, sequence_tokenizer
+from glycresoft_sqlalchemy.structure import sequence
+from glycresoft_sqlalchemy.structure.parser import sequence_tokenizer_respect_sequons, sequence_tokenizer
 
-from ..data_model import TheoreticalGlycopeptide, Hypothesis, MS2GlycopeptideHypothesis, Protein, DatabaseManager
-from ..data_model import PipelineModule
+from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide, Hypothesis, MS2GlycopeptideHypothesis, Protein, DatabaseManager
+from glycresoft_sqlalchemy.data_model import PipelineModule
 
-from .utils import fragments
+from ..utils import fragments
 
 Sequence = sequence.Sequence
 

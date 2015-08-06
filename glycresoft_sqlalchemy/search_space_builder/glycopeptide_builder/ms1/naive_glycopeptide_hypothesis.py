@@ -5,15 +5,18 @@ import functools
 import itertools
 import multiprocessing
 
-from ..data_model import (DatabaseManager, MS1GlycopeptideHypothesis, Protein, NaivePeptide,
-                          TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func)
-from .include_glycomics import MS1GlycanImporter
-from .peptide_utilities import generate_peptidoforms, ProteinFastaFileParser, SiteListFastaFileParser
-from .glycan_utilities import get_glycan_combinations, merge_compositions
-from .utils import flatten
+from glycresoft_sqlalchemy.data_model import (
+    DatabaseManager, MS1GlycopeptideHypothesis, Protein, NaivePeptide,
+    TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func)
 
-from ..structure import composition
-from ..utils.worker_utils import async_worker_pool
+from .include_glycomics import MS1GlycanImporter
+
+from ..peptide_utilities import generate_peptidoforms, ProteinFastaFileParser, SiteListFastaFileParser
+from ..glycan_utilities import get_glycan_combinations, merge_compositions
+from ..utils import flatten
+
+from glycresoft_sqlalchemy.structure import composition
+from glycresoft_sqlalchemy.utils.worker_utils import async_worker_pool
 Composition = composition.Composition
 
 format_mapping = {

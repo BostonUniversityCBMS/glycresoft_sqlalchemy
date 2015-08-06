@@ -3,26 +3,23 @@ import os
 import re
 import datetime
 import multiprocessing
-import threading
 import logging
-
 import functools
 
-from ..structure.modification import RestrictedModificationTable
-from ..structure.modification import ModificationTable
-from ..structure.sequence import Sequence
-from ..structure.sequence_space import SequenceSpace
-from ..structure.stub_glycopeptides import StubGlycopeptide
-from ..structure import constants
-from ..proteomics import get_enzyme, msdigest_xml_parser
+from glycresoft_sqlalchemy.structure.modification import RestrictedModificationTable
+from glycresoft_sqlalchemy.structure.modification import ModificationTable
+from glycresoft_sqlalchemy.structure.sequence_space import SequenceSpace
+from glycresoft_sqlalchemy.structure.stub_glycopeptides import StubGlycopeptide
+from glycresoft_sqlalchemy.structure import constants
+from glycresoft_sqlalchemy.proteomics import get_enzyme, msdigest_xml_parser
 
-from .. import data_model as model
-from .peptide_utilities import SiteListFastaFileParser
-from ..data_model import (PipelineModule, Hypothesis,
-                          MS2GlycopeptideHypothesis,
-                          HypothesisSampleMatch, PeakGroupMatch, Protein,
-                          TheoreticalGlycopeptideGlycanAssociation,
-                          TheoreticalGlycopeptide)
+from glycresoft_sqlalchemy import data_model as model
+from ..peptide_utilities import SiteListFastaFileParser
+from glycresoft_sqlalchemy.data_model import (
+    PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
+    HypothesisSampleMatch, PeakGroupMatch, Protein,
+    TheoreticalGlycopeptideGlycanAssociation,
+    TheoreticalGlycopeptide)
 
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)(\w+)')
@@ -85,7 +82,8 @@ class MS1GlycopeptideResult(object):
             base_peptide_sequence=base_peptide_sequence, peptide_modifications=peptide_modifications,
             count_missed_cleavages=count_missed_cleavages, count_glycosylation_sites=count_glycosylation_sites,
             ppm_error=ppm_error, volume=volume, start_pos=start_pos, end_pos=end_pos,
-            glycan_composition_map=glycan_composition_map, protein_name=protein_name)
+            glycan_composition_map=glycan_composition_map, protein_name=protein_name,
+            composition_id=None)
 
     @classmethod
     def from_peak_group_match(cls, peak_group_match=None, theoretical=None):
@@ -103,7 +101,7 @@ class MS1GlycopeptideResult(object):
             count_glycosylation_sites=theoretical.count_glycosylation_sites,
             ppm_error=pgm.ppm_error, volume=pgm.total_volume,
             start_pos=theoretical.start_position, end_pos=theoretical.end_position,
-            protein_name=theoretical.protein.name)
+            protein_name=theoretical.protein.name, composition_id=theoretical.id)
 
     def __init__(self, score=None,
                  calculated_mass=None,
@@ -320,7 +318,8 @@ def generate_fragments(seq, ms1_result):
         oxonium_ions=oxonium_ions,
         stub_ions=stub_ions,
         glycosylated_b_ions=b_ions_hexnac,
-        glycosylated_y_ions=y_ions_hexnac
+        glycosylated_y_ions=y_ions_hexnac,
+        base_composition_id=ms1_result.composition_id
         )
     return theoretical_glycopeptide
 
