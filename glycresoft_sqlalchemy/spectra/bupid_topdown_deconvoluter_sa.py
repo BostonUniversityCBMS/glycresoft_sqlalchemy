@@ -260,6 +260,7 @@ class StreamingYAMLRenderer(object):
                 elif isinstance(event, MappingEndEvent):
                     if len(scans) == 0:
                         continue
+                    scan_time = scans[0]['id']
                     precursor_charge_state = scans[0]['z']
                     precursor_neutral_mass = neutral_mass(scans[0]['mz'], precursor_charge_state)
                     logger.info("Scan Time %d", scan_time)
@@ -299,7 +300,7 @@ class StreamingYAMLRenderer(object):
                         else:
                             value = float(event.value)
                         if current_key == 'id':
-                            scan_time = value
+                            pass
                         elif current_list is not None:
                             current_list(value)
 
