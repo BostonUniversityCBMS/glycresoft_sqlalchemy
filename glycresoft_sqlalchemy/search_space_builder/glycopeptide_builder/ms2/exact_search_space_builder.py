@@ -87,7 +87,8 @@ def generate_fragments(seq, ms1_result):
         stub_ions=stub_ions,
         glycosylated_b_ions=b_ions_hexnac,
         glycosylated_y_ions=y_ions_hexnac,
-        protein_id=ms1_result.protein_name
+        protein_id=ms1_result.protein_name,
+        base_composition_id=ms1_result.composition_id
         )
     return theoretical_glycopeptide
 
