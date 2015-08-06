@@ -57,7 +57,8 @@ def export_glycopeptide_ms2_matches(glycopeptides, output_path):
             "id", "ms1_score", "ms2_score", "q_value", "observed_mass", "volume", "ppm_error",
             "scan_id_range", "glycopeptide_sequence", "sequence_length", "mean_coverage", "mean_hexnac_coverage",
             "stub_ion_count", "bare_b_ion_coverage", "bare_y_ion_coverage", "glycosylated_b_ion_coverage",
-            "glycosylated_y_ion_coverage", "protein_name", "b_ions", "y_ions", 'stub_ions', 'oxonium_ions'
+            "glycosylated_y_ion_coverage", "protein_name", "b_ions", "y_ions", 'stub_ions', 'oxonium_ions',
+            "start_position", "end_position"
         ]
         writer.writerow(header)
         for gpm in glycopeptides.yield_per(1000):
@@ -76,7 +77,8 @@ def export_glycopeptide_ms2_matches(glycopeptides, output_path):
                 ";".join([ion['key'] for series in [gpm.bare_y_ions, gpm.glycosylated_y_ions]
                           for ion in series]),
                 ";".join([ion['key'] for ion in gpm.stub_ions]),
-                ";".join([ion['key'] for ion in gpm.oxonium_ions])
+                ";".join([ion['key'] for ion in gpm.oxonium_ions]),
+                gpm.start_position, gpm.end_position
 
             ]
             writer.writerow(row)
