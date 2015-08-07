@@ -751,7 +751,7 @@ class PeakGroupClassification(PipelineModule):
             if mask[row_index]:
                 conn.execute(
                     TPeakGroupMatch.update().where(
-                        TPeakGroupMatch.c.peak_group_id == group_id).values(
+                        TPeakGroupMatch.c.peak_group_id == group_id[0]).values(
                         ms1_score=float(scores[i])))
                 i += 1
         data_model_session.commit()
