@@ -286,7 +286,7 @@ def build_naive_glycopeptide_search_space_post():
     site_list = request.files["glycosylation-site-list-file"]
     glycan_file = request.files["glycan-definition-file"]
     glycan_file_type = values.get("glycans-file-format")
-    max_missed_cleavages = values.get("missed_cleavages")
+    max_missed_cleavages = int(values.get("missed_cleavages"))
 
     secure_protein_fasta = manager.get_temp_path(secure_filename(protein_fasta.filename))
     secure_site_list_file = manager.get_temp_path(secure_filename(site_list.filename))
@@ -348,7 +348,7 @@ def tandem_match_samples_post():
     return jsonify(**dict(request.values))
 
 # ----------------------------------------
-#
+# Sample Management
 # ----------------------------------------
 
 
@@ -390,6 +390,22 @@ def post_add_sample():
 def add_sample():
     return render_template("add_sample_form.templ")
 
+
+# ----------------------------------------
+# Server Shutdown
+# ----------------------------------------
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+
+
+@app.route('/internal/shutdown', methods=['POST'])
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
 
 # ----------------------------------------
 #

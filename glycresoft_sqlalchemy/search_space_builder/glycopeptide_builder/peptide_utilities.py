@@ -92,7 +92,10 @@ def unpositioned_isoforms(
                 mod: sites -
                 sequons_occupied for mod,
                 sites in variable_sites.items()}
-            mods, sites = zip(*avail_sites.items())
+            try:
+                mods, sites = zip(*avail_sites.items())
+            except:
+                mods, sites = [], []
             site_combinations = product(*map(growing_combinations, sites))
             for comb in site_combinations:
                 assignments = {}

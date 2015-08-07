@@ -747,12 +747,13 @@ class PeakGroupClassification(PipelineModule):
             classifier.coef_ = np.asarray(self.model_parameters)
         scores = classifier.predict_proba(feature_matrix)[:, 1]
         i = 0
-        for group_id, in conn.execute(select(ids)):
-            conn.execute(
-                TPeakGroupMatch.update().where(
-                    TPeakGroupMatch.c.peak_group_id == group_id).values(
-                    ms1_score=scores[i]))
-            i += 1
+        for row_index, group_id, in enumerate(conn.execute(select(ids))):
+            if mask[row_index]:
+                conn.execute(
+                    TPeakGroupMatch.update().where(
+                        TPeakGroupMatch.c.peak_group_id == group_id).values(
+                        ms1_score=scores[i]))
+                i += 1
         data_model_session.commit()
         return classifier
 

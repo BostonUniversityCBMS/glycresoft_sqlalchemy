@@ -65,6 +65,16 @@ class Hypothesis(Base):
     }
 
 
+class MS1GlycanHypothesis(Hypothesis):
+    __tablename__ = "MS1GlycanHypothesis"
+
+    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'MS1GlycanHypothesis',
+    }
+
+
 class MS1GlycopeptideHypothesis(Hypothesis):
     __tablename__ = "MS1GlycopeptideHypothesis"
 

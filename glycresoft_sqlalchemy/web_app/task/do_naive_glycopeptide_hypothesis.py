@@ -6,7 +6,7 @@ from .task_process import NullPipe, Message, Task
 def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
              glycan_file, glycan_file_type, constant_modifications,
              variable_modifications, enzyme, max_missed_cleavages=1,
-             n_processes=4, comm=None):
+             comm=None, **kwargs):
     if comm is None:
         comm = NullPipe()
     manager = DatabaseManager(database_path)
@@ -22,7 +22,7 @@ def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
             variable_modifications=variable_modifications,
             enzyme=enzyme,
             max_missed_cleavages=max_missed_cleavages,
-            n_processes=n_processes
+            n_processes=kwargs.get("n_processes", 4)
             )
         hypothesis_id = task.start()
         if task.status != 0:

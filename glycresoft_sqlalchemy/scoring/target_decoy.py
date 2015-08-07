@@ -4,7 +4,7 @@ try:
 except:
     pass
 from itertools import chain
-from collections import namedtuple, Counter, defaultdict
+from collections import namedtuple, Counter, OrderedDict
 
 from sqlalchemy import func, distinct
 from ..data_model import DatabaseManager, GlycopeptideMatch, Protein
@@ -69,7 +69,7 @@ class TargetDecoyAnalyzer(PipelineModule):
             Protein.hypothesis_id == self.target_id).all()
 
         running_total = 0
-        targets_above = {}
+        targets_above = OrderedDict()
         for score, at in targets:
             targets_above[score] = running_total
             running_total += at
@@ -86,7 +86,7 @@ class TargetDecoyAnalyzer(PipelineModule):
             Protein.hypothesis_id == self.decoy_id).all()
 
         running_total = 0
-        decoys_above = {}
+        decoys_above = OrderedDict()
         for score, at in decoys:
             decoys_above[score] = running_total
             running_total += at
@@ -99,7 +99,7 @@ class TargetDecoyAnalyzer(PipelineModule):
 
         return targets_above, decoys_above
 
-    def calculate_n_decoys_at(self, threshold):
+    def n_decoys_above_threshold(self, threshold):
         if threshold in self.n_decoys_at:
             return self.n_decoys_at[threshold]
         else:
@@ -113,7 +113,7 @@ class TargetDecoyAnalyzer(PipelineModule):
                 self.hypothesis_sample_match_id is not None else True).count()
             return self.n_decoys_at[threshold]
 
-    def calculate_n_targets_at(self, threshold):
+    def n_targets_above_threshold(self, threshold):
         if threshold in self.n_targets_at:
             return self.n_targets_at[threshold]
         else:
@@ -129,31 +129,13 @@ class TargetDecoyAnalyzer(PipelineModule):
 
     def target_decoy_ratio(self, cutoff, score=ms2_score):
 
-        decoys_at = self.calculate_n_decoys_at(cutoff)
-        targets_at = self.calculate_n_targets_at(cutoff)
+        decoys_at = self.n_decoys_above_threshold(cutoff)
+        targets_at = self.n_targets_above_threshold(cutoff)
         try:
             ratio = decoys_at / float(targets_at)
         except ZeroDivisionError:
             ratio = 1.
         return ratio, targets_at, decoys_at
-
-    def global_thresholds(self):
-        session = self.manager.session()
-
-        thresholds = session.query(distinct(func.round(GlycopeptideMatch.ms2_score, 2)))
-
-        results = {}
-
-        for score in thresholds:
-            score = score[0]
-            ratio, targets_at, decoys_at = self.target_decoy_ratio(score)
-            if ratio >= 0.5:
-                continue
-            result = Threshold(score, targets_at, decoys_at, ratio)
-            results[score] = result
-
-        session.close()
-        return results
 
     def p_values(self):
         logger.info("Computing p-values")
@@ -178,7 +160,7 @@ class TargetDecoyAnalyzer(PipelineModule):
                 session.add(target)
             else:
                 session.commit()
-                decoys_at = self.calculate_n_decoys_at(target.ms2_score)
+                decoys_at = self.n_decoys_above_threshold(target.ms2_score)
                 last_score = target.ms2_score
 
                 last_p_value = decoys_at / total_decoys
@@ -190,8 +172,8 @@ class TargetDecoyAnalyzer(PipelineModule):
     def estimate_percent_incorrect_targets(self, cutoff, score=ms2_score):
         session = self.manager.session()
 
-        target_cut = self.target_count - self.calculate_n_targets_at(cutoff)
-        decoy_cut = self.decoy_count - self.calculate_n_decoys_at(cutoff)
+        target_cut = self.target_count - self.n_targets_above_threshold(cutoff)
+        decoy_cut = self.decoy_count - self.n_decoys_above_threshold(cutoff)
         percent_incorrect_targets = target_cut / float(decoy_cut)
         session.close()
         return percent_incorrect_targets

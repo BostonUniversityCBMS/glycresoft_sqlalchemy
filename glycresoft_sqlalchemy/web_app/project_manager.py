@@ -4,7 +4,7 @@ import shutil
 import logging
 from glycresoft_sqlalchemy.data_model import DatabaseManager, MSMSSqlDB, Hypothesis, SampleRun
 
-from task.task_process import TaskManager
+from task.task_process import TaskManager, pickle
 from task.dummy import DummyTask
 from glycresoft_sqlalchemy.web_app.common import logmethod
 
@@ -96,3 +96,9 @@ class ProjectManager(DatabaseManager, TaskManager):
     @logmethod
     def add_sample(self, path):
         self.sample_submanagers.append(MSMSSqlDB(path))
+
+    @logmethod
+    def add_task(self, task):
+        TaskManager.add_task(self, task)
+        path = self.get_task_path(task.name)
+        pickle.dump(task.args[:-1], open(path, 'wb'))

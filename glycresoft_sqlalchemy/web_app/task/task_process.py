@@ -326,7 +326,7 @@ class TaskManager(object):
             task.log_file_path = self.get_task_log_path(task)
             self.n_running += 1
             task.start()
-            self.messages.put(Message({"id": task.id, "name": task.name}, 'task-start'))
+            self.add_message(Message({"id": task.id, "name": task.name}, 'task-start'))
 
     def add_message(self, message):
         self.messages.put(message)
