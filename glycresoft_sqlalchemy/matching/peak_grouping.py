@@ -752,7 +752,7 @@ class PeakGroupClassification(PipelineModule):
                 conn.execute(
                     TPeakGroupMatch.update().where(
                         TPeakGroupMatch.c.peak_group_id == group_id).values(
-                        ms1_score=scores[i]))
+                        ms1_score=float(scores[i])))
                 i += 1
         data_model_session.commit()
         return classifier
