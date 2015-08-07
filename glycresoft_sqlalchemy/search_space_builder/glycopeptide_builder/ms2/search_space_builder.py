@@ -89,6 +89,8 @@ class MS1GlycopeptideResult(object):
     def from_peak_group_match(cls, peak_group_match=None, theoretical=None):
         pgm = peak_group_match
         theoretical = pgm.theoretical_match if theoretical is None else theoretical
+        if theoretical is None:
+            raise ValueError("PeakGroupMatch {} did not map to a real theoretical composition".format(pgm))
         return cls(
             score=pgm.ms1_score, calculated_mass=theoretical.calculated_mass,
             observed_mass=pgm.weighted_monoisotopic_mass,
