@@ -1,4 +1,6 @@
 import logging
+import sys
+import traceback
 from uuid import uuid4
 from multiprocessing import Process, Pipe
 from threading import Event, Thread, RLock
@@ -176,6 +178,10 @@ class Message(object):
 
     def __str__(self):
         return "%s:%s - %r" % (self.source, self.type, self.message)
+
+    @classmethod
+    def traceback(cls):
+        return cls(traceback.format_exc(), "error")
 
 
 class TaskManager(object):

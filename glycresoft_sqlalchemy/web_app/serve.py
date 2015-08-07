@@ -21,6 +21,7 @@ from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
 from glycresoft_sqlalchemy.web_app.task.do_bupid_yaml_parse import BUPIDYamlParseTask
 from glycresoft_sqlalchemy.web_app.task.do_decon2ls_parse import Decon2LSIsosParseTask
 from glycresoft_sqlalchemy.web_app.task.do_ms2_search import TandemMSGlycoproteomicsSearchTask
+from glycresoft_sqlalchemy.web_app.task.do_naive_glycopeptide_hypothesis import NaiveGlycopeptideHypothesisBuilderTask
 from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
 from glycresoft_sqlalchemy.web_app.task.dummy import DummyTask
 
@@ -279,23 +280,32 @@ def build_naive_glycopeptide_search_space_post():
     values = request.values
     constant_modifications = values.getlist("constant_modifications")
     variable_modifications = values.getlist("variable_modifications")
-    enzyme = values.getlist("enzyme")
+    enzyme = values.get("enzyme")
     hypothesis_name = values.get("hypothesis_name")
     protein_fasta = request.files["protein-fasta-file"]
     site_list = request.files["glycosylation-site-list-file"]
     glycan_file = request.files["glycan-definition-file"]
     glycan_file_type = values.get("glycans-file-format")
+    max_missed_cleavages = values.get("missed_cleavages")
 
-    print(constant_modifications,
-          variable_modifications,
-          enzyme,
-          hypothesis_name,
-          protein_fasta,
-          site_list,
-          glycan_file,
-          glycan_file_type,)
+    secure_protein_fasta = manager.get_temp_path(secure_filename(protein_fasta.filename))
+    secure_site_list_file = manager.get_temp_path(secure_filename(site_list.filename))
+    secure_glycan_file = manager.get_temp_path(secure_filename(glycan_file.filename))
 
-    return jsonify(status=202)
+    protein_fasta.save(secure_protein_fasta)
+    glycan_file.save(secure_glycan_file)
+    if site_list.filename != "":
+        site_list.save(secure_site_list_file)
+    else:
+        secure_site_list_file = None
+
+    task = NaiveGlycopeptideHypothesisBuilderTask(
+        manager.path, hypothesis_name,
+        secure_protein_fasta, secure_site_list_file,
+        secure_glycan_file, glycan_file_type, constant_modifications,
+        variable_modifications, enzyme, max_missed_cleavages, callback=lambda: 0)
+    manager.add_task(task)
+    return jsonify(**dict(request.values))
 
 
 # ----------------------------------------
@@ -418,7 +428,9 @@ def inject_functions():
 parser = argparse.ArgumentParser('view-results')
 parser.add_argument("results_database")
 parser.add_argument("-n", "--no-execute-tasks", action="store_true", required=False, default=False)
-parser.add_argument("--external", action='store_true', required=False, default=False, help='Let non-host machines connect to the server')
+parser.add_argument("--external", action='store_true', required=False, default=False,
+                    help='Let non-host machines connect to the server')
+parser.add_argument("-p", "--port", required=False, type=int, default=5000, help="The port on which to run the server")
 
 
 def main():
@@ -433,7 +445,7 @@ def main():
     manager = ProjectManager(DATABASE)
     app.debug = DEBUG
     app.secret_key = SECRETKEY
-    app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG)
+    app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=args.port)
 
 if __name__ == "__main__":
     main()

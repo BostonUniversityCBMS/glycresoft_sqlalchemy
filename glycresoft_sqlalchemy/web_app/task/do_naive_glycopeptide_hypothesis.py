@@ -6,7 +6,7 @@ from .task_process import NullPipe, Message, Task
 def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
              glycan_file, glycan_file_type, constant_modifications,
              variable_modifications, enzyme, max_missed_cleavages=1,
-             output_path=None, n_processes=4, comm=None):
+             n_processes=4, comm=None):
     if comm is None:
         comm = NullPipe()
     manager = DatabaseManager(database_path)
@@ -30,20 +30,20 @@ def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
         session = manager.session()
         hypothesis = session.query(Hypothesis).get(hypothesis_id)
         comm.send(Message(hypothesis.to_json(), "new-hypothesis"))
-    except Exception, e:
-        comm.send(Message(e, 'error'))
-    return hypothesis_id
+        return hypothesis_id
+    except Exception:
+        comm.send(Message.traceback())
+        raise
 
 
 class NaiveGlycopeptideHypothesisBuilderTask(Task):
     def __init__(self, database_path, hypothesis_name, protein_file, site_list_file,
                  glycan_file, glycan_file_type, constant_modifications,
                  variable_modifications, enzyme, max_missed_cleavages,
-                 output_path, n_processes, comm, callback, **kwargs):
+                 callback, **kwargs):
         args = (database_path, hypothesis_name, protein_file, site_list_file,
                 glycan_file, glycan_file_type, constant_modifications,
-                variable_modifications, enzyme, max_missed_cleavages,
-                output_path, n_processes)
+                variable_modifications, enzyme, max_missed_cleavages)
         job_name = "Naive Glycopeptide Hypothesis Builder " + hypothesis_name
         kwargs.setdefault('name', job_name)
         super(NaiveGlycopeptideHypothesisBuilderTask, self).__init__(taskmain, args, callback, **kwargs)

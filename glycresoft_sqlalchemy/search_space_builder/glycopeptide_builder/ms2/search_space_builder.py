@@ -79,7 +79,8 @@ class MS1GlycopeptideResult(object):
         return cls(
             score=score, calculated_mass=calculated_mass,
             observed_mass=observed_mass, glycan_composition_str=glycan_composition_str,
-            base_peptide_sequence=base_peptide_sequence, peptide_modifications=peptide_modifications,
+            base_peptide_sequence=base_peptide_sequence, modified_peptide_sequence=base_peptide_sequence,
+            peptide_modifications=peptide_modifications,
             count_missed_cleavages=count_missed_cleavages, count_glycosylation_sites=count_glycosylation_sites,
             ppm_error=ppm_error, volume=volume, start_pos=start_pos, end_pos=end_pos,
             glycan_composition_map=glycan_composition_map, protein_name=protein_name,
@@ -159,7 +160,7 @@ class MS1GlycopeptideResult(object):
                 return self.base_peptide_sequence
 
     def __repr__(self):
-        return "MS1GlycopeptideResult(%s)" % str((self.base_peptide_sequence, self.peptide_modifications, self.glycan_composition_str))
+        return "MS1GlycopeptideResult(%s)" % str((self.most_detailed_sequence, self.peptide_modifications, self.glycan_composition_str))
 
 
 def get_monosaccharide_identities(csv_columns):
@@ -237,7 +238,7 @@ def get_search_space(ms1_result, glycan_sites, mod_list):
     """
 
     seq_space = SequenceSpace(
-        ms1_result.base_peptide_sequence,
+        ms1_result.modified_peptide_sequence,
         ms1_result.glycan_composition_map,
         glycan_sites, mod_list)
     return seq_space
