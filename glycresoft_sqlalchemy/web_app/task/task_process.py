@@ -2,7 +2,7 @@ import logging
 import sys
 import traceback
 from uuid import uuid4
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Pipe, current_process
 from threading import Event, Thread, RLock
 from collections import deque
 from Queue import Queue, Empty as QueueEmptyException
@@ -29,9 +29,16 @@ def noop():
 
 def configure_log(log_file_path, callable, args):
     import logging
-    logging.basicConfig(filename=log_file_path, level='INFO', filemode='w',
-                        format="%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
-                        datefmt="%H:%M:%S")
+    logger = logging.getLogger()
+    handler = logging.FileHandler(log_file_path)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(processName)s:%(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
+        "%H:%M:%S")
+    handler.setFormatter(formatter)
+    logger.handlers = []
+    logger.addHandler(handler)
+    logger.setLevel("DEBUG")
+    logger.propagate = False
     return callable(*args)
 
 
@@ -238,7 +245,13 @@ class TaskManager(object):
         self.messages.put(Message({"id": task.id, "name": task.name}, "task-queued"))
 
     def get_task_log_path(self, task):
-        return path.join(self.task_dir, task.id + '.log')
+        return path.join(getattr(self, "task_dir", ""), task.id + '.log')
+
+    def startloop(self):
+        self.timer.start()
+
+    def stoploop(self):
+        self.timer.stop()
 
     def tick(self):
         """Check each managed task for status updates, schedule new tasks
@@ -255,7 +268,7 @@ class TaskManager(object):
     def check_state(self):
         """Iterate over all tasks in :attr:`TaskManager.tasks` and check their status.
         """
-        logger.info(
+        logger.debug(
             "Checking task manager state:\n %d tasks running\nRunning: %r\n%r",
             self.n_running, self.currently_running, self.tasks)
         for task_id, task in list(self.tasks.items()):
@@ -274,6 +287,7 @@ class TaskManager(object):
                     task.callback()
                     self.messages.put(Message({"id": task.id, "name": task.name}, "task-complete"))
                     self.running_lock.release()
+                    print "\n\n\n\n{} Completed\n\n\n\n".format(task)
             elif task.state == ERROR:
                 if task.id in self.currently_running:
                     if self.running_lock.acquire(0):

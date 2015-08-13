@@ -9,6 +9,10 @@ ActionBook = {
     contentURL: '/add_sample',
     name: 'add-sample'
   },
+  peakGroupingMatchSamples: {
+    contentURL: '/peak_grouping_match_samples',
+    name: "peak-grouping-match-samples"
+  },
   tandemMatchSamples: {
     contentURL: '/tandem_match_samples',
     name: 'tandem-match-samples'

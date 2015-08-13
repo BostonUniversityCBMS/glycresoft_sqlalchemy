@@ -12,10 +12,13 @@ from glycresoft_sqlalchemy.data_model import (Hypothesis, MS1GlycopeptideHypothe
 from glycresoft_sqlalchemy.data_model.informed_proteomics import (InformedPeptide, InformedTheoreticalGlycopeptideComposition)
 from glycresoft_sqlalchemy.data_model import PipelineModule
 from glycresoft_sqlalchemy.utils.worker_utils import async_worker_pool
+from glycresoft_sqlalchemy.utils.database_utils import toggle_indices
+
 from .include_glycomics import MS1GlycanImporter
 from .include_proteomics import ProteomeImporter
 from ..glycan_utilities import get_glycan_combinations, merge_compositions
 from ..utils import flatten
+
 
 from glycresoft_sqlalchemy.structure import sequence
 from glycresoft_sqlalchemy.structure import modification
@@ -189,7 +192,8 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
 
     def run(self):
         task_fn = self.prepare_task_fn()
-
+        index_controller = toggle_indices(self.manager.session(), TheoreticalGlycopeptideComposition)
+        index_controller.drop()
         cntr = 0
         if self.n_processes > 1:
             pool = Pool(self.n_processes)
@@ -199,7 +203,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
             for peptide in self.stream_peptides():
                 cntr += task_fn(peptide)
                 logger.info("Completed %d sequences", cntr)
-
+        logger.info("Checking Integrity")
         session = self.manager.session()
         ids = session.query(
             func.min(
@@ -217,6 +221,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
 
         # Delete the base class, and let the cascade through the foreign key delete
         # the subclass.
+        logger.info("Removing Duplicates")
         conn = session.connection()
         conn.execute(TheoreticalGlycopeptideComposition.__table__.delete(
             TheoreticalGlycopeptideComposition.__table__.c.id.in_(q.selectable)))
@@ -228,6 +233,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
             Protein.hypothesis_id == self.hypothesis_id).count())
 
         session.close()
+        index_controller.create()
         return self.hypothesis_id
 
 

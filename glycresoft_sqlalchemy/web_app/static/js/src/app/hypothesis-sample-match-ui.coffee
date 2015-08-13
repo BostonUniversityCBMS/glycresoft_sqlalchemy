@@ -4,9 +4,12 @@ Application::renderHypothesisSampleMatchListAt = (container)->
     for hsm in _.sortBy(_.values(@hypothesisSampleMatches), (o) -> o.name)
         hsm.name = if hsm.name? then hsm.name else "HypothesisSampleMatch:#{hsm.target_hypothesis.name}@#{hsm.sample_run_name}"
         row = $("
-    <div data-id=#{hsm.id} class=''>
-        <span class='handle'>#{hsm.name.replace('_', ' ')}</span> <small class='right'>#{}
-            <a class='remove-hsm mdi-content-clear'></a></small></div>
+    <div data-id=#{hsm.id} class='list-item'>
+        <span class='handle'>#{hsm.name.replace('_', ' ')}</span>
+            <small class='right'>#{hsm.hypothesis_sample_match_type.replace('HypothesisSampleMatch', '')}
+                                 <a class='remove-hsm mdi-content-clear'></a>
+            </small>
+    </div>
     ")
         chunks.push row
         self = @

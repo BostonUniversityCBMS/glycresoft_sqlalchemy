@@ -218,3 +218,30 @@ def drop_database(url):
     else:
         text = 'DROP DATABASE {0}'.format(quote(engine, database))
         engine.execute(text)
+
+
+class toggle_indices(object):
+
+    def __init__(self, session, table):
+        if isinstance(table, type):
+            table = table.__table__
+        self.table = table
+        self.session = session
+
+    def drop(self):
+        conn = self.session.connection()
+        for index in self.table.indexes:
+            index.drop(conn)
+        try:
+            self.session.commit()
+        except:
+            pass
+
+    def create(self):
+        conn = self.session.connection()
+        for index in self.table.indexes:
+            index.create(conn)
+        try:
+            self.session.commit()
+        except:
+            pass

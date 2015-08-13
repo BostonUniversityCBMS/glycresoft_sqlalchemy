@@ -11,6 +11,7 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table,
 from .generic import MutableDict, MutableList
 from .base import Base
 from .glycomics import TheoreticalGlycanComposition as Glycan
+from . import glycomics
 
 from ..structure import sequence
 
@@ -65,37 +66,6 @@ class Hypothesis(Base):
     }
 
 
-class MS1GlycanHypothesis(Hypothesis):
-    __tablename__ = "MS1GlycanHypothesis"
-
-    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
-
-    __mapper_args__ = {
-        'polymorphic_identity': u'MS1GlycanHypothesis',
-    }
-
-
-class MS1GlycopeptideHypothesis(Hypothesis):
-    __tablename__ = "MS1GlycopeptideHypothesis"
-
-    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
-
-    __mapper_args__ = {
-        'polymorphic_identity': u'MS1GlycopeptideHypothesis',
-    }
-
-
-class MS2GlycopeptideHypothesis(Hypothesis):
-    __tablename__ = "MS2GlycopeptideHypothesis"
-
-    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
-    ms1_source_hypothesis_id = Column(Integer, ForeignKey(MS1GlycopeptideHypothesis.id))
-
-    __mapper_args__ = {
-        'polymorphic_identity': u'MS2GlycopeptideHypothesis',
-    }
-
-
 class Protein(Base):
     __tablename__ = "Protein"
 
@@ -121,13 +91,13 @@ class Protein(Base):
 class PeptideBase(object):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    sequence_type = Column(Unicode(20))
+    sequence_type = Column(Unicode(45))
 
     @declared_attr
     def protein_id(self):
         return Column(Integer, ForeignKey(Protein.id, ondelete="CASCADE"), index=True)
 
-    calculated_mass = Column(Numeric(10, 6, asdecimal=False), index=True)
+    calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
 
     count_glycosylation_sites = Column(Integer)
     count_missed_cleavages = Column(Integer)
@@ -186,6 +156,9 @@ class PeptideBase(object):
             pass
         return list(sites)
 
+    def __repr__(self):
+        return "<{} {} {}>".format(self.__class__.__name__, self.id, self.most_detailed_sequence)
+
 
 TheoreticalGlycopeptideGlycanAssociation = Table(
     "TheoreticalGlycopeptideGlycanAssociation", Base.metadata,
@@ -200,14 +173,14 @@ class TheoreticalGlycopeptide(PeptideBase, Base):
     glycans = relationship(Glycan, secondary=TheoreticalGlycopeptideGlycanAssociation,
                            backref='glycopeptides', lazy='dynamic',
                            cascade="delete")
-    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    ms1_score = Column(Numeric(12, 6, asdecimal=False), index=True)
 
-    base_composition_id = Column(Integer, ForeignKey("TheoreticalGlycopeptideComposition.id"))
+    base_composition_id = Column(Integer, ForeignKey("TheoreticalGlycopeptideComposition.id"), index=True)
 
-    observed_mass = Column(Numeric(10, 6, asdecimal=False))
-    glycan_mass = Column(Numeric(10, 6, asdecimal=False))
-    ppm_error = Column(Numeric(10, 6, asdecimal=False))
-    volume = Column(Numeric(10, 6, asdecimal=False))
+    observed_mass = Column(Numeric(12, 6, asdecimal=False))
+    glycan_mass = Column(Numeric(12, 6, asdecimal=False))
+    ppm_error = Column(Numeric(12, 6, asdecimal=False))
+    volume = Column(Numeric(12, 4, asdecimal=False))
 
     glycopeptide_sequence = Column(Unicode(128), index=True)
     glycan_composition_str = Column(Unicode(128), index=True)
@@ -260,3 +233,42 @@ class TheoreticalGlycopeptide(PeptideBase, Base):
     def __repr__(self):
         rep = "<TheoreticalGlycopeptide {} {}>".format(self.glycopeptide_sequence, self.observed_mass)
         return rep
+
+
+class MS1GlycanHypothesis(Hypothesis):
+    __tablename__ = "MS1GlycanHypothesis"
+
+    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'MS1GlycanHypothesis',
+    }
+
+    theoretical_structure_type = glycomics.TheoreticalGlycanComposition
+
+
+class MS1GlycopeptideHypothesis(Hypothesis):
+    from . import naive_proteomics
+
+    __tablename__ = "MS1GlycopeptideHypothesis"
+
+    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'MS1GlycopeptideHypothesis',
+    }
+
+    theoretical_structure_type = naive_proteomics.TheoreticalGlycopeptideComposition
+
+
+class MS2GlycopeptideHypothesis(Hypothesis):
+    __tablename__ = "MS2GlycopeptideHypothesis"
+
+    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
+    ms1_source_hypothesis_id = Column(Integer, ForeignKey(MS1GlycopeptideHypothesis.id))
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'MS2GlycopeptideHypothesis',
+    }
+
+    theoretical_structure_type = TheoreticalGlycopeptide

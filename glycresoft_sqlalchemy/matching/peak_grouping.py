@@ -9,6 +9,7 @@ except Exception, e:
     logging.exception("Logger could not be initialized", exc_info=e)
     raise e
 
+from sqlalchemy.ext.baked import bakery
 from sqlalchemy import func, bindparam, select
 from sqlalchemy.orm import make_transient
 
@@ -17,7 +18,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 
 from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
-                          SampleRun, Hypothesis,
+                          SampleRun, Hypothesis, MS1GlycanHypothesisSampleMatch, hypothesis_sample_match_type,
                           TheoreticalCompositionMap, MassShift, HypothesisSampleMatch,
                           PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch)
 
@@ -28,6 +29,13 @@ from ..report import chromatogram
 TDecon2LSPeakGroup = Decon2LSPeakGroup.__table__
 T_TempPeakGroupMatch = TempPeakGroupMatch.__table__
 TPeakGroupMatch = PeakGroupMatch.__table__
+
+
+query_oven = bakery()
+get_group_id_by_mass_window = query_oven(lambda session: session.query(Decon2LSPeakGroup.id))
+get_group_id_by_mass_window += lambda q: q.filter(Decon2LSPeakGroup.weighted_monoisotopic_mass.between(
+            bindparam("lower"), bindparam("upper")))
+get_group_id_by_mass_window += lambda q: q.filter(Decon2LSPeakGroup.sample_run_id == bindparam("sample_run_id"))
 
 
 class Decon2LSPeakGrouper(PipelineModule):
@@ -76,6 +84,7 @@ class Decon2LSPeakGrouper(PipelineModule):
         session.commit()
         logger.info("Cleared? %r", session.query(Decon2LSPeakGroup).count())
         conn = session.connection()
+        map_items = []
         for count, row in enumerate(Decon2LSPeak.from_sample_run(session.query(
                 Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass).filter(
                 Decon2LSPeak.charge <= self.max_charge_state,
@@ -89,9 +98,11 @@ class Decon2LSPeakGrouper(PipelineModule):
             window_min = monoisotopic_mass - window_radius
             window_max = monoisotopic_mass + window_radius
 
-            group = session.query(Decon2LSPeakGroup.id).filter(
-                Decon2LSPeakGroup.weighted_monoisotopic_mass.between(
-                    window_min, window_max), Decon2LSPeakGroup.sample_run_id == sample_run_id).first()
+            # group = session.query(Decon2LSPeakGroup.id).filter(
+            #     Decon2LSPeakGroup.weighted_monoisotopic_mass.between(
+            #         window_min, window_max), Decon2LSPeakGroup.sample_run_id == sample_run_id).first()
+            group = get_group_id_by_mass_window(session).params(
+                lower=window_min, upper=window_max, sample_run_id=sample_run_id).first()
             # If no group is within the window of acceptable masses, create a new group
             # with this peak as the seed
             if group is None:
@@ -105,11 +116,16 @@ class Decon2LSPeakGrouper(PipelineModule):
             else:
                 group_id = group[0]
 
+            map_items.append({"peak_id": peak_id, "group_id": group_id})
             # Add this peak to the many-to-many mapping between peaks and groups with respect to this group.
             # Many-to-many relationship allows a
-            conn.execute(map_insert, {"peak_id": peak_id, "group_id": group_id})
             if count % 1000 == 0:
                 logger.info("%d peaks clustered, %d groups", count, group_count)
+                conn.execute(map_insert, map_items)
+                map_items = []
+
+        conn.execute(map_insert, map_items)
+        map_items = []
         session.commit()
         session.close()
 
@@ -484,7 +500,7 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                 "average_signal_to_noise": mass_match.average_signal_to_noise,
                 "peak_data": mass_match.peak_data,
                 "matched": True,
-                "mass_shift_type": mass_shift.name,
+                "mass_shift_type": mass_shift.id,
                 "mass_shift_count": shift_count,
                 "peak_group_id": mass_match.id,
                 "peak_ids": mass_match.peak_ids
@@ -534,7 +550,9 @@ class PeakGroupMatching(PipelineModule):
         self.match_tolerance = match_tolerance
         self.n_processes = n_processes
         self.lcms_database = lcms_database
-        self.search_type = TheoreticalCompositionMap[search_type]
+        self.search_type = TheoreticalCompositionMap.get(search_type, search_type)
+        if not isinstance(self.search_type, type):
+            raise TypeError("{} is not a type".format(self.search_type))
         session.close()
 
     def stream_ids(self):
@@ -787,25 +805,35 @@ class LCMSPeakClusterSearch(PipelineModule):
         self.grouping_error_tolerance = grouping_error_tolerance
         self.minimum_scan_count = minimum_scan_count
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
-        self.search_type = search_type
+        self.search_type = TheoreticalCompositionMap[search_type]
         self.match_tolerance = match_tolerance
         self.mass_shift_map = mass_shift_map
         self.n_processes = n_processes
         self.regression_parameters = regression_parameters
         self.options = kwargs
+        self.hypothesis_sample_match_type = hypothesis_sample_match_type(self.search_type)
 
-    def run(self):
+    def do_matching(self):
+        matcher = PeakGroupMatching(
+            self.database_path, self.observed_ions_path, self.hypothesis_id,
+            self.sample_run_id, self.hypothesis_sample_match_id,
+            self.search_type, self.match_tolerance, self.mass_shift_map,
+            self.n_processes)
+
+        if not self.options.get("skip_matching", False):
+            matcher.start()
+
+    def do_grouping(self):
         grouper = Decon2LSPeakGrouper(
             self.observed_ions_path, self.sample_run_id, self.grouping_error_tolerance,
             self.minimum_scan_count, self.n_processes)
         if not self.options.get("skip_grouping", False):
             grouper.start()
+        return grouper
 
-        database_manager = self.manager
-        session = database_manager.session()
-        sample_name = grouper.manager.session().query(SampleRun).get(self.sample_run_id).name
+    def prepare_hypothesis_sample_match(self, session, sample_name):
         hypothesis_sample_match, created = get_or_create(
-            session, HypothesisSampleMatch,
+            session, self.hypothesis_sample_match_type,
             id=self.hypothesis_sample_match_id,
             target_hypothesis_id=self.hypothesis_id)
         if self.hypothesis_sample_match_id is not None:
@@ -826,19 +854,26 @@ class LCMSPeakClusterSearch(PipelineModule):
         session.commit()
 
         self.hypothesis_sample_match_id = hypothesis_sample_match.id
+        return hypothesis_sample_match
 
-        matcher = PeakGroupMatching(
-            self.database_path, self.observed_ions_path, self.hypothesis_id,
-            self.sample_run_id, self.hypothesis_sample_match_id,
-            self.search_type, self.match_tolerance, self.mass_shift_map,
-            self.n_processes)
-
-        if not self.options.get("skip_matching", False):
-            matcher.start()
-
+    def do_classification(self):
         classifier = PeakGroupClassification(
             self.database_path, self.observed_ions_path, self.hypothesis_id,
             self.sample_run_id, self.hypothesis_sample_match_id, self.regression_parameters)
 
         classifier.start()
+        return classifier
+
+    def run(self):
+        grouper = self.do_grouping()
+
+        database_manager = self.manager
+        session = database_manager.session()
+        sample_name = grouper.manager.session().query(SampleRun).get(self.sample_run_id).name
+
+        hypothesis_sample_match = self.prepare_hypothesis_sample_match(session, sample_name)
+
+        self.do_matching()
+
+        classifier = self.do_classification()
         hypothesis_sample_match.parameters['classifier'] = pickle.dumps(classifier.classifier)

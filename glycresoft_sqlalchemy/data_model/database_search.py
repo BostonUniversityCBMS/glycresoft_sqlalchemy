@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from sqlalchemy.ext.baked import bakery
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from sqlalchemy.orm import relationship, backref
@@ -63,13 +62,123 @@ class HypothesisSampleMatch(Base):
                 (PeakGroupMatch.theoretical_match_type == None))
 
     def __repr__(self):
-        return "<{self.__class__.__name__} {self.id} {self.target_hypothesis_id} {self.sample_run_name} {matches}>".format(
-            self=self, matches=','.join(res[0].__name__ for res in self.results()))
+        return ("<{self.__class__.__name__} {self.id} {self.target_hypothesis_id}" +
+                " {self.sample_run_name} {matches}>").format(
+            self=self, matches=self.results().next()[0].__name__)
 
     __mapper_args__ = {
         "polymorphic_identity": u"HypothesisSampleMatch",
         "polymorphic_on": hypothesis_sample_match_type
     }
+
+    is_exact = False
+
+    @property
+    def results_type(self):
+        return (GlycopeptideMatch, PeakGroupMatch)
+
+
+class MS1GlycanHypothesisSampleMatch(HypothesisSampleMatch):
+    __tablename__ = "MS1GlycanHypothesisSampleMatch"
+    id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
+
+    def results(self):
+        yield TheoreticalGlycanComposition, self.peak_group_matches.filter(
+                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition") |
+                (PeakGroupMatch.theoretical_match_type == None))
+
+    __mapper_args__ = {
+        "polymorphic_identity": u"MS1GlycanHypothesisSampleMatch",
+    }
+
+    ms_level = 1
+
+    @property
+    def results_type(self):
+        return (PeakGroupMatch)
+
+
+class MS1GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
+    __tablename__ = "MS1GlycopeptideHypothesisSampleMatch"
+    id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": u"MS1GlycopeptideHypothesisSampleMatch",
+    }
+
+    def results(self):
+        yield TheoreticalGlycopeptideComposition, self.peak_group_matches.filter(
+                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition") |
+                (PeakGroupMatch.theoretical_match_type == None))
+
+    is_exact = False
+    ms_level = 1
+
+    @property
+    def results_type(self):
+        return (PeakGroupMatch)
+
+
+class ExactMS1GlycopeptideHypothesisSampleMatch(MS1GlycopeptideHypothesisSampleMatch):
+    __mapper_args__ = {
+        "polymorphic_identity": u"ExactMS1GlycopeptideHypothesisSampleMatch",
+    }
+
+    is_exact = True
+
+    def results(self):
+        yield TheoreticalGlycopeptideComposition, self.peak_group_matches.filter(
+                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition") |
+                (PeakGroupMatch.theoretical_match_type == None))
+
+    @property
+    def results_type(self):
+        return (PeakGroupMatch)
+
+
+class MS2GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
+    __tablename__ = "MS2GlycopeptideHypothesisSampleMatch"
+
+    id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": u"MS2GlycopeptideHypothesisSampleMatch",
+    }
+
+    is_exact = False
+    ms_level = 2
+
+    def results(self):
+        yield GlycopeptideMatch, self.glycopeptide_matches.filter(
+                GlycopeptideMatch.protein_id == Protein.id,
+                Protein.hypothesis_id == Hypothesis.id,
+                ~Hypothesis.is_decoy)
+
+    @property
+    def results_type(self):
+        return (GlycopeptideMatch)
+
+
+class ExactMS2GlycopeptideHypothesisSampleMatch(MS2GlycopeptideHypothesisSampleMatch):
+    __mapper_args__ = {
+        "polymorphic_identity": u"ExactMS2GlycopeptideHypothesisSampleMatch",
+    }
+
+    is_exact = True
+    ms_level = 2
+
+
+def hypothesis_sample_match_type(theoretical_type):
+    if theoretical_type == TheoreticalGlycopeptideComposition or\
+            issubclass(TheoreticalGlycopeptideComposition):
+        return MS1GlycopeptideHypothesisSampleMatch
+    elif theoretical_type == TheoreticalGlycanComposition or\
+            issubclass(TheoreticalGlycanComposition):
+        return MS1GlycanHypothesisSampleMatch
+    elif theoretical_type == TheoreticalGlycopeptide or issubclass(TheoreticalGlycopeptide):
+        return MS2GlycopeptideHypothesisSampleMatch
+    else:
+        raise KeyError(theoretical_type)
 
 
 GlycopeptideMatchGlycanAssociation = Table(
@@ -82,7 +191,7 @@ class GlycopeptideMatch(PeptideBase, Base):
     __tablename__ = "GlycopeptideMatch"
 
     id = Column(Integer, primary_key=True)
-    theoretical_glycopeptide_id = Column(Integer, ForeignKey(TheoreticalGlycopeptide.id))
+    theoretical_glycopeptide_id = Column(Integer, ForeignKey(TheoreticalGlycopeptide.id), index=True)
     theoretical_reference = relationship(TheoreticalGlycopeptide)
     hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
     hypothesis_sample_match = relationship(
@@ -93,10 +202,10 @@ class GlycopeptideMatch(PeptideBase, Base):
 
     glycans = relationship(Glycan, secondary=GlycopeptideMatchGlycanAssociation, lazy='dynamic')
 
-    observed_mass = Column(Numeric(10, 6, asdecimal=False))
-    glycan_mass = Column(Numeric(10, 6, asdecimal=False))
-    ppm_error = Column(Numeric(10, 6, asdecimal=False))
-    volume = Column(Numeric(10, 6, asdecimal=False))
+    observed_mass = Column(Numeric(12, 6, asdecimal=False))
+    glycan_mass = Column(Numeric(12, 6, asdecimal=False))
+    ppm_error = Column(Numeric(12, 6, asdecimal=False))
+    volume = Column(Numeric(12, 4, asdecimal=False))
 
     glycopeptide_sequence = Column(Unicode(128), index=True)
     glycan_composition_str = Column(Unicode(128), index=True)
@@ -157,7 +266,7 @@ class PeakGroupMatch(Base):
     hypothesis_sample_match = relationship(HypothesisSampleMatch, backref=backref("peak_group_matches", lazy='dynamic'))
 
     theoretical_match_type = Column(Unicode(128), index=True)
-    theoretical_match_id = Column(Integer)
+    theoretical_match_id = Column(Integer, index=True)
 
     # ForeignKey across database boundaries
     peak_group_id = Column(Integer, index=True)
@@ -175,15 +284,15 @@ class PeakGroupMatch(Base):
     first_scan_id = Column(Integer)
     last_scan_id = Column(Integer)
 
-    ppm_error = Column(Numeric(10, 6, asdecimal=False))
+    ppm_error = Column(Numeric(10, 4, asdecimal=False))
 
-    scan_density = Column(Numeric(10, 6, asdecimal=False))
+    scan_density = Column(Numeric(10, 4, asdecimal=False))
     weighted_monoisotopic_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
 
-    total_volume = Column(Numeric(12, 6, asdecimal=False))
-    average_a_to_a_plus_2_ratio = Column(Numeric(12, 6, asdecimal=False))
+    total_volume = Column(Numeric(12, 4, asdecimal=False))
+    average_a_to_a_plus_2_ratio = Column(Numeric(12, 4, asdecimal=False))
     a_peak_intensity_error = Column(Numeric(10, 6, asdecimal=False))
-    centroid_scan_estimate = Column(Numeric(12, 6, asdecimal=False))
+    centroid_scan_estimate = Column(Numeric(12, 4, asdecimal=False))
     centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
     average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
 
@@ -194,12 +303,21 @@ class PeakGroupMatch(Base):
     matched = Column(Boolean, index=True)
 
     mass_shift_type = Column(Integer, ForeignKey(MassShift.id))
-
+    mass_shift = relationship(MassShift)
     mass_shift_count = Column(Integer)
 
     def __repr__(self):
         rep = "<PeakGroupMatch {id} {ms1_score} {weighted_monoisotopic_mass} {theoretical_match_type}>"
         return rep.format(**self.__dict__)
+
+
+def protein_peak_group_matches(protein):
+    return object_session(protein).query(PeakGroupMatch).join(
+        TheoreticalGlycopeptideComposition,
+        PeakGroupMatch.theoretical_match_id == TheoreticalGlycopeptideComposition.id).filter(
+        TheoreticalGlycopeptideComposition.protein_id == protein.id)
+
+Protein.peak_group_matches = property(fget=protein_peak_group_matches)
 
 
 class TempPeakGroupMatch(Base):
@@ -216,10 +334,10 @@ class TempPeakGroupMatch(Base):
     scan_density = Column(Numeric(10, 6, asdecimal=False))
     weighted_monoisotopic_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
 
-    total_volume = Column(Numeric(12, 6, asdecimal=False))
-    average_a_to_a_plus_2_ratio = Column(Numeric(12, 6, asdecimal=False))
+    total_volume = Column(Numeric(12, 4, asdecimal=False))
+    average_a_to_a_plus_2_ratio = Column(Numeric(12, 4, asdecimal=False))
     a_peak_intensity_error = Column(Numeric(10, 6, asdecimal=False))
-    centroid_scan_estimate = Column(Numeric(12, 6, asdecimal=False))
+    centroid_scan_estimate = Column(Numeric(12, 4, asdecimal=False))
     centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
     average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
 

@@ -2,7 +2,12 @@ import os
 from os import path
 import shutil
 import logging
-from glycresoft_sqlalchemy.data_model import DatabaseManager, MSMSSqlDB, Hypothesis, SampleRun
+from glycresoft_sqlalchemy.data_model import (
+    DatabaseManager, Hypothesis, SampleRun, HypothesisSampleMatch,
+    BUPIDDeconvolutedLCMSMSSampleRun, Decon2LSLCMSSampleRun,
+    MS1GlycanHypothesis,
+    MS1GlycopeptideHypothesis, MS2GlycopeptideHypothesis,
+    PeakGroupMatch, MS1GlycopeptideHypothesisSampleMatch)
 
 from task.task_process import TaskManager, pickle
 from task.dummy import DummyTask
@@ -29,7 +34,7 @@ class ProjectManager(DatabaseManager, TaskManager):
         self._ensure_paths_exist()
         self.sample_submanagers = []
         for sample in os.listdir(self.sample_dir):
-            manager = MSMSSqlDB(path.join(self.sample_dir, sample))
+            manager = DatabaseManager(path.join(self.sample_dir, sample))
             try:
                 manager.connect()
                 self.sample_submanagers.append(manager)
@@ -70,7 +75,7 @@ class ProjectManager(DatabaseManager, TaskManager):
         name = path.basename(fname)
         dest = path.join(self.sample_dir, name)
         shutil.copy(fname, dest)
-        self.sample_submanagers.append(MSMSSqlDB(dest))
+        self.sample_submanagers.append(DatabaseManager(dest))
 
     def get_sample_path(self, name):
         return path.join(self.sample_dir, name)
@@ -84,7 +89,27 @@ class ProjectManager(DatabaseManager, TaskManager):
     @logmethod
     def hypotheses(self):
         session = self.session()
-        return session.query(Hypothesis)
+        return session.query(Hypothesis).filter(~Hypothesis.is_decoy)
+
+    @logmethod
+    def ms1_glycan_hypotheses(self):
+        session = self.session()
+        return session.query(MS1GlycanHypothesis).filter(~Hypothesis.is_decoy)
+
+    @logmethod
+    def ms1_glycopeptide_hypotheses(self):
+        session = self.session()
+        return session.query(MS1GlycopeptideHypothesis).filter(~Hypothesis.is_decoy)
+
+    @logmethod
+    def ms2_glycopeptide_hypotheses(self):
+        session = self.session()
+        return session.query(MS2GlycopeptideHypothesis).filter(~Hypothesis.is_decoy)
+
+    @logmethod
+    def ms1_glycopeptide_peak_group_matches(self):
+        session = self.session()
+        return session.query(MS1GlycopeptideHypothesisSampleMatch)
 
     @logmethod
     def samples(self):
@@ -94,8 +119,22 @@ class ProjectManager(DatabaseManager, TaskManager):
         return results
 
     @logmethod
+    def ms1_samples(self):
+        results = []
+        for manager in self.sample_submanagers:
+            results.extend(manager.session().query(Decon2LSLCMSSampleRun).all())
+        return results
+
+    @logmethod
+    def ms2_samples(self):
+        results = []
+        for manager in self.sample_submanagers:
+            results.extend(manager.session().query(BUPIDDeconvolutedLCMSMSSampleRun).all())
+        return results
+
+    @logmethod
     def add_sample(self, path):
-        self.sample_submanagers.append(MSMSSqlDB(path))
+        self.sample_submanagers.append(DatabaseManager(path))
 
     @logmethod
     def add_task(self, task):

@@ -183,10 +183,10 @@ class Decon2LSPeakGroup(Base):
     scan_density = Column(Numeric(10, 6, asdecimal=False))
     weighted_monoisotopic_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
 
-    total_volume = Column(Numeric(12, 6, asdecimal=False))
-    average_a_to_a_plus_2_ratio = Column(Numeric(12, 6, asdecimal=False))
+    total_volume = Column(Numeric(12, 4, asdecimal=False))
+    average_a_to_a_plus_2_ratio = Column(Numeric(12, 4, asdecimal=False))
     a_peak_intensity_error = Column(Numeric(10, 6, asdecimal=False))
-    centroid_scan_estimate = Column(Numeric(12, 6, asdecimal=False))
+    centroid_scan_estimate = Column(Numeric(12, 4, asdecimal=False))
     centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
     average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
 
@@ -201,20 +201,6 @@ class Decon2LSPeakGroup(Base):
         return "<Decon2LSPeakGroup {} {} {} {} {}>".format(
             id, self.weighted_monoisotopic_mass,
             self.total_volume, self.peaks.count(), self.charge_state_count)
-
-    @hybrid_method
-    def ppm_match_tolerance_search(self, mass, tolerance):
-        spread = mass * tolerance
-        hi = mass + spread
-        lo = mass - spread
-        return (lo <= self.weighted_monoisotopic_mass) & (self.weighted_monoisotopic_mass <= hi)
-
-    @ppm_match_tolerance_search.expression
-    def ppm_match_tolerance_search(cls, mass, tolerance):
-        spread = mass * tolerance
-        hi = mass + spread
-        lo = mass - spread
-        return cls.weighted_monoisotopic_mass.between(lo, hi)
 
     @classmethod
     def from_sample_run(self, query, sample_run_id):

@@ -1,0 +1,54 @@
+<div style='overflow-x: scroll;width: 100%;'>
+<table class='bordered glycopeptide-match-table' style='width: 100%;'>
+    <thead class='glycopeptide-match-header' >
+        <tr>
+            <th>Observed Mass</th>
+            <th class='wide'>Sequence</th>
+            <th class='wide'>Glycan Composition</th>
+            <th>Tandem Score</th>
+            <th class='narrow'>q-value</th>
+            <th>Profile Score</th>
+            <th>Volume</th>
+            <th class='narrow'>Coordinates</th>
+            <th>Tandem Scans</th>
+            <th>Peptide Coverage</th>
+            <th>HexNAc Coverage</th>
+            <th class='narrow'>Stub Ions</th>
+            <th class='narrow'>b Ions</th>
+            <th class='narrow'>y Ions</th>
+        </tr>
+    </thead>
+    <tbody class='glycopeptide-match-table-body' style='height:450px;'>
+    {% for gpm in glycopeptides %}    
+        <tr class='glycopeptide-match-row' data-target="{{gpm.id}}">
+            <td>{{"%0.4f"|format(gpm.observed_mass)}}</td>
+            <td class='wide'><span>{{gpm.modified_peptide_sequence}}</span></td>
+            <td class='wide'>{{gpm.glycan_composition_str}}</td>
+            <td>{{"%0.4f"|format(gpm.ms2_score)}}</td>
+            <td class='narrow'>{{"%0.3f"|format(gpm.q_value) if gpm.q_value != 0.0 else 0.0}}</td>
+            <td>{{"%0.4f"|format(gpm.ms1_score)}}</td>
+            <td>{{"%0.5e"|format(gpm.volume)}}</td>
+            <td class='narrow' data-start="{{gpm.start_position}}" data-end="{{gpm.end_position}}">
+                {{gpm.start_position}} - {{gpm.end_position}}
+            </td>
+            <td>{{gpm.scan_id_range|length}}</td>
+            <td>{{"%0.4f"|format(gpm.mean_coverage)}}</td>
+            <td>{{"%0.4f"|format(gpm.mean_hexnac_coverage)}}</td>
+            <td class='narrow'>{{gpm.stub_ions|length}}</td>
+            <td class='narrow'>
+                {{gpm.bare_b_ions|length}}|{{gpm.glycosylated_b_ions|length}}
+            </td>
+            <td class='narrow'>{{gpm.bare_y_ions|length}}|{{gpm.glycosylated_y_ions|length}}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>    
+</div>
+<!-- On narrow screens, the above table may appear to have two horizontal scroll bars -->
+<div id="peptide-detail-modal" class="modal modal-fixed-footer wide">
+    <div class="modal-content">
+    </div>
+    <div class="modal-footer">
+        <a href="#!" class=" modal-action modal-close waves-effect waves-green btn-flat">Dismiss</a>
+    </div>
+</div>

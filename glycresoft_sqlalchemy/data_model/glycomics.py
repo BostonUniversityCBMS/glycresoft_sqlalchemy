@@ -24,10 +24,10 @@ class StructureMotif(Base):
     canonical_sequence = Column(Unicode(256))
 
 
-class GlycanBase(AbstractConcreteBase, Base):
+class GlycanBase(object):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Unicode(128), index=True)
-    mass = Column(Numeric(10, 6, asdecimal=False), index=True)
+    mass = Column(Numeric(12, 6, asdecimal=False), index=True)
     derivatization = Column(Unicode(64), index=True)
 
     composition = Column(Unicode(128), index=True)
@@ -42,7 +42,7 @@ class GlycanBase(AbstractConcreteBase, Base):
         return self.hypothesis_id == hypothesis_id
 
 
-class TheoreticalGlycanComposition(GlycanBase):
+class TheoreticalGlycanComposition(GlycanBase, Base):
     __tablename__ = "TheoreticalGlycanComposition"
 
     __mapper_args__ = {
@@ -58,7 +58,7 @@ TheoreticalGlycanCompositionToMotifTable = Table(
     )
 
 
-class TheoreticalGlycanStructure(GlycanBase):
+class TheoreticalGlycanStructure(GlycanBase, Base):
     __tablename__ = "TheoreticalGlycanStructure"
     composition_reference = Column(Integer, ForeignKey(TheoreticalGlycanComposition.id), index=True)
     glycoct = Column(Unicode(256), index=True)

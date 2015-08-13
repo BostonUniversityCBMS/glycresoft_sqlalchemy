@@ -137,8 +137,7 @@ Application = (function(superClass) {
         self.sideNav = $('.side-nav');
         self.addLayer(ActionBook.home);
         $("#run-matching").click(function(event) {
-          self.addLayer(ActionBook.tandemMatchSamples);
-          return self.setShowingLayer(self.lastAdded);
+          return setupAjaxForm("/ms1_or_ms2_choice?ms1_choice=peakGroupingMatchSamples&ms2_choice=tandemMatchSamples", "#message-modal");
         });
         $("#build-glycan-search-space").click(function(event) {
           self.addLayer(ActionBook.naiveGlycanSearchSpace);

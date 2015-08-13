@@ -9,6 +9,7 @@ except:
     pass
 from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch, DatabaseManager
 from glycresoft_sqlalchemy.report.plot_glycoforms import plot_glycoforms_svg
+from glycresoft_sqlalchemy.report.chromatogram import draw_chromatogram
 from jinja2 import Environment, PackageLoader, Undefined, FileSystemLoader
 from jinja2 import nodes
 from jinja2.ext import Extension
@@ -91,13 +92,19 @@ def render_plot(figure, **kwargs):
 
 
 def plot_glycoforms(protein, filter_context):
-    old_size = matplotlib.rcParams['figure.figsize']
-    matplotlib.rcParams['figure.figsize'] = 10, 16
 
     svg = plot_glycoforms_svg(protein, filterfunc=filter_context)
 
-    matplotlib.rcParams['figure.figsize'] = old_size
     return svg
+
+
+def plot_chromatogram(peak_group):
+    with matplotlib.rc_context({
+            "figure.figsize": (16, 4),
+            "axes.edgecolor": 'grey'
+            }):
+        ax = draw_chromatogram(peak_group, color='teal', alpha=0.3)
+    return ax
 
 
 def prepare_environment(env=None):
@@ -115,6 +122,7 @@ def prepare_environment(env=None):
     env.filters["n_per_row"] = n_per_row
     env.filters['highlight_sequence_site'] = highlight_sequence_site
     env.filters['plot_glycoforms'] = plot_glycoforms
+    env.filters['chromatogram'] = plot_chromatogram
     env.filters['svg_plot'] = svg_plot
     env.filters['png_plot'] = png_plot
     env.filters['fsort'] = fsort

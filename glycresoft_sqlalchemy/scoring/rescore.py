@@ -1,4 +1,4 @@
-from ..data_model import DatabaseManager, TheoreticalGlycopeptide, GlycopeptideMatch, PipelineModule
+from ..data_model import TheoreticalGlycopeptide, GlycopeptideMatch, PipelineModule
 from .score_matches import evaluate
 
 

@@ -318,6 +318,9 @@ var materialFileInput, materialRefresh;
 
 materialRefresh = function() {
   try {
+    $('select').material_select();
+  } catch (_error) {}
+  try {
     materialFileInput();
   } catch (_error) {}
   try {

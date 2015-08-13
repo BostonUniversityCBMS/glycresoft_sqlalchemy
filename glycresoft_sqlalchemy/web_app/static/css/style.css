@@ -13,6 +13,11 @@
     visibility: none !important;
 }
 
+
+.list-item {
+    border-bottom: 1px lightgrey solid;
+}
+
 /*
 
 Modals

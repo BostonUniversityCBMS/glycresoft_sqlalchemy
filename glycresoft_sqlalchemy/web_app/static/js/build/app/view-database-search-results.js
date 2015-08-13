@@ -1,4 +1,4 @@
-var doZoom, viewDatabaseSearchResults;
+var doZoom, viewTandemGlycopeptideDatabaseSearchResults;
 
 doZoom = function() {
   var svg, zoom;
@@ -9,7 +9,7 @@ doZoom = function() {
   return d3.select("svg g").call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom));
 };
 
-viewDatabaseSearchResults = function() {
+viewTandemGlycopeptideDatabaseSearchResults = function() {
   var getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
   peptideDetailsModal = void 0;
   setup = function() {

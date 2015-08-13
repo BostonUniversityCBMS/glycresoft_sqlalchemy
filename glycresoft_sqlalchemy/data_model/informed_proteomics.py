@@ -8,7 +8,7 @@ from .naive_proteomics import TheoreticalGlycopeptideComposition
 class InformedPeptide(PeptideBase, Base):
     __tablename__ = "InformedPeptide"
     id = Column(Integer, primary_key=True)
-    peptide_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    peptide_score = Column(Numeric(12, 6, asdecimal=False), index=True)
     peptide_score_type = Column(Unicode(56))
     protein = relationship(Protein, backref=backref('informed_peptides', lazy='dynamic'))
     other = Column(PickleType)
@@ -21,7 +21,7 @@ class InformedPeptide(PeptideBase, Base):
 
 InformedPeptideToTheoreticalGlycopeptide = Table(
     "InformedPeptideToTheoreticalGlycopeptide", Base.metadata,
-    Column("informed_peptide", Integer, ForeignKey(InformedPeptide.id, ondelete="CASCADE")),
+    Column("informed_peptide", Integer, ForeignKey(InformedPeptide.id, ondelete="CASCADE"), index=True),
     Column("theoretical_glycopeptide", Integer, ForeignKey(TheoreticalGlycopeptideComposition.id, ondelete="CASCADE")))
 
 
@@ -30,7 +30,7 @@ class InformedTheoreticalGlycopeptideComposition(TheoreticalGlycopeptideComposit
 
     id = Column(Integer, ForeignKey(TheoreticalGlycopeptideComposition.id, ondelete="CASCADE"), primary_key=True)
 
-    peptide_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    peptide_score = Column(Numeric(12, 6, asdecimal=False), index=True)
     other = Column(PickleType)
     base_peptide_id = Column(Integer, ForeignKey(InformedPeptide.id), index=True)
     base_peptide = relationship(InformedPeptide)

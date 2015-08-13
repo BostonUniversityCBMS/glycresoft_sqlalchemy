@@ -9,6 +9,10 @@ ActionBook = {
     contentURL: '/add_sample',
     name: 'add-sample'
   },
+  peakGroupingMatchSamples: {
+    contentURL: '/peak_grouping_match_samples',
+    name: "peak-grouping-match-samples"
+  },
   tandemMatchSamples: {
     contentURL: '/tandem_match_samples',
     name: 'tandem-match-samples'
@@ -180,8 +184,7 @@ Application = (function(superClass) {
         self.sideNav = $('.side-nav');
         self.addLayer(ActionBook.home);
         $("#run-matching").click(function(event) {
-          self.addLayer(ActionBook.tandemMatchSamples);
-          return self.setShowingLayer(self.lastAdded);
+          return setupAjaxForm("/ms1_or_ms2_choice?ms1_choice=peakGroupingMatchSamples&ms2_choice=tandemMatchSamples", "#message-modal");
         });
         $("#build-glycan-search-space").click(function(event) {
           self.addLayer(ActionBook.naiveGlycanSearchSpace);
@@ -250,7 +253,7 @@ $(function() {
     for (i = 0, len = ref.length; i < len; i++) {
       hsm = ref[i];
       hsm.name = hsm.name != null ? hsm.name : "HypothesisSampleMatch:" + hsm.target_hypothesis.name + "@" + hsm.sample_run_name;
-      row = $("<div data-id=" + hsm.id + " class=''> <span class='handle'>" + (hsm.name.replace('_', ' ')) + "</span> <small class='right'>" + " <a class='remove-hsm mdi-content-clear'></a></small></div>");
+      row = $("<div data-id=" + hsm.id + " class='list-item'> <span class='handle'>" + (hsm.name.replace('_', ' ')) + "</span> <small class='right'>" + (hsm.hypothesis_sample_match_type.replace('HypothesisSampleMatch', '')) + " <a class='remove-hsm mdi-content-clear'></a> </small> </div>");
       chunks.push(row);
       self = this;
       row.click(function(event) {
@@ -349,7 +352,7 @@ Application.initializers.push(function() {
 });
 
 //# sourceMappingURL=sample-ui.js.map
-;var doZoom, viewDatabaseSearchResults;
+;var doZoom, viewTandemGlycopeptideDatabaseSearchResults;
 
 doZoom = function() {
   var svg, zoom;
@@ -360,7 +363,7 @@ doZoom = function() {
   return d3.select("svg g").call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom));
 };
 
-viewDatabaseSearchResults = function() {
+viewTandemGlycopeptideDatabaseSearchResults = function() {
   var getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
   peptideDetailsModal = void 0;
   setup = function() {
@@ -440,3 +443,148 @@ viewDatabaseSearchResults = function() {
 };
 
 //# sourceMappingURL=view-database-search-results.js.map
+;var viewPeakGroupingDatabaseSearchResults;
+
+viewPeakGroupingDatabaseSearchResults = function() {
+  var peptideDetailsModal, setup, showGlycopeptideCompositionDetailsModal, unload, updateProteinChoice;
+  peptideDetailsModal = void 0;
+  setup = function() {
+    $('.protein-match-table tbody tr').click(updateProteinChoice);
+    return updateProteinChoice.apply($('.protein-match-table tbody tr'));
+  };
+  updateProteinChoice = function() {
+    var handle, id;
+    handle = $(this);
+    id = handle.attr('data-target');
+    $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
+    return $.post('/view_database_search_results/protein_composition_view/' + id, GlycReSoft.context).success(function(doc) {
+      var tabs;
+      $('#chosen-protein-container').hide();
+      $('#chosen-protein-container').html(doc).fadeIn();
+      tabs = $('ul.tabs');
+      tabs.tabs();
+      if (GlycReSoft.context['protein-view-active-tab'] !== void 0) {
+        console.log(GlycReSoft.context['protein-view-active-tab']);
+        $('ul.tabs').tabs('select_tab', GlycReSoft.context['protein-view-active-tab']);
+      } else {
+        $('ul.tabs').tabs('select_tab', 'protein-overview');
+      }
+      $('.indicator').addClass('indigo');
+      $('ul.tabs .tab a').click(function() {
+        return GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1);
+      });
+      peptideDetailsModal = $('#peptide-detail-modal');
+      return $('.glycopeptide-match-row').click(showGlycopeptideCompositionDetailsModal);
+    }).error(function(error) {
+      return console.log(arguments);
+    });
+  };
+  showGlycopeptideCompositionDetailsModal = function() {
+    var handle, id;
+    handle = $(this);
+    id = handle.attr('data-target');
+    console.log(id);
+    return $.get('/view_database_search_results/view_glycopeptide_composition_details/' + id).success(function(doc) {
+      peptideDetailsModal.find('.modal-content').html(doc);
+      $(".lean-overlay").remove();
+      return peptideDetailsModal.openModal();
+    });
+  };
+  unload = function() {
+    return GlycReSoft.removeCurrentLayer();
+  };
+  return setup();
+};
+
+//# sourceMappingURL=view-peak-grouping-database-search.js.map
+;var doZoom, viewTandemGlycopeptideDatabaseSearchResults;
+
+doZoom = function() {
+  var svg, zoom;
+  svg = d3.select("svg g");
+  zoom = function() {
+    return svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+  };
+  return d3.select("svg g").call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom));
+};
+
+viewTandemGlycopeptideDatabaseSearchResults = function() {
+  var getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
+  peptideDetailsModal = void 0;
+  setup = function() {
+    $('.protein-match-table tbody tr').click(updateProteinChoice);
+    return updateProteinChoice.apply($('.protein-match-table tbody tr'));
+  };
+  initGlycopeptideOverviewPlot = function() {
+    $('svg .glycopeptide').customTooltip(glycopeptideTooltipCallback, 'protein-view-tooltip');
+    return $('svg .modification path').customTooltip(modificationTooltipCallback, 'protein-view-tooltip');
+  };
+  glycopeptideTooltipCallback = function(handle) {
+    var template;
+    template = '<div> <span><b>MS2 Score:</b> {ms2-score}</span><br> <span><b>q-value:</b> {q-value}</span><br> <b>{sequence}</b> </div>';
+    return template.format({
+      'sequence': handle.attr('data-sequence'),
+      'ms2-score': handle.attr('data-ms2-score'),
+      'q-value': handle.attr('data-q-value')
+    });
+  };
+  modificationTooltipCallback = function(handle) {
+    var sequence, template, value;
+    template = '<div> <span>{value}</span> </div>';
+    value = handle.parent().attr('data-modification-type');
+    if (value === 'HexNAc') {
+      sequence = $('#' + handle.parent().attr('data-parent')).attr('data-sequence');
+      value = 'HexNAc - Glycosylation: ' + sequence.split(/(\[|\{)/).slice(1).join('');
+    }
+    return template.format({
+      'value': value
+    });
+  };
+  updateProteinChoice = function() {
+    var handle, id;
+    handle = $(this);
+    id = handle.attr('data-target');
+    $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
+    return $.post('/view_database_search_results/protein_view/' + id, GlycReSoft.context).success(function(doc) {
+      var tabs;
+      $('#chosen-protein-container').hide();
+      $('#chosen-protein-container').html(doc).fadeIn();
+      initGlycopeptideOverviewPlot();
+      tabs = $('ul.tabs');
+      tabs.tabs();
+      if (GlycReSoft.context['protein-view-active-tab'] !== void 0) {
+        console.log(GlycReSoft.context['protein-view-active-tab']);
+        $('ul.tabs').tabs('select_tab', GlycReSoft.context['protein-view-active-tab']);
+      } else {
+        $('ul.tabs').tabs('select_tab', 'protein-overview');
+      }
+      $('ul.tabs .tab a').click(function() {
+        return GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1);
+      });
+      $('.indicator').addClass('indigo');
+      $('.glycopeptide-match-row').click(showGlycopeptideDetailsModal);
+      return peptideDetailsModal = $('#peptide-detail-modal');
+    }).error(function(error) {
+      return console.log(arguments);
+    });
+  };
+  getGlycopeptideMatchDetails = function(id, callback) {
+    return $.get('/api/glycopeptide_match/' + id, callback);
+  };
+  showGlycopeptideDetailsModal = function() {
+    var handle, id;
+    handle = $(this);
+    id = handle.attr('data-target');
+    return $.get('/view_database_search_results/view_glycopeptide_details/' + id).success(function(doc) {
+      peptideDetailsModal.find('.modal-content').html(doc);
+      $(".lean-overlay").remove();
+      return peptideDetailsModal.openModal();
+    });
+  };
+  unload = function() {
+    return GlycReSoft.removeCurrentLayer();
+  };
+  return setup();
+};
+
+//# sourceMappingURL=view-tandem-glycopeptide-database-search-results.js.map

@@ -1,0 +1,5 @@
+12:50:39 - MainProcess:werkzeug:_log:87 - INFO -  * Running on http://127.0.0.1:5000/
+12:50:40 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 12:50:40] "GET /view_database_search_results/view_glycopeptide_composition_details/444 HTTP/1.1" 200 -
+12:52:18 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 12:52:18] "GET /view_database_search_results/view_glycopeptide_composition_details/444 HTTP/1.1" 200 -
+12:52:22 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 12:52:22] "GET /static/js/dist/material-shim.js.map HTTP/1.1" 404 -
+12:52:22 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 12:52:22] "GET /static/js/dist/view-tandem-glycopeptide-database-search-results.js.map HTTP/1.1" 404 -

@@ -15,7 +15,6 @@
     <script>
 
 $(function() {
-    $('select').material_select();
     $(".side-nav").css('top', $('.nav-wrapper').innerHeight()).css("z-index", 3)
     $(".add-sample").click(function(event){
         event.preventDefault()
@@ -66,6 +65,13 @@ $(function() {
         {% block body %}
         {% endblock %}
         </div>        
+    </div>
+    <div id="message-modal" class="modal">
+        <div class="modal-content">
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class=" modal-action modal-close waves-effect waves-green btn-flat">Dismiss</a>
+        </div>
     </div>
     <div id="dialog-modal" class="modal wide">
         <div class="modal-content">

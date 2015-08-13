@@ -1,11 +1,19 @@
 import logging
+import os
 try:
-    logging.basicConfig(level='DEBUG')
-except:
-    pass
+    logging.basicConfig(level=logging.INFO, filename='glycresoft-log', filemode='w',
+                        format="%(asctime)s - %(processName)s:%(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
+                        datefmt="%H:%M:%S")
+    fmt = logging.Formatter(
+        "%(asctime)s - %(processName)s:%(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s", "%H:%M:%S")
+    handler = logging.StreamHandler()
+    handler.setFormatter(fmt)
+    logging.getLogger().addHandler(handler)
+except Exception, e:
+    logging.exception("Error, %r", e, exc_info=e)
+    raise e
 import json
 import functools
-from glycresoft_sqlalchemy.web_app import report
 from flask import Flask, request, session, g, redirect, url_for, \
      abort, render_template, flash, Markup, make_response, jsonify, \
      Response
@@ -13,14 +21,20 @@ from flask import Flask, request, session, g, redirect, url_for, \
 from werkzeug import secure_filename
 import argparse
 import random
-from glycresoft_sqlalchemy.data_model import (Hypothesis, Protein, TheoreticalGlycopeptide,
-                                              GlycopeptideMatch, HypothesisSampleMatch, json_type)
-from glycresoft_sqlalchemy.report import microheterogeneity
+
 from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
+from glycresoft_sqlalchemy.web_app import report
+
+from glycresoft_sqlalchemy.data_model import (
+    Hypothesis, Protein, TheoreticalGlycopeptide, PeakGroupMatch, TheoreticalGlycopeptideComposition,
+    GlycopeptideMatch, HypothesisSampleMatch, json_type)
+
+from glycresoft_sqlalchemy.report import microheterogeneity
 
 from glycresoft_sqlalchemy.web_app.task.do_bupid_yaml_parse import BUPIDYamlParseTask
 from glycresoft_sqlalchemy.web_app.task.do_decon2ls_parse import Decon2LSIsosParseTask
 from glycresoft_sqlalchemy.web_app.task.do_ms2_search import TandemMSGlycoproteomicsSearchTask
+from glycresoft_sqlalchemy.web_app.task.do_ms1_peak_group_matching import LCMSSearchTask
 from glycresoft_sqlalchemy.web_app.task.do_naive_glycopeptide_hypothesis import NaiveGlycopeptideHypothesisBuilderTask
 from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
 from glycresoft_sqlalchemy.web_app.task.dummy import DummyTask
@@ -48,6 +62,10 @@ def message_queue_stream():
 
     These messages are handled on the client side.
 
+    At the moment, messages are not "addressed" to a particular recipient. If multiple users
+    are connected at once, who receives which message is undefined. A solution to this would
+    be to create labeled queues, but this requires a user identification system.
+
     Yields
     ------
     str: Formatted Server Side Event Message
@@ -63,7 +81,7 @@ def message_queue_stream():
     i += 1
     while True:
         try:
-            message = manager.messages.get(True, 3)
+            message = manager.messages.get(True, 1)
             event = payload.format(
                 id=i, event_name=message.type,
                 data=json.dumps(message.message))
@@ -105,8 +123,7 @@ def show_preferences():
 @app.route("/preferences", methods=["POST"])
 def update_preferences():
     preferences = request.values
-    print "Minimum Score:", preferences["minimum_score"]
-    print request.values
+    print "Minimum Score:", preferences["minimum-score"]
     return jsonify(**preferences)
 
 
@@ -124,22 +141,26 @@ def update_settings():
 
 @app.route("/test/task-test")
 def test_page():
-    protein = g.db.query(Protein).join(GlycopeptideMatch).first()
-
-    def filter_context(q):
-        return q.filter(
-            GlycopeptideMatch.ms2_score > 0.2)
-
-    return render_template("test.templ", protein=protein, filter_context=filter_context)
-
-
-# ----------------------------------------
-#           View Database Search Results
-# ----------------------------------------
+    return render_template("test.templ")
 
 
 @app.route("/view_database_search_results/<int:id>")
 def view_database_search_results(id):
+    hsm = g.db.query(HypothesisSampleMatch).get(id)
+    results_type = hsm.results_type
+    if PeakGroupMatch == results_type:
+        return view_composition_database_search_results(id)
+    elif GlycopeptideMatch == results_type:
+        return view_tandem_glycopeptide_database_search_results(id)
+    return Response("No Match, " + results_type.__name__)
+
+# -------------------------------------------------------------------------
+#           View Tandem Glycopeptide Database Search Results
+# -------------------------------------------------------------------------
+
+
+# Dispatch through view_database_search_results
+def view_tandem_glycopeptide_database_search_results(id):
     hsm = g.db.query(HypothesisSampleMatch).get(id)
     hypothesis_sample_match_id = id
 
@@ -149,13 +170,13 @@ def view_database_search_results(id):
             GlycopeptideMatch.ms2_score > 0.2)
 
     return render_template(
-        "view_database_search_results.templ",
+        "tandem_glycopeptide_search/view_database_search_results.templ",
         hsm=hsm,
         filter_context=filter_context)
 
 
 @app.route("/view_database_search_results/protein_view/<int:id>", methods=["POST"])
-def view_protein_results(id):
+def view_tandem_glycopeptide_protein_results(id):
     print request.values
     hypothesis_sample_match_id = request.values["hypothesis_sample_match_id"]
     protein = g.db.query(Protein).get(id)
@@ -169,31 +190,77 @@ def view_protein_results(id):
         protein, filter_context)
 
     return render_template(
-        "components/protein_view.templ",
+        "tandem_glycopeptide_search/components/protein_view.templ",
         protein=protein,
         site_summary=site_summary,
         filter_context=filter_context)
 
 
 @app.route("/view_database_search_results/view_glycopeptide_details/<int:id>")
-def view_glycopeptide_details(id):
+def view_tandem_glycopeptide_glycopeptide_details(id):
     gpm = g.db.query(GlycopeptideMatch).get(id)
     return render_template(
-        "components/glycopeptide_details.templ", glycopeptide=gpm)
+        "tandem_glycopeptide_search/components/glycopeptide_details.templ", glycopeptide=gpm)
+
+
+# ----------------------------------------------------------------------
+#           View Peak Grouping Database Search Results
+# ----------------------------------------------------------------------
+
+
+# Dispatch through view_database_search_results
+def view_composition_database_search_results(id):
+    hsm = g.db.query(HypothesisSampleMatch).get(id)
+    hypothesis_sample_match_id = id
+
+    def filter_context(q):
+        return q.filter_by(
+            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
+            PeakGroupMatch.ms1_score > 0.2)
+
+    return render_template(
+        "peak_group_search/view_database_search_results.templ",
+        hsm=hsm,
+        filter_context=filter_context)
+
+
+@app.route("/view_database_search_results/protein_composition_view/<int:id>", methods=["POST"])
+def view_composition_glycopeptide_protein_results(id):
+    print request.values
+    hypothesis_sample_match_id = request.values["hypothesis_sample_match_id"]
+    protein = g.db.query(Protein).get(id)
+
+    def filter_context(q):
+        return q.filter(
+            PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
+            PeakGroupMatch.ms1_score > 0.2)
+
+    return render_template(
+        "peak_group_search/components/protein_view.templ",
+        protein=protein,
+        filter_context=filter_context)
+
+
+@app.route("/view_database_search_results/view_glycopeptide_composition_details/<int:id>")
+def view_peak_grouping_glycopeptide_composition_details(id):
+    pgm = g.db.query(PeakGroupMatch).get(id)
+    return render_template(
+        "peak_group_search/components/glycopeptide_details.templ", pgm=pgm)
+
+# ----------------------------------------
+#           CSV Export
+# ----------------------------------------
 
 
 @app.route("/view_database_search_results/export_csv/<int:id>")
 def export_csv_task(id):
     hypothesis_sample_match = g.db.query(HypothesisSampleMatch).get(id)
 
-    ## Architecture
-    # Launch CSV writer task in a separate process. Have it emit files
-    # to a known location, and when it completes, send an event to prompt
-    # the client to download those files.
     task = DummyTask()
 
     manager.add_task(task)
     return jsonify(target=hypothesis_sample_match.to_json())
+
 
 # ----------------------------------------
 #           JSON Data API Calls
@@ -230,6 +297,19 @@ def api_samples():
     samples = manager.samples()
     d = {str(h.name): h.to_json() for h in samples}
     return jsonify(**d)
+
+
+# ----------------------------------------
+#
+# ----------------------------------------
+
+
+@app.route("/ms1_or_ms2_choice")
+def branch_ms1_ms2():
+    ms1_choice = request.values.get("ms1_choice")
+    ms2_choice = request.values.get("ms2_choice")
+    return render_template("components/ms1_or_ms2_choice.templ",
+                           ms1_choice=ms1_choice, ms2_choice=ms2_choice)
 
 
 # ----------------------------------------
@@ -275,8 +355,6 @@ def build_naive_glycopeptide_search_space():
 
 @app.route("/glycopeptide_search_space", methods=["POST"])
 def build_naive_glycopeptide_search_space_post():
-    print request.values.__dict__
-    print request.files
     values = request.values
     constant_modifications = values.getlist("constant_modifications")
     variable_modifications = values.getlist("variable_modifications")
@@ -313,9 +391,47 @@ def build_naive_glycopeptide_search_space_post():
 # ----------------------------------------
 
 
+@app.route("/peak_grouping_match_samples")
+def peak_grouping_match_samples():
+    return render_template("peak_group_search/peak_grouping_match_samples.templ")
+
+
+@app.route("/peak_grouping_match_samples", methods=["POST"])
+def peak_grouping_match_samples_post():
+    user_parameters = request.values
+    print user_parameters
+    job_parameters = {
+        "match_tolerance": float(user_parameters["mass-matching-tolerance"]) * 1e-6,
+        "grouping_error_tolerance": float(user_parameters["peak-grouping-tolerance"]) * 1e-6,
+        "minimum_scan_count": int(user_parameters.get("minimum-scan-count", 1)),
+        "database_path": manager.path,
+    }
+
+    input_type, input_id = user_parameters.get("hypothesis_choice").split(",")
+    input_id = int(input_id)
+    # Handle mass shifts
+    job_parameters["search_type"] = input_type
+    job_parameters["hypothesis_id"] = input_id
+
+    for sample_name in request.values.getlist('samples'):
+        instance_parameters = job_parameters.copy()
+        sample_run, sample_manager = manager.find_sample(sample_name)
+        instance_parameters["observed_ions_path"] = sample_manager.path
+        instance_parameters["sample_run_id"] = sample_run.id
+        instance_parameters['callback'] = lambda: 0
+        instance_parameters['observed_ions_type'] = 'db'
+        task = LCMSSearchTask(**instance_parameters)
+        manager.add_task(task)
+    return jsonify(**dict(request.values))
+
+# ----------------------------------------
+#
+# ----------------------------------------
+
+
 @app.route("/tandem_match_samples")
 def tandem_match_samples():
-    return render_template("tandem_match_samples.templ")
+    return render_template("tandem_glycopeptide_search/tandem_match_samples.templ")
 
 
 @app.route("/tandem_match_samples", methods=["POST"])
@@ -324,12 +440,20 @@ def tandem_match_samples_post():
     job_parameters = {
         "ms1_tolerance": float(user_parameters["ms1-tolerance"]) * 1e-6,
         "ms2_tolerance": float(user_parameters["ms2-tolerance"]) * 1e-6,
-        "target_hypothesis_id": int(user_parameters["hypothesis_choice"]),
         "database_path": manager.path
 
     }
+    input_type, input_id = user_parameters.get("hypothesis_choice").split(",")
+    input_id = int(input_id)
+    if input_type == "Hypothesis":
+        defer = False
+    else:
+        defer = True
+
+    job_parameters["target_hypothesis_id"] = input_id
+
     db = manager.session()
-    target_hypothesis = db.query(Hypothesis).get(user_parameters["hypothesis_choice"])
+    target_hypothesis = db.query(Hypothesis).get(input_id)
     decoy_id = target_hypothesis.parameters["decoys"][0]["hypothesis_id"]
     job_parameters['decoy_hypothesis_id'] = decoy_id
 
@@ -405,6 +529,7 @@ def shutdown_server():
 @app.route('/internal/shutdown', methods=['POST'])
 def shutdown():
     shutdown_server()
+    manager.stoploop()
     return 'Server shutting down...'
 
 # ----------------------------------------
@@ -431,7 +556,9 @@ def inject_model():
         "Protein": Protein,
         "TheoreticalGlycopeptide": TheoreticalGlycopeptide,
         "GlycopeptideMatch": GlycopeptideMatch,
-        "Manager": manager
+        "Manager": manager,
+        "PeakGroupMatch": PeakGroupMatch,
+        "TheoreticalGlycopeptideComposition": TheoreticalGlycopeptideComposition,
     }
 
 
@@ -448,6 +575,8 @@ parser.add_argument("--external", action='store_true', required=False, default=F
                     help='Let non-host machines connect to the server')
 parser.add_argument("-p", "--port", required=False, type=int, default=5000, help="The port on which to run the server")
 
+
+DEBUG = False
 
 def main():
     args = parser.parse_args()

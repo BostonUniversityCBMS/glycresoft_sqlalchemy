@@ -19,10 +19,12 @@ def test_main():
     except:
         pass
 
-    i = integrated_omics.load_proteomics("datafiles/integrated_omics_simple.db", "datafiles/AGP_Proteomics2.mzid")
-    integrated_omics.load_glycomics_naive("datafiles/integrated_omics_simple.db", "datafiles/human_n_glycan.csv", i)
+    # db_file_name = "postgresql:///db"
+
+    i = integrated_omics.load_proteomics(db_file_name, "datafiles/AGP_Proteomics2.mzid")
+    integrated_omics.load_glycomics_naive(db_file_name, "datafiles/human_n_glycan.csv", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
-        "./datafiles/integrated_omics_simple.db", i,
+        db_file_name, i,
         protein_ids=["P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"], n_processes=4) # "P19652|A1AG2_HUMAN", 
     job.start()
 
@@ -37,7 +39,7 @@ def test_main():
     decoy_hypothesis_id = job.start()[0]
     manager = data_model.DatabaseManager(db_file_name)
     session = manager.session()
-    hsm = data_model.HypothesisSampleMatch(
+    hsm = data_model.MS2GlycopeptideHypothesisSampleMatch(
         target_hypothesis_id=hypothesis_id,
         decoy_hypothesis_id=decoy_hypothesis_id,
         sample_run_name="20140918_01.yaml",

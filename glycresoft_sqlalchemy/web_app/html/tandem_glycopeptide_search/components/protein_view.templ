@@ -1,0 +1,61 @@
+<div class='row'>
+    <div class='col s12'>
+        <ul class='tabs indigo-text'>
+            <li class='tab col s3'>
+                <a class='indigo-text' class="active" href="#protein-overview">Overview</a>
+            </li>
+            <li class='tab col s3'>
+                <a class='indigo-text' href="#glycopeptide-table">Glycopeptides</a>
+            </li>
+            <li class='tab col s3'>
+                <a class='indigo-text' href="#site-distribution">Site Distribution</a>
+            </li>
+        </ul>
+    </div>
+    <div id='protein-overview' class='col s12'>
+        <div class='col s5'>
+            <h5>>{{protein.name}}</h5>
+            <code>
+                {{
+                protein.protein_sequence | highlight_sequence_site(protein.glycosylation_sites, "glycosylation-site") | n_per_row(60)
+                }}
+            </code>
+        </div>
+        <div class='col s3'>
+            .
+        </div>
+        <div class='col s3'>
+            <h5>Glycosylation Sites Occupied</h5>
+            <table class='centered bordered'>
+                <thead>
+                    <tr>
+                        <th>Glycosylation Site</th>
+                        <th>Microheterogeneity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for site, composition_volumes in site_summary | sort%}
+                    <tr>
+                        <td>{{site}}</td>
+                        <td>{{composition_volumes|length}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {{protein|plot_glycoforms(filter_context)}}
+    </div>
+    <div id='glycopeptide-table'>
+        {% with glycopeptides=filter_context(protein.glycopeptide_matches).order_by(GlycopeptideMatch.ms2_score.desc()) %}
+            {% include "tandem_glycopeptide_search/components/glycopeptide_match_table.templ" %}
+        {% endwith %}
+    </div>
+    <div id='site-distribution'>
+        {% for site, plot in site_summary.glycan_site_specific_abundance_plot() | dictsort %}
+            <div>
+                <h5>Site {{site}}, {{protein.protein_sequence[site-1:site+5]}}</h5>
+                {{plot|svg_plot(pad_inches=0.5, bbox_inches='tight')}}
+            </div>
+        {% endfor %}
+    </div>
+</div>

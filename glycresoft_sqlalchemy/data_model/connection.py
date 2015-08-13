@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.engine.url import make_url
+from sqlalchemy.pool import NullPool
 
 from .data_model import Base
 from ..utils import database_utils
@@ -25,7 +26,8 @@ class ConnectionManager(object):
         return create_engine(
             url,
             echo=self.echo,
-            connect_args=self.connect_args)
+            connect_args=self.connect_args,
+            poolclass=NullPool)
 
     def construct_url(self):
         return "{}{}".format(self.database_uri_prefix, self.database_uri)
@@ -105,7 +107,10 @@ class DatabaseManager(object):
     def make_connection_manager(self, path):
         if isinstance(path, ConnectionManager):
             return path
-        else:
+        try:
+            make_url(path)
+            return ConnectionManager(path)
+        except:
             return self.connection_manager_type(path)
 
     def connect(self):
@@ -117,7 +122,7 @@ class DatabaseManager(object):
             conn = self.connect()
         try:
             conn.execute("SELECT id FROM Hypothesis LIMIT 1;")
-        except OperationalError:
+        except:
             logger.info("Database requires initialization")
             self.connection_manager.ensure_database()
             Base.metadata.create_all(conn)

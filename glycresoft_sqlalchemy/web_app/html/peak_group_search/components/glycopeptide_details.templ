@@ -1,0 +1,33 @@
+<div class='glycopeptide-details-container'>
+    {% set theoretical = pgm.theoretical_match %}
+    <div class='row'>
+        <div class='col s6'>
+            <h6><b>Putative Glycopeptide Sequence</b></h6>
+            <div class='sequence-emphasis'>{{theoretical.glycopeptide_sequence}}</div>
+            <b>Start Position</b>: {{theoretical.start_position}} <b>End Position</b>: {{theoretical.end_position}}
+            <table class='center-align'>
+                <thead>
+                    <tr>
+                        <th>Profile Score</th>
+                        <th>A:A+2 Peak Ratio (Estimate Error)</th>
+                        <th>Centroid Scan Estimate (Estimate Error)</th>
+                        <th>Volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{"%0.4f"|format(pgm.ms1_score)}}</td>
+                        <td>{{"%0.4f"|format(pgm.average_a_to_a_plus_2_ratio)}} ({{"%0.4f"|format(pgm.a_peak_intensity_error)}})</td>
+                        <td>{{"%0.4f"|format(pgm.centroid_scan_estimate)}} ({{"%0.4f"|format(pgm.centroid_scan_error)}})</td>
+                        <td>{{pgm.total_volume}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class='col s4'>
+            <h6><b>Observed Mass (PPM Error)</b></h6>
+            <span>{{"%0.4f"|format(pgm.weighted_monoisotopic_mass)}} ({{"%0.3e"|format(pgm.ppm_error)}})</span>
+        </div>
+    </div>
+    {{pgm|chromatogram|svg_plot}}
+</div>

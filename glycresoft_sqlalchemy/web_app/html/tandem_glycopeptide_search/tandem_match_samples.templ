@@ -1,0 +1,62 @@
+<h4>Match Hypothesis Against Tandem Samples</h4>
+<div class='row'>
+    <form id='match-sample-form' action="/tandem_match_samples" class="col s12" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+        <div class='col s6'>
+        {% set samples = Manager.ms2_samples() %}
+        {% if samples|length > 0 %}
+            <label for="samples">Select one or more samples</label>
+            <select name="samples" class='browser-default' multiple style='height:150px;'>
+                {% for sample in Manager.ms2_samples() %}
+                    <option value="{{sample.name}}">{{sample.name}}</option>
+                {% endfor %}
+            </select>
+        {% endif %}
+        </div>
+        <div id='add-sample-container'>
+            <div class='col s6'>
+            Or add a new sample
+            {% include "components/add_sample.templ" %}
+            </div>
+        </div>
+        <div class='row'>
+            <div class='input-field col s6'>    
+                <label for="hypothesis_choice">Choose a Hypothesis</label>
+                <br>
+                <select id="hypothesis_choice" name="hypothesis_choice" class='browser-default'>
+                    <optgroup label='MS2 Glycopeptide Hypotheses'>
+                    {% for hypothesis in Manager.ms2_glycopeptide_hypotheses() %}
+                        <option value="Hypothesis,{{hypothesis.id}}">{{hypothesis.name}}</option>
+                    {% endfor %}
+                    </optgroup>
+                    <optgroup label='MS1 Glycopeptide Database Search Results'>
+                    {% for peak_group_match in Manager.ms1_glycopeptide_peak_group_matches() %}
+                        <option value="HypotthesisSampleMatch,{{peak_group_match.id}}">{{peak_group_match.name}}</option>
+                    {% endfor %}                        
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='input-field col s3'>
+                <label for='ms1-tolerance'>MS1 Mass PPM Error Tolerance</label>
+                <input type='number' value='10' id='ms1-tolerance' name='ms1-tolerance'>
+            </div>
+            <div class='input-field col s3'>
+                <label for='ms2-tolerance'>MS2 Mass PPM Error Tolerance</label>
+                <input type='number' value='20' id='ms2-tolerance' name='ms2-tolerance'>
+            </div>
+        </div>
+
+        <button class='btn'>Submit</button>
+    </form>
+<script>
+ajaxForm($("form#match-sample-form"), function(){
+    var currentAction = GlycReSoft.getShowingLayer()
+    GlycReSoft.setShowingLayer("home-layer")
+    currentAction.dispose()
+}, function(err){
+    console.log(arguments)
+})
+materialFileInput()
+</script>    
+</div>

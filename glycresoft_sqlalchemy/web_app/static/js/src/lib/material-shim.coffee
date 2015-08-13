@@ -7,6 +7,8 @@ This code is taken from https://github.com/Dogfalo/materialize/blob/master/js/fo
 
 materialRefresh = ->
     try
+        $('select').material_select();
+    try
         materialFileInput()
     try
         Materialize.updateTextFields()

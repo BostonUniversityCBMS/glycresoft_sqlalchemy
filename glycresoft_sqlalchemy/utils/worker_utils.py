@@ -18,6 +18,7 @@ def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None,
                       maxload=10000):
     if result_callback is None:
         result_callback = ResultCounter()
+    logger.info("async_worker_pool starting")
     work_queue = []
     work_loader = (work_queue.append(worker_pool.apply_async(task_fn, [item])) for item in work_stream)
     work_left = True

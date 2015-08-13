@@ -27,7 +27,10 @@ from matplotlib import cm as colormap
 import operator
 import numpy as np
 
-from glycresoft_sqlalchemy.data_model import DatabaseManager, Decon2LSPeakGroup, PeakGroupMatch, Hypothesis, Decon2LSPeak
+from glycresoft_sqlalchemy.data_model import (
+    DatabaseManager, Decon2LSPeakGroup, PeakGroupMatch,
+    Hypothesis, Decon2LSPeak)
+
 from ..utils.collectiontools import groupby
 
 
@@ -45,14 +48,20 @@ def draw_chromatogram(peak_list, ax=None, set_bounds=True, **kwargs):
     else:
         time, abundance_over_time = map(np.array, peak_list)
 
-    color = kwargs.get('color')
+    color = kwargs.pop('color', "blue")
+    alpha = kwargs.pop("alpha", 0.4)
+    linewidth = kwargs.pop("linewidth", 0.1)
 
-    ax.fill_between(time, abundance_over_time, alpha=0.5)
-    ax.plot(time, abundance_over_time, color=color, alpha=0.7)
+    ax.fill_between(time, abundance_over_time, alpha=alpha)
+    ax.plot(time, abundance_over_time, color=color, alpha=alpha + 0.2, linewidth=linewidth)
 
     if set_bounds:
         ax.set_xlim(0, time.max() + 200)
         ax.set_ylim(0, abundance_over_time.max() + 200)
+        ax.set_ylabel("Relative Intensity")
+        ax.set_xlabel("Scan Number")
+        ax.xaxis.set_tick_params(width=0)
+        ax.set_title("Extracted Chromatogram")
 
     return ax
 

@@ -95,8 +95,9 @@ class Application extends ActionLayerManager
                 self.sideNav = $('.side-nav')
                 self.addLayer ActionBook.home
                 $("#run-matching").click (event) ->
-                    self.addLayer ActionBook.tandemMatchSamples
-                    self.setShowingLayer self.lastAdded
+                    setupAjaxForm "/ms1_or_ms2_choice?ms1_choice=peakGroupingMatchSamples&ms2_choice=tandemMatchSamples",
+                                  "#message-modal"
+
                 $("#build-glycan-search-space").click (event) ->
                     self.addLayer ActionBook.naiveGlycanSearchSpace
                     self.setShowingLayer self.lastAdded

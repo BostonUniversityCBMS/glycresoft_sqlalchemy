@@ -8,7 +8,7 @@ from glycresoft_sqlalchemy.matching import matching, peak_grouping
 from glycresoft_sqlalchemy.scoring import target_decoy
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 from glycresoft_sqlalchemy.spectra.decon2ls_sa import Decon2LSIsosParser
-from glycresoft_sqlalchemy.data_model import DatabaseManager, HypothesisSampleMatch, SampleRun, Hypothesis
+from glycresoft_sqlalchemy.data_model import DatabaseManager, MS2GlycopeptideHypothesisSampleMatch, SampleRun, Hypothesis
 
 import summarize
 
@@ -34,7 +34,7 @@ def run_ms2_glycoproteomics_search(
         sample_name = ','.join(x[0] for x in DatabaseManager(observed_ions_path).session().query(SampleRun.name).all())
     session = manager.session()
     if decoy_hypothesis_id is not None:
-        hsm = HypothesisSampleMatch(
+        hsm = MS2GlycopeptideHypothesisSampleMatch(
             target_hypothesis_id=target_hypothesis_id,
             decoy_hypothesis_id=decoy_hypothesis_id,
             sample_run_name=sample_name,
