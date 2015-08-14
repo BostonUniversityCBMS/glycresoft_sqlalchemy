@@ -42,7 +42,7 @@ def process_predicted_ms1_ion(row, database_manager, modification_table, site_li
 
         # Get the start and end positions of fragment relative to the
         glycan_sites = set(site_list_map.get(ms1_result.protein_name, [])).intersection(
-            range(ms1_result.start_position, ms1_result.end_position + 1))
+            range(ms1_result.start_position, ms1_result.end_position))
 
         # No recorded sites, skip this component.
         if len(glycan_sites) == 0:
