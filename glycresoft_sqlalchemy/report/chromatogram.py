@@ -52,8 +52,7 @@ def draw_chromatogram(peak_list, ax=None, set_bounds=True, **kwargs):
     alpha = kwargs.pop("alpha", 0.4)
     linewidth = kwargs.pop("linewidth", 0.1)
 
-    ax.fill_between(time, abundance_over_time, alpha=alpha)
-    ax.plot(time, abundance_over_time, color=color, alpha=alpha + 0.2, linewidth=linewidth)
+    ax.fill_between(time, abundance_over_time, alpha=alpha + 0.2, color=color, linewidth=linewidth)
 
     if set_bounds:
         ax.set_xlim(0, time.max() + 200)

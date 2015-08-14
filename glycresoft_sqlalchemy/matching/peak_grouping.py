@@ -469,8 +469,8 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
         matches = []
         for mass_shift, count_range in mass_shift_map.items():
             shift = mass_shift.mass
-            for shift_count in range(count_range):
-                total_mass = base_mass + shift * shift_count
+            for shift_count in range(1, count_range + 1):
+                total_mass = base_mass + (shift * shift_count)
                 # This query is recompiled every time, using up the majority of the time spent
                 # per call. Look into cached compilation with bind parameters and the BakedQuery
                 # pattern.

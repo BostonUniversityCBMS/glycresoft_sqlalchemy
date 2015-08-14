@@ -60,7 +60,6 @@ class ProjectManager(DatabaseManager, TaskManager):
         except:
             pass
 
-    @logmethod
     def find_sample(self, name):
         for manager in self.sample_submanagers:
             match = manager.session().query(SampleRun).filter(SampleRun.name == name).first()
@@ -70,7 +69,6 @@ class ProjectManager(DatabaseManager, TaskManager):
                 return match, manager
         raise KeyError(name)
 
-    @logmethod
     def add_sample_path(self, fname):
         name = path.basename(fname)
         dest = path.join(self.sample_dir, name)
@@ -86,57 +84,47 @@ class ProjectManager(DatabaseManager, TaskManager):
     def get_task_path(self, name):
         return path.join(self.task_dir, name)
 
-    @logmethod
     def hypotheses(self):
         session = self.session()
         return session.query(Hypothesis).filter(~Hypothesis.is_decoy)
 
-    @logmethod
     def ms1_glycan_hypotheses(self):
         session = self.session()
         return session.query(MS1GlycanHypothesis).filter(~Hypothesis.is_decoy)
 
-    @logmethod
     def ms1_glycopeptide_hypotheses(self):
         session = self.session()
         return session.query(MS1GlycopeptideHypothesis).filter(~Hypothesis.is_decoy)
 
-    @logmethod
     def ms2_glycopeptide_hypotheses(self):
         session = self.session()
         return session.query(MS2GlycopeptideHypothesis).filter(~Hypothesis.is_decoy)
 
-    @logmethod
     def ms1_glycopeptide_peak_group_matches(self):
         session = self.session()
         return session.query(MS1GlycopeptideHypothesisSampleMatch)
 
-    @logmethod
     def samples(self):
         results = []
         for manager in self.sample_submanagers:
             results.extend(manager.session().query(SampleRun).all())
         return results
 
-    @logmethod
     def ms1_samples(self):
         results = []
         for manager in self.sample_submanagers:
             results.extend(manager.session().query(Decon2LSLCMSSampleRun).all())
         return results
 
-    @logmethod
     def ms2_samples(self):
         results = []
         for manager in self.sample_submanagers:
             results.extend(manager.session().query(BUPIDDeconvolutedLCMSMSSampleRun).all())
         return results
 
-    @logmethod
     def add_sample(self, path):
         self.sample_submanagers.append(DatabaseManager(path))
 
-    @logmethod
     def add_task(self, task):
         TaskManager.add_task(self, task)
         path = self.get_task_path(task.name)

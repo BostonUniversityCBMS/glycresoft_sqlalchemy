@@ -7,9 +7,6 @@
             <li class='tab col s3'>
                 <a class='indigo-text' href="#glycopeptide-table">Glycopeptides</a>
             </li>
-            <li class='tab col s3'>
-                <a class='indigo-text' href="#site-distribution">Site Distribution</a>
-            </li>
         </ul>
     </div>
     <div id='protein-overview' class='col s12'>
@@ -48,13 +45,5 @@
         {% with glycopeptides=filter_context(protein.peak_group_matches).order_by(PeakGroupMatch.ms1_score.desc()) %}
             {% include "peak_group_search/components/glycopeptide_match_table.templ" %}
         {% endwith %}
-    </div>
-    <div id='site-distribution'>
-        {#{% for site, plot in site_summary.glycan_site_specific_abundance_plot() | dictsort %}
-                    <div>
-                        <h5>Site {{site}}, {{protein.protein_sequence[site-1:site+5]}}</h5>
-                        {{plot|svg_plot(pad_inches=0.5, bbox_inches='tight')}}
-                    </div>
-                {% endfor %}#}
     </div>
 </div>

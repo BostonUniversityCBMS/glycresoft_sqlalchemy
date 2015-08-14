@@ -39,7 +39,9 @@ viewPeakGroupingDatabaseSearchResults = function() {
     handle = $(this);
     id = handle.attr('data-target');
     console.log(id);
-    return $.get('/view_database_search_results/view_glycopeptide_composition_details/' + id).success(function(doc) {
+    return PartialSource.glycopeptideCompositionDetailsModal({
+      "id": id
+    }, function(doc) {
       peptideDetailsModal.find('.modal-content').html(doc);
       $(".lean-overlay").remove();
       return peptideDetailsModal.openModal();

@@ -1,4 +1,4 @@
-var ActionBook, DataSource, makeAPIGet;
+var ActionBook, DataSource, PartialSource, makeAPIGet, makePartialGet;
 
 ActionBook = {
   home: {
@@ -42,6 +42,16 @@ DataSource = {
   samples: makeAPIGet("/api/samples"),
   hypothesisSampleMatches: makeAPIGet("/api/hypothesis_sample_matches"),
   tasks: makeAPIGet("/api/tasks")
+};
+
+makePartialGet = function(url, method) {
+  return function(parameters, callback) {
+    return $[method](url.format(parameters)).success(callback);
+  };
+};
+
+PartialSource = {
+  glycopeptideCompositionDetailsModal: makePartialGet('/view_database_search_results/view_glycopeptide_composition_details/{id}', "get")
 };
 
 //# sourceMappingURL=bind-urls.js.map

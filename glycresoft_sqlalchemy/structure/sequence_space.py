@@ -4,6 +4,7 @@ import itertools
 from .modification import Modification, ModificationTable
 from .sequence import Sequence
 
+
 class SequenceSpace:
     """Generate all theoretical glycopeptide sequences"""
     def __init__(self, seq, glycan_compo, glycan_sites, mod_list):

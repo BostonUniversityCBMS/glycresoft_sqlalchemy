@@ -244,8 +244,12 @@ def view_composition_glycopeptide_protein_results(id):
 @app.route("/view_database_search_results/view_glycopeptide_composition_details/<int:id>")
 def view_peak_grouping_glycopeptide_composition_details(id):
     pgm = g.db.query(PeakGroupMatch).get(id)
+    ambiguous_with = g.db.query(PeakGroupMatch).filter(
+        PeakGroupMatch.peak_group_id == pgm.peak_group_id,
+        PeakGroupMatch.id != pgm.id).all()
     return render_template(
-        "peak_group_search/components/glycopeptide_details.templ", pgm=pgm)
+        "peak_group_search/components/glycopeptide_details.templ", pgm=pgm,
+        ambiguous_with=ambiguous_with)
 
 # ----------------------------------------
 #           CSV Export

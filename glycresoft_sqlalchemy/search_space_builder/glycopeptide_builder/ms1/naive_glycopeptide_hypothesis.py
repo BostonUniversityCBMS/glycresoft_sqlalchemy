@@ -163,6 +163,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
             Protein.hypothesis_id == self.hypothesis.id).group_by(
             TheoreticalGlycopeptideComposition.glycopeptide_sequence,
             TheoreticalGlycopeptideComposition.peptide_modifications,
+            TheoreticalGlycopeptideComposition.glycosylation_sites,
             TheoreticalGlycopeptideComposition.protein_id)
 
         q = session.query(TheoreticalGlycopeptideComposition.id).filter(

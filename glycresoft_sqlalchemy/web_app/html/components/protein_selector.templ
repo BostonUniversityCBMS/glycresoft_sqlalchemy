@@ -1,9 +1,0 @@
-<div>
-    <select name="protein-chooser" class='protein-selection'>
-        {% for protein_name, protein in proteins.items() %}
-            {% if protein.theoretical_glycopeptides.count() > 0 %}
-                <option value='{{protein.id}}'>{{protein_name}}</option>
-            {% endif %}
-        {% endfor %}
-    </select>
-</div>

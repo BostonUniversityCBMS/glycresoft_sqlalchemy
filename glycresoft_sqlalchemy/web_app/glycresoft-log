@@ -1,5 +1,150 @@
-12:50:39 - MainProcess:werkzeug:_log:87 - INFO -  * Running on http://127.0.0.1:5000/
-12:50:40 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 12:50:40] "GET /view_database_search_results/view_glycopeptide_composition_details/444 HTTP/1.1" 200 -
-12:52:18 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 12:52:18] "GET /view_database_search_results/view_glycopeptide_composition_details/444 HTTP/1.1" 200 -
-12:52:22 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 12:52:22] "GET /static/js/dist/material-shim.js.map HTTP/1.1" 404 -
-12:52:22 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 12:52:22] "GET /static/js/dist/view-tandem-glycopeptide-database-search-results.js.map HTTP/1.1" 404 -
+15:12:33 - MainProcess:werkzeug:_log:87 - INFO -  * Running on http://127.0.0.1:5000/
+15:12:33 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:33] "GET /stream HTTP/1.1" 200 -
+15:12:36 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:36] "GET / HTTP/1.1" 200 -
+15:12:36 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:36] "GET /static/css/style.css HTTP/1.1" 200 -
+15:12:36 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:36] "GET /static/js/dist/lib-bundle.js HTTP/1.1" 200 -
+15:12:36 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:36] "GET /static/css/materialize.css HTTP/1.1" 200 -
+15:12:36 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:36] "GET /static/js/dist/vendor-bundle.js HTTP/1.1" 200 -
+15:12:36 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:36] "GET /static/js/dist/app-bundle.js HTTP/1.1" 200 -
+15:12:36 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:36] "GET /static/font/icons.css HTTP/1.1" 200 -
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "GET /static/font/roboto/Roboto-Regular.woff2 HTTP/1.1" 200 -
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "GET /static/font/roboto/Roboto-Light.woff2 HTTP/1.1" 200 -
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "GET /static/font/material-design-icons/Material-Design-Icons.woff2 HTTP/1.1" 200 -
+15:12:38 - MainProcess:wcom:wrapper:10 - INFO - samples called with ((<ProjectManager <SQLiteConnectionManager sqlite:///D:\\Programming\\exploration\\glycresoft_sqlalchemy\\datafiles\\integrated_omics_simple.db>>,), {})
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "POST /internal/update_settings HTTP/1.1" 200 -
+15:12:38 - MainProcess:wcom:wrapper:12 - INFO - samples returned [<Decon2LSLCMSSampleRun 1 AGP.decon2ls 5431 0>, <BUPIDDeconvolutedLCMSMSSampleRun 2 AGP.bupid 0 701>]
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "GET /api/hypotheses HTTP/1.1" 200 -
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "GET /api/samples HTTP/1.1" 200 -
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "GET /stream HTTP/1.1" 200 -
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "GET /api/hypothesis_sample_matches HTTP/1.1" 200 -
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "GET /static/js/dist/material-shim.js.map HTTP/1.1" 404 -
+15:12:38 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:38] "GET /static/js/dist/view-tandem-glycopeptide-database-search-results.js.map HTTP/1.1" 404 -
+15:12:40 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:40] "GET /view_database_search_results/1 HTTP/1.1" 200 -
+15:12:40 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:40] "GET /static/font/roboto/Roboto-Bold.woff2 HTTP/1.1" 200 -
+15:12:41 - MainProcess:sqlalchemy.pool.NullPool:_finalize_fairy:643 - ERROR - Exception during reset or similar
+Traceback (most recent call last):
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\sqlalchemy\pool.py", line 636, in _finalize_fairy
+    fairy._reset(pool)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\sqlalchemy\pool.py", line 776, in _reset
+    pool._dialect.do_rollback(self)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\sqlalchemy\engine\default.py", line 420, in do_rollback
+    dbapi_connection.rollback()
+ProgrammingError: SQLite objects created in a thread can only be used in that same thread.The object was created in thread id 51384 and this is thread id 67716
+15:12:41 - MainProcess:sqlalchemy.pool.NullPool:_close_connection:293 - ERROR - Exception closing connection <sqlite3.Connection object at 0x0000000016FA3688>
+Traceback (most recent call last):
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\sqlalchemy\pool.py", line 290, in _close_connection
+    self._dialect.do_close(connection)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\sqlalchemy\engine\default.py", line 426, in do_close
+    dbapi_connection.close()
+ProgrammingError: SQLite objects created in a thread can only be used in that same thread.The object was created in thread id 51384 and this is thread id 67716
+15:12:45 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:45] "POST /view_database_search_results/protein_composition_view/1 HTTP/1.1" 200 -
+15:12:50 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:12:50] "GET /view_database_search_results/view_glycopeptide_composition_details/2406 HTTP/1.1" 200 -
+15:13:00 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:13:00] "GET /view_database_search_results/view_glycopeptide_composition_details/2406 HTTP/1.1" 200 -
+15:13:08 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:13:08] "GET /view_database_search_results/view_glycopeptide_composition_details/2406 HTTP/1.1" 200 -
+15:13:29 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:13:29] "GET /view_database_search_results/view_glycopeptide_composition_details/2374 HTTP/1.1" 200 -
+15:13:52 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:13:52] "GET /view_database_search_results/view_glycopeptide_composition_details/351 HTTP/1.1" 200 -
+15:14:30 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:14:30] "GET /view_database_search_results/view_glycopeptide_composition_details/3699 HTTP/1.1" 200 -
+15:14:41 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:14:41] "GET /view_database_search_results/view_glycopeptide_composition_details/2406 HTTP/1.1" 200 -
+15:15:03 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:15:03] "GET /view_database_search_results/view_glycopeptide_composition_details/1595 HTTP/1.1" 200 -
+15:15:13 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:15:13] "GET /view_database_search_results/view_glycopeptide_composition_details/1428 HTTP/1.1" 200 -
+15:15:20 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:15:20] "GET /view_database_search_results/view_glycopeptide_composition_details/3040 HTTP/1.1" 200 -
+15:15:28 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:15:28] "GET /view_database_search_results/view_glycopeptide_composition_details/3164 HTTP/1.1" 200 -
+15:15:44 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:15:44] "GET /view_database_search_results/view_glycopeptide_composition_details/4396 HTTP/1.1" 200 -
+15:15:57 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:15:57] "GET /view_database_search_results/view_glycopeptide_composition_details/426 HTTP/1.1" 200 -
+15:16:04 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:16:04] "GET /view_database_search_results/view_glycopeptide_composition_details/4395 HTTP/1.1" 200 -
+15:27:28 - MainProcess:__main__:log_exception:1423 - ERROR - Exception on /view_database_search_results/view_glycopeptide_composition_details/622 [GET]
+Traceback (most recent call last):
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1817, in wsgi_app
+    response = self.full_dispatch_request()
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1477, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1381, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1475, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1461, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "d:\programming\exploration\glycresoft_sqlalchemy\glycresoft_sqlalchemy\web_app\serve.py", line 252, in view_peak_grouping_glycopeptide_composition_details
+    ambiguous_with=ambiguous_with)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\templating.py", line 128, in render_template
+    context, ctx.app)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\templating.py", line 110, in _render
+    rv = template.render(context)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\jinja2\environment.py", line 969, in render
+    return self.environment.handle_exception(exc_info, True)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\jinja2\environment.py", line 742, in handle_exception
+    reraise(exc_type, exc_value, tb)
+  File "d:\programming\exploration\glycresoft_sqlalchemy\glycresoft_sqlalchemy\web_app\html\peak_group_search\components\glycopeptide_details.templ", line 45, in top-level template code
+    {% for bunch in pgm.peak_ids|batch(100) %}
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\jinja2\filters.py", line 617, in do_batch
+    for item in value:
+TypeError: 'NoneType' object is not iterable
+15:27:28 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:27:28] "GET /view_database_search_results/view_glycopeptide_composition_details/622 HTTP/1.1" 500 -
+15:27:41 - MainProcess:__main__:log_exception:1423 - ERROR - Exception on /view_database_search_results/view_glycopeptide_composition_details/4395 [GET]
+Traceback (most recent call last):
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1817, in wsgi_app
+    response = self.full_dispatch_request()
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1477, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1381, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1475, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1461, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "d:\programming\exploration\glycresoft_sqlalchemy\glycresoft_sqlalchemy\web_app\serve.py", line 252, in view_peak_grouping_glycopeptide_composition_details
+    ambiguous_with=ambiguous_with)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\templating.py", line 128, in render_template
+    context, ctx.app)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\templating.py", line 110, in _render
+    rv = template.render(context)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\jinja2\environment.py", line 969, in render
+    return self.environment.handle_exception(exc_info, True)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\jinja2\environment.py", line 742, in handle_exception
+    reraise(exc_type, exc_value, tb)
+  File "d:\programming\exploration\glycresoft_sqlalchemy\glycresoft_sqlalchemy\web_app\html\peak_group_search\components\glycopeptide_details.templ", line 45, in top-level template code
+    {% for bunch in pgm.peak_ids|batch(100, "") %}
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\jinja2\filters.py", line 617, in do_batch
+    for item in value:
+TypeError: 'NoneType' object is not iterable
+15:27:41 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:27:41] "GET /view_database_search_results/view_glycopeptide_composition_details/4395 HTTP/1.1" 500 -
+15:27:50 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:27:50] "GET /view_database_search_results/view_glycopeptide_composition_details/1564 HTTP/1.1" 200 -
+15:28:10 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:28:10] "GET /view_database_search_results/view_glycopeptide_composition_details/1268 HTTP/1.1" 200 -
+15:28:19 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:28:19] "GET /view_database_search_results/view_glycopeptide_composition_details/3909 HTTP/1.1" 200 -
+15:29:25 - MainProcess:__main__:log_exception:1423 - ERROR - Exception on /view_database_search_results/view_glycopeptide_composition_details/1564 [GET]
+Traceback (most recent call last):
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1817, in wsgi_app
+    response = self.full_dispatch_request()
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1477, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1381, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1475, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\app.py", line 1461, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "d:\programming\exploration\glycresoft_sqlalchemy\glycresoft_sqlalchemy\web_app\serve.py", line 252, in view_peak_grouping_glycopeptide_composition_details
+    ambiguous_with=ambiguous_with)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\templating.py", line 128, in render_template
+    context, ctx.app)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\flask\templating.py", line 110, in _render
+    rv = template.render(context)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\jinja2\environment.py", line 969, in render
+    return self.environment.handle_exception(exc_info, True)
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\jinja2\environment.py", line 742, in handle_exception
+    reraise(exc_type, exc_value, tb)
+  File "d:\programming\exploration\glycresoft_sqlalchemy\glycresoft_sqlalchemy\web_app\html\peak_group_search\components\glycopeptide_details.templ", line 46, in top-level template code
+    {% for bunch in pgm.peak_ids|batch(100, "") %}
+  File "c:\Users\Joshua\Anaconda\lib\site-packages\jinja2\filters.py", line 617, in do_batch
+    for item in value:
+TypeError: 'NoneType' object is not iterable
+15:29:25 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:29:25] "GET /view_database_search_results/view_glycopeptide_composition_details/1564 HTTP/1.1" 500 -
+15:29:47 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:29:47] "GET /view_database_search_results/view_glycopeptide_composition_details/2070 HTTP/1.1" 200 -
+15:29:58 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:29:58] "GET /view_database_search_results/view_glycopeptide_composition_details/2047 HTTP/1.1" 200 -
+15:30:32 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:30:32] "GET /view_database_search_results/view_glycopeptide_composition_details/2047 HTTP/1.1" 200 -
+15:30:54 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:30:54] "GET /view_database_search_results/view_glycopeptide_composition_details/3909 HTTP/1.1" 200 -
+15:31:08 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:31:08] "GET /view_database_search_results/view_glycopeptide_composition_details/1415 HTTP/1.1" 200 -
+15:31:27 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:31:27] "GET /static/js/dist/material-shim.js.map HTTP/1.1" 404 -
+15:31:27 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:31:27] "GET /static/js/dist/view-tandem-glycopeptide-database-search-results.js.map HTTP/1.1" 404 -
+15:32:40 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:32:40] "GET /view_database_search_results/view_glycopeptide_composition_details/2693 HTTP/1.1" 200 -
+15:33:00 - MainProcess:werkzeug:_log:87 - INFO - 127.0.0.1 - - [13/Aug/2015 15:33:00] "GET /view_database_search_results/view_glycopeptide_composition_details/2047 HTTP/1.1" 200 -

@@ -12,7 +12,7 @@ class NaivePeptide(PeptideBase, Base):
 
     def __repr__(self):
         return "<NaivePeptide {0} {1} {2} {3}...>".format(
-            self.id, self.base_peptide_sequence, self.peptide_modifications,
+            self.id, self.most_detailed_sequence, self.peptide_modifications,
             self.glycosylation_sites)
 
 

@@ -398,8 +398,9 @@ class Sequence(PeptideSequenceBase):
             pos = mod_type.position
 
         if (pos == -1) or (pos >= len(self.seq)):
-            warnings.warn("Invalid modification! Negative Pos: %s Exceeded Length: %s, %r" %
-                         ((pos == -1), (pos >= len(self.seq)), mod_type))
+            raise IndexError(
+                "Invalid modification position. %s, %s, %s" %
+                (pos, str(self.seq), mod_type))
             return -1
         if isinstance(mod_type, Modification):
             mod = mod_type

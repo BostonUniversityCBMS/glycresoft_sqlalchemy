@@ -35,7 +35,7 @@ viewPeakGroupingDatabaseSearchResults = ->
         handle = $(this)
         id = handle.attr('data-target')
         console.log(id)
-        $.get('/view_database_search_results/view_glycopeptide_composition_details/' + id).success (doc) ->
+        PartialSource.glycopeptideCompositionDetailsModal {"id": id}, (doc) ->
             peptideDetailsModal.find('.modal-content').html doc
             # Remove any straggler overlays from rapid re-opening of modal
             $(".lean-overlay").remove()
