@@ -5,9 +5,9 @@ import networkx as nx
 
 from ..data_model import TheoreticalGlycopeptide
 
-from ..structure import sequence, residue
+from ..structure import sequence, residue, fragment
 
-
+fragment_shift = fragment.fragment_shift
 neutral_mass_getter = operator.attrgetter('neutral_mass')
 
 
@@ -143,7 +143,7 @@ class TagFinder(object):
         self.peak_list = sorted(peak_list, key=neutral_mass_getter)
         self.spectrum_graph = nx.DiGraph()
 
-    def find_tags(self, blocks, tolerance=default_match_tolerance):
+    def find_tags(self, blocks, tolerance=default_match_tolerance, offset=0):
         peak_list = self.peak_list
         spectrum_graph = self.spectrum_graph
 
@@ -152,12 +152,12 @@ class TagFinder(object):
                 peak.id, neutral_mass=peak.neutral_mass,
                 charge=peak.charge, intensity=peak.intensity)
 
-        for a_peak in peak_list:
+        for i, a_peak in enumerate(peak_list):
             a_mass = a_peak.neutral_mass
             for block in blocks:
                 a_mass += block.neutral_mass
-                for b_peak in peak_list:
-                    if abs(ppm_error(a_mass, b_peak.neutral_mass)) <= tolerance:
+                for b_peak in peak_list[:]:
+                    if abs(ppm_error(a_mass - offset, b_peak.neutral_mass)) <= tolerance:
                         spectrum_graph.add_edge(a_peak.id, b_peak.id, residue=block)
                 a_mass -= block.neutral_mass
         return spectrum_graph

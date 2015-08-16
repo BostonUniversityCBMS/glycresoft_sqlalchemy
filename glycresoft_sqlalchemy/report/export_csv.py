@@ -6,50 +6,6 @@ from glycresoft_sqlalchemy.data_model import (DatabaseManager, Hypothesis, Prote
                                               TheoreticalGlycopeptideComposition)
 
 
-# def export_matches_as_csv(database_path, hypothesis_id=1, output_path=None, include_ions_matched=True):
-#     manager = DatabaseManager(database_path)
-#     session = manager.session()
-#     gpms = session.query(GlycopeptideMatch).filter(
-#         GlycopeptideMatch.protein_id == Protein.id, Protein.hypothesis_id == hypothesis_id)
-#     if output_path is None:
-#         hypothesis = session.query(Hypothesis).get(hypothesis_id)
-#         output_path = database_path[:-3] + "_" + hypothesis.name + ".glycopeptide_matches.csv"
-#     with open(output_path, 'wb') as fh:
-#         writer = csv.writer(fh)
-#         header = [
-#             "id", "ms1_score", "ms2_score", "q_value", "observed_mass", "volume", "ppm_error",
-#             "scan_id_range", "glycopeptide_sequence", "sequence_length", "mean_coverage", "mean_hexnac_coverage",
-#             "stub_ion_count", "bare_b_ion_coverage", "bare_y_ion_coverage", "glycosylated_b_ion_coverage",
-#             "glycosylated_y_ion_coverage", "protein_name"
-#         ]
-#         if include_ions_matched:
-#             header.extend(["b_ions", "y_ions", 'stub_ions', 'oxonium_ions'])
-#         writer.writerow(header)
-#         for gpm in gpms:
-#             row = [
-#                 gpm.id, gpm.ms1_score, gpm.ms2_score, gpm.q_value, gpm.observed_mass, gpm.volume, gpm.ppm_error,
-#                 ';'.join(map(str, gpm.scan_id_range)), gpm.glycopeptide_sequence, gpm.sequence_length,
-#                 gpm.mean_coverage, gpm.mean_hexnac_coverage,
-#                 len(gpm.stub_ions),
-#                 len(gpm.bare_b_ions),
-#                 len(gpm.bare_y_ions),
-#                 len(gpm.glycosylated_b_ions),
-#                 len(gpm.glycosylated_y_ions),
-#                 gpm.protein.name
-#             ]
-#             if include_ions_matched:
-#                 row.extend([
-#                         ";".join([ion['key'] for series in [gpm.bare_b_ions, gpm.glycosylated_b_ions]
-#                                   for ion in series]),
-#                         ";".join([ion['key'] for series in [gpm.bare_y_ions, gpm.glycosylated_y_ions]
-#                                   for ion in series]),
-#                         ";".join([ion['key'] for ion in gpm.stub_ions]),
-#                         ";".join([ion['key'] for ion in gpm.oxonium_ions])
-#                     ])
-#             writer.writerow(row)
-#     return output_path
-
-
 def export_glycopeptide_ms2_matches(glycopeptides, output_path):
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
@@ -127,7 +83,7 @@ def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_id
 
 
 class CSVExportDriver(PipelineModule):
-    def __init__(self, database_path, hypothesis_sample_match_ids=None, output_path=None):
+    def __init__(self, database_path, hypothesis_sample_match_ids=None, output_path=None, filterfunc=lambda q: q):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
 
@@ -145,10 +101,13 @@ class CSVExportDriver(PipelineModule):
         if output_path is None:
             output_path = os.path.splitext(database_path)[0]
         self.output_path = output_path
+        self.filterfunc = filterfunc
 
     def dispatch_export(self, hypothesis_sample_match_id):
         session = self.session
         hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+
+        filterfunc = self.filterfunc
 
         def getname(hsm):
             try:
@@ -159,13 +118,13 @@ class CSVExportDriver(PipelineModule):
             if res_type == GlycopeptideMatch:
                 output_path = self.output_path + '.{}.glycopeptide_matches.csv'.format(getname(hsm))
                 # Only export target hypothesis
-                export_glycopeptide_ms2_matches(query.filter(
+                export_glycopeptide_ms2_matches(filterfunc(query.filter(
                     GlycopeptideMatch.protein_id == Protein.id,
-                    Protein.hypothesis_id == hsm.target_hypothesis_id), output_path)
+                    Protein.hypothesis_id == hsm.target_hypothesis_id)), output_path)
             elif res_type == TheoreticalGlycopeptideComposition:
                 output_path = self.output_path + '.{}.glycopeptide_compositions.csv'.format(getname(hsm))
                 export_glycopeptide_ms1_matches_legacy(
-                    query,
+                    filterfunc(query),
                     hsm.target_hypothesis.parameters['monosaccharide_identities'],
                     output_path)
             else:

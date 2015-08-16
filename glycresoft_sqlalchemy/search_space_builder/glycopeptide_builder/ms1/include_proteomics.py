@@ -9,7 +9,7 @@ except:
 
 from ..peptide_utilities import SiteListFastaFileParser
 
-from glycresoft_sqlalchemy.data_model import DatabaseManager, Hypothesis, Protein
+from glycresoft_sqlalchemy.data_model import MS1GlycopeptideHypothesis, Protein
 from glycresoft_sqlalchemy.data_model import PipelineModule
 
 from glycresoft_sqlalchemy.proteomics.mzid_sa import Proteome as MzIdentMLProteome
@@ -36,7 +36,7 @@ class ProteomeImporter(PipelineModule):
                             os.path.basename(self.mzid_path)
                             )[0],
                         tag)
-                hypothesis = Hypothesis(name=name, parameters={"mzid_path": self.mzid_path})
+                hypothesis = MS1GlycopeptideHypothesis(name=name, parameters={"mzid_path": self.mzid_path})
                 session.add(hypothesis)
                 session.commit()
                 self.hypothesis_id = hypothesis.id
