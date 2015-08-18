@@ -7,13 +7,12 @@ from glycresoft_sqlalchemy.data_model import DatabaseManager, Glycan, Theoretica
 from glycresoft_sqlalchemy.data_model import PipelineModule
 
 from glycresoft_sqlalchemy.structure import glycans as ms1_glycomics
+from ..glycan_builder.composition_source import GlycanCompositionHypothesisBuilder
+
 
 glycan_file_type_map = {
-    "hypothesis": ms1_glycomics.GlycanHypothesis,
-    "ms1_matches": ms1_glycomics.GlycanMS1Results
+   "txt": GlycanCompositionHypothesisBuilder
 }
-
-glycan_composition_string = ms1_glycomics.SimpleGlycan.glycan_composition_string
 
 
 class MS1GlycanImporter(PipelineModule):
@@ -24,42 +23,3 @@ class MS1GlycanImporter(PipelineModule):
         self.glycan_file_type = glycan_file_type
         self.hypothesis_id = hypothesis_id
         self.glycan_path = glycan_path
-
-    def run(self):
-        self.glycan_reader = glycan_file_type_map[self.glycan_file_type](self.glycan_path)
-
-        session = self.manager.session()
-        hypothesis = session.query(Hypothesis).filter(Hypothesis.id == self.hypothesis_id).first()
-        hypothesis.parameters['monosaccharide_identities'] = self.glycan_reader.glycan_identities
-        session.add(hypothesis)
-        session.commit()
-        session = self.manager.session()
-        try:
-            for glycan in self.glycan_reader.glycans:
-                g = Glycan(composition=glycan_composition_string(glycan.composition),
-                           mass=glycan.mass,  # other=glycan.data,
-                           hypothesis_id=self.hypothesis_id,
-                           monosaccaride_map=glycan.composition_dict)
-                session.add(g)
-            session.commit()
-        except Exception, e:
-            logger.exception("%r", locals(), exc_info=e)
-            raise
-        finally:
-            session.close()
-
-
-def map_glycans_by_composition(database_path, hypothesis_id,
-                               target_tables=(TheoreticalGlycopeptide, GlycopeptideMatch)):
-    session = DatabaseManager(database_path).session()
-    for composition, glycan_id in (session.query(Glycan.composition, Glycan.id).filter(
-            Glycan.hypothesis_id == hypothesis_id)):
-        for table in target_tables:
-            session.query(table).filter(
-                table.glycan_composition_str == composition,
-                table.protein_id == Protein.id,
-                Protein.hypothesis_id == hypothesis_id).update(
-                {"glycan_id": glycan_id}, synchronize_session=False)
-            session.commit()
-    session.commit()
-    session.close()

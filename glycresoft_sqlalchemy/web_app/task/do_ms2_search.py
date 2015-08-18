@@ -4,7 +4,7 @@ from glycresoft_sqlalchemy.data_model import (
 
 from glycresoft_sqlalchemy.matching.matching import IonMatching, ms1_tolerance_default, ms2_tolerance_default
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
-from glycresoft_sqlalchemy.scoring import target_decoy
+from glycresoft_sqlalchemy.scoring import target_decoy, score_spectrum_matches
 
 import os
 
@@ -80,6 +80,13 @@ def taskmain(
         ms2_tolerance=ms2_tolerance,
         n_processes=kwargs.get("n_processes", 4))
     job.start()
+
+    job = score_spectrum_matches.SimpleSpectrumAssignment(database_path, target_hypothesis_id, hsm_id)
+    job.start()
+
+    job = score_spectrum_matches.SimpleSpectrumAssignment(database_path, decoy_hypothesis_id, hsm_id)
+    job.start()
+
     comm.send(Message("Begin TDA", "update"))
     job = target_decoy.TargetDecoyAnalyzer(database_path, target_hypothesis_id, decoy_hypothesis_id, hsm_id)
     job.start()

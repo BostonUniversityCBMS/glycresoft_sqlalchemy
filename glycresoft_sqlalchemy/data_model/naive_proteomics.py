@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table
 
-from .data_model import Base, PeptideBase, Glycan
+from .data_model import Base, PeptideBase, Glycan, has_glycan_composition
 
 
 class NaivePeptide(PeptideBase, Base):
@@ -43,3 +43,4 @@ class TheoreticalGlycopeptideComposition(PeptideBase, Base):
         'polymorphic_on': PeptideBase.sequence_type,
         'polymorphic_identity': u'TheoreticalGlycopeptideComposition',
     }
+has_glycan_composition(TheoreticalGlycopeptideComposition, "glycan_composition_str")

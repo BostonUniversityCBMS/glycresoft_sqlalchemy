@@ -68,10 +68,10 @@ def merge_compositions(composition_list):
     -------
     str
     """
-    return "[%s]" % ';'.join(map(str, map(sum, zip(*[
-        map(int, composition[1:-1].split(";"))
-        for composition in composition_list
-    ]))))
+    first = composition_list[0].clone()
+    for comp in composition_list[1:]:
+        first += comp
+    return first.serialize()
 
 
 def _glycan_product_coreblock(session, group, n, hypothesis_id, uniqueness_cache=None):

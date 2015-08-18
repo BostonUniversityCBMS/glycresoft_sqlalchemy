@@ -33,12 +33,11 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
     try:
         session = database_manager.session()
         peptide = session.query(NaivePeptide).get(peptide[0])
-        # logger.info("Working on %r", peptide)
         i = 0
         for glycan_set in get_glycan_combinations(
                 database_manager.session(), min(peptide.count_glycosylation_sites, max_sites), hypothesis_id):
-            glycan_composition_str = merge_compositions([(g.composition) for g in glycan_set])
-            glycan_mass = sum([(g.mass) for g in glycan_set]) - (water * len(glycan_set))
+            glycan_composition_str = merge_compositions(g.glycan_composition for g in glycan_set)
+            glycan_mass = sum([(g.theoretical_mass - water) for g in glycan_set])
             glycoform = TheoreticalGlycopeptideComposition(
                 base_peptide_sequence=peptide.base_peptide_sequence,
                 modified_peptide_sequence=peptide.modified_peptide_sequence,
@@ -55,6 +54,7 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
                 glycan_composition_str=glycan_composition_str,
                 glycan_mass=glycan_mass,
             )
+            glycoform.glycans = glycan_set
             session.add(glycoform)
             i += 1
             if i % 100000 == 0:

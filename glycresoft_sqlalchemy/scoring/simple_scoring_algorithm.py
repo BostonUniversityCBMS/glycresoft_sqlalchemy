@@ -3,12 +3,9 @@ import itertools
 import operator
 import math
 
-from ..data_model import GlycopeptideMatch, TheoreticalGlycopeptide, DatabaseManager
 from ..utils import collectiontools
 
 from ..structure.sequence import Sequence
-from ..structure.stub_glycopeptides import StubGlycopeptide
-
 
 imap = itertools.imap
 chain = itertools.chain
@@ -17,6 +14,70 @@ key_getter = operator.itemgetter("key")
 
 bare_ion_pattern = re.compile(r"[czby](\d+)")
 glycosylated_ion_pattern = re.compile(r"[czby](\d+)\+(.+)")
+
+
+def split_ion_list(ion_list):
+    ion_store = {
+        "oxonium_ions": [],
+        "stub_ions": [],
+        "bare_b_ions": [],
+        "bare_y_ions": [],
+        "glycosylated_b_ions": [],
+        "glycosylated_y_ions": [],
+        "bare_c_ions": [],
+        "bare_z_ions": [],
+        "glycosylated_c_ions": [],
+        "glycosylated_z_ions": []
+    }
+    for ion in ion_list:
+        key = ion['key']
+        # Pseudoswitch
+        if 'pep' == key[:3]:
+            ion_store['stub_ions'].append(ion)
+            continue
+        match = bare_ion_pattern.match(key)
+        if match:
+            ion_store['bare_%s_ions' % key[0]].append(ion)
+            continue
+
+        match = glycosylated_ion_pattern.match(key)
+        if match:
+            ion_store['"glycosylated_%s_ions' % key[0]].append(ion)
+            continue
+        # Finally
+        ion_store['oxonium_ions'].append(ion)
+    return ion_store
+
+
+def merge_ion_matches(matches):
+    """Group multiple matches to the same fragment
+
+    Parameters
+    ----------
+    matches : list of dict
+        The list of ion matches to group
+
+    Returns
+    -------
+    list of dict: Merged ion matches
+    """
+    groups = collectiontools.groupby(matches,
+                                     key_getter)
+    best_matches = []
+    fabs = math.fabs
+    for key, matched_key in groups.items():
+        best_match = matched_key[0]
+        best_ppm = fabs(best_match["ppm_error"])
+        peak_map = {best_match["peak_id"]: best_match}
+        for match in matched_key[1:]:
+            peak_map[match["peak_id"]] = match
+            if fabs(match["ppm_error"]) < best_ppm:
+                best_match = match
+                best_ppm = fabs(match["ppm_error"])
+        best_match = best_match.copy()
+        best_match["peak_map"] = peak_map
+        best_matches.append(best_match)
+    return best_matches
 
 
 def evaluate(matched, theoretical, **parameters):

@@ -11,12 +11,10 @@ except:
 from os.path import splitext
 from collections import defaultdict
 
-from ..utils import collectiontools
 from ..spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 
-from ..scoring import score_matches
 from .. import data_model as model
-from ..data_model import PipelineModule, MSMSSqlDB, TandemScan
+from ..data_model import PipelineModule, MSMSSqlDB
 
 
 HypothesisSampleMatch = model.HypothesisSampleMatch
@@ -24,7 +22,7 @@ Hypothesis = model.Hypothesis
 SampleRun = model.SampleRun
 Protein = model.Protein
 TheoreticalGlycopeptide = model.TheoreticalGlycopeptide
-SpectrumMatch = model.SpectrumMatch
+GlycopeptideSpectrumMatch = model.GlycopeptideSpectrumMatch
 GlycopeptideMatch = model.GlycopeptideMatch
 
 
@@ -47,7 +45,8 @@ def ppm_error(x, y):
 
 
 def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
-                    database_manager, hypothesis_sample_match_id, sample_run_id):
+                    database_manager, hypothesis_sample_match_id, sample_run_id,
+                    hypothesis_id):
     '''
     *Task Function*
 
@@ -216,13 +215,6 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
             first_scan = min(scan_ids)
             last_scan = max(scan_ids)
 
-            oxonium_ions = merge_ion_matches(oxonium_ions)
-            bare_b_ions = merge_ion_matches(bare_b_ions)
-            bare_y_ions = merge_ion_matches(bare_y_ions)
-            glycosylated_b_ions = merge_ion_matches(glycosylated_b_ions)
-            glycosylated_y_ions = merge_ion_matches(glycosylated_y_ions)
-            stub_ions = merge_ion_matches(stub_ions)
-
             gpm = GlycopeptideMatch(
                 protein_id=theoretical.protein_id,
                 theoretical_glycopeptide_id=theoretical.id,
@@ -256,15 +248,17 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                 last_scan=last_scan,
                 hypothesis_sample_match_id=hypothesis_sample_match_id
             )
-            try:
-                score_matches.evaluate(gpm, theoretical)
-            except Exception, e:
-                logger.exception("An error occurred while scoring (%r, %r)", gpm, theoretical, exc_info=e)
+
             session.add(gpm)
             session.commit()
             for spectrum, peak_match_map in spectrum_matches:
-                sm = SpectrumMatch(glycopeptide_match_id=gpm.id,
-                                   spectrum_id=spectrum.id, peak_match_map=peak_match_map)
+                sm = GlycopeptideSpectrumMatch(
+                    glycopeptide_match_id=gpm.id,
+                    scan_time=spectrum.time, peak_match_map=peak_match_map,
+                    peaks_explained=len(peak_match_map),
+                    peaks_unexplained=len(spectrum.tandem_data) - len(peak_match_map),
+                    hypothesis_sample_match_id=hypothesis_sample_match_id,
+                    hypothesis_id=hypothesis_id)
                 session.add(sm)
             session.commit()
             session.close()
@@ -278,37 +272,6 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
             session.close()
         except:
             pass
-
-
-def merge_ion_matches(matches):
-    """Group multiple matches to the same fragment
-
-    Parameters
-    ----------
-    matches : list of dict
-        The list of ion matches to group
-
-    Returns
-    -------
-    list of dict: Merged ion matches
-    """
-    groups = collectiontools.groupby(matches,
-                                     key_getter)
-    best_matches = []
-    fabs = math.fabs
-    for key, matched_key in groups.items():
-        best_match = matched_key[0]
-        best_ppm = fabs(best_match["ppm_error"])
-        peak_map = {best_match["peak_id"]: best_match}
-        for match in matched_key[1:]:
-            peak_map[match["peak_id"]] = match
-            if fabs(match["ppm_error"]) < best_ppm:
-                best_match = match
-                best_ppm = fabs(match["ppm_error"])
-        best_match = best_match.copy()
-        best_match["peak_map"] = peak_map
-        best_matches.append(best_match)
-    return best_matches
 
 
 class IonMatching(PipelineModule):
@@ -359,7 +322,8 @@ class IonMatching(PipelineModule):
                                     ms2_tolerance=self.ms2_tolerance,
                                     database_manager=self.manager,
                                     hypothesis_sample_match_id=self.hypothesis_sample_match_id,
-                                    sample_run_id=self.sample_run_id)
+                                    sample_run_id=self.sample_run_id,
+                                    hypothesis_id=self.hypothesis_id)
         return task_fn
 
     def stream_theoretical_glycopeptides(self, chunksize=50):

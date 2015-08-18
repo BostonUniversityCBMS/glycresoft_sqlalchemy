@@ -2,7 +2,8 @@
 
 
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import event
+from sqlalchemy.orm import relationship, backref, make_transient
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy import (PickleType, Numeric, Unicode, Table,
@@ -10,7 +11,7 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table,
 
 from .generic import MutableDict, MutableList
 from .base import Base
-from .glycomics import TheoreticalGlycanComposition as Glycan
+from .glycomics import TheoreticalGlycanComposition as Glycan, has_glycan_composition
 from . import glycomics
 
 from ..structure import sequence
@@ -233,6 +234,7 @@ class TheoreticalGlycopeptide(PeptideBase, Base):
     def __repr__(self):
         rep = "<TheoreticalGlycopeptide {} {}>".format(self.glycopeptide_sequence, self.observed_mass)
         return rep
+has_glycan_composition(TheoreticalGlycopeptide, "glycan_composition_str")
 
 
 class MS1GlycanHypothesis(Hypothesis):

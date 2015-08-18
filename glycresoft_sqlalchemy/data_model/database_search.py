@@ -9,7 +9,7 @@ from sqlalchemy.orm.session import object_session
 from .generic import MutableDict, MutableList
 from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan, Protein
 from .naive_proteomics import TheoreticalGlycopeptideComposition
-from .glycomics import TheoreticalGlycanComposition, MassShift
+from .glycomics import TheoreticalGlycanComposition, MassShift, has_glycan_composition
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
 from .json_type import tryjson
 
@@ -230,25 +230,31 @@ class GlycopeptideMatch(PeptideBase, Base):
     mean_coverage = Column(Numeric(10, 6, asdecimal=False))
     mean_hexnac_coverage = Column(Numeric(10, 6, asdecimal=False))
 
-    spectrum_matches = relationship("SpectrumMatch", backref='glycopeptide_match', lazy='dynamic')
+    spectrum_matches = relationship("GlycopeptideSpectrumMatch", backref='glycopeptide_match', lazy='dynamic')
 
     def __repr__(self):
         rep = "<GlycopeptideMatch {} {} {}>".format(self.glycopeptide_sequence, self.ms2_score, self.observed_mass)
         return rep
+has_glycan_composition(GlycopeptideMatch, "glycan_composition_str")
 
 
-class SpectrumMatch(Base):
-    __tablename__ = "SpectrumMatch"
+class GlycopeptideSpectrumMatch(Base):
+    __tablename__ = "GlycopeptideSpectrumMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    spectrum_id = Column(Integer)
+    scan_time = Column(Integer)
     glycopeptide_match_id = Column(Integer, ForeignKey(GlycopeptideMatch.id), index=True)
     peak_match_map = Column(MutableDict.as_mutable(PickleType))
+    peaks_explained = Column(Integer, index=True)
+    peaks_unexplained = Column(Integer)
+    best_match = Column(Boolean, index=True)
+    hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), index=True)
+    hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), index=True)
 
     def __repr__(self):
-        return "<SpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
+        return "<GlycopeptideSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
             self.glycopeptide_match.glycopeptide_sequence,
-            self.spectrum_id, len(self.peak_match_map))
+            self.scan_time, len(self.peak_match_map))
 
 
 TheoreticalCompositionMap = {

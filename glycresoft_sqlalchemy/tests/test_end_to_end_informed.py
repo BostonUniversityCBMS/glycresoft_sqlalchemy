@@ -1,13 +1,14 @@
 import os
 import logging
-logging.basicConfig(level=logging.DEBUG, filemode='w',
-                    format="%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
-                    datefmt="%H:%M:%S")
-
+try:
+    logging.basicConfig(level=logging.DEBUG, filemode='w',
+                        format="%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
+                        datefmt="%H:%M:%S")
+except:
+    pass
 from glycresoft_sqlalchemy import data_model
-from glycresoft_sqlalchemy.search_space_builder import naive_glycopeptide_hypothesis
 from glycresoft_sqlalchemy.search_space_builder import exact_search_space_builder, pooling_make_decoys
-from glycresoft_sqlalchemy.matching import matching, peak_grouping
+from glycresoft_sqlalchemy.matching import matching
 from glycresoft_sqlalchemy.scoring import target_decoy
 from glycresoft_sqlalchemy.search_space_builder import integrated_omics
 
@@ -37,6 +38,8 @@ def test_main():
     print hypothesis_id
     job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id])
     decoy_hypothesis_id = job.start()[0]
+    # hypothesis_id = 2
+    # decoy_hypothesis_id = 3
     manager = data_model.DatabaseManager(db_file_name)
     session = manager.session()
     hsm = data_model.MS2GlycopeptideHypothesisSampleMatch(
@@ -57,8 +60,8 @@ def test_main():
                                "db", ms1_tolerance=1e-5, ms2_tolerance=2e-5,
                                hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=8)
     matcher.start()
-    tda = target_decoy.TargetDecoyAnalyzer(db_file_name, hypothesis_id, decoy_hypothesis_id)
-    tda.start()
+    # tda = target_decoy.TargetDecoyAnalyzer(db_file_name, hypothesis_id, decoy_hypothesis_id)
+    # tda.start()
 
 
 if __name__ == '__main__':

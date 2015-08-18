@@ -6,16 +6,21 @@ import functools
 import os
 from multiprocessing import Pool
 
-from glycresoft_sqlalchemy.data_model import (Hypothesis, MS1GlycopeptideHypothesis, Protein, TheoreticalGlycopeptide,
-                          Glycan, DatabaseManager, TheoreticalGlycopeptideCompositionGlycanAssociation,
-                          func, TheoreticalGlycopeptideComposition)
+from glycresoft_sqlalchemy.data_model import (
+    Hypothesis, MS1GlycopeptideHypothesis, Protein,
+    Glycan, DatabaseManager, TheoreticalGlycopeptideCompositionGlycanAssociation,
+    func, TheoreticalGlycopeptideComposition)
+
 from glycresoft_sqlalchemy.data_model.informed_proteomics import (InformedPeptide, InformedTheoreticalGlycopeptideComposition)
 from glycresoft_sqlalchemy.data_model import PipelineModule
+
+from glycresoft_sqlalchemy.proteomics.enrich_peptides import EnrichDistinctPeptides
 from glycresoft_sqlalchemy.utils.worker_utils import async_worker_pool
 from glycresoft_sqlalchemy.utils.database_utils import toggle_indices
 
 from .include_glycomics import MS1GlycanImporter
 from .include_proteomics import ProteomeImporter
+
 from ..glycan_utilities import get_glycan_combinations, merge_compositions
 from ..utils import flatten
 
@@ -66,11 +71,11 @@ def glycosylate_callback(peptide, session, hypothesis_id, position_selector, max
                 for site in sites:
                     glycan = glycan_iter.next()
                     hexnac = Modification("HexNAc")
-                    hexnac.mass = glycan.mass - water
+                    hexnac.mass = glycan.theoretical_mass - water
                     for mod in target[site][1]:
                         target.drop_modification(site, mod)
                     target.add_modification(site, hexnac)
-                    glycan_composition.append(glycan.composition)
+                    glycan_composition.append(glycan.glycan_composition)
                 glycan_composition_string = merge_compositions(glycan_composition)
                 target.glycan = glycan_composition_string
                 result.append((target, [g.id for g in glycans]))
@@ -191,6 +196,9 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
         return task_fn
 
     def run(self):
+        subjob = EnrichDistinctPeptides(self.database_path, self.hypothesis_id, self.protein_ids, max_distance=0)
+        subjob.start()
+
         task_fn = self.prepare_task_fn()
         index_controller = toggle_indices(self.manager.session(), TheoreticalGlycopeptideComposition)
         index_controller.drop()
