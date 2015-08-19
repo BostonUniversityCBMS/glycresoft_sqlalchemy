@@ -1,7 +1,7 @@
 import re
 import multiprocessing
 import logging
-
+import pickle
 import functools
 
 from glycresoft_sqlalchemy.structure.sequence import Sequence, strip_modifications
@@ -60,7 +60,7 @@ def generate_fragments(seq, ms1_result):
         ms1_result.base_peptide_sequence,
         ms1_result.peptide_modifications,
         ms1_result.count_glycosylation_sites,
-        ms1_result.glycan_composition_str)
+        seq.glycan)
 
     stub_ions = pep_stubs.get_stubs()
     oxonium_ions = pep_stubs.get_oxonium_ions()
@@ -107,7 +107,7 @@ def from_sequence(ms1_result, database_manager, protein_map, source_type):
         session.close()
         return product
     except Exception, e:
-        logger.exception("An error occurred, %r", locals(), exc_info=e)
+        logger.exception("An error occurred, %r", ms1_result, exc_info=e)
         raise
 
 

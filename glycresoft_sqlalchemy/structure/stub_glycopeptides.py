@@ -34,18 +34,20 @@ class StubGlycopeptide(object):
         self.pep_seq = sequence
         self.mass = sequence_obj.mass
         self.glyco_num = int(sites_num)
-        self.glycan_compo = glycan_comp
+        self.glycan_composition = glycan_comp
         if glycan_comp == '':
-            self.dHex = ''
-            self.Hex = ''
-            self.HexNAc = ''
-            self.NeuAc = ''
+            self.dHex = 0
+            self.Hex = 0
+            self.HexNAc = 0
+            self.NeuAc = 0
         else:
-            self.glycans = re.findall(r'\b\d+\b', self.glycan_compo)
-            self.dHex = int(self.glycans[0])
-            self.Hex = int(self.glycans[1])
-            self.HexNAc = int(self.glycans[2])
-            self.NeuAc = int(self.glycans[3])
+            no_stem_gc = self.glycan_composition.clone()
+            no_stem_gc.drop_stems()
+            no_stem_gc.drop_positions()
+            self.dHex = no_stem_gc["dHex"]
+            self.Hex = no_stem_gc["Hex"]
+            self.HexNAc = no_stem_gc["HexNAc"]
+            self.NeuAc = no_stem_gc["NeuNAc"]
 
         self.length = len(self.pep_seq)
 

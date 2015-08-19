@@ -92,6 +92,23 @@ def build_naive_ms2_glycopeptide(database_path, hypothesis_sample_match_id, **kw
     print target_hypothesis_id, decoy_hypothesis_id
 
 
+def build_informed_ms2_glycopeptide(database_path, hypothesis_sample_match_id, **kwargs):
+    kwargs.setdefault("n_processes", 4)
+    job = exact_search_space_builder.ExactSearchSpaceBuilder.from_hypothesis(
+        database_path, hypothesis_sample_match_id, **kwargs)
+    target_hypothesis_id = job.start()
+    decoy_job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(
+        database_path,
+        hypothesis_ids=[target_hypothesis_id],
+        prefix_len=kwargs.get("prefix_len", 0),
+        suffix_len=kwargs.get("suffix_len", 1),
+        decoy_type=kwargs.get("decoy_type", 0),
+        n_processes=kwargs.get('n_processes', 4),
+        commit_checkpoint=commit_checkpoint)
+    decoy_hypothesis_id, = decoy_job.start()
+    print target_hypothesis_id, decoy_hypothesis_id
+
+
 app = argparse.ArgumentParser("build-database")
 app.add_argument("-n", "--n-processes", default=4, type=int, help='Number of processes to run on')
 subparsers = app.add_subparsers()
@@ -113,47 +130,57 @@ build_naive_simple.add_argument(
 build_naive_simple.set_defaults(task=build_naive_search_space_simple)
 
 
-c = build_naive_ms1_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms1")
-c.add_argument(
-    "-d", "--database-path", default=None, required=True,
-    help="Path to project database.")
-c.add_argument(
-    "-p", "--protein-file", help="Path to Proteins to digest in Fasta format")
-c.add_argument(
-    "-s", "--site-list-file",
-    required=False, help="Path to a file in FASTA format where each sequence is N-glycosylated."
-    "Entries are each a space-separated list of positions that start at 1. If omitted, glycosites"
-    " will be inferred using canonical sequon patterns.")
-c.add_argument(
-    "-g", "--glycan-file",
-    help="Path to file of glycans to use. May be either a CSV or a database file formats."
-    )
-c.add_argument("-f", "--glycan-file-type", help="The format of --glycan-file")
-c.add_argument(
-    "-c", "--constant-modifications", action='append', help='A text formatted modification specifier'
-    ' to be applied at every possible site. Modification specifier of the form "ModificationName (ResiduesAllowed)"'
-    " May be specified more than once.")
+build_naive_ms1_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms1")
+with build_naive_ms1_glycopeptide_app as c:
+    c.add_argument(
+        "-d", "--database-path", default=None, required=True,
+        help="Path to project database.")
+    c.add_argument(
+        "-p", "--protein-file", help="Path to Proteins to digest in Fasta format")
+    c.add_argument(
+        "-s", "--site-list-file",
+        required=False, help="Path to a file in FASTA format where each sequence is N-glycosylated."
+        "Entries are each a space-separated list of positions that start at 1. If omitted, glycosites"
+        " will be inferred using canonical sequon patterns.")
+    c.add_argument(
+        "-g", "--glycan-file",
+        help="Path to file of glycans to use. May be either a CSV or a database file formats."
+        )
+    c.add_argument("-f", "--glycan-file-type", help="The format of --glycan-file")
+    c.add_argument(
+        "-c", "--constant-modifications", action='append', help='A text formatted modification specifier'
+        ' to be applied at every possible site. Modification specifier of the form "ModificationName (ResiduesAllowed)"'
+        " May be specified more than once.")
 
-c.add_argument(
-    "-v", "--variable-modifications", action='append', help='A text formatted modification specifier'
-    ' to be applied at every possible site. Modification specifier of the form "ModificationName (ResiduesAllowed)".'
-    " May be specied more than once.")
-c.add_argument(
-    "-e", "--enzyme", required=False, default='trypsin', help="Protease to use for in-silico"
-    " digestion of proteins. Defaults to trypsin.")
-c.add_argument(
-    "-m", "--missed-cleavages", type=int, default=2, required=False, help="The maximum number of"
-    " missed cleavages to allow. Defaults to 2")
-c.add_argument("--hypothesis-name", default=None, required=False, help="Name of the hypothesis")
-c.set_defaults(task=build_naive_ms1_glycopeptide)
+    c.add_argument(
+        "-v", "--variable-modifications", action='append', help='A text formatted modification specifier'
+        ' to be applied at every possible site. Modification specifier of the form "ModificationName (ResiduesAllowed)".'
+        " May be specied more than once.")
+    c.add_argument(
+        "-e", "--enzyme", required=False, default='trypsin', help="Protease to use for in-silico"
+        " digestion of proteins. Defaults to trypsin.")
+    c.add_argument(
+        "-m", "--missed-cleavages", type=int, default=2, required=False, help="The maximum number of"
+        " missed cleavages to allow. Defaults to 2")
+    c.add_argument("--hypothesis-name", default=None, required=False, help="Name of the hypothesis")
+    c.set_defaults(task=build_naive_ms1_glycopeptide)
 
 
-c = build_naive_ms2_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms2")
-c.add_argument(
-    "-d", "--database-path", default=None, required=True,
-    help="Path to project database.")
-c.add_argument("-i", "--hypothesis-sample-match-id", help="The id number of the hypothesis sample match to build from")
-c.set_defaults(task=build_naive_ms2_glycopeptide)
+build_naive_ms2_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms2")
+with build_naive_ms2_glycopeptide_app as c:
+    c.add_argument(
+        "-d", "--database-path", default=None, required=True,
+        help="Path to project database.")
+    c.add_argument("-i", "--hypothesis-sample-match-id", help="The id number of the hypothesis sample match to build from")
+    c.set_defaults(task=build_naive_ms2_glycopeptide)
+
+build_informed_ms2_glycopeptide_app = subparsers.add_parser("informed-glycopeptide-ms2")
+with build_informed_ms2_glycopeptide_app as c:
+    c.add_argument(
+        "-d", "--database-path", default=None, required=True,
+        help="Path to project database.")
+    c.add_argument("-i", "--hypothesis-sample-match-id", help="The id number of the hypothesis sample match to build from")
+    c.set_defaults(task=build_informed_ms2_glycopeptide)
 
 
 def main():

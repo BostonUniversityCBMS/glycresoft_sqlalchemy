@@ -1,8 +1,10 @@
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import PickleType, Numeric, Unicode, Column, Integer, ForeignKey, Table
+from sqlalchemy import event
 
 from .data_model import Base, PeptideBase, Protein
 from .naive_proteomics import TheoreticalGlycopeptideComposition
+from .glycomics import has_glycan_composition_listener
 
 
 class InformedPeptide(PeptideBase, Base):
@@ -38,3 +40,5 @@ class InformedTheoreticalGlycopeptideComposition(TheoreticalGlycopeptideComposit
     __mapper_args__ = {
         'polymorphic_identity': u'InformedTheoreticalGlycopeptideComposition',
     }
+
+has_glycan_composition_listener(InformedTheoreticalGlycopeptideComposition.glycan_composition_str)

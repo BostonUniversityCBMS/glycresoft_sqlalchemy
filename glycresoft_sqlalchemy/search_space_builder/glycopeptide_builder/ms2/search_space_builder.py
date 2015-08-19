@@ -297,7 +297,7 @@ def generate_fragments(seq, ms1_result):
         ms1_result.base_peptide_sequence,
         ms1_result.peptide_modifications,
         ms1_result.count_glycosylation_sites,
-        ms1_result.glycan_composition_str)
+        seq.glycan)
 
     stub_ions = pep_stubs.get_stubs()
     oxonium_ions = pep_stubs.get_oxonium_ions()

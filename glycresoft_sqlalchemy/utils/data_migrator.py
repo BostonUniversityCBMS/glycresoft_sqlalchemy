@@ -30,6 +30,12 @@ class Migrator(object):
             raise ValueError("Relation not yet copied", fk, value)
         return new_id
 
+    def look_up_reference_for_instance(self, instance):
+        new_id = self.copy_register(instance.__tablename__, instance.id, Incomplete)
+        if new_id is Incomplete:
+            raise ValueError("Relation not yet copied", instance)
+        return new_id
+
     def set_reference(self, model, old_value, new_value):
         for layer in model.mro():
             if not hasattr(layer, "__table__"):

@@ -1,4 +1,7 @@
+import sys
 import operator
+import functools
+import traceback
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import alias
@@ -25,10 +28,11 @@ class MassShift(Base):
         return hash(self.name)
 
 
-class AssociationComposition(_AssociationDict, glycan_composition.GlycanComposition):
-    def __init__(self, *args, **kwargs):
-        _AssociationDict.__init__(self, *args, **kwargs)
-        glycan_composition.GlycanComposition.__init__(self)
+class AssociationComposition(_AssociationDict):
+    def __init__(self, lazy_collection, *args, **kwargs):
+        _AssociationDict.__init__(self, lazy_collection, *args, **kwargs)
+        # glycan_composition.GlycanComposition.__init__(self)
+        self.lazy_collection = lazy_collection
 
     def mass(self, *args, **kwargs):
         return glycan_composition.GlycanComposition(self).mass(*args, **kwargs)
@@ -41,6 +45,49 @@ class AssociationComposition(_AssociationDict, glycan_composition.GlycanComposit
 
     def clone(self):
         return glycan_composition.GlycanComposition(self)
+
+    def __iadd__(self, other):
+        for elem, cnt in (other.items()):
+            self[elem] += cnt
+        return self
+
+    def __add__(self, other):
+        result = self.copy()
+        for elem, cnt in other.items():
+            result[elem] += cnt
+        return result
+
+    def __radd__(self, other):
+        return self + other
+
+    def __isub__(self, other):
+        for elem, cnt in other.items():
+            self[elem] -= cnt
+        return self
+
+    def __sub__(self, other):
+        result = self.copy()
+        for elem, cnt in other.items():
+            result[elem] -= cnt
+        return result
+
+    def __rsub__(self, other):
+        return (self - other) * (-1)
+
+    def __mul__(self, other):
+        if not isinstance(other, int):
+            raise TypeError(
+                'Cannot multiply Composition by non-integer',
+                other)
+        prod = {}
+        for k, v in self.items():
+            prod[k] = v * other
+
+        return (prod)
+
+
+def association_composition_creator(k, v, reference_table):
+    return reference_table(base_type=k, count=v)
 
 
 def composition_association_factory(lazy_collection, creator, value_attr, assoc_prox):
@@ -71,14 +118,31 @@ def has_glycan_composition(model, composition_attr):
 
     @event.listens_for(getattr(model, composition_attr), "set")
     def convert_composition(target, value, oldvalue, initiator):
-        for k, v in glycan_composition.parse(value).items():
-            target.glycan_composition[k.name()] = v
+        if value == "{}":
+            return
+        try:
+            for k, v in glycan_composition.parse(value).items():
+                target.glycan_composition[k.name()] = v
+        except:
+            traceback.print_exc()
 
+    @event.listens_for(model, "load")
+    def convert_composition_load(target, context):
+        value = getattr(target, composition_attr)
+        try:
+            for k, v in glycan_composition.parse(value).items():
+                target.glycan_composition[k.name()] = v
+        except:
+            traceback.print_exc()
+
+    creator = functools.partial(association_composition_creator, reference_table=MonosaccharideBaseCounter)
+    MonosaccharideBaseCounter.__name__ = "%s_MonosaccharideBaseCounter" % model.__name__
     model.GlycanCompositionAssociation = MonosaccharideBaseCounter
     model.glycan_composition = association_proxy(
         '_glycan_composition', 'count',
-        creator=lambda k, v: MonosaccharideBaseCounter(base_type=k, count=v),
-        proxy_factory=composition_association_factory)
+        creator=creator,
+        proxy_factory=composition_association_factory
+        )
 
     def qmonosaccharide(cls, monosaccharide_name):
         if monosaccharide_name in cls._qmonosaccharide_cache:
@@ -92,7 +156,34 @@ def has_glycan_composition(model, composition_attr):
     model.qmonosaccharide = classmethod(qmonosaccharide)
     model._qmonosaccharide_cache = {}
 
+    # This hack is necessary to make inner class locatable to the pickle
+    # machinery. A possible alternative solution is to define a single class
+    # once and use multiple tables that are mapped to it.
+    setattr(sys.modules[__name__], MonosaccharideBaseCounter.__name__, MonosaccharideBaseCounter)
     return model
+
+
+# For cases where event handlers must be set without creating a new
+# table such as with inheritance.
+def has_glycan_composition_listener(attr):
+    @event.listens_for(attr, "set")
+    def convert_composition(target, value, oldvalue, initiator):
+        if value == "{}":
+            return
+        try:
+            for k, v in glycan_composition.parse(value).items():
+                target.glycan_composition[k.name()] = v
+        except:
+            traceback.print_exc()
+
+    @event.listens_for(attr.class_, "load")
+    def convert_composition_load(target, context):
+        value = getattr(target, attr.prop.key)
+        try:
+            for k, v in glycan_composition.parse(value).items():
+                target.glycan_composition[k.name()] = v
+        except:
+            traceback.print_exc()
 
 
 class GlycanBase(object):
@@ -110,6 +201,10 @@ class GlycanBase(object):
     @hybrid_method
     def from_hypothesis(self, hypothesis_id):
         return self.hypothesis_id == hypothesis_id
+
+    def __repr__(self):
+        rep = "<{self.__class__.__name__} {self.composition}>".format(self=self)
+        return rep
 
 
 class StructureMotif(GlycanBase, Base):

@@ -7,7 +7,7 @@ import logging
 from glycresoft_sqlalchemy.structure import sequence
 from glycresoft_sqlalchemy.structure.parser import sequence_tokenizer_respect_sequons, sequence_tokenizer
 
-from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide, Hypothesis, MS2GlycopeptideHypothesis, Protein, DatabaseManager
+from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide, Hypothesis, MS2GlycopeptideHypothesis, Protein
 from glycresoft_sqlalchemy.data_model import PipelineModule
 
 from ..utils import fragments

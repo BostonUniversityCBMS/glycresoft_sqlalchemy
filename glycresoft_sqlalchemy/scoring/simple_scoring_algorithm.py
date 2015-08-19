@@ -35,15 +35,16 @@ def split_ion_list(ion_list):
         if 'pep' == key[:3]:
             ion_store['stub_ions'].append(ion)
             continue
+        match = glycosylated_ion_pattern.match(key)
+        if match:
+            ion_store['glycosylated_%s_ions' % key[0]].append(ion)
+            continue
+
         match = bare_ion_pattern.match(key)
         if match:
             ion_store['bare_%s_ions' % key[0]].append(ion)
             continue
 
-        match = glycosylated_ion_pattern.match(key)
-        if match:
-            ion_store['"glycosylated_%s_ions' % key[0]].append(ion)
-            continue
         # Finally
         ion_store['oxonium_ions'].append(ion)
     return ion_store

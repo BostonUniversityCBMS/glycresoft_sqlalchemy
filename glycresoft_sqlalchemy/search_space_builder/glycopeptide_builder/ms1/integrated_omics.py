@@ -141,8 +141,8 @@ def load_proteomics(database_path, mzid_path):
     return task.hypothesis_id
 
 
-def load_glycomics_naive(database_path, glycan_path, hypothesis_id):
-    task = MS1GlycanImporter(database_path, glycan_path, hypothesis_id, "hypothesis")
+def load_glycomics_naive(database_path, glycan_path, hypothesis_id, format='txt'):
+    task = MS1GlycanImporter(database_path, glycan_path, hypothesis_id, format)
     task.start()
     return task.hypothesis_id
 

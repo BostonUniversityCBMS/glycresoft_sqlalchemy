@@ -12,6 +12,8 @@ from .naive_proteomics import TheoreticalGlycopeptideComposition
 from .glycomics import TheoreticalGlycanComposition, MassShift, has_glycan_composition
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
 from .json_type import tryjson
+from .observed_ions import SampleRun, Peak, ScanBase
+from glycresoft_sqlalchemy.utils.data_migrator import Migrator
 
 
 class HypothesisSampleMatch(Base):
@@ -28,6 +30,8 @@ class HypothesisSampleMatch(Base):
 
     hypothesis_sample_match_type = Column(Unicode(56))
 
+    samples = relationship("SampleRun", secondary=lambda: HypothesisSampleMatchToSample.__table__)
+
     def __init__(self, **kwargs):
         kwargs.setdefault('parameters', {})
         super(HypothesisSampleMatch, self).__init__(**kwargs)
@@ -43,6 +47,20 @@ class HypothesisSampleMatch(Base):
             "decoy_hypothesis": tryjson(self.decoy_hypothesis)
         }
         return d
+
+    def copy_sample_run(self, sample_run):
+
+        target = object_session(self)
+        source = object_session(sample_run)
+
+        migrator = Migrator(source, target)
+        migrator.copy_model(SampleRun, lambda q: q.filter(SampleRun.id == sample_run.id))
+        migrator.copy_model(ScanBase, lambda q: q.filter(ScanBase.sample_run_id == sample_run.id))
+        migrator.copy_model(Peak, lambda q: q.join(ScanBase).filter(ScanBase.sample_run_id == sample_run.id))
+
+        HypothesisSampleMatchToSample(
+            hypothesis_sample_match_id=self.id,
+            sample_run_id=migrator.look_up_reference_for_instance(sample_run))
 
     def results(self):
         if self.glycopeptide_matches.first() is not None:
@@ -76,6 +94,14 @@ class HypothesisSampleMatch(Base):
     @property
     def results_type(self):
         return (GlycopeptideMatch, PeakGroupMatch)
+
+
+class HypothesisSampleMatchToSample(Base):
+    __tablename__ = "HypothesisSampleMatchToSample"
+
+    id = Column(Integer, primary_key=True)
+    hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
+    sample_run_id = Column(Integer, ForeignKey(SampleRun.id), index=True)
 
 
 class MS1GlycanHypothesisSampleMatch(HypothesisSampleMatch):

@@ -9,8 +9,11 @@ except:
 from glycresoft_sqlalchemy import data_model
 from glycresoft_sqlalchemy.search_space_builder import exact_search_space_builder, pooling_make_decoys
 from glycresoft_sqlalchemy.matching import matching
-from glycresoft_sqlalchemy.scoring import target_decoy
+from glycresoft_sqlalchemy.scoring import target_decoy, score_spectrum_matches
 from glycresoft_sqlalchemy.search_space_builder import integrated_omics
+
+# import multiprocessing
+# multiprocessing.log_to_stderr()
 
 
 def test_main():
@@ -23,7 +26,7 @@ def test_main():
     # db_file_name = "postgresql:///db"
 
     i = integrated_omics.load_proteomics(db_file_name, "datafiles/AGP_Proteomics2.mzid")
-    integrated_omics.load_glycomics_naive(db_file_name, "datafiles/human_n_glycan.csv", i)
+    integrated_omics.load_glycomics_naive(db_file_name, "datafiles/human_n_glycans.txt", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         db_file_name, i,
         protein_ids=["P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"], n_processes=4) # "P19652|A1AG2_HUMAN", 
@@ -35,7 +38,7 @@ def test_main():
     job = exact_search_space_builder.ExactSearchSpaceBuilder.from_hypothesis(
         db_file_name, 1, 4)
     hypothesis_id = job.start()
-    print hypothesis_id
+
     job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id])
     decoy_hypothesis_id = job.start()[0]
     # hypothesis_id = 2
@@ -52,16 +55,27 @@ def test_main():
 
     hsm_id = hsm.id
 
-    matcher = matching.IonMatching(db_file_name, hypothesis_id, r"datafiles\20140918_01.db",
-                               "db", ms1_tolerance=1e-5, ms2_tolerance=2e-5,
-                               hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=8)
+    matcher = matching.IonMatching(
+        db_file_name, hypothesis_id, r"datafiles\20140918_01.db",
+        "db", ms1_tolerance=1e-5, ms2_tolerance=2e-5,
+        hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=8)
     matcher.start()
-    matcher = matching.IonMatching(db_file_name, decoy_hypothesis_id, r"datafiles\20140918_01.db",
-                               "db", ms1_tolerance=1e-5, ms2_tolerance=2e-5,
-                               hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=8)
+
+    matcher = matching.IonMatching(
+        db_file_name, decoy_hypothesis_id, r"datafiles\20140918_01.db",
+        "db", ms1_tolerance=1e-5, ms2_tolerance=2e-5,
+        hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=8)
+
     matcher.start()
-    # tda = target_decoy.TargetDecoyAnalyzer(db_file_name, hypothesis_id, decoy_hypothesis_id)
-    # tda.start()
+
+    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, hypothesis_id, hsm_id)
+    job.start()
+
+    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, decoy_hypothesis_id, hsm_id)
+    job.start()
+
+    tda = target_decoy.TargetDecoyAnalyzer(db_file_name, hypothesis_id, decoy_hypothesis_id)
+    tda.start()
 
 
 if __name__ == '__main__':

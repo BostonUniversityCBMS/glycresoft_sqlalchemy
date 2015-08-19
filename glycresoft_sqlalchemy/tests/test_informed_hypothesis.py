@@ -22,7 +22,7 @@ def test_main():
     except:
         print "Did not clear %s" % db_file_name
     i = integrated_omics.load_proteomics(db_file_name, "datafiles/AGP_Proteomics2.mzid")
-    integrated_omics.load_glycomics_naive(db_file_name, "datafiles/human_n_glycan.csv", i)
+    integrated_omics.load_glycomics_naive(db_file_name, "datafiles/human_n_glycans.txt", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         db_file_name, i, n_processes=4)
     job.start()

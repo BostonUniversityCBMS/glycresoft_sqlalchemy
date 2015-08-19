@@ -94,3 +94,7 @@ def descending_combination_counter(counter):
     count_ranges = map(lambda x: range(x + 1), counter.values())
     for combination in itertools.product(*count_ranges):
         yield dict(zip(keys, combination))
+
+
+def flatten(iterable):
+    return tuple(itertools.chain.from_iterable(iterable))

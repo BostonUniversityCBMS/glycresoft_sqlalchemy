@@ -84,7 +84,6 @@ class SimpleSpectrumAssignment(PipelineModule):
             for id in self.stream_glycopeptide_match_ids():
                 result = task_fn(id)
                 session.merge(result)
-                print result.ms2_score
                 cntr += 1
                 if cntr % 1000 == 0:
                     session.commit()
@@ -94,17 +93,18 @@ class SimpleSpectrumAssignment(PipelineModule):
 def score_on_limited_peak_matches(glycopeptide_match, database_manager):
     try:
         session = database_manager.session()
-        glycopeptide_match = session.query(GlycopeptideMatch).get(glycopeptide_match)
-        ion_matches = split_ion_list(merge_ion_matches(itertools.chain.from_iterable(itertools.chain.from_iterable(
-            [gsm.peak_match_map.values() for gsm in glycopeptide_match.spectrum_matches
-             if gsm.best_match]))))
+        with session.no_autoflush:
+            glycopeptide_match = session.query(GlycopeptideMatch).get(glycopeptide_match)
+            ion_matches = split_ion_list(merge_ion_matches(itertools.chain.from_iterable(itertools.chain.from_iterable(
+                [gsm.peak_match_map.values() for gsm in glycopeptide_match.spectrum_matches
+                 if gsm.best_match]))))
 
-        for series, value in ion_matches.items():
-            setattr(glycopeptide_match, series, value)
-        theoretical_sequence = glycopeptide_match.theoretical_reference
-        glycopeptide_match.ms2_score = 0.0
-        score(glycopeptide_match, theoretical_sequence)
-        return glycopeptide_match
+            for series, value in ion_matches.items():
+                setattr(glycopeptide_match, series, value)
+            theoretical_sequence = glycopeptide_match.theoretical_reference
+            glycopeptide_match.ms2_score = 0.0
+            score(glycopeptide_match, theoretical_sequence)
+            return glycopeptide_match
     except Exception, e:
         logger.exception("An error occurred processing %r", glycopeptide_match, exc_info=e)
         raise e

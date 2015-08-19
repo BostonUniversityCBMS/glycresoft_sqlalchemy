@@ -14,7 +14,7 @@ def test_main():
     i = 1
     os.remove("./datafiles/integrated_omics_simple.db")
     i = integrated_omics.load_proteomics("datafiles/integrated_omics_simple.db", "datafiles/AGP_Proteomics2.mzid")
-    integrated_omics.load_glycomics_naive("datafiles/integrated_omics_simple.db", "datafiles/human_n_glycan.csv", i)
+    integrated_omics.load_glycomics_naive("datafiles/integrated_omics_simple.db", "datafiles/human_n_glycans.txt", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         "./datafiles/integrated_omics_simple.db", i, n_processes=4)
     job.start()
@@ -24,7 +24,7 @@ def test_main():
     dups = db.query(
         TheoreticalGlycopeptideComposition.glycopeptide_sequence,
         func.count(TheoreticalGlycopeptideComposition.glycopeptide_sequence)).group_by(
-        TheoreticalGlycopeptideComposition.glycopeptide_sequence).having(
+        TheoreticalGlycopeptideComposition.glycopeptide_sequence, TheoreticalGlycopeptideComposition.protein_id).having(
         func.count(TheoreticalGlycopeptideComposition.glycopeptide_sequence) > 1).all()
     assert len(dups) == 0, "Duplicate Sequences Found"
 if __name__ == '__main__':

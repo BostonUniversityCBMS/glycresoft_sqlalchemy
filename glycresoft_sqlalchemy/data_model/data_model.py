@@ -176,7 +176,7 @@ class TheoreticalGlycopeptide(PeptideBase, Base):
                            cascade="delete")
     ms1_score = Column(Numeric(12, 6, asdecimal=False), index=True)
 
-    base_composition_id = Column(Integer, ForeignKey("TheoreticalGlycopeptideComposition.id"), index=True)
+    base_composition_id = Column(Integer, ForeignKey("PeakGroupMatch.id"), index=True)
 
     observed_mass = Column(Numeric(12, 6, asdecimal=False))
     glycan_mass = Column(Numeric(12, 6, asdecimal=False))

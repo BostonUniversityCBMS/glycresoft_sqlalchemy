@@ -437,7 +437,7 @@ class Sequence(PeptideSequenceBase):
             if self.c_term is not None and self.c_term != implicit_c_term:
                 c_term = "-({0})".format(self.c_term.serialize())
             rep = "{0}{1}{2}".format(n_term, rep, c_term)
-        rep += self.glycan if include_glycan else ""
+        rep += str(self.glycan) if include_glycan else ""
         return rep
 
     __str__ = get_sequence

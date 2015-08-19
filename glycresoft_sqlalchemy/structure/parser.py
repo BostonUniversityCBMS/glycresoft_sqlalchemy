@@ -1,7 +1,9 @@
+import logging
 from copy import deepcopy
 from . import constants as structure_constants
 from . import PeptideSequenceBase
 from ..utils.memoize import memoize
+from glypy.composition.glycan_composition import parse as glycan_parser
 
 
 @memoize()
@@ -87,7 +89,7 @@ def sequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
                 mods.append(current_mod)
                 current_mod = ""
 
-        elif next_char == "[":
+        elif next_char == "{":
             if (state == 'aa' or (state == "c_term" and paren_level == 0)):
                 glycan = sequence[i:]
                 break
@@ -128,6 +130,12 @@ def sequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
         chunks.append([current_aa, current_mods])
     if current_mod != "":
         mods.append(current_mod)
+
+    if glycan != "":
+        try:
+            glycan = glycan_parser(glycan)
+        except Exception, e:
+            logging.exception("Error in parser, %s and %s", glycan, sequence, exc_info=e)
 
     return chunks, mods, glycan, n_term, c_term
 

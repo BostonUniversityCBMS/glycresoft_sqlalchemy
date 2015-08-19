@@ -42,7 +42,7 @@ class GlycanCompositionHypothesisBuilder(PipelineModule):
     def run(self):
         loader = composition_source_type_map[self.composition_source_type]
         session = self.manager.session()
-
+        hypothesis = None
         if self.hypothesis_id is None:
             hypothesis = self.HypothesisType(name=self.options.get(
                 "hypothesis_name",
@@ -71,20 +71,25 @@ class GlycanCompositionHypothesisBuilder(PipelineModule):
                 pass
 
         i = 0
+        monosaccharide_identities = set()
         for composition, motifs in loader(self.composition_source):
             reduction(composition)
             derivatization(composition)
 
             theoretical_composition = TheoreticalGlycanComposition(
                 composition=composition.serialize(),
-                mass=composition.mass(),
+                theoretical_mass=composition.mass(),
                 derivatization=self.derivatization,
                 hypothesis_id=hypothesis_id
             )
             # include motifs here
+            monosaccharide_identities |= set(composition)
 
             session.add(theoretical_composition)
             i += 1
             if i % 1000 == 0:
                 session.commit()
+        monosaccharide_identities = map(str, monosaccharide_identities)
+        hypothesis.parameters["monosaccharide_identities"] = monosaccharide_identities
+        session.add(hypothesis)
         session.commit()

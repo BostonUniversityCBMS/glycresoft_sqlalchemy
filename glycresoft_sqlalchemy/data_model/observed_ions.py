@@ -18,8 +18,8 @@ class SampleRun(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Unicode(128))
     parameters = Column(MutableDict.as_mutable(PickleType))
-    ms_scans = relationship("MSScan", backref=backref("hypothesis_run"), lazy='dynamic')
-    tandem_scans = relationship("TandemScan", backref=backref("hypothesis_run"), lazy='dynamic')
+    ms_scans = relationship("MSScan", backref=backref("sample_run"), lazy='dynamic')
+    tandem_scans = relationship("TandemScan", backref=backref("sample_run"), lazy='dynamic')
     sample_type = Column(Unicode(128))
 
     def __init__(self, **kwargs):

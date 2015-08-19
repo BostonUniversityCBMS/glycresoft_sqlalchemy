@@ -6,8 +6,9 @@ import itertools
 import multiprocessing
 
 from glycresoft_sqlalchemy.data_model import (
-    DatabaseManager, MS1GlycopeptideHypothesis, Protein, NaivePeptide,
-    TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func)
+    DatabaseManager, MS1GlycopeptideHypothesis, Protein, NaivePeptide, make_transient,
+    TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func,
+    TheoreticalGlycopeptideCompositionGlycanAssociation)
 
 from .include_glycomics import MS1GlycanImporter
 
@@ -20,7 +21,7 @@ from glycresoft_sqlalchemy.utils.worker_utils import async_worker_pool
 Composition = composition.Composition
 
 format_mapping = {
-    "csv": "hypothesis",
+    "txt": "txt",
     "hypothesis": None
 }
 
@@ -34,8 +35,10 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
         session = database_manager.session()
         peptide = session.query(NaivePeptide).get(peptide[0])
         i = 0
+        associtation_tasks = []
         for glycan_set in get_glycan_combinations(
                 database_manager.session(), min(peptide.count_glycosylation_sites, max_sites), hypothesis_id):
+            glycan_set = list(glycan_set)
             glycan_composition_str = merge_compositions(g.glycan_composition for g in glycan_set)
             glycan_mass = sum([(g.theoretical_mass - water) for g in glycan_set])
             glycoform = TheoreticalGlycopeptideComposition(
@@ -54,15 +57,31 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
                 glycan_composition_str=glycan_composition_str,
                 glycan_mass=glycan_mass,
             )
-            glycoform.glycans = glycan_set
             session.add(glycoform)
+
             i += 1
-            if i % 100000 == 0:
+            associtation_tasks.extend({"peptide_id": glycoform, "glycan_id": g.id} for g in glycan_set)
+            if i % 5000 == 0:
+                logger.info("Flushing %d", i)
                 session.commit()
+                session.flush()
+                session.execute(TheoreticalGlycopeptideCompositionGlycanAssociation.insert(), [
+                        {"peptide_id": d["peptide_id"].id, "glycan_id": d['glycan_id']} for d in
+                        associtation_tasks
+                    ])
+                session.commit()
+                associtation_tasks = []
+
+        session.commit()
+        session.flush()
+        session.execute(TheoreticalGlycopeptideCompositionGlycanAssociation.insert(), [
+                {"peptide_id": d["peptide_id"].id, "glycan_id": d['glycan_id']} for d in
+                associtation_tasks
+            ])
         session.commit()
         session.close()
         return i
-    except Exception, e:
+    except KeyboardInterrupt, e:
         logger.exception("%r", locals(), exc_info=e)
         raise e
     finally:
@@ -114,8 +133,8 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
 
     def run(self):
         session = self.session
-        if self.glycan_file_type == "csv":
-            importer = MS1GlycanImporter(self.database_path, self.glycan_file, self.hypothesis.id, 'hypothesis')
+        if self.glycan_file_type == "txt":
+            importer = MS1GlycanImporter(self.database_path, self.glycan_file, self.hypothesis.id, 'txt')
             importer.run()
         else:
             raise NotImplementedError()

@@ -17,7 +17,7 @@ def test_main():
     except:
         pass
     i = integrated_omics.load_proteomics("datafiles/integrated_omics.db", "datafiles/AGP_Transferin_Proteomics.mzid")
-    integrated_omics.load_glycomics_naive("datafiles/integrated_omics.db", "datafiles/human_n_glycan.csv", i)
+    integrated_omics.load_glycomics_naive("datafiles/integrated_omics.db", "datafiles/human_n_glycans.txt", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         "./datafiles/integrated_omics.db", i, protein_ids=[2, 4, 5, 6, 8, 9, 15, 20], n_processes=4)
     job.start()
