@@ -31,10 +31,14 @@ class Migrator(object):
         return new_id
 
     def look_up_reference_for_instance(self, instance):
-        new_id = self.copy_register(instance.__tablename__, instance.id, Incomplete)
-        if new_id is Incomplete:
-            raise ValueError("Relation not yet copied", instance)
-        return new_id
+        for klass in instance.__class__.mro():
+            if not hasattr(klass, "__tablename__"):
+                continue
+            new_id = self.copy_register.get(str((instance.__tablename__, instance.id)), Incomplete)
+            if new_id is Incomplete:
+                continue
+            return new_id
+        raise ValueError("Relation not yet copied", instance)
 
     def set_reference(self, model, old_value, new_value):
         for layer in model.mro():
@@ -42,7 +46,7 @@ class Migrator(object):
                 break
             self.copy_register[str((layer.__table__.name, old_value))] = new_value
 
-    def copy_model(self, model, filterfunc=lambda q: q, batch_size=1000):
+    def copy_model(self, model, filterfunc=lambda q: q, batch_size=10000):
         fks = self.find_foreign_keys(model)
         i = 0
         for ref in filterfunc(self.source.query(model)).yield_per(1000):
@@ -59,12 +63,11 @@ class Migrator(object):
             i += 1
             if i % batch_size == 0:
                 self.target.commit()
-                print "Commit! %d" % i
         self.target.commit()
 
 
 class MigrationPipeline(object):
-    def __init__(self, source, target, order=tuple(), batch_size=1000):
+    def __init__(self, source, target, order=tuple(), batch_size=10000):
         self.source = source
         self.target = target
         self.order = list(order)

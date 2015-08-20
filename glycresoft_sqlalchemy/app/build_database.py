@@ -1,5 +1,6 @@
 import argparse
 import os
+from contextlib import contextmanager
 from glycresoft_sqlalchemy.search_space_builder import (
     pooling_search_space_builder,
     pooling_make_decoys,
@@ -130,8 +131,16 @@ build_naive_simple.add_argument(
 build_naive_simple.set_defaults(task=build_naive_search_space_simple)
 
 
+@contextmanager
+def let(obj):
+    try:
+        yield obj
+    finally:
+        pass
+
+
 build_naive_ms1_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms1")
-with build_naive_ms1_glycopeptide_app as c:
+with let(build_naive_ms1_glycopeptide_app) as c:
     c.add_argument(
         "-d", "--database-path", default=None, required=True,
         help="Path to project database.")
@@ -167,7 +176,7 @@ with build_naive_ms1_glycopeptide_app as c:
 
 
 build_naive_ms2_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms2")
-with build_naive_ms2_glycopeptide_app as c:
+with let(build_naive_ms2_glycopeptide_app) as c:
     c.add_argument(
         "-d", "--database-path", default=None, required=True,
         help="Path to project database.")
@@ -175,7 +184,7 @@ with build_naive_ms2_glycopeptide_app as c:
     c.set_defaults(task=build_naive_ms2_glycopeptide)
 
 build_informed_ms2_glycopeptide_app = subparsers.add_parser("informed-glycopeptide-ms2")
-with build_informed_ms2_glycopeptide_app as c:
+with let(build_informed_ms2_glycopeptide_app) as c:
     c.add_argument(
         "-d", "--database-path", default=None, required=True,
         help="Path to project database.")

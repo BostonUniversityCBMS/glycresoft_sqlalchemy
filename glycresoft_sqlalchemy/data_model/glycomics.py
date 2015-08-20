@@ -15,7 +15,8 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from glypy.composition import glycan_composition
 
 from .base import Base
-from .generic import MutableDict
+from .generic import MutableDict, HasTaxonomy
+from ..utils.database_utils import get_or_create
 
 
 class MassShift(Base):
@@ -27,11 +28,21 @@ class MassShift(Base):
     def __hash__(self):
         return hash(self.name)
 
+    def __eq__(self, other):
+        return (self.name == other.name) and (self.mass == other.mass)
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    @classmethod
+    def get(cls, session, name, mass=None):
+        obj, made = get_or_create(session, cls, name=name, mass=mass)
+        return obj
+
 
 class AssociationComposition(_AssociationDict):
     def __init__(self, lazy_collection, *args, **kwargs):
         _AssociationDict.__init__(self, lazy_collection, *args, **kwargs)
-        # glycan_composition.GlycanComposition.__init__(self)
         self.lazy_collection = lazy_collection
 
     def mass(self, *args, **kwargs):
@@ -209,11 +220,12 @@ class GlycanBase(object):
 
 class StructureMotif(GlycanBase, Base):
     __tablename__ = "StructureMotif"
-    canonical_sequence = Column(Unicode(256))
+    canonical_sequence = Column(Unicode(256), index=True)
+    motif_class = Column(Unicode(64), index=True)
 has_glycan_composition(StructureMotif, "composition")
 
 
-class TheoreticalGlycanComposition(GlycanBase, Base):
+class TheoreticalGlycanComposition(GlycanBase, HasTaxonomy, Base):
     __tablename__ = "TheoreticalGlycanComposition"
 
     __mapper_args__ = {
@@ -223,14 +235,7 @@ class TheoreticalGlycanComposition(GlycanBase, Base):
 has_glycan_composition(TheoreticalGlycanComposition, "composition")
 
 
-TheoreticalGlycanCompositionToMotifTable = Table(
-    "TheoreticalGlycanCompositionToMotifTable", Base.metadata,
-    Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanComposition.id"), index=True),
-    Column("motif_id", Integer, ForeignKey("StructureMotif.id"))
-    )
-
-
-class TheoreticalGlycanStructure(GlycanBase, Base):
+class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, Base):
     __tablename__ = "TheoreticalGlycanStructure"
     composition_reference = Column(Integer, ForeignKey(TheoreticalGlycanComposition.id), index=True)
     glycoct = Column(Unicode(256), index=True)

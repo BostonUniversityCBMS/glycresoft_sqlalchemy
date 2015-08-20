@@ -39,7 +39,7 @@ def test_main():
     decoy_hypothesis_id = job.start()[0]
     manager = data_model.DatabaseManager(db_file_name)
     session = manager.session()
-    hsm = data_model.HypothesisSampleMatch(
+    hsm = data_model.MS2GlycopeptideHypothesisSampleMatch(
         target_hypothesis_id=hypothesis_id,
         decoy_hypothesis_id=decoy_hypothesis_id,
         sample_run_name="20140918_01.yaml",

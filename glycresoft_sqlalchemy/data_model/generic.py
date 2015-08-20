@@ -1,5 +1,9 @@
 from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy import Table, Column, Integer, ForeignKey, Unicode
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declared_attr
 
+from .base import Base
 
 class MutableDict(Mutable, dict):
     @classmethod
@@ -52,3 +56,22 @@ class MutableList(Mutable, list):
 
     def __setstate__(self, state):
         self[:] = state
+
+
+class Taxon(Base):
+    __tablename__ = "Taxon"
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode(128), index=True)
+
+
+class HasTaxonomy(object):
+
+    @declared_attr
+    def taxa(cls):
+        taxon_association = Table(
+            "%s_Taxa" % cls.__tablename__,
+            cls.metadata,
+            Column("taxon_id", Integer, ForeignKey(Taxon.id, ondelete="CASCADE"), primary_key=True),
+            Column("entity_id", Integer, ForeignKey("%s.id" % cls.__tablename__, ondelete="CASCADE"), primary_key=True))
+        cls._TaxonomyAssociationTable = taxon_association
+        return relationship(Taxon, secondary=taxon_association)

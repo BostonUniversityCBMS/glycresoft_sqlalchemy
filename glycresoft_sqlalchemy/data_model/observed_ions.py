@@ -74,6 +74,9 @@ class ScanBase(Base):
     decon2ls_peaks = relationship("Decon2LSPeak", backref="scan", lazy='dynamic')
     sample_run_id = Column(Integer, ForeignKey(SampleRun.id), index=True)
 
+    def __iter__(self):
+        return iter(self.peaks)
+
     __mapper_args__ = {
         'polymorphic_identity': u'Scan',
         'polymorphic_on': scan_type,

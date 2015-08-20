@@ -12,7 +12,7 @@ from .naive_proteomics import TheoreticalGlycopeptideComposition
 from .glycomics import TheoreticalGlycanComposition, MassShift, has_glycan_composition
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
 from .json_type import tryjson
-from .observed_ions import SampleRun, Peak, ScanBase
+from .observed_ions import SampleRun, Peak, ScanBase, TandemScan
 from glycresoft_sqlalchemy.utils.data_migrator import Migrator
 
 
@@ -48,19 +48,21 @@ class HypothesisSampleMatch(Base):
         }
         return d
 
-    def copy_sample_run(self, sample_run):
+    def copy_tandem_sample_run(self, sample_run):
 
         target = object_session(self)
         source = object_session(sample_run)
 
         migrator = Migrator(source, target)
         migrator.copy_model(SampleRun, lambda q: q.filter(SampleRun.id == sample_run.id))
-        migrator.copy_model(ScanBase, lambda q: q.filter(ScanBase.sample_run_id == sample_run.id))
+        migrator.copy_model(TandemScan, lambda q: q.filter(TandemScan.sample_run_id == sample_run.id))
         migrator.copy_model(Peak, lambda q: q.join(ScanBase).filter(ScanBase.sample_run_id == sample_run.id))
 
-        HypothesisSampleMatchToSample(
+        link = HypothesisSampleMatchToSample(
             hypothesis_sample_match_id=self.id,
             sample_run_id=migrator.look_up_reference_for_instance(sample_run))
+        target.add(link)
+        target.commit()
 
     def results(self):
         if self.glycopeptide_matches.first() is not None:
