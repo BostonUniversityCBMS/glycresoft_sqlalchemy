@@ -73,20 +73,31 @@ class SimpleSpectrumAssignment(PipelineModule):
         task_fn = self.prepare_task_fn()
 
         cntr = 0
+        accum = []
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             for result in pool.imap_unordered(task_fn, self.stream_glycopeptide_match_ids()):
-                session.merge(result)
+                accum.append(result)
                 cntr += 1
                 if cntr % 1000 == 0:
+                    for a in accum:
+                        session.merge(a)
                     session.commit()
+                    accum = []
         else:
             for id in self.stream_glycopeptide_match_ids():
                 result = task_fn(id)
-                session.merge(result)
+                accum.append(result)
                 cntr += 1
                 if cntr % 1000 == 0:
+                    for a in accum:
+                        session.merge(a)
                     session.commit()
+                    accum = []
+        for a in accum:
+            session.merge(a)
+        session.commit()
+        accum = []
         session.commit()
 
 

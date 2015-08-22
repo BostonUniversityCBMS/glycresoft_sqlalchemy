@@ -85,6 +85,11 @@ class PipelineModule(object):
     def set_runner(self, callable):
         self.run = callable
 
+    def inform(self, *args, **kwargs):
+        now = time.time() - self.start_time
+        logger.info("%s time elapsed." % time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(now)))
+        logger.info(*args, **kwargs)
+
     def _end(self, *args, **kwargs):
         self.end_time = time.time()
         logger.info("End %s", self.__class__.__name__)

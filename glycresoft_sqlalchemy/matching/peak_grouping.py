@@ -586,7 +586,7 @@ class PeakGroupMatching(PipelineModule):
         accumulator = []
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
-            for res in pool.imap_unordered(task_fn, self.stream_ids(), chunksize=500):
+            for res in pool.imap_unordered(task_fn, self.stream_ids(), chunksize=5000):
                 counter += 1
                 if res is not None:
                     accumulator.extend(res)

@@ -35,7 +35,7 @@ class Hypothesis(Base):
                            cascade="delete")
 
     is_decoy = Column(Boolean, default=False)
-    parameters = Column(MutableDict.as_mutable(PickleType), default={})
+    parameters = Column(MutableDict.as_mutable(PickleType))
 
     hypothesis_type = Column(Unicode(56), index=True)
 
@@ -247,6 +247,18 @@ class MS1GlycanHypothesis(Hypothesis):
     }
 
     theoretical_structure_type = glycomics.TheoreticalGlycanComposition
+
+
+class MS2GlycanHypothesis(Hypothesis):
+    __tablename__ = "MS2GlycanHypothesis"
+
+    id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'MS2GlycanHypothesis',
+    }
+
+    theoretical_structure_type = glycomics.TheoreticalGlycanStructure
 
 
 class MS1GlycopeptideHypothesis(Hypothesis):

@@ -15,7 +15,7 @@ def composition_from_text_file(path):
 
 composition_source_type_map = {
     'txt': composition_from_text_file,
-    'db': NotImplemented,
+    'glycome-db': NotImplemented,
     'csv': NotImplemented
 }
 

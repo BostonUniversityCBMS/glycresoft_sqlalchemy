@@ -1,7 +1,7 @@
+import re
 import sys
 import operator
 import functools
-import traceback
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import alias
@@ -13,10 +13,14 @@ from sqlalchemy.ext.associationproxy import association_proxy, _AssociationDict
 from sqlalchemy.orm.collections import attribute_mapped_collection
 
 from glypy.composition import glycan_composition
+from glypy.io import glycoct
 
 from .base import Base
-from .generic import MutableDict, HasTaxonomy
+from .generic import MutableDict, MutableList, HasTaxonomy, Taxon, ReferenceDatabase, ReferenceAccessionNumber, HasReferenceAccessionNumber
 from ..utils.database_utils import get_or_create
+
+
+crossring_pattern = re.compile(r"\d,\d")
 
 
 class MassShift(Base):
@@ -131,20 +135,14 @@ def has_glycan_composition(model, composition_attr):
     def convert_composition(target, value, oldvalue, initiator):
         if value == "{}":
             return
-        try:
-            for k, v in glycan_composition.parse(value).items():
-                target.glycan_composition[k.name()] = v
-        except:
-            traceback.print_exc()
+        for k, v in glycan_composition.parse(value).items():
+            target.glycan_composition[k.name()] = v
 
     @event.listens_for(model, "load")
     def convert_composition_load(target, context):
         value = getattr(target, composition_attr)
-        try:
-            for k, v in glycan_composition.parse(value).items():
-                target.glycan_composition[k.name()] = v
-        except:
-            traceback.print_exc()
+        for k, v in glycan_composition.parse(value).items():
+            target.glycan_composition[k.name()] = v
 
     creator = functools.partial(association_composition_creator, reference_table=MonosaccharideBaseCounter)
     MonosaccharideBaseCounter.__name__ = "%s_MonosaccharideBaseCounter" % model.__name__
@@ -181,21 +179,14 @@ def has_glycan_composition_listener(attr):
     def convert_composition(target, value, oldvalue, initiator):
         if value == "{}":
             return
-        try:
-            for k, v in glycan_composition.parse(value).items():
-                target.glycan_composition[k.name()] = v
-        except:
-            traceback.print_exc()
+        for k, v in glycan_composition.parse(value).items():
+            target.glycan_composition[k.name()] = v
 
     @event.listens_for(attr.class_, "load")
     def convert_composition_load(target, context):
         value = getattr(target, attr.prop.key)
-        try:
-            for k, v in glycan_composition.parse(value).items():
-                target.glycan_composition[k.name()] = v
-        except:
-            traceback.print_exc()
-
+        for k, v in glycan_composition.parse(value).items():
+            target.glycan_composition[k.name()] = v
 
 class GlycanBase(object):
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -218,14 +209,14 @@ class GlycanBase(object):
         return rep
 
 
-class StructureMotif(GlycanBase, Base):
+class StructureMotif(GlycanBase, HasReferenceAccessionNumber, Base):
     __tablename__ = "StructureMotif"
     canonical_sequence = Column(Unicode(256), index=True)
     motif_class = Column(Unicode(64), index=True)
 has_glycan_composition(StructureMotif, "composition")
 
 
-class TheoreticalGlycanComposition(GlycanBase, HasTaxonomy, Base):
+class TheoreticalGlycanComposition(GlycanBase, HasTaxonomy, HasReferenceAccessionNumber, Base):
     __tablename__ = "TheoreticalGlycanComposition"
 
     __mapper_args__ = {
@@ -235,15 +226,32 @@ class TheoreticalGlycanComposition(GlycanBase, HasTaxonomy, Base):
 has_glycan_composition(TheoreticalGlycanComposition, "composition")
 
 
-class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, Base):
+class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionNumber, Base):
     __tablename__ = "TheoreticalGlycanStructure"
-    composition_reference = Column(Integer, ForeignKey(TheoreticalGlycanComposition.id), index=True)
+
+    composition_reference_id = Column(Integer, ForeignKey(TheoreticalGlycanComposition.id), index=True)
     glycoct = Column(Unicode(256), index=True)
+    _fragments = Column(MutableDict.as_mutable(PickleType))
+
+    structure = None
+
+
+    def fragments(self, kind='BY'):
+        if self._fragments is None:
+            self._fragments = {}
+        ion_types = map(''.join, map(sorted, kind))
+        return (f for f in self._fragments.values()
+                if ''.join(
+                    sorted(crossring_pattern.sub("", f.kind))) in (ion_types))
+            
+
 
     __mapper_args__ = {
         'polymorphic_identity': u'TheoreticalGlycanStructure',
         "concrete": True
     }
+
+has_glycan_composition(TheoreticalGlycanStructure, "composition")
 
 
 TheoreticalGlycanStructureToMotifTable = Table(
