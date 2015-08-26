@@ -9,26 +9,42 @@ from lxml import etree
 from glypy.utils import StringIO
 from glypy.io import glycoct
 from glypy import Glycan, GlycanComposition
+from glypy.algorithms import subtree_search
+
+from taxonomylite import Taxonomy
+
+from sqlalchemy import select
 
 from glycresoft_sqlalchemy.data_model import (
+    Hypothesis, make_transient, StructureMotif, TheoreticalGlycanStructureToMotifTable,
     PipelineModule, Taxon, ReferenceDatabase, ReferenceAccessionNumber, TheoreticalGlycanComposition,
     TheoreticalGlycanStructure, MS1GlycanHypothesis, MS2GlycanHypothesis, func)
 
+from glycresoft_sqlalchemy.utils.database_utils import temp_table
 
 logger = logging.getLogger("glycomedb_utils")
+
+
+motif_families = {
+    "N-Linked Glycans": "%N-Glycan%",
+    "O-Linked Glycans": "%O-Glycan%",
+}
+
 
 def timestamp():
     return datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
 
 
 cache_name = "glycome-db-cache"
+reference_hypothesis_name_prefix = "GlycomeDB-Reference-"
 
 
 class GlycomeDBDownloader(PipelineModule):
-    def __init__(self, database_path, drop_stems=True, drop_positions=True):
+    def __init__(self, database_path, drop_stems=True, drop_positions=True, verbose=False):
         self.manager = self.manager_type(database_path)
         self.drop_stems = drop_stems
         self.drop_positions = drop_positions
+        self.verbose = verbose
 
     def run(self):
         self.manager.initialize()
@@ -43,13 +59,15 @@ class GlycomeDBDownloader(PipelineModule):
         handle = gzip.GzipFile(fileobj=data_source)
         xml = etree.parse(handle)
         session = self.manager.session()
-        hypothesis = MS2GlycanHypothesis(name="GlycomeDB-" + timestamp())
+        hypothesis = MS2GlycanHypothesis(name=reference_hypothesis_name_prefix + timestamp())
         session.add(hypothesis)
         glycomedb = ReferenceDatabase.get(session, name="Glycome-DB")
         session.add(glycomedb)
         session.commit()
         hypothesis_id = hypothesis.id
         i = 0
+
+        motifs = session.query(StructureMotif).all()
 
         logger.info("Parsing database structures")
         drop_stems = self.drop_stems
@@ -79,9 +97,12 @@ class GlycomeDBDownloader(PipelineModule):
                     glycoct=glycoct_str,
                     composition=composition.serialize(),
                     reduction=reduction,
-                    theoretical_mass=glycan.mass(),
+                    calculated_mass=glycan.mass(),
                     hypothesis_id=hypothesis_id)
                 record.taxa = taxa
+                for motif in motifs:
+                    if motif.matches(record):
+                        record.motifs.append(motif)
                 record.references = [ReferenceAccessionNumber.get(session, accession, glycomedb.id)]
                 session.add(record)
                 if i % 1000 == 0:
@@ -90,8 +111,10 @@ class GlycomeDBDownloader(PipelineModule):
             except glycoct.GlycoCTSectionUnsupported:
                 pass
             except Exception, e:
-                logger.exception("%s", accession, exc_info=e)
+                if self.verbose:
+                    logger.exception("%s", accession, exc_info=e)
         session.commit()
+        self.hypothesis_id = hypothesis_id
 
         self.inform("Linking Compositions")
         i = 0
@@ -103,7 +126,7 @@ class GlycomeDBDownloader(PipelineModule):
             tgc = TheoreticalGlycanComposition(
                 composition=composition,
                 hypothesis_id=hypothesis_id,
-                theoretical_mass=GlycanComposition.parse(composition).mass())
+                calculated_mass=GlycanComposition.parse(composition).mass())
             session.add(tgc)
             session.flush()
             logger.info("Relating Composition to Structures %s", tgc)
@@ -112,10 +135,199 @@ class GlycomeDBDownloader(PipelineModule):
                 "composition_reference_id": tgc.id
                 }, synchronize_session=False)
             logger.info("Assigning Taxa")
-            taxa_assoc = [{"taxon_id": id[0], "entity_id": tgc.id} for id in session.query(func.distinct(Taxon.id)).join(
+            taxa_assoc = [{"taxon_id": id[0], "entity_id": tgc.id} for id in session.query(
+                func.distinct(Taxon.id)).join(
                 TheoreticalGlycanStructure.taxa).filter(
                 TheoreticalGlycanStructure.hypothesis_id == hypothesis_id)]
             session.execute(CompositionTaxonomyAssociationTable.insert(), taxa_assoc)
             if i % 1000 == 0:
                 session.commit()
         session.commit()
+        return hypothesis_id
+
+
+class TaxonomyFilter(PipelineModule):
+    def __init__(
+            self, database_path, hypothesis_id, taxonomy_path=None,
+            taxa_ids=None, include_children=True, motif_family=None):
+        self.manager = self.manager_type(database_path)
+        self.hypothesis_id = hypothesis_id
+        self.taxa_ids = taxa_ids
+        self.include_children = include_children
+        self.motif_family = motif_family
+
+        self.taxonomy_path = taxonomy_path
+
+    def run(self):
+        return self.stream_chosen_glycans()
+
+    def stream_chosen_glycans(self):
+        taxonomy = None
+        if self.include_children:
+            if self.taxonomy_path is None or not os.path.exists(self.taxonomy_path):
+                if self.taxonomy_path is None:
+                    self.taxonomy_path = "taxonomy.db"
+                self.inform("Downloading NCBI Taxonomic Hierarchy From Source")
+                taxonomy = Taxonomy.from_source()
+            else:
+                taxonomy = Taxonomy(self.taxonomy_path)
+
+        session = self.manager.session()
+
+        TempTaxonTable = temp_table(Taxon)
+        conn = session.connection()
+        TempTaxonTable.create(conn)
+
+        for taxon_id in self.taxa_ids:
+            if self.include_children:
+                all_ids = taxonomy.children(taxon_id, deep=True)
+            else:
+                all_ids = [taxon_id]
+
+            conn.execute(TempTaxonTable.insert(), {"id": i for i in all_ids})
+        session.commit()
+        conn = session.connection()
+        chosen_taxa = select([TempTaxonTable.c.id])
+
+        last_composition_reference_id = None
+        composition_reference = None
+
+        query = session.query(func.distinct(TheoreticalGlycanStructure.id)).join(
+            TheoreticalGlycanStructure.TaxonomyAssociationTable).filter(
+            TheoreticalGlycanStructure.TaxonomyAssociationTable.c.taxon_id.in_(chosen_taxa)).order_by(
+            TheoreticalGlycanStructure.composition_reference_id)
+
+        if self.motif_family is not None:
+            query = query.join(TheoreticalGlycanStructure.motifs).filter(StructureMotif.name.like(
+                motif_families[self.motif_family]))
+        i = 0
+        for id, in query:
+            i += 1
+            if i % 1000 == 0:
+                self.inform("%d Glycans processed" % i)
+            structure = session.query(TheoreticalGlycanStructure).get(id)
+            if structure.composition_reference_id != last_composition_reference_id:
+                last_composition_reference_id = structure.composition_reference_id
+                composition_reference = session.query(TheoreticalGlycanComposition).get(last_composition_reference_id)
+                yield (TheoreticalGlycanComposition, composition_reference)
+            yield TheoreticalGlycanStructure, structure
+        TempTaxonTable.drop(conn)
+        session.commit()
+
+
+class GlycomeDBHypothesis(PipelineModule):
+    batch_size = 5000
+
+    def __init__(
+            self, database_path, hypothesis_id=None, glycomedb_path=None,
+            taxonomy_path=None, taxa_ids=None, include_children=False, include_tandem=True,
+            motif_family=None):
+        self.manager = self.manager_type(database_path)
+        self.glycomedb_path = glycomedb_path
+        self.taxonomy_path = taxonomy_path
+        self.taxa_ids = taxa_ids
+        self.include_children = include_children
+        self.hypothesis_id = hypothesis_id
+        self.include_tandem = include_tandem
+        self.motif_family = motif_family
+
+    def run(self):
+        self.manager.initialize()
+        session = self.manager.session()
+        hypothesis = None
+        if self.hypothesis_id is None:
+            if self.include_tandem:
+                hypothesis = MS2GlycanHypothesis()
+            else:
+                hypothesis = MS1GlycanHypothesis()
+            session.add(hypothesis)
+            session.commit()
+            self.hypothesis_id = hypothesis.id
+        else:
+            hypothesis = session.query(Hypothesis).get(self.hypothesis_id)
+
+        hypothesis.parameters = hypothesis.parameters or {}
+        hypothesis.parameters['taxa_ids'] = self.taxa_ids
+        hypothesis.parameters['taxa_include_children'] = self.include_children
+        hypothesis.parameters['include_tandem'] = self.include_tandem
+        hypothesis.parameters['motif_family'] = self.motif_family
+
+        self.fetch_relevant_glycans()
+
+    def fetch_relevant_glycans(self):
+        session = self.manager.session()
+        glycomedb_reference = self.resolve_glycomedb()
+        taxonomy_filter = TaxonomyFilter(
+            self.glycomedb_path, glycomedb_reference.id, self.taxonomy_path,
+            self.taxa_ids, self.include_children, self.motif_family)
+
+        i = 0
+        last_composition_reference_id = None
+        for record_type, record in taxonomy_filter.start():
+            taxa = list(record.taxa)
+            if record_type is TheoreticalGlycanComposition:
+                new_record = TheoreticalGlycanComposition(
+                    calculated_mass=record.calculated_mass,
+                    composition=record.composition,
+                    derivatization=record.derivatization,
+                    reduction=record.reduction,
+                    hypothesis_id=self.hypothesis_id)
+            elif record_type is TheoreticalGlycanStructure:
+                if not self.include_tandem:
+                    continue
+                new_record = TheoreticalGlycanStructure(
+                    calculated_mass=record.calculated_mass,
+                    composition=record.composition,
+                    derivatization=record.derivatization,
+                    reduction=record.reduction,
+                    glycoct=record.glycoct,
+                    hypothesis_id=self.hypothesis_id)
+            else:
+                raise Exception("Unknown Record Type: %s" % record_type)
+            session.add(new_record)
+            session.flush()
+
+            if record_type is TheoreticalGlycanComposition:
+                last_composition_reference_id = new_record.id
+            elif record_type is TheoreticalGlycanStructure:
+                new_record.composition_reference_id = last_composition_reference_id
+                session.execute(
+                    TheoreticalGlycanStructureToMotifTable.insert(),
+                    [{"glycan_id": new_record.id, "motif_id": motif.id} for motif in record.motifs])
+
+            session.execute(record_type.TaxonomyAssociationTable.insert(), [
+                {"taxon_id": t.id, "entity_id": new_record.id} for t in taxa])
+            i += 1
+
+            if i % self.batch_size == 0:
+                # self.inform("%d records processed" % i)
+                print ("%d records processed" % i)
+                session.commit()
+        session.commit()
+
+    def resolve_glycomedb(self):
+        try:
+            glycomedb_manager = self.manager_type(self.glycomedb_path)
+            try:
+                glycomedb_session = glycomedb_manager.session()
+                glycomedb_reference = glycomedb_session.query(
+                    Hypothesis).filter(Hypothesis.name.like(reference_hypothesis_name_prefix + "%")).first()
+                if glycomedb_reference is None:
+                    raise Exception("No Reference Found")
+                return glycomedb_reference
+            except Exception, e:
+                logger.exception(
+                    "An error occurred while resolving the GlycomeDB reference database",
+                    exc_info=e)
+                job = GlycomeDBDownloader(self.glycomedb_path)
+                hypothesis_id = job.start()
+                glycomedb_reference = glycomedb_manager.session().query(Hypothesis).get(hypothesis_id)
+                if glycomedb_reference is None:
+                    raise Exception("No Reference Found")
+                return glycomedb_reference
+        except Exception, e:
+            logger.exception(
+                ("An error occured while resolving the GlycomeDB reference database."
+                 " The reference could not be created. Check to see if %s is a valid file path or"
+                 " database URI.") % self.glycomedb_path, exc_info=e)
+            raise e

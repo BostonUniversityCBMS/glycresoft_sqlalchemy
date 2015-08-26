@@ -78,7 +78,7 @@ class GlycanCompositionHypothesisBuilder(PipelineModule):
 
             theoretical_composition = TheoreticalGlycanComposition(
                 composition=composition.serialize(),
-                theoretical_mass=composition.mass(),
+                calculated_mass=composition.mass(),
                 derivatization=self.derivatization,
                 hypothesis_id=hypothesis_id
             )

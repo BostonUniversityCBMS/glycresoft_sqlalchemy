@@ -5,7 +5,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.pool import NullPool
 
-from .data_model import Base
+from .base import Base, Namespace
 from ..utils import database_utils
 
 import logging
@@ -116,16 +116,21 @@ class DatabaseManager(object):
     def connect(self):
         return self.connection_manager.connect()
 
-    def initialize(self, conn=None):
+    def initialize(self, conn=None, force=False):
 
         if conn is None:
             conn = self.connect()
         try:
             conn.execute("SELECT id FROM Hypothesis LIMIT 1;")
+            if force:
+                raise Exception()
         except:
             logger.info("Database requires initialization")
             self.connection_manager.ensure_database()
             Base.metadata.create_all(conn)
+            session = self.session()
+            for initializer in Namespace.initialization_list:
+                initializer(session)
 
     def session(self, connection=None):
         if connection is None:

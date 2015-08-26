@@ -1,7 +1,7 @@
 import os
 from copy import copy
-
-from sqlalchemy import create_engine
+from time import time
+from sqlalchemy import create_engine, Table
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.sql import ClauseElement
 from sqlalchemy.engine.url import make_url
@@ -245,3 +245,17 @@ class toggle_indices(object):
             self.session.commit()
         except:
             pass
+
+
+def temp_table(table, metdata=None):
+    if metdata is None:
+        if hasattr(table, "metadata"):
+            metadata = table.metadata
+        else:
+            from glycresoft_sqlalchemy.data_model import Base
+            metadata = Base.metadata
+    if hasattr(table, "__table__"):
+        table = table.__table__
+    cols = [c.copy() for c in table.columns]
+    constraints = [c.copy() for c in table.constraints]
+    return Table("TempTable_%s" % hex(int(time())), metadata, *(cols + constraints))

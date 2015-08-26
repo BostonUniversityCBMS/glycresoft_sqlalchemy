@@ -31,7 +31,7 @@ class Hypothesis(Base):
     proteins_query = relationship("Protein", lazy='dynamic')
 
     glycans = relationship(Glycan, backref=backref("hypothesis", order_by=id),
-                           collection_class=attribute_mapped_collection('name'),
+                           lazy="dynamic",
                            cascade="delete")
 
     is_decoy = Column(Boolean, default=False)
@@ -59,7 +59,7 @@ class Hypothesis(Base):
     def __repr__(self):
         return "<{} {} {} {} proteins {} glycans>".format(
             self.__class__.__name__,
-            self.id, self.name, len(self.proteins), len(self.glycans))
+            self.id, self.name, len(self.proteins), self.glycans.count())
 
     __mapper_args__ = {
         'polymorphic_identity': u'Hypothesis',

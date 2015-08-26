@@ -62,6 +62,11 @@ class ve_build_ext(build_ext):
 cmdclass['build_ext'] = ve_build_ext
 
 
+required = []
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
+
 def status_msgs(*msgs):
     print('*' * 75)
     for msg in msgs:
@@ -74,12 +79,7 @@ def run_setup(include_cext=True):
       name='glycresoft_sqlalchemy',
       version='0.0.5',
       packages=find_packages(),
-      install_requires=[
-        "sqlalchemy >= 1.0",
-        "pyyaml >= 3.11",
-        "pyteomics >= 3.0",
-        "matplotlib >= 1.4"
-      ],
+      install_requires=required,
       entry_points={
                 'console_scripts': [
                     "glycresoft-build-database = glycresoft_sqlalchemy.app.build_database:main",

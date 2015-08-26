@@ -9,7 +9,7 @@ from sqlalchemy.orm.session import object_session
 from .generic import MutableDict, MutableList
 from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan, Protein
 from .naive_proteomics import TheoreticalGlycopeptideComposition
-from .glycomics import TheoreticalGlycanComposition, MassShift, has_glycan_composition
+from .glycomics import TheoreticalGlycanComposition, MassShift, has_glycan_composition, TheoreticalGlycanStructure
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
 from .json_type import tryjson
 from .observed_ions import SampleRun, Peak, ScanBase, TandemScan
@@ -117,6 +117,24 @@ class MS1GlycanHypothesisSampleMatch(HypothesisSampleMatch):
 
     __mapper_args__ = {
         "polymorphic_identity": u"MS1GlycanHypothesisSampleMatch",
+    }
+
+    ms_level = 1
+
+    @property
+    def results_type(self):
+        return (PeakGroupMatch)
+
+
+class MS2GlycanHypothesisSampleMatch(HypothesisSampleMatch):
+    __tablename__ = "MS2GlycanHypothesisSampleMatch"
+    id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
+
+    def results(self):
+        yield TheoreticalGlycanStructure, ()
+
+    __mapper_args__ = {
+        "polymorphic_identity": u"MS2GlycanHypothesisSampleMatch",
     }
 
     ms_level = 1
@@ -282,6 +300,89 @@ class GlycopeptideSpectrumMatch(Base):
     def __repr__(self):
         return "<GlycopeptideSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
             self.glycopeptide_match.glycopeptide_sequence,
+            self.scan_time, len(self.peak_match_map))
+
+
+class GlycanStructureMatch(Base):
+    __tablename__ = "GlycanStructureMatch"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    theoretical_reference_id = Column(
+        Integer, ForeignKey(TheoreticalGlycanStructure.id, ondelete="CASCADE"), index=True)
+    theoretical_reference = relationship(TheoreticalGlycanStructure)
+
+    hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
+    hypothesis_sample_match = relationship(
+        HypothesisSampleMatch, backref=backref("glycan_structure_matches", lazy='dynamic'))
+
+    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    ms2_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+
+    observed_mass = Column(Numeric(12, 6, asdecimal=False))
+    ppm_error = Column(Numeric(12, 6, asdecimal=False))
+    volume = Column(Numeric(12, 4, asdecimal=False))
+
+    fragment_matches = Column(MutableList.as_mutable(PickleType))
+
+    scan_id_range = Column(MutableList.as_mutable(PickleType))
+    first_scan = Column(Integer)
+    last_scan = Column(Integer)
+
+    spectrum_matches = relationship("GlycanSpectrumMatch", backref='glycan_structure_match', lazy='dynamic')
+
+    def structure(self):
+        return self.theoretical_reference.structure()
+
+    @property
+    def name(self):
+        return self.theoretical_reference.name
+
+    @property
+    def glycoct(self):
+        return self.theoretical_reference.glycoct
+
+    @property
+    def calculated_mass(self):
+        return self.theoretical_reference.calculated_mass
+
+    @property
+    def composition(self):
+        return self.theoretical_reference.composition
+
+    @property
+    def glycan_composition(self):
+        return self.theoretical_reference.glycan_composition
+
+    @property
+    def reduction(self):
+        return self.theoretical_reference.reduction
+
+    @property
+    def derivatization(self):
+        return self.theoretical_reference.derivatization
+
+    def __repr__(self):
+        rep = "<{self.__class__.__name__} {self.ms2_score}\n{self.theoretical_reference.glycoct}>".format(self=self)
+        return rep
+
+
+class GlycanSpectrumMatch(Base):
+    __tablename__ = "GlycanSpectrumMatch"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    scan_time = Column(Integer)
+    glycan_structure_match_id = Column(Integer, ForeignKey(GlycanStructureMatch.id), index=True)
+    peak_match_map = Column(MutableDict.as_mutable(PickleType))
+    peaks_explained = Column(Integer, index=True)
+    peaks_unexplained = Column(Integer)
+    best_match = Column(Boolean, index=True)
+    hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), index=True)
+    hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), index=True)
+
+    def __repr__(self):
+        return "<GlycanSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
+            self.glycan_structure_match.name or self.glycan_structure_match.id,
             self.scan_time, len(self.peak_match_map))
 
 

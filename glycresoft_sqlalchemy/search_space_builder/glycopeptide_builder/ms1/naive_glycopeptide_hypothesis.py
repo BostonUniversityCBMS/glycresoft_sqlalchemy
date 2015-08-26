@@ -40,7 +40,7 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
                 database_manager.session(), min(peptide.count_glycosylation_sites, max_sites), hypothesis_id):
             glycan_set = list(glycan_set)
             glycan_composition_str = merge_compositions(g.glycan_composition for g in glycan_set)
-            glycan_mass = sum([(g.theoretical_mass - water) for g in glycan_set])
+            glycan_mass = sum([(g.calculated_mass - water) for g in glycan_set])
             glycoform = TheoreticalGlycopeptideComposition(
                 base_peptide_sequence=peptide.base_peptide_sequence,
                 modified_peptide_sequence=peptide.modified_peptide_sequence,

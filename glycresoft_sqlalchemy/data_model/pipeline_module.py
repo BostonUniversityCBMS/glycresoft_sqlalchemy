@@ -1,3 +1,4 @@
+import types
 import logging
 import time
 import pprint
@@ -34,6 +35,17 @@ class Pipeline(object):
         for i in range(at, len(self.steps)):
             step = self.steps[i]
             step.start()
+
+
+class GeneratorWithCallback(object):
+    def __init__(self, generator, callback):
+        self.generator = generator
+        self.callback = callback
+
+    def __iter__(self):
+        for item in self.generator:
+            yield item
+        self.callback()
 
 
 class PipelineModule(object):
@@ -75,8 +87,11 @@ class PipelineModule(object):
                 raise e
         else:
             self.status = 0
-        self._end(*args, **kwargs)
-        return out
+        if isinstance(out, types.GeneratorType):
+            return GeneratorWithCallback(out, lambda: self._end(*args, **kwargs))
+        else:
+            self._end(*args, **kwargs)
+            return out
 
     def _begin(self, *args, **kwargs):
         self.start_time = time.time()
@@ -87,7 +102,9 @@ class PipelineModule(object):
 
     def inform(self, *args, **kwargs):
         now = time.time() - self.start_time
-        logger.info("%s time elapsed." % time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(now)))
+        logger.info(
+            "%s: %s time elapsed.", self.__class__.__name__,
+            time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(now)))
         logger.info(*args, **kwargs)
 
     def _end(self, *args, **kwargs):

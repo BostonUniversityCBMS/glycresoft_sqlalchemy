@@ -15,7 +15,7 @@ id_getter = operator.attrgetter("id")
 
 GlycanTable = Glycan.__table__
 composition_c = GlycanTable.c.composition
-mass_c = GlycanTable.c.theoretical_mass
+mass_c = GlycanTable.c.calculated_mass
 id_c = GlycanTable.c.id
 get_id_c = operator.itemgetter(id_c)
 get_composition_c = operator.itemgetter(composition_c)
@@ -79,7 +79,7 @@ def merge_compositions(composition_list):
 
 def _glycan_product_coreblock(session, group, n, hypothesis_id, uniqueness_cache=None):
     for glycan in session.execute(select(
-            [GlycanTable.c.id, GlycanTable.c.theoretical_mass, GlycanTable.c.composition]).where(
+            [GlycanTable.c.id, GlycanTable.c.calculated_mass, GlycanTable.c.composition]).where(
             GlycanTable.c.hypothesis_id == hypothesis_id)):
         if uniqueness_cache is not None:
             id_bunch = tuple(sorted(map(get_id_c, group) + [glycan[id_c]]))

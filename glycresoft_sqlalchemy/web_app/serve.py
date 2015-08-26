@@ -1,17 +1,5 @@
 import logging
 import os
-try:
-    logging.basicConfig(level=logging.INFO, filename='glycresoft-log', filemode='w',
-                        format="%(asctime)s - %(processName)s:%(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
-                        datefmt="%H:%M:%S")
-    fmt = logging.Formatter(
-        "%(asctime)s - %(processName)s:%(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s", "%H:%M:%S")
-    handler = logging.StreamHandler()
-    handler.setFormatter(fmt)
-    logging.getLogger().addHandler(handler)
-except Exception, e:
-    logging.exception("Error, %r", e, exc_info=e)
-    raise e
 import json
 import functools
 from flask import Flask, request, session, g, redirect, url_for, \
@@ -582,6 +570,23 @@ parser.add_argument("-p", "--port", required=False, type=int, default=5000, help
 
 DEBUG = False
 
+
+def setup_logging():
+    try:
+        logging.basicConfig(
+            level=logging.INFO, filename='glycresoft-log', filemode='w',
+            format="%(asctime)s - %(processName)s:%(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
+            datefmt="%H:%M:%S")
+        fmt = logging.Formatter(
+            "%(asctime)s - %(processName)s:%(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s", "%H:%M:%S")
+        handler = logging.StreamHandler()
+        handler.setFormatter(fmt)
+        logging.getLogger().addHandler(handler)
+    except Exception, e:
+        logging.exception("Error, %r", e, exc_info=e)
+        raise e
+
+
 def main():
     args = parser.parse_args()
     results_database = args.results_database
@@ -594,6 +599,7 @@ def main():
     manager = ProjectManager(DATABASE)
     app.debug = DEBUG
     app.secret_key = SECRETKEY
+    setup_logging()
     app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=args.port)
 
 if __name__ == "__main__":

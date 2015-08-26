@@ -7,20 +7,27 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy import alias
 from sqlalchemy import event
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table, PickleType
+from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table, PickleType, Boolean
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy.ext.associationproxy import association_proxy, _AssociationDict
 from sqlalchemy.orm.collections import attribute_mapped_collection
 
+import glypy
 from glypy.composition import glycan_composition
 from glypy.io import glycoct
+from glypy.algorithms import subtree_search
 
-from .base import Base
-from .generic import MutableDict, MutableList, HasTaxonomy, Taxon, ReferenceDatabase, ReferenceAccessionNumber, HasReferenceAccessionNumber
+from .base import Base, Namespace
+from .generic import (
+    MutableDict, MutableList, HasTaxonomy, Taxon, ReferenceDatabase,
+    ReferenceAccessionNumber, HasReferenceAccessionNumber)
+
 from ..utils.database_utils import get_or_create
+from ..utils.memoize import memoclone
 
 
 crossring_pattern = re.compile(r"\d,\d")
+glycoct_parser = memoclone(100)(glycoct.loads)
 
 
 class MassShift(Base):
@@ -133,7 +140,7 @@ def has_glycan_composition(model, composition_attr):
 
     @event.listens_for(getattr(model, composition_attr), "set")
     def convert_composition(target, value, oldvalue, initiator):
-        if value == "{}":
+        if value == "{}" or value is None:
             return
         for k, v in glycan_composition.parse(value).items():
             target.glycan_composition[k.name()] = v
@@ -141,6 +148,8 @@ def has_glycan_composition(model, composition_attr):
     @event.listens_for(model, "load")
     def convert_composition_load(target, context):
         value = getattr(target, composition_attr)
+        if value == "{}" or value is None:
+            return
         for k, v in glycan_composition.parse(value).items():
             target.glycan_composition[k.name()] = v
 
@@ -177,7 +186,7 @@ def has_glycan_composition(model, composition_attr):
 def has_glycan_composition_listener(attr):
     @event.listens_for(attr, "set")
     def convert_composition(target, value, oldvalue, initiator):
-        if value == "{}":
+        if value == "{}" or value is None:
             return
         for k, v in glycan_composition.parse(value).items():
             target.glycan_composition[k.name()] = v
@@ -185,12 +194,15 @@ def has_glycan_composition_listener(attr):
     @event.listens_for(attr.class_, "load")
     def convert_composition_load(target, context):
         value = getattr(target, attr.prop.key)
+        if value == "{}" or value is None:
+            return
         for k, v in glycan_composition.parse(value).items():
             target.glycan_composition[k.name()] = v
 
+
 class GlycanBase(object):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    theoretical_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+    calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
     derivatization = Column(Unicode(64), index=True)
     reduction = Column(Unicode(64))
     name = Column(Unicode(64))
@@ -213,6 +225,45 @@ class StructureMotif(GlycanBase, HasReferenceAccessionNumber, Base):
     __tablename__ = "StructureMotif"
     canonical_sequence = Column(Unicode(256), index=True)
     motif_class = Column(Unicode(64), index=True)
+    is_core_motif = Column(Boolean)
+    _structure = None
+
+    def structure(self):
+        if self._structure is not None:
+            return self._structure
+        self._structure = glycoct_parser(self.canonical_sequence)
+        return self._structure
+
+    def matches(self, other):
+        motif = self.structure()
+        target = other.structure()
+        ix = subtree_search.subtree_of(motif, target, exact=True)
+        if self.is_core_motif:
+            return ix == 1
+        else:
+            return ix is not None
+
+    @classmethod
+    def get(cls, session, name, canonical_sequence, motif_class=None, is_core_motif=None):
+        obj, made = get_or_create(
+            session, cls, name=name, canonical_sequence=canonical_sequence,
+            motif_class=motif_class, is_core_motif=is_core_motif)
+        return obj
+
+    def __repr__(self):
+        rep = "<{self.__class__.__name__} {self.name}\n{self.canonical_sequence}>".format(self=self)
+        return rep
+
+    @classmethod
+    def initialize(cls, session):
+        for name, motif in glypy.motifs.items():
+            inst = cls.get(
+                session, name=name, canonical_sequence=str(motif),
+                motif_class=motif.motif_class, is_core_motif=motif.is_core_motif)
+            session.add(inst)
+        session.commit()
+
+Namespace.initialization_list.append(StructureMotif.initialize)
 has_glycan_composition(StructureMotif, "composition")
 
 
@@ -233,9 +284,6 @@ class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionN
     glycoct = Column(Unicode(256), index=True)
     _fragments = Column(MutableDict.as_mutable(PickleType))
 
-    structure = None
-
-
     def fragments(self, kind='BY'):
         if self._fragments is None:
             self._fragments = {}
@@ -243,14 +291,20 @@ class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionN
         return (f for f in self._fragments.values()
                 if ''.join(
                     sorted(crossring_pattern.sub("", f.kind))) in (ion_types))
-            
 
+    def structure(self):
+        return glycoct_parser(self.glycoct)
+
+    motifs = relationship(StructureMotif, secondary=lambda: TheoreticalGlycanStructureToMotifTable)
 
     __mapper_args__ = {
         'polymorphic_identity': u'TheoreticalGlycanStructure',
         "concrete": True
     }
 
+    def __repr__(self):
+        rep = "<{self.__class__.__name__}\n{self.glycoct}>".format(self=self)
+        return rep
 has_glycan_composition(TheoreticalGlycanStructure, "composition")
 
 

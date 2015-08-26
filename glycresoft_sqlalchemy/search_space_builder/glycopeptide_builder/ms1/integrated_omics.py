@@ -71,7 +71,7 @@ def glycosylate_callback(peptide, session, hypothesis_id, position_selector, max
                 for site in sites:
                     glycan = glycan_iter.next()
                     hexnac = Modification("HexNAc")
-                    hexnac.mass = glycan.theoretical_mass - water
+                    hexnac.mass = glycan.calculated_mass - water
                     for mod in target[site][1]:
                         target.drop_modification(site, mod)
                     target.add_modification(site, hexnac)
