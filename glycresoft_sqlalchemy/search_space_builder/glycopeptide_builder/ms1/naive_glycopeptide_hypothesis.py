@@ -153,11 +153,20 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
 
         session.commit()
         for protein in session.query(Protein).filter(Protein.hypothesis_id == self.hypothesis.id):
-            peptidoforms = list(generate_peptidoforms(protein, self.constant_modifications,
-                                                      self.variable_modifications, self.enzyme,
-                                                      self.max_missed_cleavages))
+            peptidoforms = []
+            i = 0
+            for peptidoform in generate_peptidoforms(protein, self.constant_modifications,
+                                                     self.variable_modifications, self.enzyme,
+                                                     self.max_missed_cleavages):
+                peptidoforms.append(peptidoform)
+                i += 1
+                if len(peptidoforms) > 10000:
+                    session.add_all(peptidoforms)
+                    session.commit()
+                    peptidoforms = []
             session.add_all(peptidoforms)
-            logger.info("Digested %s", protein)
+            session.commit()
+            logger.info("Digested %d peptidoforms for %s", i, protein)
             session.commit()
 
         session.query(NaivePeptide).filter(NaivePeptide.count_glycosylation_sites == None).delete('fetch')

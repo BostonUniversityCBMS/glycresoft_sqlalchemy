@@ -66,6 +66,10 @@ def growing_combinations(iterable):
 
 def unpositioned_isoforms(
         theoretical_peptide, constant_modifications, variable_modifications, modification_table):
+    if variable_modifications is None:
+        variable_modifications = []
+    if constant_modifications is None:
+        constant_modifications = []
     sequence = Sequence(theoretical_peptide.base_peptide_sequence)
     for mod in {modification_table[const_mod]
                 for const_mod in constant_modifications}:
