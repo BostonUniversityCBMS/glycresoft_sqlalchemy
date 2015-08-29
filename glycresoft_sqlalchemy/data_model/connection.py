@@ -86,7 +86,6 @@ class SQLiteConnectionManager(ConnectionManager):
 
     def connect(self):
         engine = super(SQLiteConnectionManager, self).connect()
-        engine.execute("PRAGMA journal_mode=WAL;")
         return engine
 
 
