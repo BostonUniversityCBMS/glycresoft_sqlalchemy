@@ -16,7 +16,8 @@ logger = logging.getLogger("database_manager")
 class ConnectionManager(object):
     echo = False
 
-    def __init__(self, database_uri, database_uri_prefix="", connect_args=None):
+    def __init__(self, database_uri, database_uri_prefix="",
+                 connect_args=None):
         self.database_uri = database_uri
         self.database_uri_prefix = database_uri_prefix
         self.connect_args = connect_args or {}
@@ -56,7 +57,8 @@ class ConnectionManager(object):
             database_utils.create_database(url)
 
     def __repr__(self):
-        return '<{} {}{}>'.format(self.__class__.__name__, self.database_uri_prefix, self.database_uri)
+        return '<{} {}{}>'.format(
+            self.__class__.__name__, self.database_uri_prefix, self.database_uri)
 
 
 class SQLiteConnectionManager(ConnectionManager):
@@ -66,7 +68,12 @@ class SQLiteConnectionManager(ConnectionManager):
     def __init__(self, path, connect_args=None):
         if connect_args is None:
             connect_args = self.connect_args
-        super(SQLiteConnectionManager, self).__init__(path, self.database_uri_prefix, connect_args)
+        super(
+            SQLiteConnectionManager,
+            self).__init__(
+            path,
+            self.database_uri_prefix,
+            connect_args)
 
     def clear(self):
         try:
@@ -90,7 +97,12 @@ class LocalPostgresConnectionManager(ConnectionManager):
     def __init__(self, path, connect_args=None):
         if connect_args is None:
             connect_args = self.connect_args
-        super(LocalPostgresConnectionManager, self).__init__(path, self.database_uri_prefix, connect_args)
+        super(
+            LocalPostgresConnectionManager,
+            self).__init__(
+            path,
+            self.database_uri_prefix,
+            connect_args)
 
 
 class DatabaseManager(object):
@@ -141,7 +153,8 @@ class DatabaseManager(object):
         return self.connection_manager.bridge_address()
 
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__, self.connection_manager)
+        return '<{} {}>'.format(
+            self.__class__.__name__, self.connection_manager)
 
 
 class LocalPostgresDatabaseManager(DatabaseManager):
@@ -151,14 +164,21 @@ class LocalPostgresDatabaseManager(DatabaseManager):
         super(LocalPostgresDatabaseManager, self).__init__(path, clear)
 
 
-def create_remote_manager(driver, user="", password="", host='localhost', port=5432):
-    database_uri_prefix = "{driver}://{user}:{password}@{host}:{port}".format(**locals())
+def create_remote_manager(
+        driver, user="", password="", host='localhost', port=5432):
+    database_uri_prefix = "{driver}://{user}:{password}@{host}:{port}".format(
+        **locals())
 
     class RemoteConnectionManager(ConnectionManager):
         database_uri_prefix = database_uri_prefix
 
         def __init__(self, path, connect_args):
-            super(RemoteConnectionManager, self).__init__(path, self.database_uri_prefix, connect_args)
+            super(
+                RemoteConnectionManager,
+                self).__init__(
+                path,
+                self.database_uri_prefix,
+                connect_args)
 
 
 def initialize(database_path, clear=False):
