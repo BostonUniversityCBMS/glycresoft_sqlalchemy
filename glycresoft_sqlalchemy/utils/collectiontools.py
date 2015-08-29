@@ -3,6 +3,11 @@ import itertools
 
 import sqlitedict
 
+try:
+    range = xrange
+except Exception, e:
+    pass
+
 
 class DefaultSqliteDict(sqlitedict.SqliteDict):
     def __init__(self, *args, **kwargs):

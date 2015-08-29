@@ -16,7 +16,7 @@ Sequence = sequence.Sequence
 
 strip_modifications = sequence.strip_modifications
 list_to_sequence = sequence.list_to_sequence
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("make_decoys")
 
 
 def pair_rotate(sequence):

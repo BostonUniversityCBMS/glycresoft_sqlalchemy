@@ -385,11 +385,11 @@ class Glycosylation(ModificationRule):
 
 class NGlycanCoreGlycosylation(Glycosylation):
     mass_ladder = {
-        "{HexpNAc:1}": 203.079372,
-        "{HexpNAc:2}": 406.158745,
-        "{HexpNAc:2, Hexp:1}": 586.222133,
-        "{HexpNAc:2, Hexp:2}": 730.264391,
-        "{HexpNAc:2, Hexp:3}": 892.317215
+        "{HexNAc:1}": 203.079372,
+        "{HexNAc:2}": 406.158745,
+        "{HexNAc:2; Hex:1}": 586.222133,
+        "{HexNAc:2; Hex:2}": 730.264391,
+        "{HexNAc:2; Hex:3}": 892.317215
     }
 
     def __init__(self, base_mass=203.07937):
@@ -398,6 +398,23 @@ class NGlycanCoreGlycosylation(Glycosylation):
         self.title = "NGlycanCoreGlycosylation"
         self.unimod_name = "HexNAc"
         self.targets = ModificationTarget("N")
+
+    def losses(self):
+        for label_loss in self.mass_ladder.items():
+            yield label_loss
+
+
+class OGlcNAcylation(Glycosylation):
+    mass_ladder = {
+        "{GlcNAc:1}": 203.079372
+    }
+
+    def __init__(self, base_mass=203.07937):
+        self.name = "O-GlcNAc"
+        self.mass = base_mass
+        self.title = "O-GlcNAc"
+        self.unimod_name = "O-GlcNAc"
+        self.targets = [ModificationTarget("S"), ModificationTarget("T")]
 
     def losses(self):
         for label_loss in self.mass_ladder.items():
@@ -435,6 +452,7 @@ class ModificationTable(dict):
     # Protein Prospector output
     other_modifications = {
         "HexNAc": NGlycanCoreGlycosylation(),
+        "O-GlcNAc": OGlcNAcylation(),
         #"pyroGlu": ModificationRule("Q", "pyroGlu", "pyroGlu", -17.02655),
         "H": ModificationRule("N-term", "H", "H", composition_to_mass("H")),
         "OH": ModificationRule("C-term", "OH", "OH", composition_to_mass("OH")),

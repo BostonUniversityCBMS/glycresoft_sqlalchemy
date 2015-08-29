@@ -49,20 +49,21 @@ class Migrator(object):
     def copy_model(self, model, filterfunc=lambda q: q, batch_size=10000):
         fks = self.find_foreign_keys(model)
         i = 0
-        for ref in filterfunc(self.source.query(model)).yield_per(1000):
-            make_transient(ref)
-            for fk in fks:
-                value = getattr(ref, fk.parent.name)
-                setattr(ref, fk.parent.name, self.look_up_reference(fk, value))
-            old_id = ref.id
-            ref.id = None
-            self.target.add(ref)
-            self.target.flush()
-            assert ref.id is not None
-            self.set_reference(model, old_id, ref.id)
-            i += 1
-            if i % batch_size == 0:
-                self.target.commit()
+        with self.source.no_autoflush:
+            for ref in filterfunc(self.source.query(model)).yield_per(1000):
+                make_transient(ref)
+                for fk in fks:
+                    value = getattr(ref, fk.parent.name)
+                    setattr(ref, fk.parent.name, self.look_up_reference(fk, value))
+                old_id = ref.id
+                ref.id = None
+                self.target.add(ref)
+                self.target.flush()
+                assert ref.id is not None
+                self.set_reference(model, old_id, ref.id)
+                i += 1
+                if i % batch_size == 0:
+                    self.target.commit()
         self.target.commit()
 
 

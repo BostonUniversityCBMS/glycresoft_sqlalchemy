@@ -169,7 +169,7 @@ with let(build_naive_ms1_glycopeptide_app) as c:
         "-e", "--enzyme", required=False, default='trypsin', help="Protease to use for in-silico"
         " digestion of proteins. Defaults to trypsin.")
     c.add_argument(
-        "-m", "--missed-cleavages", type=int, default=2, required=False, help="The maximum number of"
+        "-m", "--missed-cleavages", destination="max_missed_cleavages", type=int, default=2, required=False, help="The maximum number of"
         " missed cleavages to allow. Defaults to 2")
     c.add_argument("--hypothesis-name", default=None, required=False, help="Name of the hypothesis")
     c.set_defaults(task=build_naive_ms1_glycopeptide)

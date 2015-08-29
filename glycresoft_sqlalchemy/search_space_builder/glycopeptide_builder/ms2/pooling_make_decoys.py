@@ -8,7 +8,7 @@ from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide
 from .make_decoys import (DecoySearchSpaceBuilder, strip_modifications, decoy_type_map,
                           reverse_preserve_sequon, fragments)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("make_decoys")
 
 
 def make_decoy(theoretical_sequence_id, prefix_len=0, suffix_len=1,

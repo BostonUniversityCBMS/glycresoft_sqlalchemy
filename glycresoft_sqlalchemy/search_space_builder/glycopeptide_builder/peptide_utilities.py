@@ -1,5 +1,10 @@
 import re
 import itertools
+import logging
+try:
+    logger = logging.getLogger("peptide_utilities")
+except:
+    logger = logging
 from collections import Counter
 
 from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, NaivePeptide
@@ -64,6 +69,64 @@ def growing_combinations(iterable):
     return chain_iterable(combinations(data, i) for i in range(len(data) + 1))
 
 
+class SiteGenerator(object):
+    '''
+    A simple generator-generator
+    '''
+    def __init__(self, iterable):
+        self.data = list(iterable)
+
+    def __iter__(self):
+        return growing_combinations(self.data)
+
+
+class SiteCombinator(object):
+    '''
+    A more memory efficient version of itertools.product() to leverage
+    the fact that the iterables being combined can be re-generated instead
+    of completely stored in memory.
+
+    This is still a brute force solution. We're more concerned with how many
+    (length of) each position as opposed to the exact values in them. A better
+    solution would look at how many ways each set can intersect. This gets tricky
+    when there are more than two sets and intersection in one blocks the other. A
+    similar stack-based algorithm would be effecient for this problem too.
+    '''
+    def __init__(self, *iterables):
+        self.combinators = list(map(SiteGenerator, iterables))
+        self.stack_index = 0
+        self.generator_stack = None
+        self.current = None
+
+    def __iter__(self):
+        self.current = [None] * len(self.combinators)
+        self.generator_stack = [iter(g) for g in self.combinators]
+        self.stack_index = -1
+        for g in self.generator_stack:
+            self.current[self.stack_index] = g.next()
+            self.stack_index += 1
+
+        running = True
+        while running:
+            try:
+                self.current[self.stack_index] = self.generator_stack[self.stack_index].next()
+                yield tuple(self.current)
+            except StopIteration:
+                self.reset_generator()
+
+    def reset_generator(self):
+        try:
+            self.stack_index -= 1
+            self.current[self.stack_index] = self.generator_stack[self.stack_index].next()
+            self.stack_index += 1
+            self.generator_stack[self.stack_index] = iter(self.combinators[self.stack_index])
+        except StopIteration:
+            if self.stack_index == -1:
+                raise StopIteration("Really stop")
+            else:
+                self.reset_generator()
+
+
 def unpositioned_isoforms(
         theoretical_peptide, constant_modifications, variable_modifications, modification_table):
     if variable_modifications is None:
@@ -100,16 +163,10 @@ def unpositioned_isoforms(
                 mods, sites = zip(*avail_sites.items())
             except:
                 mods, sites = [], []
-            site_combinations = product(*map(growing_combinations, sites))
-            for comb in site_combinations:
-                assignments = {}
-                for i, taken_sites in enumerate(comb):
-                    mod = mods[i]
-                    for site in (taken_sites):
-                        assignments[site] = mod
+            for comb in SiteCombinator(*sites):
                 modifications = Counter()
-                for site, mod in assignments.items():
-                    modifications[mod] += 1
+                for i, taken_sites in enumerate(comb):
+                    modifications[mods[i]] = len(taken_sites)
                 hashable = frozenset(modifications.items())
                 if hashable in solutions:
                     continue

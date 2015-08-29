@@ -155,6 +155,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
         for protein in session.query(Protein).filter(Protein.hypothesis_id == self.hypothesis.id):
             peptidoforms = []
             i = 0
+            logger.info("Digesting %r, %d glycosites", protein, len(protein.glycosylation_sites))
             for peptidoform in generate_peptidoforms(protein, self.constant_modifications,
                                                      self.variable_modifications, self.enzyme,
                                                      self.max_missed_cleavages):

@@ -53,14 +53,18 @@ class HypothesisSampleMatch(Base):
         target = object_session(self)
         source = object_session(sample_run)
 
+        sid = sample_run.id
         migrator = Migrator(source, target)
-        migrator.copy_model(SampleRun, lambda q: q.filter(SampleRun.id == sample_run.id))
-        migrator.copy_model(TandemScan, lambda q: q.filter(TandemScan.sample_run_id == sample_run.id))
-        migrator.copy_model(Peak, lambda q: q.join(ScanBase).filter(ScanBase.sample_run_id == sample_run.id))
+        migrator.copy_model(SampleRun, lambda q: q.filter(SampleRun.id == sid))
+        print SampleRun
+        migrator.copy_model(TandemScan, lambda q: q.filter(TandemScan.sample_run_id == sid))
+        print TandemScan
+        migrator.copy_model(Peak, lambda q: q.join(ScanBase).filter(ScanBase.sample_run_id == sid))
 
+        target.commit()
         link = HypothesisSampleMatchToSample(
             hypothesis_sample_match_id=self.id,
-            sample_run_id=migrator.look_up_reference_for_instance(sample_run))
+            sample_run_id=sample_run.id)
         target.add(link)
         target.commit()
 

@@ -543,6 +543,25 @@ def cleave(sequence, rule, missed_cleavages=0, min_length=0, **kwargs):
     return sorted(set(peptides), key=get1)
 
 
+def itercleave(sequence, rule, missed_cleavages=0, min_length=0, **kwargs):
+    if isinstance(sequence, Sequence):
+        sequence = str(sequence)
+    seen = set()
+    cleavage_sites = deque([0], maxlen=missed_cleavages+2)
+    for i in itertools.chain(map(lambda x: x.end(), re.finditer(rule, sequence)), [None]):
+        cleavage_sites.append(i)
+        for j in range(len(cleavage_sites)-1):
+            seq = sequence[cleavage_sites[j]:cleavage_sites[-1]]
+            if seq:
+                if min_length is None or sequence_length(seq) >= min_length:
+                    case = ((seq, cleavage_sites[j], cleavage_sites[-1] if cleavage_sites[-1]
+                             is not None else sequence_length(sequence)))
+                    if case in seen:
+                        continue
+                    seen.add(case)
+                    yield case
+
+
 @memoize()
 def sequence_tokens_to_mass(tokens):
     mass = 0.0
