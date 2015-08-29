@@ -135,7 +135,7 @@ class DatabaseManager(object):
     def session(self, connection=None):
         if connection is None:
             connection = self.connect()
-        return sessionmaker(bind=connection)()
+        return sessionmaker(bind=connection, autoflush=False)()
 
     def bridge_address(self):
         return self.connection_manager.bridge_address()
