@@ -49,6 +49,7 @@ class SimpleSpectrumAssignment(PipelineModule):
                 Protein.hypothesis_id == self.hypothesis_id,
                 GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id):
             yield id
+        session.close()
 
     def run(self):
         session = self.manager.session()
@@ -99,6 +100,7 @@ class SimpleSpectrumAssignment(PipelineModule):
         session.commit()
         accum = []
         session.commit()
+        session.close()
 
 
 def score_on_limited_peak_matches(glycopeptide_match, database_manager):

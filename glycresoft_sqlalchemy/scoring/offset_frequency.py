@@ -18,8 +18,6 @@ def offset_frequency(gsms, kind='b'):
         n_frag_sites = count_fragmentation_sites(gsm.glycopeptide_match.glycopeptide_sequence, kind)
 
 
-
-
 def count_fragmentation_sites(sequence, kind='b'):
     sequence = Sequence(sequence)
     fragmentation_sites = len(collectiontools.flatten(sequence.get_fragments("b")))

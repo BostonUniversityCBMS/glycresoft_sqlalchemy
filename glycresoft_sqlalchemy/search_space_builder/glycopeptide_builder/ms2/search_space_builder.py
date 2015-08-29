@@ -418,7 +418,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
             n_processes=n_processes, ms1_format=MS1ResultsFacade,
             source_hypothesis_id=hypothesis_id,
             source_hypothesis_sample_match_id=hypothesis_sample_match_id)
-
+        session.close()
         return inst
 
     def __init__(self, ms1_results_file, db_file_name=None,
