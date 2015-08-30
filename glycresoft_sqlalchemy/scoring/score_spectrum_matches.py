@@ -11,13 +11,14 @@ from ..data_model import (
 from .simple_scoring_algorithm import evaluate, merge_ion_matches, split_ion_list
 
 
-def score(matched, theoretical):
-    evaluate(matched, theoretical)
+def score(matched, theoretical, **parameters):
+    evaluate(matched, theoretical, **parameters)
 
 
 class MatchScorer(PipelineModule):
-    def __init__(self, database_path):
+    def __init__(self, database_path, score_parameters=None):
         self.manager = self.manager_type(database_path)
+        self.score_parameters = score_parameters or {}
 
     def run(self):
         session = self.manager.session()
@@ -26,21 +27,24 @@ class MatchScorer(PipelineModule):
             q = session.query(GlycopeptideMatch, TheoreticalGlycopeptide).filter(
                 GlycopeptideMatch.id == i, GlycopeptideMatch.theoretical_glycopeptide_id == TheoreticalGlycopeptide.id)
             for match, theoretical in q:
-                score(match, theoretical)
+                score(match, theoretical, **self.score_parameters)
                 session.add(match)
 
         session.commit()
 
 
 class SimpleSpectrumAssignment(PipelineModule):
-    def __init__(self, database_path, hypothesis_id, hypothesis_sample_match_id, n_processes=4):
+    def __init__(self, database_path, hypothesis_id, hypothesis_sample_match_id, score_parameters=None, n_processes=4):
         self.manager = self.manager_type(database_path)
         self.hypothesis_id = hypothesis_id
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
+        self.score_parameters = score_parameters or {}
         self.n_processes = n_processes
 
     def prepare_task_fn(self):
-        return functools.partial(score_on_limited_peak_matches, database_manager=self.manager)
+        return functools.partial(
+            score_on_limited_peak_matches,
+            database_manager=self.manager, score_parameters=self.score_parameters)
 
     def stream_glycopeptide_match_ids(self):
         session = self.manager.session()
@@ -103,7 +107,7 @@ class SimpleSpectrumAssignment(PipelineModule):
         session.close()
 
 
-def score_on_limited_peak_matches(glycopeptide_match, database_manager):
+def score_on_limited_peak_matches(glycopeptide_match, database_manager, score_parameters):
     try:
         session = database_manager.session()
         with session.no_autoflush:
@@ -116,7 +120,7 @@ def score_on_limited_peak_matches(glycopeptide_match, database_manager):
                 setattr(glycopeptide_match, series, value)
             theoretical_sequence = glycopeptide_match.theoretical_reference
             glycopeptide_match.ms2_score = 0.0
-            score(glycopeptide_match, theoretical_sequence)
+            score(glycopeptide_match, theoretical_sequence, **score_parameters)
             return glycopeptide_match
     except Exception, e:
         logger.exception("An error occurred processing %r", glycopeptide_match, exc_info=e)

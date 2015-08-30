@@ -8,12 +8,29 @@ from glycresoft_sqlalchemy.matching import matching, peak_grouping
 from glycresoft_sqlalchemy.scoring import target_decoy, score_spectrum_matches
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 from glycresoft_sqlalchemy.spectra.decon2ls_sa import Decon2LSIsosParser
-from glycresoft_sqlalchemy.data_model import DatabaseManager, MS2GlycopeptideHypothesisSampleMatch, SampleRun, Hypothesis
+from glycresoft_sqlalchemy.data_model import (
+    DatabaseManager, MS2GlycopeptideHypothesisSampleMatch, SampleRun, Hypothesis,
+    MassShift)
+from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 
 import summarize
 
 ms1_tolerance_default = matching.ms1_tolerance_default
 ms2_tolerance_default = matching.ms2_tolerance_default
+
+
+class ParseMassShiftAction(argparse.Action):
+    def __init__(self, option_strings, dest, default=None, **kwargs):
+        kwargs['default'] = []
+        kwargs['nargs'] = 3
+        kwargs["metavar"] = ("NAME", "MASSDELTA", "MAX")
+        super(ParseMassShiftAction, self).__init__(option_strings, dest, **kwargs)
+
+    def parse(self, shift):
+        return shift[0].replace("\-", '-'), int(shift[1].replace("\-", '-')), int(shift[2])
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        getattr(namespace, self.dest).append(self.parse(values))
 
 
 def run_ms2_glycoproteomics_search(
@@ -95,17 +112,22 @@ def run_ms1_search(
     }[search_type]
 
     manager = DatabaseManager(database_path)
+    session = manager.session()
+    mass_shift_map = {}
+    for shift_params in mass_shift:
+        shift, flag = get_or_create(session, MassShift, name=shift_params[0], mass=shift_params[1])
+        session.add(shift)
+        mass_shift_map[shift] = shift_params[2]
 
     if observed_ions_type == 'isos':
         parser = Decon2LSIsosParser(observed_ions_path, manager.bridge_address())
         observed_ions_path = parser.manager.path
 
-    # mass_shift converted to dictionary for mass_shift_map
-
     pipeline = peak_grouping.LCMSPeakClusterSearch(
         database_path, observed_ions_path, hypothesis_id, sample_run_id=1,
         grouping_error_tolerance=grouping_tolerance,
-        search_type=search_type, match_tolerance=match_tolerance, mass_shift_map=None,
+        search_type=search_type, match_tolerance=match_tolerance,
+        mass_shift_map=mass_shift_map,
         n_processes=n_processes, **kwargs)
     pipeline.start()
 
@@ -137,7 +159,7 @@ ms1_app.add_argument("-p", "--observed-ions-type", default='isos', choices=["iso
 ms1_app.add_argument("-t", "--match-tolerance", default=1e-5, required=False, type=float)
 ms1_app.add_argument("-g", "--grouping-tolerance", default=8e-5, required=False, type=float)
 ms1_app.add_argument("-s", "--search-type", default='glycopeptide', choices=['glycan', 'glycopeptide'])
-# ms1_app.add_argument("-m", "--mass-shift", action='append', nargs=4)
+ms1_app.add_argument("-m", "--mass-shift", action=ParseMassShiftAction)
 ms1_app.add_argument('--skip-grouping', action='store_true', required=False)
 ms1_app.add_argument('--skip-matching', action='store_true', required=False)
 ms1_app.add_argument('--hypothesis-sample-match-id', action='store', default=None, required=False)

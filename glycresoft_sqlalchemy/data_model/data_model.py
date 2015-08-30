@@ -253,6 +253,7 @@ class MS2GlycanHypothesis(Hypothesis):
     __tablename__ = "MS2GlycanHypothesis"
 
     id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), primary_key=True)
+    ms1_source_hypothesis_id = Column(Integer, ForeignKey("MS1GlycanHypothesisSampleMatch.id"))
 
     __mapper_args__ = {
         'polymorphic_identity': u'MS2GlycanHypothesis',

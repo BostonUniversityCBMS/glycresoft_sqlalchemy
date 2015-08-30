@@ -127,6 +127,45 @@ class SiteCombinator(object):
                 self.reset_generator()
 
 
+def all_combinations(site_assignments):
+    all_positions = reduce(set().union, site_assignments.values())
+
+    intersects = {}
+    for i in all_positions:
+        intersects[i] = []
+        for t, t_sites in site_assignments.items():
+            if i in t_sites:
+                intersects[i].append(t)
+
+    combinations = [Counter()]
+    for i, options in intersects.items():
+        if len(options) == 1:
+            for c in combinations:
+                c[options[0]] += 1
+        else:
+            new_combinations = []
+            for opt in options:
+                for c in combinations:
+                    new_c = Counter(c)
+                    new_c[opt] += 1
+                    new_combinations.append(new_c)
+            combinations = new_combinations
+
+    unique_combinations = set()
+    for combn in combinations:
+        unique_combinations.add(frozenset(combn.items()))
+
+    combinations = map(dict, unique_combinations)
+
+    unique_combinations = set()
+    for combn in combinations:
+        for i in range(1, len(combn) + 1):
+            for key_set in itertools.combinations(combn, i):
+                unique_combinations.add(frozenset((k, combn[k]) for k in key_set))
+    result = map(dict, unique_combinations)
+    return result
+
+
 def unpositioned_isoforms(
         theoretical_peptide, constant_modifications, variable_modifications, modification_table):
     if variable_modifications is None:
@@ -159,14 +198,15 @@ def unpositioned_isoforms(
                 mod: sites -
                 sequons_occupied for mod,
                 sites in variable_sites.items()}
-            try:
-                mods, sites = zip(*avail_sites.items())
-            except:
-                mods, sites = [], []
-            for comb in SiteCombinator(*sites):
-                modifications = Counter()
-                for i, taken_sites in enumerate(comb):
-                    modifications[mods[i]] = len(taken_sites)
+            # try:
+            #     mods, sites = zip(*avail_sites.items())
+            # except:
+            #     mods, sites = [], []
+            # for comb in SiteCombinator(*sites):
+            #     modifications = Counter()
+            #     for i, taken_sites in enumerate(comb):
+            #         modifications[mods[i]] = len(taken_sites)
+            for modifications in all_combinations(avail_sites):
                 hashable = frozenset(modifications.items())
                 if hashable in solutions:
                     continue

@@ -16,14 +16,14 @@ def main(database_path):
     session = DatabaseManager(database_path).session()
     for hypothesis in session.query(Hypothesis):
         print hypothesis
-        if hypothesis.parameters.get("is_decoy", False):
+        if hypothesis.is_decoy:
             continue
         for protein in hypothesis.proteins.values():
             gp_count = protein.theoretical_glycopeptides.count()
             if gp_count == 0:
                 continue
             print "%d Theoretical Glycopeptides" % gp_count
-            print protein
+            print protein.name, protein.id
             print "Top Score: ", session.query(
                 sql_max(GlycopeptideMatch.ms2_score)).filter(GlycopeptideMatch.protein_id == protein.id).first()
             print "Number of matches: ", session.query(GlycopeptideMatch).filter(

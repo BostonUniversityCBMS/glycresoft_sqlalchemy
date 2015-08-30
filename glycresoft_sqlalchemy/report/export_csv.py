@@ -87,7 +87,7 @@ class CSVExportDriver(PipelineModule):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
 
-        if hypothesis_sample_match_ids is None:
+        if hypothesis_sample_match_ids is None or len(hypothesis_sample_match_ids) == 0:
             hypothesis_sample_match_ids = [hsm.id for hsm in self.session.query(
                 HypothesisSampleMatch.id)]
             self.hypothesis_sample_match_ids = hypothesis_sample_match_ids
@@ -136,7 +136,7 @@ class CSVExportDriver(PipelineModule):
 app = argparse.ArgumentParser("export-csv")
 
 app.add_argument("database_path", help="path to the database file to export")
-app.add_argument("-e", "--hypothesis-sample-match-id", default=None, help="The hypothesis sample match to export.")
+app.add_argument("-e", "--hypothesis-sample-match-id",  action="append", type=int, help="The hypothesis sample match to export.")
 app.add_argument("-o", "--out", default=None, help="Where to save the result")
 
 

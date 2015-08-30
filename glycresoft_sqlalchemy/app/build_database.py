@@ -8,6 +8,7 @@ from glycresoft_sqlalchemy.search_space_builder import (
     naive_glycopeptide_hypothesis,
     integrated_omics)
 import summarize
+from . import let
 
 commit_checkpoint = os.environ.get("GLYCRESOFT_COMMIT_INTERVAL", 1000)
 
@@ -131,14 +132,6 @@ build_naive_simple.add_argument(
 build_naive_simple.set_defaults(task=build_naive_search_space_simple)
 
 
-@contextmanager
-def let(obj):
-    try:
-        yield obj
-    finally:
-        pass
-
-
 build_naive_ms1_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms1")
 with let(build_naive_ms1_glycopeptide_app) as c:
     c.add_argument(
@@ -169,7 +162,7 @@ with let(build_naive_ms1_glycopeptide_app) as c:
         "-e", "--enzyme", required=False, default='trypsin', help="Protease to use for in-silico"
         " digestion of proteins. Defaults to trypsin.")
     c.add_argument(
-        "-m", "--missed-cleavages", destination="max_missed_cleavages", type=int, default=2, required=False, help="The maximum number of"
+        "-m", "--missed-cleavages", dest="max_missed_cleavages", type=int, default=2, required=False, help="The maximum number of"
         " missed cleavages to allow. Defaults to 2")
     c.add_argument("--hypothesis-name", default=None, required=False, help="Name of the hypothesis")
     c.set_defaults(task=build_naive_ms1_glycopeptide)
