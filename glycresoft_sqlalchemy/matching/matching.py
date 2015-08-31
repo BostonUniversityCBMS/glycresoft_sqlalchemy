@@ -283,7 +283,7 @@ class IonMatching(PipelineModule):
                  hypothesis_sample_match_id=None,
                  ms1_tolerance=ms1_tolerance_default,
                  ms2_tolerance=ms2_tolerance_default,
-                 intensity_threshold=0.0,
+                 intensity_threshold=150.0,
                  n_processes=4):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
