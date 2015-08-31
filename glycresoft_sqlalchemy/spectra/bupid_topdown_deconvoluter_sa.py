@@ -265,7 +265,7 @@ class StreamingYAMLRenderer(object):
                     precursor_neutral_mass = neutral_mass(scans[0]['mz'], precursor_charge_state)
                     logger.info("Scan Time %d", scan_time)
                     scan = TandemScan(
-                        time=scan_time,
+                        time=scan_time, precursor_charge_state=precursor_charge_state,
                         precursor_neutral_mass=precursor_neutral_mass, sample_run_id=self.sample_run_id)
                     session.add(scan)
                     session.flush()

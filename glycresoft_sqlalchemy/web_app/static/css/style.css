@@ -157,3 +157,14 @@ Protein Overview Graphic
 .side-nav.fixed {
     padding-left: 5px;
 }
+
+/*
+
+Mass Shift Input
+
+*/
+
+.mass-shift-row input{
+    width: 125px;
+    margin-bottom: 5px;
+}

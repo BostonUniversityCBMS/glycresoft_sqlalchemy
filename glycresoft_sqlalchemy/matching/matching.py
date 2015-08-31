@@ -46,7 +46,7 @@ def ppm_error(x, y):
 
 def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
                     database_manager, hypothesis_sample_match_id, sample_run_id,
-                    hypothesis_id):
+                    hypothesis_id, intensity_threshold=0.0):
     '''
     *Task Function*
 
@@ -93,6 +93,7 @@ def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,
 
         for spectrum in query:
             peak_list = spectrum.tandem_data
+            peak_list = [p for p in peak_list if p.intensity >= intensity_threshold]
             peak_list = sorted(peak_list, key=neutral_mass_getter)
             peak_match_map = defaultdict(list)
 
@@ -282,6 +283,7 @@ class IonMatching(PipelineModule):
                  hypothesis_sample_match_id=None,
                  ms1_tolerance=ms1_tolerance_default,
                  ms2_tolerance=ms2_tolerance_default,
+                 intensity_threshold=0.0,
                  n_processes=4):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
@@ -292,11 +294,12 @@ class IonMatching(PipelineModule):
         self.ms2_tolerance = ms2_tolerance
         self.observed_ions_path = observed_ions_path
         self.observed_ions_type = observed_ions_type
+        self.intensity_threshold = intensity_threshold
 
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.sample_run_id = sample_run_id
-
-        if isinstance(observed_ions_path, str):
+        print observed_ions_path
+        if isinstance(observed_ions_path, basestring):
             if observed_ions_type != "db" and splitext(observed_ions_path)[1] != '.db':
                 msmsdb = decon_format_lookup[observed_ions_type](observed_ions_path).to_db()
             else:
@@ -305,14 +308,15 @@ class IonMatching(PipelineModule):
             msmsdb = observed_ions_path
 
         self.msmsdb = msmsdb
-
-        for hypothesis in self.session.query(Hypothesis).filter(Hypothesis.id == hypothesis_id):
-            hypothesis.parameters.update({
-                    "ms1_ppm_tolerance": ms1_tolerance,
-                    "ms2_ppm_tolerance": ms2_tolerance,
-                    "observed_ions_path": observed_ions_path
-            })
-            self.session.add(hypothesis)
+        if hypothesis_sample_match_id is not None:
+            for hsm in self.session.query(HypothesisSampleMatch).filter(HypothesisSampleMatch.id == hypothesis_sample_match_id):
+                hsm.parameters.update({
+                        "ms1_ppm_tolerance": ms1_tolerance,
+                        "ms2_ppm_tolerance": ms2_tolerance,
+                        "intensity_threshold": intensity_threshold,
+                        "observed_ions_path": observed_ions_path
+                })
+                self.session.add(hsm)
         self.session.commit()
 
     def prepare_task_fn(self):
@@ -323,7 +327,8 @@ class IonMatching(PipelineModule):
                                     database_manager=self.manager,
                                     hypothesis_sample_match_id=self.hypothesis_sample_match_id,
                                     sample_run_id=self.sample_run_id,
-                                    hypothesis_id=self.hypothesis_id)
+                                    hypothesis_id=self.hypothesis_id,
+                                    intensity_threshold=self.intensity_threshold)
         return task_fn
 
     def stream_theoretical_glycopeptides(self, chunksize=50):

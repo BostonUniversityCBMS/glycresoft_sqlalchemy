@@ -282,6 +282,10 @@ class GlycopeptideMatch(PeptideBase, Base):
 
     spectrum_matches = relationship("GlycopeptideSpectrumMatch", backref='glycopeptide_match', lazy='dynamic')
 
+    @classmethod
+    def is_not_decoy(cls):
+        return (cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy)
+
     def __repr__(self):
         rep = "<GlycopeptideMatch {} {} {}>".format(self.glycopeptide_sequence, self.ms2_score, self.observed_mass)
         return rep
@@ -305,6 +309,17 @@ class GlycopeptideSpectrumMatch(Base):
         return "<GlycopeptideSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
             self.glycopeptide_match.glycopeptide_sequence,
             self.scan_time, len(self.peak_match_map))
+
+    @property
+    def spectrum(self):
+        session = object_session(self)
+        s = session.query(TandemScan).join(
+            HypothesisSampleMatchToSample,
+            TandemScan.sample_run_id == HypothesisSampleMatchToSample.sample_run_id).filter(
+            HypothesisSampleMatch.id == self.hypothesis_sample_match_id).filter(
+            TandemScan.sample_run_id == SampleRun.id,
+            TandemScan.time == self.scan_time)
+        return s.first()
 
 
 class GlycanStructureMatch(Base):
@@ -383,6 +398,17 @@ class GlycanSpectrumMatch(Base):
     best_match = Column(Boolean, index=True)
     hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), index=True)
     hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), index=True)
+
+    @property
+    def spectrum(self):
+        session = object_session(self)
+        s = session.query(TandemScan).join(
+            HypothesisSampleMatchToSample,
+            TandemScan.sample_run_id == HypothesisSampleMatchToSample.sample_run_id).filter(
+            HypothesisSampleMatch.id == self.hypothesis_sample_match_id).filter(
+            TandemScan.sample_run_id == SampleRun.id,
+            TandemScan.time == self.scan_time)
+        return s.first()
 
     def __repr__(self):
         return "<GlycanSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(

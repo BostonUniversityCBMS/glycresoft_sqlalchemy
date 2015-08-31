@@ -109,11 +109,10 @@ def label_path(G, path):
 
 def layout_graph(graph):
     nodes = graph.node.items()
-    y = np.random.uniform(-4, 4, len(nodes))
     coords = {}
-    for y_shift, ix_node in zip(y, nodes):
+    for ix_node in (nodes):
         ix, node = ix_node
-        coords[ix] = (node['neutral_mass'], y_shift)
+        coords[ix] = (node['neutral_mass'], node['intensity'])
     return coords
 
 
@@ -126,10 +125,10 @@ def edge_labels(graph):
     return labels
 
 
-def draw_graph(graph):
+def draw_graph(graph, **kwargs):
     position = layout_graph(graph)
     edge_label_dict = edge_labels(graph)
-    ax = nx.draw_networkx(graph, pos=position)
+    ax = nx.draw_networkx(graph, pos=position, **kwargs)
     nx.draw_networkx_edge_labels(
         graph,
         pos=position,
