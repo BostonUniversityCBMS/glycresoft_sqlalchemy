@@ -30,7 +30,7 @@ def process_predicted_ms1_ion(row, database_manager, modification_table, site_li
         List of each theoretical sequence and its fragment ions
     """
     try:
-        session = database_manager.session(autoflush=False)
+        session = database_manager.session()
         ms1_result = source_type.render(session, row)
 
         if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
