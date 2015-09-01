@@ -1,5 +1,6 @@
 import json
 import sqlalchemy.types
+import types
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 
@@ -32,6 +33,34 @@ def tryjson(obj):
         return None
 
 
+def clean_dict(d):
+    result = {}
+    for k, v in d.items():
+        if not isinstance(k, (str, int)):
+            if isinstance(k.__class__, DeclarativeMeta):
+                rk = k.id
+            else:
+                rk = str(k)
+        else:
+            rk = k
+        if isinstance(v, (list, tuple)):
+            rv = []
+            for x in v:
+                if isinstance(x, dict):
+                    rv.append(clean_dict(x))
+                elif isinstance(x.__class__, DeclarativeMeta):
+                    rv.append(tryjson(x))
+                else:
+                    rv.append(x)
+        elif isinstance(v, dict):
+            rv = clean_dict(v)
+        else:
+            rv = v
+
+        result[rk] = rv
+    return result
+
+
 def new_alchemy_encoder():
     class AlchemyEncoder(json.JSONEncoder):
         def default(self, obj):
@@ -44,6 +73,8 @@ def new_alchemy_encoder():
                         json.dumps(data)  # this will fail on non-encodable values, like other classes
                         fields[field] = data
                     except TypeError:
+                        if isinstance(data, types.MethodType):
+                            continue
                         fields[field] = None
                 # a json-encodable dict
                 return fields

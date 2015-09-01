@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.baked import bakery
-from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 
@@ -8,6 +8,9 @@ from .data_model import Base
 from .connection import DatabaseManager
 from .generic import MutableDict, MutableList
 
+from ..structure.composition import Composition
+
+PROTON = Composition("H+").mass
 
 observed_ions_bakery = bakery()
 
@@ -146,6 +149,10 @@ class Peak(Base):
 
     def __repr__(self):
         return "<Peak {} {} {} {}>".format(self.id, self.neutral_mass, self.intensity, self.charge)
+
+    @hybrid_property
+    def mz(self):
+        return (self.neutral_mass + (self.charge * PROTON)) / self.charge
 
 
 class Decon2LSPeak(Base):

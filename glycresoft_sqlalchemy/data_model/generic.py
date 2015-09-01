@@ -86,6 +86,14 @@ class HasTaxonomy(object):
         cls.TaxonomyAssociationTable = taxon_association
         return relationship(Taxon, secondary=taxon_association)
 
+    @classmethod
+    def with_taxa(cls, ids):
+        try:
+            iter(ids)
+            return cls.taxa.any(Taxon.id.in_(tuple(ids)))
+        except:
+            return cls.taxa.any(Taxon.id == ids)
+
 
 class ReferenceDatabase(Base):
     __tablename__ = "ReferenceDatabase"

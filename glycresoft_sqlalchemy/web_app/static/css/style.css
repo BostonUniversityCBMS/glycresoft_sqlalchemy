@@ -166,5 +166,16 @@ Mass Shift Input
 
 .mass-shift-row input{
     width: 125px;
-    margin-bottom: 5px;
+    margin-bottom: 0px !important;
+}
+
+.mass-shift-row .input-field{
+    margin-top: 4px !important;
+}
+
+.mass-shift-row {
+    margin-bottom: 4px !important;
+}
+.mass-shift-input-table{
+    margin-top: 11px;
 }

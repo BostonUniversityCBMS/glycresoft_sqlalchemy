@@ -100,11 +100,17 @@ def longest_paths(G):
 
 def label_path(G, path):
     last = path[0]
-    residues = []
+    sequences = [[]]
     for i in path[1:]:
-        residues.append(G.edge[last][i]['residue'])
+        new_sequences = []
+        for edge in G.edge[last][i].values():
+            for sequence in sequences:
+                new_seq = sequence[:]
+                new_seq.append(edge['residue'])
+                new_sequences.append(new_seq)
+        sequences = new_sequences
         last = i
-    return residues
+    return sequences
 
 
 def layout_graph(graph):
@@ -121,7 +127,8 @@ def edge_labels(graph):
     for ij in graph.edges():
         i, j = ij
         edge = graph.edge[i][j]
-        labels[ij] = "{residue}".format(**edge)
+        for edge_case, edge_data in edge.items():
+            labels[ij + (edge_case,)] = "{residue}".format(**edge_data)
     return labels
 
 
@@ -140,7 +147,7 @@ def draw_graph(graph, **kwargs):
 class TagFinder(object):
     def __init__(self, peak_list):
         self.peak_list = sorted(peak_list, key=neutral_mass_getter)
-        self.spectrum_graph = nx.DiGraph()
+        self.spectrum_graph = nx.MultiDiGraph()
 
     def find_tags(self, blocks, tolerance=default_match_tolerance, offset=0):
         peak_list = self.peak_list
@@ -168,4 +175,11 @@ class TagFinder(object):
         if paths is None:
             paths = self.tag_paths()
         for path in paths:
-            yield ''.join(map(str, label_path(self.spectrum_graph, path)))
+            g = (''.join(map(str, seq)) for seq in label_path(self.spectrum_graph, path))
+            for seq in g:
+                yield seq
+
+
+class SuffixTree(object):
+    pass
+    # Implement a Suffix Tree to filter redundant sequences

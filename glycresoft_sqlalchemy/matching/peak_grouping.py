@@ -544,6 +544,7 @@ class PeakGroupMatching(PipelineModule):
             mass_shift_map = {no_shift: 1}
         else:
             mass_shift_map[no_shift] = 1
+        logger.info("Mass Shift Map: %r", mass_shift_map)
         self.hypothesis_id = hypothesis_id
         self.sample_run_id = sample_run_id
         self.mass_shift_map = mass_shift_map

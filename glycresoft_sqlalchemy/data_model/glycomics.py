@@ -45,6 +45,9 @@ class MassShift(Base):
     def __ne__(self, other):
         return not (self == other)
 
+    def __repr__(self):
+        return "<MassShift {self.name} {self.mass}>".format(self=self)
+
     @classmethod
     def get(cls, session, name, mass=None):
         obj, made = get_or_create(session, cls, name=name, mass=mass)
@@ -174,6 +177,11 @@ def has_glycan_composition(model, composition_attr):
     model.qmonosaccharide = classmethod(qmonosaccharide)
     model._qmonosaccharide_cache = {}
 
+    def with_monosaccharide(cls, monosaccharide_name):
+        return cls.glycan_composition.any(cls.GlycanCompositionAssociation.base_type == monosaccharide_name)
+
+    model.with_monosaccharide = classmethod(with_monosaccharide)
+
     # This hack is necessary to make inner class locatable to the pickle
     # machinery. A possible alternative solution is to define a single class
     # once and use multiple tables that are mapped to it.
@@ -270,6 +278,8 @@ has_glycan_composition(StructureMotif, "composition")
 class TheoreticalGlycanComposition(GlycanBase, HasTaxonomy, HasReferenceAccessionNumber, Base):
     __tablename__ = "TheoreticalGlycanComposition"
 
+    structures = relationship("TheoreticalGlycanStructure", lazy='dynamic')
+
     __mapper_args__ = {
         'polymorphic_identity': u'TheoreticalGlycanComposition',
         "concrete": True
@@ -296,6 +306,10 @@ class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionN
         return glycoct_parser(self.glycoct)
 
     motifs = relationship(StructureMotif, secondary=lambda: TheoreticalGlycanStructureToMotifTable)
+
+    @classmethod
+    def with_motif(cls, name):
+        return cls.motifs.any(StructureMotif.name.like(name))
 
     __mapper_args__ = {
         'polymorphic_identity': u'TheoreticalGlycanStructure',

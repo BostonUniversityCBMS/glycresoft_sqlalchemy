@@ -1,6 +1,6 @@
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, Hypothesis, Protein, TheoreticalGlycopeptideComposition,
-    MS1GlycopeptideHypothesisSampleMatch, SampleRun)
+    MS1GlycopeptideHypothesisSampleMatch, SampleRun, make_transient, MassShift)
 
 from glycresoft_sqlalchemy.matching.peak_grouping import (
     LCMSPeakClusterSearch, Decon2LSPeakGrouper, PeakGroupMatching, PeakGroupClassification)
@@ -19,6 +19,15 @@ class CommunicativeLCMSPeakClusterSearch(LCMSPeakClusterSearch):
                  match_tolerance=2e-5, mass_shift_map=None, regression_parameters=None,
                  comm=NullPipe(), **kwargs):
         kwargs.setdefault("n_processes", 4)
+        dbm = self.manager_type(database_path)
+        session = dbm.session()
+        new_map = {}
+        for k, v in mass_shift_map.items():
+            s = session.query(MassShift).get(k)
+            new_map[s] = v
+        mass_shift_map = new_map
+        session.close()
+
         super(CommunicativeLCMSPeakClusterSearch, self).__init__(
             database_path, observed_ions_path, hypothesis_id, sample_run_id,
             grouping_error_tolerance, minimum_scan_count, hypothesis_sample_match_id,

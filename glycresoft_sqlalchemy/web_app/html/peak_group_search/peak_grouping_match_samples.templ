@@ -45,10 +45,15 @@
                 <label for='peak-grouping-tolerance'>Peak Grouping PPM Error Tolerance</label>
                 <input type='number' value='20' id='peak-grouping-tolerance' name='peak-grouping-tolerance'>
             </div>
+            
+            <div class='mass-shift-input-table col s6'>
+                
+            </div>
         </div>
         <button class='btn'>Submit</button>
     </form>
 <script>
+MassShiftInputWidget($(".mass-shift-input-table"))
 ajaxForm($("form#match-sample-form"), function(){
     var currentAction = GlycReSoft.getShowingLayer()
     GlycReSoft.setShowingLayer("home-layer")

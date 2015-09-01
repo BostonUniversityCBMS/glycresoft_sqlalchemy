@@ -661,8 +661,11 @@ class RestrictedModificationTable(ModificationTable):
 
         for name in self.constant_modifications + self.variable_modifications:
             mod = deepcopy(self[name])
-            target = extract_targets_from_string(title_cleaner.search(name).groupdict()["target"])
-            mod.targets = {target}
+            try:
+                target = extract_targets_from_string(title_cleaner.search(name).groupdict()["target"])
+                mod.targets = {target}
+            except:
+                pass
             if mod.name in modifications:
                 modifications[mod.name] += mod
             else:

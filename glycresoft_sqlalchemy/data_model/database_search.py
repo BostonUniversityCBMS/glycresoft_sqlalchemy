@@ -11,7 +11,7 @@ from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, 
 from .naive_proteomics import TheoreticalGlycopeptideComposition
 from .glycomics import TheoreticalGlycanComposition, MassShift, has_glycan_composition, TheoreticalGlycanStructure
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
-from .json_type import tryjson
+from .json_type import tryjson, clean_dict
 from .observed_ions import SampleRun, Peak, ScanBase, TandemScan
 from glycresoft_sqlalchemy.utils.data_migrator import Migrator
 
@@ -39,7 +39,7 @@ class HypothesisSampleMatch(Base):
     def to_json(self):
         d = {
             "id": self.id,
-            "parameters": self.parameters,
+            "parameters": clean_dict(self.parameters),
             "hypothesis_sample_match_type": self.hypothesis_sample_match_type,
             "name": self.name,
             "sample_run_name": self.sample_run_name,
@@ -284,7 +284,7 @@ class GlycopeptideMatch(PeptideBase, Base):
 
     @classmethod
     def is_not_decoy(cls):
-        return (cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy)
+        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy))
 
     def __repr__(self):
         rep = "<GlycopeptideMatch {} {} {}>".format(self.glycopeptide_sequence, self.ms2_score, self.observed_mass)
