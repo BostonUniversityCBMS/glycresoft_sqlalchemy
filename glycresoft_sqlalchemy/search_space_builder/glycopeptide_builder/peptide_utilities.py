@@ -172,7 +172,10 @@ def unpositioned_isoforms(
         variable_modifications = []
     if constant_modifications is None:
         constant_modifications = []
-    sequence = Sequence(theoretical_peptide.base_peptide_sequence)
+    try:
+        sequence = Sequence(theoretical_peptide.base_peptide_sequence)
+    except KeyError:
+        raise StopIteration()
     for mod in {modification_table[const_mod]
                 for const_mod in constant_modifications}:
         for site in mod.find_valid_sites(sequence):
