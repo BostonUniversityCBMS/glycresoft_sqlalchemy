@@ -3,7 +3,7 @@ import logging
 import time
 import pprint
 
-from sqlalchemy import (PickleType, Numeric, Unicode, Table,
+from sqlalchemy import (PickleType, Numeric, Unicode, Table, DateTime, func,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 
 from .connection import DatabaseManager
@@ -15,8 +15,27 @@ logger = logging.getLogger("pipeline_module")
 debug = True
 
 
+class User(Base):
+    __tablename__ = "User"
+
+    id = Column(Integer, primary_key=True)
+    email_address = Column(Unicode(128))
+    password = Column(Unicode(128))
+
+
+class Message(Base):
+    __tablename__ = "Message"
+
+    id = Column(Integer, primary_key=True)
+    owner = Column(Integer, ForeignKey(User.id), index=True)
+    message_type = Column(Unicode(64))
+    contents = Column(PickleType)
+    created = Column(DateTime, index=True, default=func.now())
+
+
 class JobState(Base):
     __tablename__ = "JobState"
+
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(128))
     state = Column(Unicode(128))

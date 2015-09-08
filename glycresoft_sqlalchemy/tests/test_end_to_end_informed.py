@@ -25,15 +25,19 @@ def test_main():
 
     # db_file_name = "postgresql:///db"
 
-    i = integrated_omics.load_proteomics(db_file_name, "datafiles/AGP_Proteomics2.mzid")
-    integrated_omics.load_glycomics_naive(db_file_name, "datafiles/human_n_glycans.txt", i)
+    # i = integrated_omics.load_proteomics(db_file_name, "datafiles/AGP_Proteomics2.mzid")
+    # integrated_omics.load_glycomics_naive(db_file_name, "datafiles/human_n_glycans.txt", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
-        db_file_name, i,
-        protein_ids=["P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"], n_processes=4) # "P19652|A1AG2_HUMAN", 
+        db_file_name,
+        protein_ids=["P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"],  # "P19652|A1AG2_HUMAN",
+        mzid_path="datafiles/AGP_Proteomics2.mzid",
+        glycomics_path="datafiles/human_n_glycans.txt",
+        n_processes=4)
     job.start()
 
     ec = os.system(
-        "glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db -p db -g 2e-5 --skip-grouping {db_file_name} 1".format(db_file_name=db_file_name))
+        "glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db -p db -g 2e-5 --skip-grouping {db_file_name} 1".format(
+            db_file_name=db_file_name))
     assert ec == 0
     job = exact_search_space_builder.ExactSearchSpaceBuilder.from_hypothesis(
         db_file_name, 1, 4)

@@ -276,6 +276,16 @@ class MS1GlycopeptideHypothesis(Hypothesis):
     theoretical_structure_type = naive_proteomics.TheoreticalGlycopeptideComposition
 
 
+class ExactMS1GlycopeptideHypothesis(MS1GlycopeptideHypothesis):
+    __tablename__ = "ExactMS1GlycopeptideHypothesis"
+
+    id = Column(Integer, ForeignKey(MS1GlycopeptideHypothesis.id, ondelete="CASCADE"), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'ExactMS1GlycopeptideHypothesis',
+    }
+
+
 class MS2GlycopeptideHypothesis(Hypothesis):
     __tablename__ = "MS2GlycopeptideHypothesis"
 
@@ -284,6 +294,19 @@ class MS2GlycopeptideHypothesis(Hypothesis):
 
     __mapper_args__ = {
         'polymorphic_identity': u'MS2GlycopeptideHypothesis',
+    }
+
+    theoretical_structure_type = TheoreticalGlycopeptide
+
+
+class ExactMS2GlycopeptideHypothesis(MS2GlycopeptideHypothesis):
+    __tablename__ = "ExactMS2GlycopeptideHypothesis"
+
+    id = Column(Integer, ForeignKey(MS2GlycopeptideHypothesis.id, ondelete="CASCADE"), primary_key=True)
+    ms1_source_hypothesis_id = Column(Integer, ForeignKey(MS1GlycopeptideHypothesis.id))
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'ExactMS2GlycopeptideHypothesis',
     }
 
     theoretical_structure_type = TheoreticalGlycopeptide

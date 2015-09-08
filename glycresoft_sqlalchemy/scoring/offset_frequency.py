@@ -1,17 +1,24 @@
 import itertools
 import random
-
+import operator
 import numpy as np
 
 from glycresoft_sqlalchemy.structure import sequence
 from glycresoft_sqlalchemy.data_model import GlycopeptideSpectrumMatch, PipelineModule
 from glycresoft_sqlalchemy.utils import collectiontools
+from glycresoft_sqlalchemy.utils import common_math
 
-from .simple_scoring_algorithm import split_ion_list
+PODPeak = common_math.DPeak
+ppm_error = common_math.ppm_error
+mass_offset_match = common_math.mass_offset_match
+MassOffsetFeature = common_math.MassOffsetFeature
+search_spectrum = common_math.search_spectrum
 
 Sequence = sequence.Sequence
 
 chain_iterable = itertools.chain.from_iterable
+
+get_intensity = operator.attrgetter("intensity")
 
 
 # Lacking a reasonable definition of the "space between fragmentation sites"
@@ -72,10 +79,6 @@ def estimate_fragment_sparsity(sequence, kind='b'):
     return Sequence(sequence).mass / SMALLEST_UNIT
 
 
-def ppm_error(x, y):
-    return (x - y) / y
-
-
 def estimate_offset_parameters(gsms, kind='b'):
     total_sites = 0
     total_explained = 0
@@ -120,14 +123,108 @@ def probability_of_peak_explained(offset_frequency, unknown_peak_rate, prior_fra
     return a / (a + b)
 
 
-def feature_function_estimator(gsms, feature_function, kind='b'):
-    total_on_kind_satisfied = 0
-    total_off_kind_satisfied = 0
-    total_on_kind = 0
-    total_off_kind = 0
-    for gsm in gsms:
-        sequence = Sequence(gsm.glycopeptide_match.glycopeptide_sequence)
-        fragments = collectiontools.flatten(sequence.get_fragments(kind))
-        spectrum = gsm.spectrum
-        
+def make_offset_function(offset=.0, tolerance=2e-5):
+    return MassOffsetFeature(offset=offset, tolerance=tolerance)
 
+
+def intensity_ratio_function(peak1, peak2):
+    ratio = peak1.intensity / float(peak2.intensity)
+    if ratio >= 5:
+        return -4
+    elif 2.5 <= ratio < 5:
+        return -3
+    elif 1.7 <= ratio < 2.5:
+        return -2
+    elif 1.3 <= ratio < 1.7:
+        return -1
+    elif 1.0 <= ratio < 1.3:
+        return 0
+    elif 0.8 <= ratio < 1.0:
+        return 1
+    elif 0.6 <= ratio < 0.8:
+        return 2
+    elif 0.4 <= ratio < 0.6:
+        return 3
+    elif 0.2 <= ratio < 0.4:
+        return 4
+    elif 0. <= ratio < 0.2:
+        return 5
+
+
+def intensity_rank(peak_list, minimum_intensity=100.):
+    peak_list = sorted(peak_list, key=get_intensity, reverse=True)
+    i = 0
+    rank = 10
+    tailing = 6
+    for p in peak_list:
+        if p.intensity < minimum_intensity:
+            p.rank = 0
+            continue
+        i += 1
+        if i == 10 and rank != 0:
+            if rank == 1:
+                if tailing != 0:
+                    i = 0
+                    tailing -= 1
+                else:
+                    i = 0
+                    rank -= 1
+            else:
+                i = 0
+                rank -= 1
+        if rank == 0:
+            break
+        p.rank = rank
+
+
+class PeakRelation(object):
+    def __init__(self, from_peak, to_peak, feature, intensity_ratio=None, kind=None):
+        if intensity_ratio is None:
+            intensity_ratio = intensity_ratio_function(from_peak, to_peak)
+        self.from_peak = from_peak
+        self.to_peak = to_peak
+        self.feature = feature
+        self.intensity_ratio = intensity_ratio
+        self.same_terminal = None
+        self.from_charge = from_peak.charge
+        self.to_charge = to_peak.charge
+        self.kind = kind or "Noise"
+
+    def __repr__(self):
+        template = "<PeakRelation {s.from_peak.neutral_mass}({s.from_charge}) ->" +\
+            " {s.to_peak.neutral_mass}({s.to_charge}) by {s.feature.name} on {s.kind}>"
+        return template.format(s=self)
+
+
+def feature_function_estimator(gsms, feature_function, kind='b'):
+    total_on_kind_satisfied = 0.
+    total_off_kind_satisfied = 0.
+    total_on_kind = 0.
+    total_off_kind = 0.
+    peak_relations = []
+    for gsm in gsms:
+        spectrum = gsm.spectrum
+        peaks = list(map(PODPeak, spectrum))
+        intensity_rank(peaks)
+        peaks = [p for p in peaks if p.rank > 0]
+        related = []
+        for peak in peaks:
+            is_on_kind = any(k[0] == kind for k in gsm.peak_explained_by(peak.id))
+            matches = search_spectrum(peak, peaks, feature_function)
+            for match in matches:
+                pr = PeakRelation(peak, match, feature_function, intensity_ratio_function(peak, match))
+                related.append(pr)
+                if is_on_kind:
+                    print peak.id, match.id
+                    total_on_kind_satisfied += 1
+                    pr.kind = kind
+                else:
+                    total_off_kind_satisfied += 1
+                    pr.kind = "Noise"
+            if is_on_kind:
+                total_on_kind += 1
+            else:
+                total_off_kind += 1
+        peak_relations.append((gsm, related))
+
+    return total_on_kind_satisfied / max(total_on_kind, 1), total_off_kind_satisfied / max(total_off_kind, 1), peak_relations

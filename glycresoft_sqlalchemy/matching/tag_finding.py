@@ -6,35 +6,13 @@ import networkx as nx
 from ..data_model import TheoreticalGlycopeptide
 
 from ..structure import sequence, residue, fragment
+from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2 import residue_counter
 
 fragment_shift = fragment.fragment_shift
 neutral_mass_getter = operator.attrgetter('neutral_mass')
 
 
-class Block(object):
-    def __init__(self, residue_, modifications, neutral_mass=None):
-        self.residue = residue_
-        self.modifications = tuple(modifications)
-        if neutral_mass is None:
-            neutral_mass = residue_.mass + sum(m.mass for m in modifications)
-        self.neutral_mass = neutral_mass
-
-    def __hash__(self):
-        return hash((self.residue, self.modifications))
-
-    def __eq__(self, other):
-        return self.residue == other.residue and self.modifications == other.modifications
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __repr__(self):
-        return "({}, {}):{:.2f}".format(self.residue.symbol, self.modifications, self.neutral_mass)
-
-    def __str__(self):
-        return "{}{}".format(
-            self.residue.symbol,
-            "({.name})".format(self.modifications[0]) if len(self.modifications) > 0 else "")
+Block = residue_counter.Block
 
 
 def building_blocks(sequence_iterable):

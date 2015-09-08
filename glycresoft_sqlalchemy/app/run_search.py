@@ -34,12 +34,14 @@ class ParseMassShiftAction(argparse.Action):
 
 
 def run_ms2_glycoproteomics_search(
-        database_path, observed_ions_path, target_hypothesis_id=None,
+        database_path, observed_ions_path, target_hypothesis_id=None, hypothesis_sample_match_id=None,
         decoy_hypothesis_id=None, observed_ions_type='bupid_yaml', sample_run_id=None,
         ms1_tolerance=ms1_tolerance_default,
         ms2_tolerance=ms2_tolerance_default, **kwargs):
-    if target_hypothesis_id is None:
-        target_hypothesis_id = 1
+    if hypothesis_sample_match_id is not None:
+        pass
+    elif target_hypothesis_id is None:
+        raise Exception("A Hypothesis must be provided")
     manager = DatabaseManager(database_path)
     manager.initialize()
     if observed_ions_type == 'bupid_yaml' and observed_ions_path[-3:] != '.db':
@@ -140,6 +142,11 @@ ms2_glycoproteomics_app = subparsers.add_parser("ms2-glycoproteomics")
 
 ms2_glycoproteomics_app.add_argument("database_path")
 ms2_glycoproteomics_app.add_argument("target_hypothesis_id")
+
+target_group = ms2_glycoproteomics_app.add_mutually_exclusive_group()
+target_group.add_argument("-a", "--target-hypothesis-id", help='The identity of the target hypothesis, if it already exists')
+target_group.add_argument("-s", "--source-hypothesis-sample-match-id", help="The ")
+
 ms2_glycoproteomics_app.add_argument("-n", "--n-processes", default=4, required=False, type=int)
 ms2_glycoproteomics_app.add_argument("-i", "--observed-ions-path")
 ms2_glycoproteomics_app.add_argument("-p", "--observed-ions-type", default='bupid_yaml', choices=["bupid_yaml", "db"])

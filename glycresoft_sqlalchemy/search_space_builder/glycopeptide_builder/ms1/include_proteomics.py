@@ -11,7 +11,7 @@ from ..peptide_utilities import SiteListFastaFileParser
 from glycresoft_sqlalchemy.structure import sequence, modification
 
 from glycresoft_sqlalchemy.data_model import MS1GlycopeptideHypothesis, Protein
-from glycresoft_sqlalchemy.data_model import PipelineModule, make_transient, InformedPeptide
+from glycresoft_sqlalchemy.data_model import PipelineModule, make_transient, InformedPeptide, ExactMS1GlycopeptideHypothesis
 
 from glycresoft_sqlalchemy.proteomics.mzid_sa import Proteome as MzIdentMLProteome
 
@@ -35,12 +35,14 @@ def make_base_sequence(peptide, constant_modifications, modification_table):
 class ProteomeImporter(PipelineModule):
 
     def __init__(self, database_path, mzid_path, glycosylation_sites_file=None,
-                 hypothesis_id=None, constant_modifications=("Carbamidomethyl (C)",)):
+                 hypothesis_id=None, constant_modifications=("Carbamidomethyl (C)",),
+                 hypothesis_type=ExactMS1GlycopeptideHypothesis):
         self.manager = self.manager_type(database_path)
         self.mzid_path = mzid_path
         self.hypothesis_id = hypothesis_id
         self.glycosylation_sites_file = glycosylation_sites_file
         self.constant_modifications = constant_modifications
+        self.hypothesis_type = hypothesis_type
 
     def run(self):
         try:
@@ -53,10 +55,12 @@ class ProteomeImporter(PipelineModule):
                             os.path.basename(self.mzid_path)
                             )[0],
                         tag)
-                hypothesis = MS1GlycopeptideHypothesis(name=name, parameters={"mzid_path": self.mzid_path})
+                hypothesis = self.hypothesis_type(name=name, parameters={"mzid_path": self.mzid_path})
                 session.add(hypothesis)
                 session.commit()
                 self.hypothesis_id = hypothesis.id
+            else:
+                hypothesis = session.query(self.hypothesis_type).get(self.hypothesis_id)
             session.close()
             MzIdentMLProteome(self.manager.path, self.mzid_path, self.hypothesis_id)
 

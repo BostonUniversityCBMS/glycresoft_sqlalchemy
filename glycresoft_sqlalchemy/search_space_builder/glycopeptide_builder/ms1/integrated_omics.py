@@ -7,11 +7,13 @@ import os
 from multiprocessing import Pool
 
 from glycresoft_sqlalchemy.data_model import (
-    Hypothesis, MS1GlycopeptideHypothesis, Protein,
+    Hypothesis, ExactMS1GlycopeptideHypothesis, Protein,
     Glycan, DatabaseManager, TheoreticalGlycopeptideCompositionGlycanAssociation,
     func, TheoreticalGlycopeptideComposition)
 
-from glycresoft_sqlalchemy.data_model.informed_proteomics import (InformedPeptide, InformedTheoreticalGlycopeptideComposition)
+from glycresoft_sqlalchemy.data_model.informed_proteomics import (
+    InformedPeptide, InformedTheoreticalGlycopeptideComposition,
+    InformedPeptideToTheoreticalGlycopeptide)
 from glycresoft_sqlalchemy.data_model import PipelineModule
 
 from glycresoft_sqlalchemy.proteomics.enrich_peptides import EnrichDistinctPeptides
@@ -104,8 +106,12 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
     """
     try:
         session = database_manager.session()
-        conn = session.connection()
+        logger.debug("Creating glycopeptides from %r", peptide)
         glycoforms = glycosylate_callback(peptide, session, hypothesis_id, position_selector)
+        conn = session.connection()
+        glycopeptide_acc = []
+        glycan_assoc_acc = []
+        i = 0
         for glycoform, glycan_ids in glycoforms:
             informed_glycopeptide = InformedTheoreticalGlycopeptideComposition(
                 protein_id=peptide.protein_id,
@@ -121,13 +127,43 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
                 other=peptide.other,
                 glycan_composition_str=glycoform.glycan,
                 base_peptide_id=peptide.id)
-            session.add(informed_glycopeptide)
+
+            glycopeptide_acc.append(informed_glycopeptide)
+            glycan_assoc_acc.extend((informed_glycopeptide, glycan_id) for glycan_id in glycan_ids)
+            i += 1
+            if i % 5000 == 0:
+                session.add_all(glycopeptide_acc)
+                session.flush()
+                session.execute(
+                    TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
+                    [{'peptide_id': ig.id, 'glycan_id': gid} for ig, gid in glycan_assoc_acc])
+                session.execute(
+                    InformedPeptideToTheoreticalGlycopeptide.insert(),
+                    [{"informed_peptide": peptide.id, "theoretical_glycopeptide": ig.id}
+                     for ig in glycopeptide_acc])
+                session.commit()
+                glycopeptide_acc = []
+                glycan_assoc_acc = []
+            # session.add(informed_glycopeptide)
+            # session.flush()
+            # conn.execute(
+            #     TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
+            #     [{'peptide_id': informed_glycopeptide.id, 'glycan_id': gid} for gid in glycan_ids])
+            # conn.execute(
+            #     InformedPeptideToTheoreticalGlycopeptide.insert(),
+            #     [{"informed_peptide": peptide.id, "theoretical_glycopeptide": informed_glycopeptide.id}])
+            session.add_all(glycopeptide_acc)
             session.flush()
-            conn.execute(
+            session.execute(
                 TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
-                [{'peptide_id': informed_glycopeptide.id, 'glycan_id': gid} for gid in glycan_ids])
-        if len(glycoforms) > 0:
+                [{'peptide_id': ig.id, 'glycan_id': gid} for ig, gid in glycan_assoc_acc])
+            session.execute(
+                InformedPeptideToTheoreticalGlycopeptide.insert(),
+                [{"informed_peptide": peptide.id, "theoretical_glycopeptide": ig.id}
+                 for ig in glycopeptide_acc])
             session.commit()
+            glycopeptide_acc = []
+            glycan_assoc_acc = []
             session.close()
         return len(glycoforms)
     except Exception, e:
@@ -135,8 +171,9 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
         raise
 
 
-def load_proteomics(database_path, mzid_path):
-    task = ProteomeImporter(database_path, mzid_path)
+def load_proteomics(database_path, mzid_path, hypothesis_id=None, hypothesis_type=ExactMS1GlycopeptideHypothesis):
+    task = ProteomeImporter(
+        database_path, mzid_path, hypothesis_id=hypothesis_id, hypothesis_type=hypothesis_type)
     task.start()
     return task.hypothesis_id
 
@@ -148,29 +185,46 @@ def load_glycomics_naive(database_path, glycan_path, hypothesis_id, format='txt'
 
 
 class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
-    HypothesisType = MS1GlycopeptideHypothesis
+    HypothesisType = ExactMS1GlycopeptideHypothesis
 
-    def __init__(self, database_path, hypothesis_id, protein_ids=None, n_processes=4):
+    def __init__(self, database_path, hypothesis_id=None, protein_ids=None, mzid_path=None,
+                 glycomics_path=None, glycomics_format='txt', n_processes=4):
         self.manager = self.manager_type(database_path)
         if not os.path.exists(database_path):
             self.manager.initialize()
             self.manager = self.manager_type(database_path)
+        self.hypothesis_id = hypothesis_id
+        self.mzid_path = mzid_path
+        self.glycomics_path = glycomics_path
+        self.glycomics_format = glycomics_format
+        self.protein_ids = protein_ids
+        self.n_processes = n_processes
 
+    def bootstrap_hypothesis(self):
         session = self.manager.session()
-        hypothesis = session.query(Hypothesis).filter(Hypothesis.id == hypothesis_id).first()
-        hypothesis.hypothesis_type = self.HypothesisType.__name__
+
+        hypothesis = None
+        if self.hypothesis_id is not None:
+            hypothesis = session.query(Hypothesis).get(self.hypothesis_id)
+
+        if hypothesis is None:
+            hypothesis = self.HypothesisType(name=make_name(self.mzid_path, self.glycomics_path))
+            session.add(hypothesis)
+            session.commit()
+            load_proteomics(self.database_path, self.mzid_path, hypothesis_id=hypothesis.id, hypothesis_type=self.HypothesisType)
+            load_glycomics_naive(self.database_path, self.glycomics_path, hypothesis.id, format=self.glycomics_format)
 
         self.hypothesis_id = hypothesis.id
-        if protein_ids is None:
-            protein_ids = flatten(session.query(Protein.id).filter(Protein.hypothesis_id == hypothesis_id))
-        elif isinstance(protein_ids[0], basestring):
+        if self.protein_ids is None:
+            protein_ids = flatten(session.query(Protein.id).filter(Protein.hypothesis_id == self.hypothesis_id))
+        elif isinstance(self.protein_ids[0], basestring):
             protein_ids = flatten(session.query(Protein.id).filter(Protein.name == name).first()
-                                  for name in protein_ids)
+                                  for name in self.protein_ids)
+        else:
+            protein_ids = protein_ids
         session.close()
 
         self.protein_ids = protein_ids
-
-        self.n_processes = n_processes
 
     def stream_peptides(self):
         session = self.manager.session()
@@ -196,6 +250,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
         return task_fn
 
     def run(self):
+        self.bootstrap_hypothesis()
         subjob = EnrichDistinctPeptides(self.database_path, self.hypothesis_id, self.protein_ids, max_distance=0)
         subjob.start()
 

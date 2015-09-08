@@ -88,6 +88,33 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
         session.close()
 
 
+def digest_protein(protein, manager, constant_modifications, variable_modifications, enzyme, max_missed_cleavages):
+    session = manager.session()
+    try:
+        peptidoforms = []
+        i = 0
+        logger.info("Digesting %r, %d glycosites", protein, len(protein.glycosylation_sites))
+        for peptidoform in generate_peptidoforms(protein, constant_modifications,
+                                                 variable_modifications, enzyme,
+                                                 max_missed_cleavages):
+            peptidoforms.append(peptidoform)
+            i += 1
+            if len(peptidoforms) > 10000:
+                map(session.merge, peptidoforms)
+                session.commit()
+                peptidoforms = []
+        map(session.merge, peptidoforms)
+        session.commit()
+        logger.info("Digested %d peptidoforms for %s", i, protein)
+        session.commit()
+        return 1
+    except Exception, e:
+        logger.exception("An exception occurred in digest_protein", exc_info=e)
+        raise
+    finally:
+        session.close()
+
+
 class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
     HypothesisType = MS1GlycopeptideHypothesis
 
@@ -125,6 +152,9 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
                                  database_manager=self.manager,
                                  hypothesis_id=self.hypothesis.id)
 
+    def stream_proteins(self):
+        return self.manager.session().query(Protein).filter(Protein.hypothesis_id == self.hypothesis.id)
+
     def stream_peptides(self):
         for item in self.manager.session().query(NaivePeptide.id).filter(
                 NaivePeptide.protein_id == Protein.id,
@@ -152,26 +182,27 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
             logger.info("Loaded %s", protein)
 
         session.commit()
-        for protein in session.query(Protein).filter(Protein.hypothesis_id == self.hypothesis.id):
-            peptidoforms = []
-            i = 0
-            logger.info("Digesting %r, %d glycosites", protein, len(protein.glycosylation_sites))
-            for peptidoform in generate_peptidoforms(protein, self.constant_modifications,
-                                                     self.variable_modifications, self.enzyme,
-                                                     self.max_missed_cleavages):
-                peptidoforms.append(peptidoform)
-                i += 1
-                if len(peptidoforms) > 10000:
-                    session.add_all(peptidoforms)
-                    session.commit()
-                    peptidoforms = []
-            session.add_all(peptidoforms)
-            session.commit()
-            logger.info("Digested %d peptidoforms for %s", i, protein)
-            session.commit()
-
-        session.query(NaivePeptide).filter(NaivePeptide.count_glycosylation_sites == None).delete('fetch')
+        protein_digest_task = functools.partial(
+            digest_protein,
+            manager=self.manager,
+            constant_modifications=self.constant_modifications,
+            variable_modifications=self.variable_modifications,
+            enzyme=self.enzyme,
+            max_missed_cleavages=self.max_missed_cleavages)
+        if self.n_processes > 1:
+            pool = multiprocessing.Pool(self.n_processes)
+            async_worker_pool(pool, self.stream_proteins(), protein_digest_task)
+            pool.terminate()
+        else:
+            for protein in self.stream_proteins():
+                protein_digest_task(protein)
         session.commit()
+        session.expire_all()
+        print session.query(NaivePeptide).filter(NaivePeptide.count_glycosylation_sites == None).delete("fetch")
+        session.commit()
+        session.expire_all()
+
+        assert session.query(NaivePeptide).filter(NaivePeptide.count_glycosylation_sites == None).count() == 0
 
         work_stream = self.stream_peptides()
         task_fn = self.prepare_task_fn()
@@ -180,6 +211,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             async_worker_pool(pool, work_stream, task_fn)
+            pool.terminate()
         else:
             for item in work_stream:
                 cntr += task_fn(item)

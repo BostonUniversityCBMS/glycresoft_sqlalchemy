@@ -11,14 +11,17 @@ from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptideComposition,
 
 
 def test_main():
-    i = 1
-    os.remove("./datafiles/integrated_omics_simple.db")
-    i = integrated_omics.load_proteomics("datafiles/integrated_omics_simple.db", "datafiles/AGP_Proteomics2.mzid")
-    integrated_omics.load_glycomics_naive("datafiles/integrated_omics_simple.db", "datafiles/human_n_glycans.txt", i)
+    try:
+        os.remove("./datafiles/integrated_omics_simple.db")
+    except:
+        pass
+    # i = integrated_omics.load_proteomics("datafiles/integrated_omics_simple.db", "datafiles/AGP_Proteomics2.mzid")
+    # integrated_omics.load_glycomics_naive("datafiles/integrated_omics_simple.db", "datafiles/human_n_glycans.txt", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
-        "./datafiles/integrated_omics_simple.db", i, n_processes=4)
-    job.start()
-    job = integrated_omics.IntegratedOmicsMS1LegacyCSV("datafiles/integrated_omics_simple.db", i)
+        "./datafiles/integrated_omics_simple.db", hypothesis_id=None,
+        mzid_path="datafiles/AGP_Proteomics2.mzid",
+        glycomics_path="datafiles/human_n_glycans.txt",
+        n_processes=4)
     job.start()
     db = job.manager.session()
     dups = db.query(

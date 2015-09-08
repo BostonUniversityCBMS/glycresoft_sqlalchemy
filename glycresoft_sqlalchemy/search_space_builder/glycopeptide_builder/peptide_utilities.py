@@ -128,8 +128,11 @@ class SiteCombinator(object):
 
 
 def all_combinations(site_assignments):
-    all_positions = reduce(set().union, site_assignments.values())
-
+    all_positions = reduce(set().union, site_assignments.values(), set())
+    verbose = False
+    if len(all_positions) > 60:
+        verbose = True
+        logger.info("%d sites to consider.", len(all_positions))
     intersects = {}
     for i in all_positions:
         intersects[i] = []
@@ -137,6 +140,8 @@ def all_combinations(site_assignments):
             if i in t_sites:
                 intersects[i].append(t)
 
+    if verbose:
+        logger.info("Intersections built. Computing combinations.")
     combinations = [Counter()]
     for i, options in intersects.items():
         if len(options) == 1:
@@ -150,7 +155,8 @@ def all_combinations(site_assignments):
                     new_c[opt] += 1
                     new_combinations.append(new_c)
             combinations = new_combinations
-
+    if verbose:
+        logger.info("Finding unique combinations")
     unique_combinations = set()
     for combn in combinations:
         unique_combinations.add(frozenset(combn.items()))

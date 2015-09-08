@@ -9,6 +9,7 @@ from .connection import DatabaseManager
 from .generic import MutableDict, MutableList
 
 from ..structure.composition import Composition
+from ..utils.common_math import DPeak
 
 PROTON = Composition("H+").mass
 
@@ -112,14 +113,17 @@ class TandemScan(ScanBase):
 
     @property
     def tandem_data(self):
-        return self.peaks.all()
+        return list(map(DPeak, self.peaks))
+
+    def __iter__(self):
+        return iter(map(DPeak, self.peaks))
 
     @hybrid_method
-    def ppm_match_tolerance_search(self, mass, tolerance):
+    def ppm_match_tolerance_search(self, mass, tolerance, filter_callable=lambda q: q):
         spread = mass * tolerance
         hi = mass + spread
         lo = mass - spread
-        return (lo <= self.precursor_neutral_mass) & (self.precursor_neutral_mass <= hi)
+        return filter_callable(self.peaks.filter(Peak.neutral_mass.between(lo, hi)))
 
     @ppm_match_tolerance_search.expression
     def ppm_match_tolerance_search(cls, mass, tolerance):

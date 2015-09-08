@@ -6,8 +6,14 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 from sqlalchemy.orm.session import object_session
 
+from .base import Hierarchy
 from .generic import MutableDict, MutableList
-from .data_model import Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan, Protein
+from .data_model import (
+    Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan, Protein,
+    MS1GlycopeptideHypothesis, MS1GlycanHypothesis,
+    MS2GlycopeptideHypothesis, MS2GlycanHypothesis,
+    ExactMS1GlycopeptideHypothesis, ExactMS2GlycopeptideHypothesis)
+
 from .naive_proteomics import TheoreticalGlycopeptideComposition
 from .glycomics import TheoreticalGlycanComposition, MassShift, has_glycan_composition, TheoreticalGlycanStructure
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
@@ -16,6 +22,10 @@ from .observed_ions import SampleRun, Peak, ScanBase, TandemScan
 from glycresoft_sqlalchemy.utils.data_migrator import Migrator
 
 
+hypothesis_sample_match_root = Hierarchy()
+
+
+@hypothesis_sample_match_root.references(Hypothesis)
 class HypothesisSampleMatch(Base):
     __tablename__ = "HypothesisSampleMatch"
 
@@ -101,6 +111,12 @@ class HypothesisSampleMatch(Base):
     def results_type(self):
         return (GlycopeptideMatch, PeakGroupMatch)
 
+    @property
+    def basis_for(self):
+        return NotImplemented
+
+    hierarchy_root = hypothesis_sample_match_root
+
 
 class HypothesisSampleMatchToSample(Base):
     __tablename__ = "HypothesisSampleMatchToSample"
@@ -110,6 +126,7 @@ class HypothesisSampleMatchToSample(Base):
     sample_run_id = Column(Integer, ForeignKey(SampleRun.id), index=True)
 
 
+@hypothesis_sample_match_root.references(MS1GlycanHypothesis)
 class MS1GlycanHypothesisSampleMatch(HypothesisSampleMatch):
     __tablename__ = "MS1GlycanHypothesisSampleMatch"
     id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
@@ -129,7 +146,16 @@ class MS1GlycanHypothesisSampleMatch(HypothesisSampleMatch):
     def results_type(self):
         return (PeakGroupMatch)
 
+    @property
+    def hypothesis_type(self):
+        return MS1GlycanHypothesis
 
+    @property
+    def basis_for(self):
+        return MS2GlycanHypothesis
+
+
+@hypothesis_sample_match_root.references(MS2GlycanHypothesis)
 class MS2GlycanHypothesisSampleMatch(HypothesisSampleMatch):
     __tablename__ = "MS2GlycanHypothesisSampleMatch"
     id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
@@ -147,9 +173,19 @@ class MS2GlycanHypothesisSampleMatch(HypothesisSampleMatch):
     def results_type(self):
         return (PeakGroupMatch)
 
+    @property
+    def hypothesis_type(self):
+        return MS2GlycanHypothesis
 
+    @property
+    def basis_for(self):
+        return NotImplemented
+
+
+@hypothesis_sample_match_root.references(MS1GlycopeptideHypothesis)
 class MS1GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
     __tablename__ = "MS1GlycopeptideHypothesisSampleMatch"
+
     id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
 
     __mapper_args__ = {
@@ -165,11 +201,24 @@ class MS1GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
     ms_level = 1
 
     @property
+    def hypothesis_type(self):
+        return MS1GlycopeptideHypothesis
+
+    @property
     def results_type(self):
         return (PeakGroupMatch)
 
+    @property
+    def basis_for(self):
+        return MS2GlycopeptideHypothesis
 
+
+@hypothesis_sample_match_root.references(ExactMS1GlycopeptideHypothesis)
 class ExactMS1GlycopeptideHypothesisSampleMatch(MS1GlycopeptideHypothesisSampleMatch):
+    __tablename__ = "ExactMS1GlycopeptideHypothesisSampleMatch"
+
+    id = Column(Integer, ForeignKey(MS1GlycopeptideHypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
+
     __mapper_args__ = {
         "polymorphic_identity": u"ExactMS1GlycopeptideHypothesisSampleMatch",
     }
@@ -185,7 +234,16 @@ class ExactMS1GlycopeptideHypothesisSampleMatch(MS1GlycopeptideHypothesisSampleM
     def results_type(self):
         return (PeakGroupMatch)
 
+    @property
+    def hypothesis_type(self):
+        return ExactMS1GlycopeptideHypothesis
 
+    @property
+    def basis_for(self):
+        return ExactMS2GlycopeptideHypothesis
+
+
+@hypothesis_sample_match_root.references(MS2GlycopeptideHypothesis)
 class MS2GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
     __tablename__ = "MS2GlycopeptideHypothesisSampleMatch"
 
@@ -198,6 +256,8 @@ class MS2GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
     is_exact = False
     ms_level = 2
 
+    hypothesis_type = MS2GlycopeptideHypothesis
+
     def results(self):
         yield GlycopeptideMatch, self.glycopeptide_matches.filter(
                 GlycopeptideMatch.protein_id == Protein.id,
@@ -205,14 +265,26 @@ class MS2GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
                 ~Hypothesis.is_decoy)
 
     @property
+    def hypothesis_type(self):
+        return MS2GlycopeptideHypothesis
+
+    @property
     def results_type(self):
         return (GlycopeptideMatch)
 
 
+@hypothesis_sample_match_root.references(ExactMS2GlycopeptideHypothesis)
 class ExactMS2GlycopeptideHypothesisSampleMatch(MS2GlycopeptideHypothesisSampleMatch):
+    __tablename__ = "ExactMS2GlycopeptideHypothesisSampleMatch"
     __mapper_args__ = {
         "polymorphic_identity": u"ExactMS2GlycopeptideHypothesisSampleMatch",
     }
+
+    id = Column(Integer, ForeignKey(MS2GlycopeptideHypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
+
+    @property
+    def hypothesis_type(self):
+        return ExactMS2GlycopeptideHypothesis
 
     is_exact = True
     ms_level = 2
@@ -320,6 +392,21 @@ class GlycopeptideSpectrumMatch(Base):
             TandemScan.sample_run_id == SampleRun.id,
             TandemScan.time == self.scan_time)
         return s.first()
+
+    def peak_explained_by(self, peak_id):
+        explained = set()
+        try:
+            matches = self.peak_match_map[peak_id]
+            for match in matches:
+                explained.add(match["key"])
+        except KeyError:
+            pass
+        return explained
+
+    def add_peak_explaination(self, peak, match_record):
+        recs = self.peak_match_map.get(peak.id, [])
+        recs.append(match_record)
+        self.peak_match_map[peak.id] = recs
 
 
 class GlycanStructureMatch(Base):

@@ -21,7 +21,9 @@ except:
 
 extensions = [
     Extension("glycresoft_sqlalchemy.structure.composition.ccomposition",
-              ["glycresoft_sqlalchemy/structure/composition/ccomposition." + c_ext])
+              ["glycresoft_sqlalchemy/structure/composition/ccomposition." + c_ext]),
+    Extension("glycresoft_sqlalchemy.utils.ccommon_math",
+              ["glycresoft_sqlalchemy/utils/ccommon_math." + c_ext])
 ]
 
 if c_ext == "pyx":

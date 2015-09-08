@@ -3,7 +3,7 @@ import logging
 
 from pyteomics import mzid
 from sqlalchemy import func
-from glycresoft_sqlalchemy.data_model import DatabaseManager, Protein, InformedPeptide, Hypothesis
+from glycresoft_sqlalchemy.data_model import DatabaseManager, Protein, InformedPeptide, Hypothesis, ExactMS1GlycopeptideHypothesis
 from glycresoft_sqlalchemy.structure import sequence, modification, residue
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 logger = logging.getLogger("mzid")
@@ -245,12 +245,14 @@ exclude_keys_from_sequence_dict = set(("PeptideEvidenceRef",))
 
 
 class Proteome(object):
-    def __init__(self, database_path, mzid_path, hypothesis_id=None):
+    def __init__(self, database_path, mzid_path, hypothesis_id=None, hypothesis_type=ExactMS1GlycopeptideHypothesis):
         self.manager = DatabaseManager(database_path)
         self.manager.initialize()
         self.mzid_path = mzid_path
         self.hypothesis_id = hypothesis_id
         self.parser = Parser(mzid_path, retrieve_refs=True, iterative=False, build_id_cache=True)
+        self.hypothesis_type = hypothesis_type
+
         self._load()
 
     def _load(self):
@@ -259,7 +261,7 @@ class Proteome(object):
 
     def _load_proteins(self):
         session = self.manager.session()
-        get_or_create(session, Hypothesis, id=self.hypothesis_id)
+        get_or_create(session, self.hypothesis_type, id=self.hypothesis_id)
         for protein in self.parser.iterfind(
                 "ProteinDetectionHypothesis", retrieve_refs=True, recursive=False, iterative=True):
             session.add(

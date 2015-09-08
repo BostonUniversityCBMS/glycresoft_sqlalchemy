@@ -31,11 +31,13 @@
     <div class='row'>
         <div class='col s4'>
             <h6>Tandem Scans</h6>
-            {% for spectrum_match in glycopeptide.spectrum_matches %}
+            {% for spectrum_match in glycopeptide.spectrum_matches | sort(attribute='scan_time')%}
+                {% if spectrum_match.best_match %}
                 <div style='float:left;border:1px solid grey;margin:2px;text-align:center;'>
-                    <div style='border-bottom:1px solid grey;border-collapse:collapse;padding:3px;'>{{spectrum_match.spectrum_id}}</div>
+                    <div style='border-bottom:1px solid grey;border-collapse:collapse;padding:3px;'>{{spectrum_match.scan_time}}</div>
                     {{spectrum_match.peak_match_map|length}}
                 </div>
+                {% endif %}
             {% endfor %}
         </div>
     </div>

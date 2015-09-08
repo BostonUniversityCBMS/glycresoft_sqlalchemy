@@ -46,9 +46,16 @@ def plot_scan(scan, ax=None, logscale=False):
 
     if ax is None:
         figure, ax = plt.subplots(1)
+        label_plot(ax)
     mzs = [p.mass_charge_ratio for p in peaks]
     intensities = [p.intensity for p in peaks]
     if logscale:
         intensities = np.log(intensities)
     ax.bar(mzs, intensities, width=0.1, edgecolor='black')
     return ax
+
+
+def label_plot(ax, **kwargs):
+    ax.set_xlabel("m/z")
+    ax.set_ylabel("Relative Intensity")
+    ax.autoscale()

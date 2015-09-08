@@ -9,3 +9,14 @@ class _Namespace(object):
 
 Namespace = _Namespace()
 Namespace.initialization_list = []
+
+
+class Hierarchy(dict):
+    def __init__(self):
+        dict.__init__(self)
+
+    def references(self, referent):
+        def wrapper(cls):
+            self[referent] = cls
+            return cls
+        return wrapper

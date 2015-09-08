@@ -4,8 +4,7 @@ import operator
 import functools
 
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import alias
-from sqlalchemy import event
+from sqlalchemy import alias, event, func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table, PickleType, Boolean
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
@@ -60,16 +59,16 @@ class AssociationComposition(_AssociationDict):
         self.lazy_collection = lazy_collection
 
     def mass(self, *args, **kwargs):
-        return glycan_composition.GlycanComposition(self).mass(*args, **kwargs)
+        return glycan_composition.GlycanComposition(**self).mass(*args, **kwargs)
 
     def total_composition(self, *args, **kwargs):
-        return glycan_composition.GlycanComposition(self).total_composition(*args, **kwargs)
+        return glycan_composition.GlycanComposition(**self).total_composition(*args, **kwargs)
 
     def serialize(self):
-        return glycan_composition.GlycanComposition(self).serialize()
+        return glycan_composition.GlycanComposition(**self).serialize()
 
     def clone(self):
-        return glycan_composition.GlycanComposition(self)
+        return glycan_composition.GlycanComposition(**self)
 
     def __iadd__(self, other):
         for elem, cnt in (other.items()):
@@ -127,66 +126,94 @@ def composition_association_factory(lazy_collection, creator, value_attr, assoc_
 
 
 def has_glycan_composition(model, composition_attr):
-    class MonosaccharideBaseCounter(Base):
-        __tablename__ = "%s_GlycanCompositionAssociation" % model.__name__
-        referent = Column(Integer, ForeignKey(model.id, ondelete="CASCADE"), primary_key=True)
-        base_type = Column(Unicode(30), primary_key=True)
-        count = Column(Integer)
+    if hasattr(model, "GlycanCompositionAssociation"):
+        has_glycan_composition_listener(getattr(model, composition_attr))
+        return model
+    else:
+        class MonosaccharideBaseCounter(Base):
+            __tablename__ = "%s_GlycanCompositionAssociation" % model.__name__
+            referent = Column(
+                Integer, ForeignKey(model.id, ondelete="CASCADE"), primary_key=True)
+            base_type = Column(Unicode(30), primary_key=True)
+            count = Column(Integer)
 
-        composition = relationship(model, backref=backref(
-            "_glycan_composition",
-            collection_class=attribute_mapped_collection("base_type"),
-            cascade="all, delete-orphan"))
+            composition = relationship(model, backref=backref(
+                "_glycan_composition",
+                collection_class=attribute_mapped_collection("base_type"),
+                cascade="all, delete-orphan"))
 
-        def __repr__(self):
-            return "<{} {}>".format(self.base_type, self.count)
+            def __repr__(self):
+                return "<{} {}>".format(self.base_type, self.count)
 
-    @event.listens_for(getattr(model, composition_attr), "set")
-    def convert_composition(target, value, oldvalue, initiator):
-        if value == "{}" or value is None:
-            return
-        for k, v in glycan_composition.parse(value).items():
-            target.glycan_composition[k.name()] = v
+        @event.listens_for(getattr(model, composition_attr), "set")
+        def convert_composition(target, value, oldvalue, initiator):
+            if value == "{}" or value is None:
+                return
+            for k, v in glycan_composition.parse(value).items():
+                target.glycan_composition[k.name()] = v
 
-    @event.listens_for(model, "load")
-    def convert_composition_load(target, context):
-        value = getattr(target, composition_attr)
-        if value == "{}" or value is None:
-            return
-        for k, v in glycan_composition.parse(value).items():
-            target.glycan_composition[k.name()] = v
+        @event.listens_for(model, "load")
+        def convert_composition_load(target, context):
+            value = getattr(target, composition_attr)
+            if value == "{}" or value is None:
+                return
+            for k, v in glycan_composition.parse(value).items():
+                target.glycan_composition[k.name()] = v
 
-    creator = functools.partial(association_composition_creator, reference_table=MonosaccharideBaseCounter)
-    MonosaccharideBaseCounter.__name__ = "%s_MonosaccharideBaseCounter" % model.__name__
-    model.GlycanCompositionAssociation = MonosaccharideBaseCounter
-    model.glycan_composition = association_proxy(
-        '_glycan_composition', 'count',
-        creator=creator,
-        proxy_factory=composition_association_factory
-        )
+        creator = functools.partial(
+            association_composition_creator, reference_table=MonosaccharideBaseCounter)
+        MonosaccharideBaseCounter.__name__ = "%s_MonosaccharideBaseCounter" % model.__name__
+        model.GlycanCompositionAssociation = MonosaccharideBaseCounter
 
-    def qmonosaccharide(cls, monosaccharide_name):
-        if monosaccharide_name in cls._qmonosaccharide_cache:
-            return cls._qmonosaccharide_cache[monosaccharide_name]
-        symbol = alias(cls.GlycanCompositionAssociation.__table__.select().where(
-            cls.GlycanCompositionAssociation.__table__.c.base_type == monosaccharide_name),
-            monosaccharide_name)
-        cls._qmonosaccharide_cache[monosaccharide_name] = symbol
-        return symbol
+        model.glycan_composition = association_proxy(
+            '_glycan_composition', 'count',
+            creator=creator,
+            proxy_factory=composition_association_factory
+            )
 
-    model.qmonosaccharide = classmethod(qmonosaccharide)
-    model._qmonosaccharide_cache = {}
+        def qmonosaccharide(cls, monosaccharide_name):
+            if monosaccharide_name in cls._qmonosaccharide_cache:
+                return cls._qmonosaccharide_cache[monosaccharide_name]
+            symbol = alias(cls.GlycanCompositionAssociation.__table__.select().where(
+                cls.GlycanCompositionAssociation.__table__.c.base_type == monosaccharide_name),
+                monosaccharide_name)
+            cls._qmonosaccharide_cache[monosaccharide_name] = symbol
+            return symbol
 
-    def with_monosaccharide(cls, monosaccharide_name):
-        return cls.glycan_composition.any(cls.GlycanCompositionAssociation.base_type == monosaccharide_name)
+        model.qmonosaccharide = classmethod(qmonosaccharide)
+        model._qmonosaccharide_cache = {}
 
-    model.with_monosaccharide = classmethod(with_monosaccharide)
+        def with_monosaccharide(cls, monosaccharide_name):
+            return cls.glycan_composition.any(
+                cls.GlycanCompositionAssociation.base_type == monosaccharide_name)
 
-    # This hack is necessary to make inner class locatable to the pickle
-    # machinery. A possible alternative solution is to define a single class
-    # once and use multiple tables that are mapped to it.
-    setattr(sys.modules[__name__], MonosaccharideBaseCounter.__name__, MonosaccharideBaseCounter)
+        model.with_monosaccharide = classmethod(with_monosaccharide)
+
+        def glycan_composition_extents(cls, session, filter_fn=lambda q: q):
+            q = session.query(
+                cls.GlycanCompositionAssociation.base_type,
+                func.min(cls.GlycanCompositionAssociation.count),
+                func.max(cls.GlycanCompositionAssociation.count),
+                ).group_by(cls.GlycanCompositionAssociation.base_type)
+            return filter_fn(q)
+
+        model.glycan_composition_extents = classmethod(glycan_composition_extents)
+
+        # This hack is necessary to make inner class locatable to the pickle
+        # machinery. A possible alternative solution is to define a single class
+        # once and use multiple tables that are mapped to it.
+        setattr(
+            sys.modules[__name__],
+            MonosaccharideBaseCounter.__name__,
+            MonosaccharideBaseCounter)
     return model
+
+
+def with_glycan_composition(attr_name):
+    def decorator(model):
+        has_glycan_composition(model, attr_name)
+        return model
+    return decorator
 
 
 # For cases where event handlers must be set without creating a new
@@ -229,6 +256,7 @@ class GlycanBase(object):
         return rep
 
 
+@with_glycan_composition("composition")
 class StructureMotif(GlycanBase, HasReferenceAccessionNumber, Base):
     __tablename__ = "StructureMotif"
     canonical_sequence = Column(Unicode(256), index=True)
@@ -272,9 +300,9 @@ class StructureMotif(GlycanBase, HasReferenceAccessionNumber, Base):
         session.commit()
 
 Namespace.initialization_list.append(StructureMotif.initialize)
-has_glycan_composition(StructureMotif, "composition")
 
 
+@with_glycan_composition("composition")
 class TheoreticalGlycanComposition(GlycanBase, HasTaxonomy, HasReferenceAccessionNumber, Base):
     __tablename__ = "TheoreticalGlycanComposition"
 
@@ -284,9 +312,9 @@ class TheoreticalGlycanComposition(GlycanBase, HasTaxonomy, HasReferenceAccessio
         'polymorphic_identity': u'TheoreticalGlycanComposition',
         "concrete": True
     }
-has_glycan_composition(TheoreticalGlycanComposition, "composition")
 
 
+@with_glycan_composition("composition")
 class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionNumber, Base):
     __tablename__ = "TheoreticalGlycanStructure"
 
@@ -319,7 +347,7 @@ class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionN
     def __repr__(self):
         rep = "<{self.__class__.__name__}\n{self.glycoct}>".format(self=self)
         return rep
-has_glycan_composition(TheoreticalGlycanStructure, "composition")
+# has_glycan_composition(TheoreticalGlycanStructure, "composition")
 
 
 TheoreticalGlycanStructureToMotifTable = Table(

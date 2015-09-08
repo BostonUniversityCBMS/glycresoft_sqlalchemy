@@ -587,7 +587,7 @@ class PeakGroupMatching(PipelineModule):
         accumulator = []
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
-            for res in pool.imap_unordered(task_fn, self.stream_ids(), chunksize=5000):
+            for res in pool.imap_unordered(task_fn, self.stream_ids(), chunksize=500):
                 counter += 1
                 if res is not None:
                     accumulator.extend(res)
@@ -812,7 +812,10 @@ class LCMSPeakClusterSearch(PipelineModule):
         self.n_processes = n_processes
         self.regression_parameters = regression_parameters
         self.options = kwargs
-        self.hypothesis_sample_match_type = hypothesis_sample_match_type(self.search_type)
+        session = self.manager.session()
+        hypothesis = session.query(Hypothesis).get(self.hypothesis_id)
+        self.hypothesis_sample_match_type = HypothesisSampleMatch.hierarchy_root[hypothesis.__class__]
+        session.close()
 
     def do_matching(self):
         matcher = PeakGroupMatching(
