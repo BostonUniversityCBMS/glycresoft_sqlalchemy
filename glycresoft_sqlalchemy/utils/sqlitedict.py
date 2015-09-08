@@ -82,8 +82,10 @@ except ImportError:
     from Queue import Queue
 
 
-
 logger = logging.getLogger(__name__)
+logger.setLevel("DEBUG")
+logger.propagate = False
+logger.addHandler(logging.NullHandler())
 
 
 def open(*args, **kwargs):
@@ -141,7 +143,7 @@ class SqliteDict(DictClass):
         self.filename = filename
         self.tablename = tablename
 
-        logger.info("opening Sqlite table %r in %s" % (tablename, filename))
+        logger.debug("opening Sqlite table %r in %s" % (tablename, filename))
         MAKE_TABLE = 'CREATE TABLE IF NOT EXISTS %s (key TEXT PRIMARY KEY, value BLOB)' % self.tablename
         self.conn = SqliteMultithread(filename, autocommit=autocommit, journal_mode=journal_mode)
         self.conn.execute(MAKE_TABLE)
@@ -251,8 +253,15 @@ class SqliteDict(DictClass):
                 # used.  However, we need to block on close() to ensure any
                 # awaiting exceptions are handled and that all data is
                 # persisted to disk before returning.
-                self.conn.commit(blocking=True)
-            self.conn.close()
+                try:
+                    self.conn.commit(blocking=True)
+                except Exception, e:
+                    logger.exception("Exception in SqliteDict.close", exc_info=e)
+            try:
+                self.conn.close()
+            except Exception, e:
+                # logger.exception("Exception in SqliteDict.close 2", exc_info=e)
+                pass
             self.conn = None
         if self.in_temp:
             try:
@@ -267,7 +276,7 @@ class SqliteDict(DictClass):
         if self.filename == ':memory:':
             return
 
-        logger.info("deleting %s" % self.filename)
+        logger.debug("deleting %s" % self.filename)
         try:
             os.remove(self.filename)
         except (OSError, IOError):

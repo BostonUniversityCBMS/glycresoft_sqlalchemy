@@ -1,20 +1,23 @@
 import argparse
 import sys
-
-from glycresoft_sqlalchemy.data_model import *
+import logging
 from glycresoft_sqlalchemy.report import export_csv
 from glycresoft_sqlalchemy.report import plot_glycoforms
 from glycresoft_sqlalchemy.report import plot_scores
-from . import summarize
+from glycresoft_sqlalchemy.app import summarize
 from glycresoft_sqlalchemy.web_app.serve import main as webmain
+from glycresoft_sqlalchemy.proteomics.mzid_sa import protein_names_taskmain
 
 task_map = {
     "export-csv": export_csv.taskmain,
     "plot-glycoforms": plot_glycoforms.taskmain,
     "plot-scores": plot_scores.taskmain,
     "summarize": summarize.taskmain,
-    "web": webmain
+    "web": webmain,
+    "mzid-proteins": protein_names_taskmain
 }
+
+logger = logging.getLogger()
 
 
 class _NonExitingHelpAction(argparse._HelpAction):
@@ -43,4 +46,6 @@ def taskmain():
 
 
 if __name__ == '__main__':
+    logger.setLevel("INFO")
+    print logger.getLevel()
     taskmain()

@@ -298,3 +298,14 @@ class Proteome(object):
             InformedPeptide.protein_id == Protein.id,
             Protein.hypothesis_id == self.hypothesis_id).group_by(InformedPeptide.modified_peptide_sequence)
         return query
+
+
+def protein_names_taskmain():
+    import argparse
+    app = argparse.ArgumentParser()
+    app.add_argument("mzid_path")
+    app.add_argument("-p", "--pattern", default=r'.*', required=False)
+    args = app.parse_args()
+    values = protein_names(**args.__dict__)
+    for value in values:
+        print value

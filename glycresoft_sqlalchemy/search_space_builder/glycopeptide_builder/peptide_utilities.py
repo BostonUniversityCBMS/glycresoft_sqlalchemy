@@ -7,8 +7,10 @@ except:
     logger = logging
 from collections import Counter
 
-from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, NaivePeptide
+from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide
 from glycresoft_sqlalchemy.structure import sequence, modification, parser
+
+from glycresoft_sqlalchemy.utils.memoize import sqlitedict_memo
 
 Sequence = sequence.Sequence
 RestrictedModificationTable = modification.RestrictedModificationTable
@@ -57,7 +59,8 @@ def n_glycan_sequon_sites(peptide):
     sites = set(sequence.find_n_glycosylation_sequons(peptide.base_peptide_sequence))
     try:
         if peptide.protein is not None:
-            sites |= set(site - peptide.start_position for site in peptide.parent.glycosylation_sites
+            protein = peptide.protein
+            sites |= set(site - peptide.start_position for site in protein.glycosylation_sites
                          if peptide.start_position <= site < peptide.end_position)
     except AttributeError:
         pass
@@ -127,6 +130,7 @@ class SiteCombinator(object):
                 self.reset_generator()
 
 
+@sqlitedict_memo()
 def all_combinations(site_assignments):
     all_positions = reduce(set().union, site_assignments.values(), set())
     verbose = False

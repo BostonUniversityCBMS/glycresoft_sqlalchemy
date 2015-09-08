@@ -1,6 +1,10 @@
 from functools import wraps
 from copy import deepcopy
-
+import sqlitedict
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 def memoize(maxsize=100):
     """Make a memoization decorator. A negative value of `maxsize` means
@@ -52,5 +56,21 @@ def memoclone(maxsize=100):
                     memo.popitem()
                 memo[key] = f(*args, **kwargs)
             return (memo[key]).clone()
+        return func
+    return deco
+
+
+def sqlitedict_memo():
+    def deco(f):
+        memo = sqlitedict.open()
+
+        @wraps(f)
+        def func(*args, **kwargs):
+            key = pickle.dumps((args, frozenset(kwargs.items())))
+            if key not in memo:
+                value = memo[key] = f(*args, **kwargs)
+            else:
+                value = memo[key]
+            return value
         return func
     return deco

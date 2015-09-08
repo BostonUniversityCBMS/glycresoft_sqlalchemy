@@ -151,7 +151,7 @@ class PeptideBase(object):
         sites = set(sequence.find_n_glycosylation_sequons(peptide.base_peptide_sequence))
         try:
             if peptide.protein is not None:
-                sites |= set(site - peptide.start_position for site in peptide.parent.glycosylation_sites
+                sites |= set(site - peptide.start_position for site in peptide.protein.glycosylation_sites
                              if peptide.start_position <= site < peptide.end_position)
         except AttributeError:
             pass
