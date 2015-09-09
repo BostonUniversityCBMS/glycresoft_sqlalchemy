@@ -144,19 +144,19 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
                 glycopeptide_acc = []
                 glycan_assoc_acc = []
 
-            session.add_all(glycopeptide_acc)
-            session.flush()
-            session.execute(
-                TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
-                [{'peptide_id': ig.id, 'glycan_id': gid} for ig, gid in glycan_assoc_acc])
-            session.execute(
-                InformedPeptideToTheoreticalGlycopeptide.insert(),
-                [{"informed_peptide": peptide.id, "theoretical_glycopeptide": ig.id}
-                 for ig in glycopeptide_acc])
-            session.commit()
-            glycopeptide_acc = []
-            glycan_assoc_acc = []
-            session.close()
+        session.add_all(glycopeptide_acc)
+        session.flush()
+        session.execute(
+            TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
+            [{'peptide_id': ig.id, 'glycan_id': gid} for ig, gid in glycan_assoc_acc])
+        session.execute(
+            InformedPeptideToTheoreticalGlycopeptide.insert(),
+            [{"informed_peptide": peptide.id, "theoretical_glycopeptide": ig.id}
+             for ig in glycopeptide_acc])
+        session.commit()
+        glycopeptide_acc = []
+        glycan_assoc_acc = []
+        session.close()
         return len(glycoforms)
     except Exception, e:
         logger.exception("An error occurred, %r", locals(), exc_info=e)

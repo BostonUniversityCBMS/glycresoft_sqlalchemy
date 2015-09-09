@@ -131,7 +131,6 @@ class SiteCombinator(object):
                 self.reset_generator()
 
 
-@sqlitedict_memo()
 def all_combinations(site_assignments):
     all_positions = reduce(set().union, site_assignments.values(), set())
     verbose = False
