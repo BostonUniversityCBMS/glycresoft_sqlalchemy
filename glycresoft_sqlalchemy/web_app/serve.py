@@ -31,7 +31,7 @@ app = Flask(__name__)
 report.prepare_environment(app.jinja_env)
 
 DATABASE = None
-DEBUG = False
+DEBUG = True
 SECRETKEY = 'TG9yZW0gaXBzdW0gZG90dW0'
 
 manager = None
@@ -112,7 +112,7 @@ def show_preferences():
 def update_preferences():
     preferences = request.values
     print "Minimum Score:", preferences["minimum-score"]
-    return jsonify(**preferences)
+    return jsonify(**dict(preferences.items()))
 
 
 @app.route("/internal/update_settings", methods=["POST"])
@@ -124,6 +124,7 @@ def update_settings():
     send back the union of the settings to the client.
     '''
     settings = request.values
+    print settings
     return jsonify(**settings)
 
 
@@ -132,7 +133,7 @@ def test_page():
     return render_template("test.templ")
 
 
-@app.route("/view_database_search_results/<int:id>")
+@app.route("/view_database_search_results/<int:id>", methods=["POST"])
 def view_database_search_results(id):
     hsm = g.db.query(HypothesisSampleMatch).get(id)
     results_type = hsm.results_type
@@ -152,10 +153,17 @@ def view_tandem_glycopeptide_database_search_results(id):
     hsm = g.db.query(HypothesisSampleMatch).get(id)
     hypothesis_sample_match_id = id
 
+    state = request.get_json()
+    print state
+    settings = state['settings']
+    context = state['context']
+
+    minimum_score = settings.get('minimum-score', 0.2)
+
     def filter_context(q):
         return q.filter_by(
             hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
-            GlycopeptideMatch.ms2_score > 0.2)
+            GlycopeptideMatch.ms2_score > minimum_score)
 
     return render_template(
         "tandem_glycopeptide_search/view_database_search_results.templ",
@@ -165,14 +173,18 @@ def view_tandem_glycopeptide_database_search_results(id):
 
 @app.route("/view_database_search_results/protein_view/<int:id>", methods=["POST"])
 def view_tandem_glycopeptide_protein_results(id):
-    print request.values
-    hypothesis_sample_match_id = request.values["hypothesis_sample_match_id"]
+    parameters = request.get_json()
+    print parameters
+    print id
+    hypothesis_sample_match_id = parameters['context']['hypothesis_sample_match_id']
     protein = g.db.query(Protein).get(id)
+
+    minimum_score = float(parameters['settings'].get("minimum-score", 0.2))
 
     def filter_context(q):
         return q.filter_by(
             hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
-            GlycopeptideMatch.ms2_score > 0.2)
+            GlycopeptideMatch.ms2_score > minimum_score)
 
     site_summary = microheterogeneity.GlycoproteinMicroheterogeneitySummary(
         protein, filter_context)
@@ -298,6 +310,8 @@ def api_samples():
 
 @app.route("/ms1_or_ms2_choice")
 def branch_ms1_ms2():
+    # This would be better done completely client-side, but 
+    # requires some templating engine/cache on the client
     ms1_choice = request.values.get("ms1_choice")
     ms2_choice = request.values.get("ms2_choice")
     return render_template("components/ms1_or_ms2_choice.templ",
@@ -474,18 +488,24 @@ def tandem_match_samples_post():
 
     }
     input_type, input_id = user_parameters.get("hypothesis_choice").split(",")
+
     input_id = int(input_id)
     if input_type == "Hypothesis":
         defer = False
     else:
         defer = True
 
-    job_parameters["target_hypothesis_id"] = input_id
-
     db = manager.session()
-    target_hypothesis = db.query(Hypothesis).get(input_id)
-    decoy_id = target_hypothesis.parameters["decoys"][0]["hypothesis_id"]
-    job_parameters['decoy_hypothesis_id'] = decoy_id
+    if not defer:
+        job_parameters["target_hypothesis_id"] = input_id
+        target_hypothesis = db.query(Hypothesis).get(input_id)
+        decoy_id = target_hypothesis.parameters["decoys"][0]["hypothesis_id"]
+        job_parameters['decoy_hypothesis_id'] = decoy_id
+        job_parameters['source_hypothesis_sample_match_id'] = None
+    else:
+        job_parameters['source_hypothesis_sample_match_id'] = input_id
+        job_parameters['target_hypothesis_id'] = None
+        job_parameters['decoy_hypothesis_id'] = None
 
     print request.values.__dict__
 

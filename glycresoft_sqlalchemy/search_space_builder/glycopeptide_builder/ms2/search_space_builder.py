@@ -19,7 +19,8 @@ from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
     HypothesisSampleMatch, PeakGroupMatch, Protein,
     TheoreticalGlycopeptideGlycanAssociation,
-    TheoreticalGlycopeptide)
+    MS1GlycopeptideHypothesis,
+    TheoreticalGlycopeptide, Hierarchy)
 
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)(\w+)')
@@ -385,6 +386,9 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map,
     except Exception, e:
         logger.exception("An error occurred, %r", locals(), exc_info=e)
         raise
+
+
+constructs = Hierarchy()
 
 
 class TheoreticalSearchSpaceBuilder(PipelineModule):

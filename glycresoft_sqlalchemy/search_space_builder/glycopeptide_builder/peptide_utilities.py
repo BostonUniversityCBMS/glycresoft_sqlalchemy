@@ -11,7 +11,6 @@ from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide
 from glycresoft_sqlalchemy.structure import sequence, modification
 
 from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet
-from glycresoft_sqlalchemy.utils.memoize import sqlitedict_memo
 
 Sequence = sequence.Sequence
 RestrictedModificationTable = modification.RestrictedModificationTable
@@ -133,10 +132,6 @@ class SiteCombinator(object):
 
 def all_combinations(site_assignments):
     all_positions = reduce(set().union, site_assignments.values(), set())
-    verbose = False
-    if len(all_positions) > 60:
-        verbose = True
-        logger.info("%d sites to consider.", len(all_positions))
     intersects = {}
     for i in all_positions:
         intersects[i] = []
@@ -144,8 +139,6 @@ def all_combinations(site_assignments):
             if i in t_sites:
                 intersects[i].append(t)
 
-    if verbose:
-        logger.info("Intersections built. Computing combinations.")
     combinations = [Counter()]
     for i, options in intersects.items():
         if len(options) == 1:
@@ -159,8 +152,6 @@ def all_combinations(site_assignments):
                     new_c[opt] += 1
                     new_combinations.append(new_c)
             combinations = new_combinations
-    if verbose:
-        logger.info("Finding unique combinations")
     unique_combinations = set()
     for combn in combinations:
         unique_combinations.add(frozenset(combn.items()))
@@ -240,7 +231,7 @@ def generate_peptidoforms(reference_protein, constant_modifications,
             protein_id=reference_protein.id,
             start_position=start,
             end_position=end)
-        ref_peptide.parent = reference_protein
+        ref_peptide.protein = reference_protein
         missed = len(re.findall(expasy_rules[enzyme], peptide))
         for modseq, modifications, mass, sequons_occupied in unpositioned_isoforms(ref_peptide, constant_modifications,
                                                                                    variable_modifications,

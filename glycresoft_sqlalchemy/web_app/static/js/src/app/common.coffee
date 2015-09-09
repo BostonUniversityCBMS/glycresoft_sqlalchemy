@@ -58,6 +58,7 @@ class Application extends ActionLayerManager
 
     updateSettings: ->
         $.post('/internal/update_settings', @settings).success((data) ->
+            console.log data, "Update Settings"
             @settings = data
         ).error (err) ->
             console.log err

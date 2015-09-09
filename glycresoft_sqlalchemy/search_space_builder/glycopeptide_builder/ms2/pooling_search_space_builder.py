@@ -2,7 +2,7 @@ import multiprocessing
 import logging
 import functools
 
-from .search_space_builder import (MS1GlycopeptideResult,
+from .search_space_builder import (MS1GlycopeptideResult, constructs, MS1GlycopeptideHypothesis,
                                    get_peptide_modifications, get_search_space,
                                    generate_fragments, TheoreticalSearchSpaceBuilder)
 
@@ -65,6 +65,7 @@ def process_predicted_ms1_ion(row, database_manager, modification_table, site_li
         raise e
 
 
+@constructs.references(MS1GlycopeptideHypothesis)
 class PoolingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
     '''
     Describe the process of generating all theoretical sequences and their fragments

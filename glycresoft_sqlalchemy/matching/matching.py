@@ -15,6 +15,7 @@ from ..spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 
 from .. import data_model as model
 from ..data_model import PipelineModule, MSMSSqlDB
+from ..utils.common_math import ppm_error
 
 
 HypothesisSampleMatch = model.HypothesisSampleMatch
@@ -38,10 +39,6 @@ PROTON = 1.007276035
 
 ms1_tolerance_default = 1e-5
 ms2_tolerance_default = 2e-5
-
-
-def ppm_error(x, y):
-    return (x - y) / y
 
 
 def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,

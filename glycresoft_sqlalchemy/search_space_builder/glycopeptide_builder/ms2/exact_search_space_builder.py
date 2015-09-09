@@ -10,9 +10,9 @@ from glycresoft_sqlalchemy.structure import constants
 from glycresoft_sqlalchemy.proteomics import get_enzyme
 
 
-from .search_space_builder import MS1ResultsFile, MS1ResultsFacade, TheoreticalSearchSpaceBuilder
+from .search_space_builder import MS1ResultsFile, MS1ResultsFacade, TheoreticalSearchSpaceBuilder, constructs
 from glycresoft_sqlalchemy import data_model as model
-from glycresoft_sqlalchemy.data_model import PipelineModule
+from glycresoft_sqlalchemy.data_model import PipelineModule, ExactMS1GlycopeptideHypothesis
 
 from sqlalchemy import func
 
@@ -111,6 +111,7 @@ def from_sequence(ms1_result, database_manager, protein_map, source_type):
         raise
 
 
+@constructs.references(ExactMS1GlycopeptideHypothesis)
 class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
 
     def __init__(self, ms1_results_file, db_file_name, enzyme, site_list=None,

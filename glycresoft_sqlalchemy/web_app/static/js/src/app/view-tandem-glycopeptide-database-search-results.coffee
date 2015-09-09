@@ -43,24 +43,28 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
         handle = $(this)
         id = handle.attr('data-target')
         $("#chosen-protein-container").html("""<div class="progress"><div class="indeterminate"></div></div>""").fadeIn()
-        $.post('/view_database_search_results/protein_view/' + id, {"context": GlycReSoft.context, "settings": GlycReSoft.settings}).success((doc) ->
-            $('#chosen-protein-container').hide()
-            $('#chosen-protein-container').html(doc).fadeIn()
-            initGlycopeptideOverviewPlot()
-            tabs = $('ul.tabs')
-            tabs.tabs()
-            if GlycReSoft.context['protein-view-active-tab'] != undefined
-                console.log GlycReSoft.context['protein-view-active-tab']
-                $('ul.tabs').tabs 'select_tab', GlycReSoft.context['protein-view-active-tab']
-            else
-                $('ul.tabs').tabs 'select_tab', 'protein-overview'
-            $('ul.tabs .tab a').click ->
-                GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1)
-            $('.indicator').addClass 'indigo'
-            $('.glycopeptide-match-row').click showGlycopeptideDetailsModal
-            peptideDetailsModal = $('#peptide-detail-modal')
-        ).error (error) ->
-            console.log arguments
+        $.ajax '/view_database_search_results/protein_view/' + id,
+                data: JSON.stringify({"context": GlycReSoft.context, "settings": GlycReSoft.settings}),
+                contentType: "application/json"
+                type: 'POST'
+                success: (doc) ->
+                    $('#chosen-protein-container').hide()
+                    $('#chosen-protein-container').html(doc).fadeIn()
+                    initGlycopeptideOverviewPlot()
+                    tabs = $('ul.tabs')
+                    tabs.tabs()
+                    if GlycReSoft.context['protein-view-active-tab'] != undefined
+                        console.log GlycReSoft.context['protein-view-active-tab']
+                        $('ul.tabs').tabs 'select_tab', GlycReSoft.context['protein-view-active-tab']
+                    else
+                        $('ul.tabs').tabs 'select_tab', 'protein-overview'
+                    $('ul.tabs .tab a').click ->
+                        GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1)
+                    $('.indicator').addClass 'indigo'
+                    $('.glycopeptide-match-row').click showGlycopeptideDetailsModal
+                    peptideDetailsModal = $('#peptide-detail-modal')
+                error: (error) ->
+                    console.log arguments
 
     getGlycopeptideMatchDetails = (id, callback) ->
         $.get '/api/glycopeptide_match/' + id, callback

@@ -67,6 +67,8 @@ class ActionLayer
         @params = params
         @contentURL = options.contentURL
         @method = method
+        if @options.method?
+            @method = @options.method
         if !options.container
             if @params?
                 @id = options.name + "-" + manager.incLayerCounter()
@@ -108,7 +110,12 @@ class ActionLayer
         if @method == "get"
             $.get(@contentURL).success callback
         else if @method == "post"
-            $.post(@contentURL, @params).success callback
+            $.ajax(@contentURL,
+                contentType: "application/json"
+                data: JSON.stringify {params: @params, context: @manager.context, settings: @manager.settings}
+                success: callback
+                type: "POST"
+                )
         
 
     show: ->

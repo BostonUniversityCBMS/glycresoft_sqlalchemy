@@ -92,6 +92,7 @@ Application = (function(superClass) {
 
   Application.prototype.updateSettings = function() {
     return $.post('/internal/update_settings', this.settings).success(function(data) {
+      console.log(data, "Update Settings");
       return this.settings = data;
     }).error(function(err) {
       return console.log(err);

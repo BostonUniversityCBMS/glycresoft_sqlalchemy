@@ -20,6 +20,7 @@ ActionBook =
     viewDatabaseSearchResults:
         contentURLTemplate: "/view_database_search_results/{hypothesis_sample_match_id}"
         name: "view-database-search-results"
+        method: "post"
 
 makeAPIGet = (url) -> (callback) -> $.get(url).success(callback)
 

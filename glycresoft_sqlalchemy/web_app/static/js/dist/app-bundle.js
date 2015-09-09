@@ -27,7 +27,8 @@ ActionBook = {
   },
   viewDatabaseSearchResults: {
     contentURLTemplate: "/view_database_search_results/{hypothesis_sample_match_id}",
-    name: "view-database-search-results"
+    name: "view-database-search-results",
+    method: "post"
   }
 };
 
@@ -149,6 +150,7 @@ Application = (function(superClass) {
 
   Application.prototype.updateSettings = function() {
     return $.post('/internal/update_settings', this.settings).success(function(data) {
+      console.log(data, "Update Settings");
       return this.settings = data;
     }).error(function(err) {
       return console.log(err);
@@ -498,27 +500,36 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
     handle = $(this);
     id = handle.attr('data-target');
     $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
-    return $.post('/view_database_search_results/protein_view/' + id, GlycReSoft.context).success(function(doc) {
-      var tabs;
-      $('#chosen-protein-container').hide();
-      $('#chosen-protein-container').html(doc).fadeIn();
-      initGlycopeptideOverviewPlot();
-      tabs = $('ul.tabs');
-      tabs.tabs();
-      if (GlycReSoft.context['protein-view-active-tab'] !== void 0) {
-        console.log(GlycReSoft.context['protein-view-active-tab']);
-        $('ul.tabs').tabs('select_tab', GlycReSoft.context['protein-view-active-tab']);
-      } else {
-        $('ul.tabs').tabs('select_tab', 'protein-overview');
+    return $.ajax('/view_database_search_results/protein_view/' + id, {
+      data: JSON.stringify({
+        "context": GlycReSoft.context,
+        "settings": GlycReSoft.settings
+      }),
+      contentType: "application/json",
+      type: 'POST',
+      success: function(doc) {
+        var tabs;
+        $('#chosen-protein-container').hide();
+        $('#chosen-protein-container').html(doc).fadeIn();
+        initGlycopeptideOverviewPlot();
+        tabs = $('ul.tabs');
+        tabs.tabs();
+        if (GlycReSoft.context['protein-view-active-tab'] !== void 0) {
+          console.log(GlycReSoft.context['protein-view-active-tab']);
+          $('ul.tabs').tabs('select_tab', GlycReSoft.context['protein-view-active-tab']);
+        } else {
+          $('ul.tabs').tabs('select_tab', 'protein-overview');
+        }
+        $('ul.tabs .tab a').click(function() {
+          return GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1);
+        });
+        $('.indicator').addClass('indigo');
+        $('.glycopeptide-match-row').click(showGlycopeptideDetailsModal);
+        return peptideDetailsModal = $('#peptide-detail-modal');
+      },
+      error: function(error) {
+        return console.log(arguments);
       }
-      $('ul.tabs .tab a').click(function() {
-        return GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1);
-      });
-      $('.indicator').addClass('indigo');
-      $('.glycopeptide-match-row').click(showGlycopeptideDetailsModal);
-      return peptideDetailsModal = $('#peptide-detail-modal');
-    }).error(function(error) {
-      return console.log(arguments);
     });
   };
   getGlycopeptideMatchDetails = function(id, callback) {

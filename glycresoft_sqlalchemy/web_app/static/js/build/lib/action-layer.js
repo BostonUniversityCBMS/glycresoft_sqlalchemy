@@ -103,6 +103,9 @@ ActionLayer = (function() {
     this.params = params;
     this.contentURL = options.contentURL;
     this.method = method;
+    if (this.options.method != null) {
+      this.method = this.options.method;
+    }
     if (!options.container) {
       if (this.params != null) {
         this.id = options.name + "-" + manager.incLayerCounter();
@@ -153,7 +156,16 @@ ActionLayer = (function() {
     if (this.method === "get") {
       return $.get(this.contentURL).success(callback);
     } else if (this.method === "post") {
-      return $.post(this.contentURL, this.params).success(callback);
+      return $.ajax(this.contentURL, {
+        contentType: "application/json",
+        data: JSON.stringify({
+          params: this.params,
+          context: this.manager.context,
+          settings: this.manager.settings
+        }),
+        success: callback,
+        type: "POST"
+      });
     }
   };
 

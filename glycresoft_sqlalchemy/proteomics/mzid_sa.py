@@ -231,6 +231,8 @@ def convert_dict_to_sequence(sequence_dict, session):
                 glycosylation_sites=None,
                 other={k: v for k, v in sequence_dict.items() if k not in
                        exclude_keys_from_sequence_dict})
+            match.protein = parent_protein
+
             glycosites = set(match.n_glycan_sequon_sites) | set(sequence.find_n_glycosylation_sequons(
                 peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
             match.count_glycosylation_sites = len(glycosites)

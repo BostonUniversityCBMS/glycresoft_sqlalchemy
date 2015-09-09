@@ -35,7 +35,10 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
         session = database_manager.session()
         peptide = session.query(NaivePeptide).get(peptide[0])
         i = 0
-        associtation_tasks = []
+
+        glycopeptide_acc = []
+        glycan_assoc_acc = []
+
         for glycan_set in get_glycan_combinations(
                 database_manager.session(), min(peptide.count_glycosylation_sites, max_sites), hypothesis_id):
             glycan_set = list(glycan_set)
@@ -57,31 +60,34 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
                 glycan_composition_str=glycan_composition_str,
                 glycan_mass=glycan_mass,
             )
+
+            glycopeptide_acc.append(glycoform)
+            glycan_assoc_acc.extend((glycoform, glycan_id) for glycan_id in [g.id for g in glycan_set])
+
             session.add(glycoform)
 
             i += 1
-            associtation_tasks.extend({"peptide_id": glycoform, "glycan_id": g.id} for g in glycan_set)
             if i % 5000 == 0:
                 logger.info("Flushing %d", i)
-                session.commit()
+                session.add_all(glycopeptide_acc)
                 session.flush()
-                session.execute(TheoreticalGlycopeptideCompositionGlycanAssociation.insert(), [
-                        {"peptide_id": d["peptide_id"].id, "glycan_id": d['glycan_id']} for d in
-                        associtation_tasks
-                    ])
+                session.execute(
+                    TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
+                    [{'peptide_id': ig.id, 'glycan_id': gid} for ig, gid in glycan_assoc_acc])
                 session.commit()
-                associtation_tasks = []
+                glycopeptide_acc = []
+                glycan_assoc_acc = []
 
-        session.commit()
+        logger.info("Flushing %d", i)
+        session.add_all(glycopeptide_acc)
         session.flush()
-        session.execute(TheoreticalGlycopeptideCompositionGlycanAssociation.insert(), [
-                {"peptide_id": d["peptide_id"].id, "glycan_id": d['glycan_id']} for d in
-                associtation_tasks
-            ])
+        session.execute(
+            TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
+            [{'peptide_id': ig.id, 'glycan_id': gid} for ig, gid in glycan_assoc_acc])
         session.commit()
         session.close()
         return i
-    except KeyboardInterrupt, e:
+    except Exception, e:
         logger.exception("%r", locals(), exc_info=e)
         raise e
     finally:
@@ -100,6 +106,7 @@ def digest_protein(protein, manager, constant_modifications, variable_modificati
             peptidoforms.append(peptidoform)
             i += 1
             if len(peptidoforms) > 10000:
+                logger.info("Flushing %d peptidoforms", i)
                 map(session.merge, peptidoforms)
                 session.commit()
                 peptidoforms = []

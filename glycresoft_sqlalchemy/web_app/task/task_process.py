@@ -15,7 +15,7 @@ import glob
 from os import path
 
 logger = logging.getLogger("task_process")
-
+logger.setLevel("ERROR")
 
 NEW = intern('new')
 RUNNING = intern('running')
@@ -273,7 +273,7 @@ class TaskManager(object):
             self.n_running, self.currently_running, self.tasks)
         for task_id, task in list(self.tasks.items()):
             running = task.update()
-            logger.info("Checking %r", task)
+            logger.debug("Checking %r", task)
             for message in task.messages():
                 self.messages.put(message)
 
@@ -303,7 +303,7 @@ class TaskManager(object):
 
         for task_id, task in list(self.currently_running.items()):
             running = task.update()
-            logger.info("Checking %r", task)
+            logger.debug("Checking %r", task)
             for message in task.messages():
                 self.messages.put(message)
 

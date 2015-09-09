@@ -1,11 +1,12 @@
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch,
-    MS2GlycopeptideHypothesisSampleMatch, SampleRun)
+    MS2GlycopeptideHypothesisSampleMatch, SampleRun, HypothesisSampleMatch)
 
 from glycresoft_sqlalchemy.matching.matching import IonMatching, ms1_tolerance_default, ms2_tolerance_default
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 from glycresoft_sqlalchemy.scoring import target_decoy, score_spectrum_matches
-
+from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder import (
+    pooling_search_space_builder, pooling_make_decoys)
 import os
 
 from .task_process import NullPipe, Message, Task
@@ -13,16 +14,28 @@ from .task_process import NullPipe, Message, Task
 
 def taskmain(
         database_path, observed_ions_path, target_hypothesis_id=None,
-        decoy_hypothesis_id=None, observed_ions_type='bupid_yaml', sample_run_id=None,
+        decoy_hypothesis_id=None, source_hypothesis_sample_match_id=None,
+        observed_ions_type='bupid_yaml', sample_run_id=None,
         ms1_tolerance=ms1_tolerance_default,
         ms2_tolerance=ms2_tolerance_default,
         comm=NullPipe(),
         **kwargs):
-    if target_hypothesis_id is None:
-        target_hypothesis_id = 1
 
     manager = DatabaseManager(database_path)
     manager.initialize()
+    if target_hypothesis_id is None:
+        if source_hypothesis_sample_match_id is None:
+            raise Exception("No target hypotesis or hypotesis sample match given")
+        session = manager.session()
+        source_hsm = session.query(HypothesisSampleMatch).get(source_hypothesis_sample_match_id)
+        search_space_builder = pooling_search_space_builder.constructs[source_hsm.target_hypothesis.__class__]
+        builder = search_space_builder.from_hypothesis(
+            database_path, source_hsm.id, n_processes=kwargs.get("n_processes", 4))
+        target_hypothesis_id = builder.start()
+        builder = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(
+            database_path, hypothesis_ids=[target_hypothesis_id], n_processes=kwargs.get("n_processes", 4))
+        decoy_hypothesis_id = builder.start()
+        decoy_hypothesis_id = decoy_hypothesis_id[0]
 
     if observed_ions_type == 'bupid_yaml' and observed_ions_path[-3:] != '.db':
         comm.send(Message("Converting %s to db" % observed_ions_path))
@@ -98,11 +111,13 @@ def taskmain(
 class TandemMSGlycoproteomicsSearchTask(Task):
     def __init__(
             self, database_path, observed_ions_path, target_hypothesis_id,
-            decoy_hypothesis_id, observed_ions_type, sample_run_id,
+            decoy_hypothesis_id, source_hypothesis_sample_match_id,
+            observed_ions_type, sample_run_id,
             ms1_tolerance, ms2_tolerance, callback=lambda: 0, **kwargs):
         args = (
             database_path, observed_ions_path, target_hypothesis_id,
-            decoy_hypothesis_id, observed_ions_type, sample_run_id,
+            decoy_hypothesis_id, source_hypothesis_sample_match_id,
+            observed_ions_type, sample_run_id,
             ms1_tolerance, ms2_tolerance)
         name = "Tandem MS Glycoproteomics Search {} @ {}".format(target_hypothesis_id, os.path.basename(observed_ions_path))
         kwargs.setdefault('name', name)
