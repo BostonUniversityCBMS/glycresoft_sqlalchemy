@@ -4,7 +4,7 @@ import time
 import pprint
 
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, DateTime, func,
-                        Column, Integer, ForeignKey, UnicodeText, Boolean)
+                        Column, Integer, ForeignKey, UnicodeText, Boolean, relationship)
 
 from .connection import DatabaseManager
 from .data_model import Base
@@ -21,6 +21,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     email_address = Column(Unicode(128))
     password = Column(Unicode(128))
+    messages = relationship("Message", lazy='dynamic')
 
 
 class Message(Base):
@@ -31,6 +32,9 @@ class Message(Base):
     message_type = Column(Unicode(64))
     contents = Column(PickleType)
     created = Column(DateTime, index=True, default=func.now())
+
+    def __repr__(self):
+        return "<{s.__class__.__name__}:{s.message_type} {s.contents} @ {s.created}>".format(s=self)
 
 
 class JobState(Base):

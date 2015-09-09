@@ -177,6 +177,7 @@ cdef class DPeak(object):
         public float intensity
         public int rank
         public float mass_charge_ratio
+        public list peak_relations
 
     def __init__(self, peak=None):
         if peak is not None:
@@ -184,6 +185,7 @@ cdef class DPeak(object):
             self.id = PyInt_AsLong(peak.id)
             self.charge = PyInt_AsLong(peak.charge)
             self.intensity = PyFloat_AsDouble(peak.intensity)
+        self.peak_relations = []
 
 
 cpdef DPeak DPeak_from_values(cls, float neutral_mass):

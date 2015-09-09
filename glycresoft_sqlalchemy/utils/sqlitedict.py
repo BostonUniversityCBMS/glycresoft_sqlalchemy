@@ -313,7 +313,7 @@ class SqliteMultithread(Thread):
         self.reqs = Queue()
         self.setDaemon(True) # python2.5-compatible
         self.exception = None
-        self.log = logging.getLogger('sqlitedict.SqliteMultithread')
+        self.log = logger  #  logging.getLogger('sqlitedict.SqliteMultithread')
         self.start()
 
     def run(self):

@@ -30,6 +30,7 @@ except ImportError, e:
             self.charge = peak.charge
             self.intensity = peak.intensity
             self.rank = 0
+            self.peak_relations = []
 
     class MassOffsetFeature(object):
 

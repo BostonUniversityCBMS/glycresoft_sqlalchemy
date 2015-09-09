@@ -106,7 +106,6 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
     """
     try:
         session = database_manager.session()
-        logger.debug("Creating glycopeptides from %r", peptide)
         glycoforms = glycosylate_callback(peptide, session, hypothesis_id, position_selector)
         conn = session.connection()
         glycopeptide_acc = []
@@ -144,14 +143,7 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
                 session.commit()
                 glycopeptide_acc = []
                 glycan_assoc_acc = []
-            # session.add(informed_glycopeptide)
-            # session.flush()
-            # conn.execute(
-            #     TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
-            #     [{'peptide_id': informed_glycopeptide.id, 'glycan_id': gid} for gid in glycan_ids])
-            # conn.execute(
-            #     InformedPeptideToTheoreticalGlycopeptide.insert(),
-            #     [{"informed_peptide": peptide.id, "theoretical_glycopeptide": informed_glycopeptide.id}])
+
             session.add_all(glycopeptide_acc)
             session.flush()
             session.execute(

@@ -43,7 +43,7 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
         handle = $(this)
         id = handle.attr('data-target')
         $("#chosen-protein-container").html("""<div class="progress"><div class="indeterminate"></div></div>""").fadeIn()
-        $.post('/view_database_search_results/protein_view/' + id, GlycReSoft.context).success((doc) ->
+        $.post('/view_database_search_results/protein_view/' + id, {"context": GlycReSoft.context, "settings": GlycReSoft.settings}).success((doc) ->
             $('#chosen-protein-container').hide()
             $('#chosen-protein-container').html(doc).fadeIn()
             initGlycopeptideOverviewPlot()

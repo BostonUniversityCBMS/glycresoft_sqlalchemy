@@ -8,6 +8,11 @@ try:
 except Exception, e:
     pass
 
+try:
+    import cPickle as pickle
+except:
+    import pickle as pickle
+
 
 class DefaultSqliteDict(sqlitedict.SqliteDict):
     def __init__(self, *args, **kwargs):
@@ -24,6 +29,25 @@ class DefaultSqliteDict(sqlitedict.SqliteDict):
                 return self[key]
             else:
                 raise e
+
+
+class SqliteSet(object):
+    def __init__(self, iterable=()):
+        self.store = sqlitedict.open()
+        for x in iterable:
+            self.add(x)
+
+    def add(self, obj):
+        value = pickle.dumps(obj, -1)
+        self.store[value] = 1
+
+    def __contains__(self, obj):
+        value = pickle.dumps(obj, -1)
+        return value in self.store
+
+    def __iter__(self):
+        for x in self.store:
+            yield pickle.loads(x)
 
 
 def _identity(i):

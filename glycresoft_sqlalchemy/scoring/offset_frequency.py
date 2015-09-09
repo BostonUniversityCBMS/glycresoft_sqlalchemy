@@ -3,7 +3,7 @@ import random
 import operator
 import numpy as np
 
-from glycresoft_sqlalchemy.structure import sequence
+from glycresoft_sqlalchemy.structure import sequence, composition, modification
 from glycresoft_sqlalchemy.data_model import GlycopeptideSpectrumMatch, PipelineModule
 from glycresoft_sqlalchemy.utils import collectiontools
 from glycresoft_sqlalchemy.utils import common_math
@@ -123,8 +123,8 @@ def probability_of_peak_explained(offset_frequency, unknown_peak_rate, prior_fra
     return a / (a + b)
 
 
-def make_offset_function(offset=.0, tolerance=2e-5):
-    return MassOffsetFeature(offset=offset, tolerance=tolerance)
+def make_offset_function(offset=.0, tolerance=2e-5, name=None):
+    return MassOffsetFeature(offset=offset, tolerance=tolerance, name=name)
 
 
 def intensity_ratio_function(peak1, peak2):
@@ -228,3 +228,10 @@ def feature_function_estimator(gsms, feature_function, kind='b'):
         peak_relations.append((gsm, related))
 
     return total_on_kind_satisfied / max(total_on_kind, 1), total_off_kind_satisfied / max(total_off_kind, 1), peak_relations
+
+
+shifts = [
+    make_offset_function(-composition.Composition("NH3").mass, name='Neutral-Loss-Ammonia'),
+    make_offset_function(-composition.Composition("H2O").mass, name='Neutral-Loss-Water'),
+
+]

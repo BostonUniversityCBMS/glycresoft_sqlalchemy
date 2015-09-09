@@ -8,8 +8,9 @@ except:
 from collections import Counter
 
 from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide
-from glycresoft_sqlalchemy.structure import sequence, modification, parser
+from glycresoft_sqlalchemy.structure import sequence, modification
 
+from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet
 from glycresoft_sqlalchemy.utils.memoize import sqlitedict_memo
 
 Sequence = sequence.Sequence
@@ -199,7 +200,7 @@ def unpositioned_isoforms(
     variable_sites = {
         mod.name: set(
             mod.find_valid_sites(sequence)) for mod in variable_modifications}
-    solutions = set()
+    solutions = SqliteSet()
     strseq = str(sequence)
     for i in range(len(sequons)):
         for sequons_occupied in (combinations(sequons, i + 1)):
@@ -211,14 +212,7 @@ def unpositioned_isoforms(
                 mod: sites -
                 sequons_occupied for mod,
                 sites in variable_sites.items()}
-            # try:
-            #     mods, sites = zip(*avail_sites.items())
-            # except:
-            #     mods, sites = [], []
-            # for comb in SiteCombinator(*sites):
-            #     modifications = Counter()
-            #     for i, taken_sites in enumerate(comb):
-            #         modifications[mods[i]] = len(taken_sites)
+
             for modifications in all_combinations(avail_sites):
                 hashable = frozenset(modifications.items())
                 if hashable in solutions:
