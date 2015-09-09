@@ -4,7 +4,8 @@ import time
 import pprint
 
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, DateTime, func,
-                        Column, Integer, ForeignKey, UnicodeText, Boolean, relationship)
+                        Column, Integer, ForeignKey, UnicodeText, Boolean)
+from sqlalchemy.orm import relationship
 
 from .connection import DatabaseManager
 from .data_model import Base
