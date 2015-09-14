@@ -406,7 +406,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
     HypothesisType = MS2GlycopeptideHypothesis
 
     @classmethod
-    def from_hypothesis(cls, database_path, hypothesis_sample_match_id, n_processes=4):
+    def from_hypothesis_sample_match(cls, database_path, hypothesis_sample_match_id, n_processes=4):
         dbm = cls.manager_type(database_path)
         session = dbm.session()
         source_hypothesis_sample_match = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
@@ -415,7 +415,10 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         variable_modifications = source_hypothesis.parameters.get("variable_modifications", [])
         constant_modifications = source_hypothesis.parameters.get("constant_modifications", [])
         enzyme = source_hypothesis.parameters.get("enzyme", [])
-        inst = cls(
+
+        builder = constructs[source_hypothesis_sample_match.__class__]
+
+        inst = builder(
             database_path, database_path, enzyme=[enzyme], site_list=None,
             constant_modifications=constant_modifications,
             variable_modifications=variable_modifications,

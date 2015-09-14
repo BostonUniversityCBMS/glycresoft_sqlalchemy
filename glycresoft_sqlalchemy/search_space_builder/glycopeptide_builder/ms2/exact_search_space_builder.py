@@ -1,7 +1,19 @@
+"""Summary
+
+Attributes
+----------
+logger : TYPE
+    Description
+Protein : TYPE
+    Description
+TheoreticalGlycopeptide : TYPE
+    Description
+TheoreticalGlycopeptideGlycanAssociation : TYPE
+    Description
+"""
 import re
 import multiprocessing
 import logging
-import pickle
 import functools
 
 from glycresoft_sqlalchemy.structure.sequence import Sequence, strip_modifications
@@ -10,9 +22,9 @@ from glycresoft_sqlalchemy.structure import constants
 from glycresoft_sqlalchemy.proteomics import get_enzyme
 
 
-from .search_space_builder import MS1ResultsFile, MS1ResultsFacade, TheoreticalSearchSpaceBuilder, constructs
+from .search_space_builder import TheoreticalSearchSpaceBuilder, constructs
 from glycresoft_sqlalchemy import data_model as model
-from glycresoft_sqlalchemy.data_model import PipelineModule, ExactMS1GlycopeptideHypothesis
+from glycresoft_sqlalchemy.data_model import ExactMS1GlycopeptideHypothesisSampleMatch
 
 from sqlalchemy import func
 
@@ -24,6 +36,21 @@ logger = logging.getLogger("search_space_builder")
 
 
 def generate_fragments(seq, ms1_result):
+    """Construct an instance of :class:`TheoreticalGlycopeptide` and
+    compute all backbone fragments of interest.
+
+    Parameters
+    ----------
+    seq : Sequnce
+        An instance of :class:`glycresoft_sqlalchemy.structure.sequence.Sequence` which
+        will be fragmented.
+    ms1_result : MS1GlycopeptideResult
+        Provides context for the created TheoreticalGlycopeptide instance
+
+    Returns
+    -------
+    TheoreticalGlycopeptide
+    """
     seq_mod = seq.get_sequence()
     fragments = zip(*map(seq.break_at, range(1, len(seq))))
     b_type = fragments[0]
@@ -94,6 +121,41 @@ def generate_fragments(seq, ms1_result):
 
 
 def from_sequence(ms1_result, database_manager, protein_map, source_type):
+    """Produce an instance of :class:`.TheoreticalGlycopeptide` from an MS1
+    match with an exact sequence definition. This is a **task function** intended
+    for execution in the main loop of `run` or in one of the worker processes therein.
+
+    This function assumes that all peptide backbone modifications have already
+    been placed exactly, directly writing the sequence into the more detailed
+    structure, unlike the equivalent function used by `TheoreticalSearchSpaceBuilder`
+    and `PoolingTheoreticalSearchSpaceBuilder`.
+
+    Parameters
+    ----------
+    ms1_result : MS1GlycopeptideResult or int
+        A generic structure representing an MS1 match from LC-MS
+        database search. The structure is expected to reference an
+        exact glycopeptide as opposed to an ambiguous one requiring
+        combinatorial expansion.
+
+        Alternatively may be an int object corresponding to the primary key
+        :attr:`id` of a :class:`PeakGroupMatch` object which will be used
+        to construct an instance of :class:`MS1GlycopeptideResult`.
+    database_manager : DatabaseManager
+        Provides connection to database
+    protein_map : dict
+        Maps :attr:`.Protein.name` to :attr:`.Protein.id`
+    source_type : MS1ResultsFile or MS1ResultsFacade
+        The source of ms1_result, defining a :method:`render` method which
+        converts the raw input into a database
+
+    Returns
+    -------
+    TheoreticalGlycopeptide:
+        The single glycopeptide with pre-computed fragment ion masses. The structure
+        has not yet been persisted to the database and must be written there by the
+        receiving process.
+    """
     try:
         session = database_manager.session()
         ms1_result = source_type.render(session, ms1_result)
@@ -111,9 +173,9 @@ def from_sequence(ms1_result, database_manager, protein_map, source_type):
         raise
 
 
-@constructs.references(ExactMS1GlycopeptideHypothesis)
+@constructs.references(ExactMS1GlycopeptideHypothesisSampleMatch)
 class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
-
+    """Summary"""
     def __init__(self, ms1_results_file, db_file_name, enzyme, site_list=None,
                  n_processes=4, **kwargs):
         try:
@@ -128,11 +190,34 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
             site_list=site_list, n_processes=n_processes, **kwargs)
 
     def prepare_task_fn(self):
-        protein_map = dict(self.session.query(Protein.name, Protein.id).filter(Protein.hypothesis_id == self.hypothesis.id))
+        """Construct the partial function to be applied to each input in this step of
+        of the pipeline. The base function used is :func:`from_sequence`
+
+        Returns
+        -------
+        function
+
+        See Also
+        --------
+        from_sequence
+        """
+        protein_map = dict(self.session.query(Protein.name, Protein.id).filter(
+            Protein.hypothesis_id == self.hypothesis.id))
         return functools.partial(
             from_sequence, database_manager=self.manager, protein_map=protein_map, source_type=self.ms1_format)
 
     def run(self):
+        """Main work method.
+
+        Applies the function returned by :meth:`prepare_task_fn` to each item to be processed.
+
+        If :attr:`n_processes` > 1, this will be done using multiple worker processes through a
+        `multiprocessing.Pool` object with :attr:`n_processes` workers.
+
+        Returns
+        -------
+        int : The :attr:`id` of the constructed :class:`.MS2GlycopeptideHypothesis`
+        """
         session = self.session
         cntr = 0
         last = 0

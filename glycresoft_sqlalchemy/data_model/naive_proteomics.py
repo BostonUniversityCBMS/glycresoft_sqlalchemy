@@ -35,9 +35,9 @@ class TheoreticalGlycopeptideComposition(PeptideBase, Base):
     protein = relationship("Protein", backref=backref("theoretical_glycopeptide_compositions", lazy='dynamic'))
 
     def __repr__(self):
-        return "<{} {} {} {}>".format(
+        return "<{} {} {} {} {}>".format(
             self.__class__.__name__,
-            self.id, self.glycopeptide_sequence, self.calculated_mass)
+            self.id, self.glycopeptide_sequence, self.peptide_modifications, self.calculated_mass)
 
     __mapper_args__ = {
         'polymorphic_on': PeptideBase.sequence_type,

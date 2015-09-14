@@ -32,7 +32,7 @@ def test_main():
     r"glycresoft-database-search ms1 -n 6 -i datafiles\20140918_01_isos.db datafiles\naive_glycopeptide.db 1"
     r" -p db -g 2e-5 --skip-grouping")
     assert ec == 0
-    job = pooling_search_space_builder.PoolingTheoreticalSearchSpaceBuilder.from_hypothesis(
+    job = pooling_search_space_builder.PoolingTheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
         "datafiles/naive_glycopeptide.db", 1, 6)
     hypothesis_id = job.start()
     job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id])

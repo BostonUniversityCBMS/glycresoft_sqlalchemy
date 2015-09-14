@@ -7,10 +7,14 @@ except:
 from glycresoft_sqlalchemy.matching import matching, peak_grouping
 from glycresoft_sqlalchemy.scoring import target_decoy, score_spectrum_matches
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
+from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2.search_space_builder import (
+    TheoreticalSearchSpaceBuilder)
+from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2.pooling_make_decoys import (
+    PoolingDecoySearchSpaceBuilder)
 from glycresoft_sqlalchemy.spectra.decon2ls_sa import Decon2LSIsosParser
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, MS2GlycopeptideHypothesisSampleMatch, SampleRun, Hypothesis,
-    MassShift)
+    MassShift, HypothesisSampleMatch)
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 
 import summarize
@@ -38,12 +42,23 @@ def run_ms2_glycoproteomics_search(
         decoy_hypothesis_id=None, observed_ions_type='bupid_yaml', sample_run_id=None,
         ms1_tolerance=ms1_tolerance_default,
         ms2_tolerance=ms2_tolerance_default, **kwargs):
-    if hypothesis_sample_match_id is not None:
-        pass
-    elif target_hypothesis_id is None:
-        raise Exception("A Hypothesis must be provided")
     manager = DatabaseManager(database_path)
     manager.initialize()
+    session = manager.session()
+
+    n_processes = kwargs.get("n_processes", 4)
+
+    if hypothesis_sample_match_id is not None:
+        source_hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+        builder = TheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
+            database_path, source_hsm, n_processes=n_processes)
+        target_hypothesis_id = builder.start()
+        decoy_builder = PoolingDecoySearchSpaceBuilder(
+            database_path, hypothesis_ids=[target_hypothesis_id], n_processes=n_processes)
+        decoy_hypothesis_id = decoy_builder.start()
+        decoy_hypothesis_id = decoy_hypothesis_id[0]
+    elif target_hypothesis_id is None:
+        raise Exception("A Hypothesis must be provided")
     if observed_ions_type == 'bupid_yaml' and observed_ions_path[-3:] != '.db':
         parser = BUPIDMSMSYamlParser(observed_ions_path, manager.bridge_address())
         observed_ions_path = parser.manager.path
@@ -51,7 +66,6 @@ def run_ms2_glycoproteomics_search(
         sample_name = parser.sample_run_name
     else:
         sample_name = ','.join(x[0] for x in DatabaseManager(observed_ions_path).session().query(SampleRun.name).all())
-    session = manager.session()
     if decoy_hypothesis_id is not None:
         hsm = MS2GlycopeptideHypothesisSampleMatch(
             target_hypothesis_id=target_hypothesis_id,
@@ -74,7 +88,7 @@ def run_ms2_glycoproteomics_search(
         hypothesis_sample_match_id=hsm_id,
         ms1_tolerance=ms1_tolerance,
         ms2_tolerance=ms2_tolerance,
-        n_processes=kwargs.get("n_processes", 4))
+        n_processes=n_processes)
     job.start()
 
     if decoy_hypothesis_id is None:
@@ -88,19 +102,19 @@ def run_ms2_glycoproteomics_search(
         hypothesis_sample_match_id=hsm_id,
         ms1_tolerance=ms1_tolerance,
         ms2_tolerance=ms2_tolerance,
-        n_processes=kwargs.get("n_processes", 4))
+        n_processes=n_processes)
     job.start()
 
-    job = score_spectrum_matches.SimpleSpectrumAssignment(database_path, target_hypothesis_id, hsm_id)
+    job = score_spectrum_matches.SimpleSpectrumAssignment(
+        database_path, target_hypothesis_id, hsm_id, n_processes=n_processes)
     job.start()
 
-    job = score_spectrum_matches.SimpleSpectrumAssignment(database_path, decoy_hypothesis_id, hsm_id)
+    job = score_spectrum_matches.SimpleSpectrumAssignment(
+        database_path, decoy_hypothesis_id, hsm_id, n_processes=n_processes)
     job.start()
 
     job = target_decoy.TargetDecoyAnalyzer(database_path, target_hypothesis_id, decoy_hypothesis_id, hsm_id)
     job.start()
-
-    summarize.main(database_path)
 
 
 def run_ms1_search(

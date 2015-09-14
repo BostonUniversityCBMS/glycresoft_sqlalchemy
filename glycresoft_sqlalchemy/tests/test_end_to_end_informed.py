@@ -39,7 +39,7 @@ def test_main():
         "glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db -p db -g 2e-5 --skip-grouping {db_file_name} 1".format(
             db_file_name=db_file_name))
     assert ec == 0
-    job = exact_search_space_builder.ExactSearchSpaceBuilder.from_hypothesis(
+    job = exact_search_space_builder.ExactSearchSpaceBuilder.from_hypothesis_sample_match(
         db_file_name, 1, 4)
     hypothesis_id = job.start()
 

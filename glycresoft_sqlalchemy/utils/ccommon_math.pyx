@@ -187,6 +187,8 @@ cdef class DPeak(object):
             self.intensity = PyFloat_AsDouble(peak.intensity)
         self.peak_relations = []
 
+    def __repr__(self):
+        return "<DPeak {} {} {}>".format(self.neutral_mass, self.charge, self.intensity)
 
 cpdef DPeak DPeak_from_values(cls, float neutral_mass):
     cdef DPeak peak

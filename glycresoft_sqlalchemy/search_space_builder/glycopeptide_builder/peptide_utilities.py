@@ -10,7 +10,7 @@ from collections import Counter
 from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide
 from glycresoft_sqlalchemy.structure import sequence, modification
 
-from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet
+from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet, descending_combination_counter
 
 Sequence = sequence.Sequence
 RestrictedModificationTable = modification.RestrictedModificationTable
@@ -154,10 +154,9 @@ def all_combinations(site_assignments):
             combinations = new_combinations
     unique_combinations = set()
     for combn in combinations:
-        unique_combinations.add(frozenset(combn.items()))
-
+        for combo in descending_combination_counter(combn):
+            unique_combinations.add(frozenset((k, v) for k, v in combo.items() if v != 0))
     combinations = map(dict, unique_combinations)
-
     unique_combinations = set()
     for combn in combinations:
         for i in range(1, len(combn) + 1):

@@ -211,9 +211,6 @@ def convert_dict_to_sequence(sequence_dict, session):
         if found == -1:
             raise ValueError("Peptide not found in Protein")
         if found != start:
-            # logger.debug(
-            #     "%r: %d <- %d, %s, %d", evidence["PeptideSequence"], found, start,
-            #     parent_protein.accession, parent_protein.sequence.count(base_sequence))
             start = found
             end = start + len(base_sequence)
         try:

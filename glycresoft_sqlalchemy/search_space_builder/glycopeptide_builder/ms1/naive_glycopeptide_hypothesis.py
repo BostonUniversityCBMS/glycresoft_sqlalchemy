@@ -109,11 +109,12 @@ def digest_protein(protein, manager, constant_modifications, variable_modificati
                 logger.info("Flushing %d peptidoforms", i)
                 map(session.merge, peptidoforms)
                 session.commit()
+                session.expire_all()
                 peptidoforms = []
         map(session.merge, peptidoforms)
         session.commit()
         logger.info("Digested %d peptidoforms for %s", i, protein)
-        session.commit()
+
         return 1
     except Exception, e:
         logger.exception("An exception occurred in digest_protein", exc_info=e)
