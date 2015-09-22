@@ -23,7 +23,9 @@ extensions = [
     Extension("glycresoft_sqlalchemy.structure.composition.ccomposition",
               ["glycresoft_sqlalchemy/structure/composition/ccomposition." + c_ext]),
     Extension("glycresoft_sqlalchemy.utils.ccommon_math",
-              ["glycresoft_sqlalchemy/utils/ccommon_math." + c_ext])
+              ["glycresoft_sqlalchemy/utils/ccommon_math." + c_ext]),
+    Extension("glycresoft_sqlalchemy.scoring.offset_frequency.cpeak_relations",
+              ["glycresoft_sqlalchemy/scoring/offset_frequency/cpeak_relations." + c_ext])
 ]
 
 if c_ext == "pyx":

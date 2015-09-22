@@ -1,6 +1,5 @@
 import re
 import copy
-import warnings
 import itertools
 import operator
 from collections import defaultdict, deque
@@ -11,8 +10,9 @@ from .composition import Composition, composition_to_mass, std_ion_comp
 from .fragment import Fragment, fragment_pairing, fragment_direction, fragment_shift
 from .modification import Modification
 from .residue import Residue
+from glypy import GlycanComposition, Glycan, MonosaccharideResidue
 
-from .parser import *
+from .parser import sequence_tokenizer, sequence_length, strip_modifications
 
 from ..utils.iterators import peekable
 from ..utils.memoize import memoize
@@ -114,6 +114,24 @@ class Sequence(PeptideSequenceBase):
     '''
     Represents a peptide that may have post-translational modifications
     including glycosylation.
+
+    Attributes
+    ----------
+    seq: list
+        The underlying container for positions in the amino acid sequence
+    modification_index: defaultdict(int)
+        A count of different modifications attached to the amino acid sequence
+    n_term: Modification or Composition
+    c_term: Modification or Composition
+        Terminal modifications (N-terminus and C-terminus respectively) which
+        default to H and OH respectively.
+    glycan: Glycan or GlycanComposition
+        The total glycan moiety attached to the molecule. The current semantics
+        do not cleanly support more than one glycosylation per sequence.
+    mass: float
+        The pre-calculated monoisotopic mass of the molecule. This quantity is
+        assumes that the glycan's glycosidic bonds have been broken, leaving only
+        the amide-bound HexNAc as a modification attached to the amino acid backbone
     '''
     position_class = list
 
@@ -145,7 +163,7 @@ class Sequence(PeptideSequenceBase):
                     mod = Modification(mod)
                 mod_list.append(mod)
                 seq.mass += mod.mass
-                seq.mod_index[mod.name] += 1
+                seq.modification_index[mod.name] += 1
             seq.seq.append(cls.position_class([resid, mod_list]))
         if not isinstance(n_term, MoleculeBase):
             n_term = Modification(n_term)
@@ -160,7 +178,7 @@ class Sequence(PeptideSequenceBase):
         seq_list, modifications, glycan, n_term, c_term = sequence_tokenizer(sequence)
         self.mass = 0.0
         self.seq = []
-        self.mod_index = defaultdict(int)
+        self.modification_index = defaultdict(int)
         for item in seq_list:
             try:
                 res = Residue()
@@ -171,25 +189,26 @@ class Sequence(PeptideSequenceBase):
                     if mod != '':
                         mod = Modification(mod)
                         mods.append(mod)
-                        self.mod_index[mod.name] += 1
+                        self.modification_index[mod.name] += 1
                         self.mass += mod.mass
                 self.seq.append(self.position_class([res, mods]))
             except:
                 print(sequence)
                 print(item)
                 raise
-        # Termini
-        # self.mass += Composition("H2O").mass
 
-        # For compatibility with Glycopeptide sequences
         self.glycan = glycan
 
-        # For compatibility with terminal modifications
         self._n_term = None
         self._c_term = None
 
         self.n_term = Modification(n_term) if isinstance(n_term, basestring) else n_term
         self.c_term = Modification(c_term) if isinstance(c_term, basestring) else c_term
+
+    def _patch_glycan_composition(self):
+        occupied_sites = self.modification_index['HexNAc']
+        offset = Composition({"H": 2, "O": 1}) * occupied_sites
+        self.glycan.composition_offset -= offset
 
     def __repr__(self):
         n_term = ""
@@ -202,7 +221,7 @@ class Sequence(PeptideSequenceBase):
         return rep
 
     def __len__(self):
-        return self.length
+        return len(self.seq)
 
     @property
     def n_term(self):
@@ -389,7 +408,7 @@ class Sequence(PeptideSequenceBase):
         try:
             drop_mod = self.seq[pos][1].pop(dropped_index)
             self.mass -= drop_mod.mass
-            self.mod_index[drop_mod.name] -= 1
+            self.modification_index[drop_mod.name] -= 1
         except:
             raise ValueError("Modification not found! %s @ %s" % (mod_type, pos))
 
@@ -408,7 +427,7 @@ class Sequence(PeptideSequenceBase):
             mod = Modification(rule=mod_type, mod_pos=pos)
         self.seq[pos][1].append(mod)
         self.mass += mod.mass
-        self.mod_index[mod.name] += 1
+        self.modification_index[mod.name] += 1
 
     def get_sequence(self, start=0, include_glycan=True, include_termini=True,
                      implicit_n_term=None, implicit_c_term=None):
@@ -456,7 +475,7 @@ class Sequence(PeptideSequenceBase):
         else:
             next_pos.append([modification])
             self.mass += modification.mass
-            self.mod_index[modification.name] += 1
+            self.modification_index[modification.name] += 1
         self.seq.append(self.position_class(next_pos))
 
     def extend(self, sequence):
@@ -464,62 +483,76 @@ class Sequence(PeptideSequenceBase):
             sequence = Sequence(sequence)
         self.seq.extend(sequence.seq)
         self.mass += sequence.mass - sequence.n_term.mass - sequence.c_term.mass
-        for mod, count in sequence.mod_index.items():
-            self.mod_index[mod] += count
+        for mod, count in sequence.modification_index.items():
+            self.modification_index[mod] += count
 
     def leading_extend(self, sequence):
         if not isinstance(sequence, PeptideSequenceBase):
             sequence = Sequence(sequence)
         self.seq = sequence.seq + self.seq
         self.mass += sequence.mass - sequence.n_term.mass - sequence.c_term.mass
-        for mod, count in sequence.mod_index.items():
-            self.mod_index[mod] += count
+        for mod, count in sequence.modification_index.items():
+            self.modification_index[mod] += count
 
     @property
     def n_glycan_sequon_sites(self):
         return find_n_glycosylation_sequons(self, structure_constants.ALLOW_MODIFIED_ASPARAGINE)
 
+    def stub_ions(self, full=False):
+        if not isinstance(self.glycan, GlycanComposition):
+            raise NotImplementedError("Cannot infer monosaccharides from non-GlycanComposition")
+        glycan = self.glycan
+        fucose_count = glycan['Fuc'] or glycan['dHex']
+        core_count = self.modification_index['HexNAc']
 
-class GrowingSequence(Sequence):
+        per_site_shifts = []
+        hexose_mass = MonosaccharideResidue.from_iupac_lite("Hex")
+        hexnac_mass = MonosaccharideResidue.from_iupac_lite("HexNAc")
+        fucose_mass = MonosaccharideResidue.from_iupac_lite("Fuc")
+        base_mass = self.mass - (hexnac_mass * core_count) + Composition("H+").mass
+        for i in range(core_count):
+            core_shifts = []
+            for hexnac_count in range(3):
+                if hexnac_count == 0:
+                    shift = {
+                        "mass": 0,
+                        "key": ""
+                        }
+                    core_shifts.append(shift)
+                elif hexnac_count == 1:
+                    shift = {
+                        "mass": (hexnac_count * hexnac_count),
+                        "key": {"HexNAc": hexnac_count}
+                        }
+                    if i < fucose_count:
+                        shift['mass'] += fucose_mass
+                        shift['key'] += '+1Fuc'
+                    core_shifts.append(shift)
+                elif hexnac_count == 2:
+                    shift = {
+                        "mass": (hexnac_count * hexnac_count),
+                        "key": "+%sHexNAc" % (hexnac_count)
+                        }
+                    if i < fucose_count:
+                        shift['mass'] += fucose_mass
+                        shift['key'] += '+1Fuc'
+                    core_shifts.append(shift)
+                    for hexose_count in range(4):
+                        shift = {
+                            "mass": (hexnac_count * hexnac_count) + (hexose_count * hexose_mass),
+                            "key": {"HexNAc": hexnac_count, "Hexose": hexose_count}
+                            }
+                        if i < fucose_count:
+                            shift['mass'] += fucose_mass
+                            shift['key']['Fuc'] = 1
+                        core_shifts.append(shift)
+            per_site_shifts.append(core_shifts)
+        for positions in itertools.product(*per_site_shifts):
+            key_base = 'peptide'
+            mass = base_mass
+            for site in positions:
+                pass
 
-    def __init__(self, sequence, cleavage_pattern):
-        super(GrowingSequence, self).__init__(sequence)
-        self.cleavage_pattern = cleavage_pattern
-        self.missed_cleavages = cleavage_pattern.count(sequence)
-
-    def extend(self, sequence):
-        super(GrowingSequence, self).extend(sequence)
-        self.missed_cleavages += sequence.missed_cleavages
-
-    def leading_extend(self, sequence):
-        super(GrowingSequence, self).leading_extend(sequence)
-        self.missed_cleavages += sequence.missed_cleavages
-
-    def pad(self):
-        for padded in self.cleavage_pattern.pad(self):
-            yield GrowingSequence(padded, self.cleavage_pattern)
-
-
-class Protease(object):
-
-    def __init__(self, prefix, suffix):
-        self.prefix = prefix
-        self.suffix = suffix
-
-    def count(self, sequence):
-        cnt = 0
-        if not isinstance(sequence, PeptideSequenceBase):
-            sequence = Sequence(sequence)
-        cnt += sum([resid.symbol in self.prefix for resid,
-                    mods in sequence[1:]])
-        cnt += sum([resid.symbol in self.suffix for resid,
-                    mods in sequence[:-1]])
-        return cnt
-
-    def pad(self, sequence):
-        for pref in self.prefix:
-            for suf in self.suffix:
-                yield "{0}{1}{2}".format(pref, str(sequence), suf)
 
 get1 = operator.itemgetter(1)
 
@@ -560,21 +593,3 @@ def itercleave(sequence, rule, missed_cleavages=0, min_length=0, **kwargs):
                         continue
                     seen.add(case)
                     yield case
-
-
-@memoize()
-def sequence_tokens_to_mass(tokens):
-    mass = 0.0
-    for residue, mods in tokens:
-        mass += Residue.mass_by_name(residue)
-        for mod in mods:
-            mass += Modification.mass_by_name(mod)
-    if n_term is not None:
-        mass += Modification.mass_by_name(n_term)
-    else:
-        mass += Composition("H").mass
-    if c_term is not None:
-        mass += Modification.mass_by_name(c_term)
-    else:
-        mass += Composition("OH").mass
-    return mass

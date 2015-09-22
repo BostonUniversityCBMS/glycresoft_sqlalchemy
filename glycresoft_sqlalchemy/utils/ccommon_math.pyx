@@ -1,3 +1,4 @@
+from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from cpython.int cimport PyInt_AsLong
 from cpython.float cimport PyFloat_AsDouble
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE
@@ -25,9 +26,9 @@ cpdef int mass_offset_match(float mass, DPeak peak, float offset=0., float toler
     return abs(ppm_error(mass + offset, peak.neutral_mass)) <= tolerance
 
 
-cdef inline int intensity_ratio_function(DPeak peak1, DPeak peak2):
+cdef int intensity_ratio_function(DPeak peak1, DPeak peak2):
     cdef float ratio
-    ratio = peak1.intensity / float(peak2.intensity)
+    ratio = peak1.intensity / (peak2.intensity)
     if ratio >= 5:
         return -4
     elif 2.5 <= ratio < 5:
@@ -48,6 +49,7 @@ cdef inline int intensity_ratio_function(DPeak peak1, DPeak peak2):
         return 4
     elif 0. <= ratio < 0.2:
         return 5
+
 
 
 cdef void intensity_rank(list peak_list, float minimum_intensity=100.):
@@ -80,14 +82,13 @@ cdef void intensity_rank(list peak_list, float minimum_intensity=100.):
             break
         p.rank = rank
 
-
 cdef class MassOffsetFeature(object):
-    cdef:
-        public float offset
-        public float tolerance
-        public str name
-        public int intensity_ratio
-        public int intensity_rank
+    #cdef:
+    #    public float offset
+    #    public float tolerance
+    #    public str name
+    #    public int intensity_ratio
+    #    public int intensity_rank
 
     def __init__(self, offset, tolerance, name=None, intensity_ratio=-1, intensity_rank=-1):
         if name is None:
@@ -120,6 +121,9 @@ cdef class MassOffsetFeature(object):
         self.intensity_ratio = d['intensity_ratio']
         self.intensity_rank = d['intensity_rank']
 
+    def __reduce__(self):
+        return MassOffsetFeature, (), self.__getstate__()
+
     def __call__(self, DPeak query, DPeak peak):
         return self.test(query, peak)        
 
@@ -131,6 +135,9 @@ cdef class MassOffsetFeature(object):
 
     def __repr__(self):
         return self.name
+
+    def __hash__(self):
+        return hash((self.name, self.offset, self.intensity_ratio, self.intensity_rank))
 
 
 cdef class PooledOffsetFeature(MassOffsetFeature):
@@ -170,14 +177,14 @@ cdef class DPeak(object):
     without the non-trivial overhead of descriptor access on the mapped object to check for
     updated data.
     '''
-    cdef:
-        public float neutral_mass
-        public long id
-        public int charge
-        public float intensity
-        public int rank
-        public float mass_charge_ratio
-        public list peak_relations
+    #cdef:
+    #    public float neutral_mass
+    #    public long id
+    #    public int charge
+    #    public float intensity
+    #    public int rank
+    #    public float mass_charge_ratio
+    #    public list peak_relations
 
     def __init__(self, peak=None):
         if peak is not None:
@@ -190,14 +197,46 @@ cdef class DPeak(object):
     def __repr__(self):
         return "<DPeak {} {} {}>".format(self.neutral_mass, self.charge, self.intensity)
 
+    cdef PeakStruct* as_struct(self):
+        cdef PeakStruct* result
+        result = <PeakStruct*>PyMem_Malloc(sizeof(PeakStruct))
+        result.neutral_mass = self.neutral_mass
+        result.id = self.id
+        result.charge = self.charge
+        result.intensity = self.intensity
+        result.rank = self.rank
+        result.mass_charge_ratio = self.mass_charge_ratio
+        return result
+
+    def __getstate__(self):
+        d = dict()
+        d['neutral_mass'] = self.neutral_mass
+        d['id'] = self.id
+        d['charge'] = self.charge
+        d['intensity'] = self.intensity
+        d['rank'] = self.rank
+        d['mass_charge_ratio'] = self.mass_charge_ratio
+        d['peak_relations'] = self.peak_relations
+        return d
+
+    def __setstate__(self, d):
+        self.neutral_mass = d['neutral_mass']
+        self.id = d['id']
+        self.charge = d['charge']
+        self.intensity = d['intensity']
+        self.rank = d['rank']
+        self.mass_charge_ratio = d['mass_charge_ratio']
+        self.peak_relations = d['peak_relations']
+
+    def __reduce__(self):
+        return DPeak, (), self.__getstate__()
+
+
 cpdef DPeak DPeak_from_values(cls, float neutral_mass):
     cdef DPeak peak
     peak = DPeak()
     peak.neutral_mass = neutral_mass
     return peak
-
-
-# DPeak.from_values = classmethod(from_values)
 
 
 cdef class TheoreticalDPeak(DPeak):
@@ -216,3 +255,10 @@ cpdef list search_spectrum(DPeak peak, list peak_list, MassOffsetFeature feature
         if feature.test(peak, other_peak):
             adder(other_peak)
     return matches
+
+
+def pintensity_rank(list peak_list, float minimum_intensity=100.):
+    intensity_rank(peak_list, minimum_intensity)
+
+def pintensity_ratio_function(DPeak peak1, DPeak peak2):
+    return intensity_ratio_function(peak1, peak2)

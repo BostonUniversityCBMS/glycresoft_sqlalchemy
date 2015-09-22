@@ -4,6 +4,7 @@ import functools
 from collections import Counter
 
 from glycresoft_sqlalchemy.structure import sequence, residue, fragment
+from glycresoft_sqlalchemy.structure import sequence_composition
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
     HypothesisSampleMatch, PeakGroupMatch, Protein,
@@ -11,34 +12,7 @@ from glycresoft_sqlalchemy.data_model import (
     TheoreticalGlycopeptide)
 
 Sequence = sequence.Sequence
-
-
-class AminoAcidSequenceBuildingBlock(object):
-    def __init__(self, residue_, modifications, neutral_mass=None):
-        self.residue = residue_
-        self.modifications = tuple(modifications)
-        if neutral_mass is None:
-            neutral_mass = residue_.mass + sum(m.mass for m in modifications)
-        self.neutral_mass = neutral_mass
-
-    def __hash__(self):
-        return hash((self.residue, self.modifications))
-
-    def __eq__(self, other):
-        return self.residue == other.residue and self.modifications == other.modifications
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __repr__(self):
-        return "({}, {}):{:.2f}".format(self.residue.symbol, self.modifications, self.neutral_mass)
-
-    def __str__(self):
-        return "{}{}".format(
-            self.residue.symbol,
-            "({.name})".format(self.modifications[0]) if len(self.modifications) > 0 else "")
-
-Block = AminoAcidSequenceBuildingBlock
+Block = AminoAcidSequenceBuildingBlock = sequence_composition.AminoAcidSequenceBuildingBlock
 
 
 def melt_sequence(sequence_string, counter=None):

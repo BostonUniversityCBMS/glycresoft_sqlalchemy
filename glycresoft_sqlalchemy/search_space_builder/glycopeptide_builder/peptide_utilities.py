@@ -189,10 +189,10 @@ def unpositioned_isoforms(
     variable_sites = {
         mod.name: set(
             mod.find_valid_sites(sequence)) for mod in variable_modifications}
-    solutions = SqliteSet()
     strseq = str(sequence)
     for i in range(len(sequons)):
         for sequons_occupied in (combinations(sequons, i + 1)):
+            solutions = SqliteSet()
             sequons_occupied = set(sequons_occupied)
             _sequons_occupied = list(sequons_occupied)
             yield strseq, {}, sequence.mass, _sequons_occupied
@@ -201,7 +201,6 @@ def unpositioned_isoforms(
                 mod: sites -
                 sequons_occupied for mod,
                 sites in variable_sites.items()}
-
             for modifications in all_combinations(avail_sites):
                 hashable = frozenset(modifications.items())
                 if hashable in solutions:

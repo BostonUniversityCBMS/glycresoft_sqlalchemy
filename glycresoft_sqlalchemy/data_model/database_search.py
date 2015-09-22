@@ -368,7 +368,7 @@ class GlycopeptideSpectrumMatch(Base):
     __tablename__ = "GlycopeptideSpectrumMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    scan_time = Column(Integer)
+    scan_time = Column(Integer, index=True)
     glycopeptide_match_id = Column(Integer, ForeignKey(GlycopeptideMatch.id), index=True)
     peak_match_map = Column(MutableDict.as_mutable(PickleType))
     peaks_explained = Column(Integer, index=True)
@@ -407,6 +407,13 @@ class GlycopeptideSpectrumMatch(Base):
         recs = self.peak_match_map.get(peak.id, [])
         recs.append(match_record)
         self.peak_match_map[peak.id] = recs
+
+    def total_signal_explained(self):
+        total = 0.
+        for k, v in self.peak_match_map.items():
+            ion = v[0]
+            total += ion['intensity']
+        return total
 
 
 class GlycanStructureMatch(Base):

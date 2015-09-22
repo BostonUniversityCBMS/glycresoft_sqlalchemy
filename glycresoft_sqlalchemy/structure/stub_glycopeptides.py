@@ -54,7 +54,7 @@ class StubGlycopeptide(object):
     @classmethod
     def from_sequence(cls, sequence_obj):
         seq = str(sequence_obj)
-        num_sites = sequence_obj.mod_index['HexNAc']
+        num_sites = sequence_obj.modification_index['HexNAc']
         glycan_comp = sequence_obj.glycan
         return StubGlycopeptide(seq, None, num_sites, glycan_comp)
 

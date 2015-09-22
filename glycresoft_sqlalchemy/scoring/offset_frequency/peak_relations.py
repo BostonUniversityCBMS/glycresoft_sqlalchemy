@@ -1,28 +1,18 @@
-import itertools
-import random
-import operator
 import numpy as np
 
-from glycresoft_sqlalchemy.structure import sequence, composition, modification
-from glycresoft_sqlalchemy.data_model import GlycopeptideSpectrumMatch, PipelineModule
+from glycresoft_sqlalchemy.structure import composition
 from glycresoft_sqlalchemy.utils import collectiontools
-from glycresoft_sqlalchemy.utils import common_math
 
-PODPeak = common_math.DPeak
-ppm_error = common_math.ppm_error
-mass_offset_match = common_math.mass_offset_match
-MassOffsetFeature = common_math.MassOffsetFeature
-search_spectrum = common_math.search_spectrum
-
-Sequence = sequence.Sequence
-
-chain_iterable = itertools.chain.from_iterable
-
-get_intensity = operator.attrgetter("intensity")
+from .utils import (
+    Sequence,
+    chain_iterable, ppm_error, MassOffsetFeature,
+    DPeak, get_intensity, intensity_ratio_function,
+    intensity_rank, mass_offset_match, search_spectrum)
 
 
 # Lacking a reasonable definition of the "space between fragmentation sites"
 SMALLEST_UNIT = 1000 * 2e-5
+
 
 # BEGIN REFERENCE Estimation
 # Simple one parameter estimator functions for learning the basic alpha, beta and p parameters
@@ -127,56 +117,6 @@ def make_offset_function(offset=.0, tolerance=2e-5, name=None):
     return MassOffsetFeature(offset=offset, tolerance=tolerance, name=name)
 
 
-def intensity_ratio_function(peak1, peak2):
-    ratio = peak1.intensity / float(peak2.intensity)
-    if ratio >= 5:
-        return -4
-    elif 2.5 <= ratio < 5:
-        return -3
-    elif 1.7 <= ratio < 2.5:
-        return -2
-    elif 1.3 <= ratio < 1.7:
-        return -1
-    elif 1.0 <= ratio < 1.3:
-        return 0
-    elif 0.8 <= ratio < 1.0:
-        return 1
-    elif 0.6 <= ratio < 0.8:
-        return 2
-    elif 0.4 <= ratio < 0.6:
-        return 3
-    elif 0.2 <= ratio < 0.4:
-        return 4
-    elif 0. <= ratio < 0.2:
-        return 5
-
-
-def intensity_rank(peak_list, minimum_intensity=100.):
-    peak_list = sorted(peak_list, key=get_intensity, reverse=True)
-    i = 0
-    rank = 10
-    tailing = 6
-    for p in peak_list:
-        if p.intensity < minimum_intensity:
-            p.rank = 0
-            continue
-        i += 1
-        if i == 10 and rank != 0:
-            if rank == 1:
-                if tailing != 0:
-                    i = 0
-                    tailing -= 1
-                else:
-                    i = 0
-                    rank -= 1
-            else:
-                i = 0
-                rank -= 1
-        if rank == 0:
-            break
-        p.rank = rank
-
-
 class PeakRelation(object):
     def __init__(self, from_peak, to_peak, feature, intensity_ratio=None, kind=None):
         if intensity_ratio is None:
@@ -204,7 +144,7 @@ def feature_function_estimator(gsms, feature_function, kind='b'):
     peak_relations = []
     for gsm in gsms:
         spectrum = gsm.spectrum
-        peaks = list(map(PODPeak, spectrum))
+        peaks = list(map(DPeak, spectrum))
         intensity_rank(peaks)
         peaks = [p for p in peaks if p.rank > 0]
         related = []
@@ -215,7 +155,6 @@ def feature_function_estimator(gsms, feature_function, kind='b'):
                 pr = PeakRelation(peak, match, feature_function, intensity_ratio_function(peak, match))
                 related.append(pr)
                 if is_on_kind:
-                    print peak.id, match.id
                     total_on_kind_satisfied += 1
                     pr.kind = kind
                 else:
@@ -225,13 +164,39 @@ def feature_function_estimator(gsms, feature_function, kind='b'):
                 total_on_kind += 1
             else:
                 total_off_kind += 1
-        peak_relations.append((gsm, related))
+        if len(related) > 0:
+            peak_relations.append((gsm, related))
 
-    return total_on_kind_satisfied / max(total_on_kind, 1), total_off_kind_satisfied / max(total_off_kind, 1), peak_relations
+    total_on_kind_satisfied_normalized = total_on_kind_satisfied / max(total_on_kind, 1)
+    total_off_kind_satisfied_normalized = total_off_kind_satisfied / max(total_off_kind, 1)
+
+    return total_on_kind_satisfied_normalized, total_off_kind_satisfied_normalized, peak_relations
 
 
 shifts = [
     make_offset_function(-composition.Composition("NH3").mass, name='Neutral-Loss-Ammonia'),
     make_offset_function(-composition.Composition("H2O").mass, name='Neutral-Loss-Water'),
-
 ]
+
+
+class FittedFeature(object):
+    def __init__(self, feature, kind, on_kind, off_kind, relations=None):
+        if relations is None:
+            relations = []
+        self.feature
+        self.kind = kind
+        self.on_kind = on_kind
+        self.off_kind = off_kind
+        self.relations = relations
+
+    def __repr__(self):
+        temp = "<FittedFeature ({feature}) u:{on_kind} v{off_kind} @ {kind} {count_relations}>"
+        return temp.format(
+            feature=self.feature, on_kind=self.on_kind, off_kind=self.off_kind,
+            kind=self.kind, count_relations=len(self.relations))
+
+
+class RelationCollection(object):
+    def __init__(self, features):
+        self.relations = {}
+        self.features = features

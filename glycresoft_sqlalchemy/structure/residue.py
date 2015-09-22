@@ -22,7 +22,8 @@ symbol_to_residue = {
     'T': 'Thr',
     'W': 'Trp',
     'Y': 'Tyr',
-    'V': 'Val'}
+    'V': 'Val',
+    "J": "Xle"}
 
 
 residue_to_symbol = {value: key for key, value in symbol_to_residue.items()}
@@ -49,12 +50,15 @@ residue_table = {
     'Trp': 'C11H10N2O1',
     'Tyr': 'C9H9N1O2',
     'Val': 'C5H9N1O1',
-    'HexNAc': 'C8H13NO5',
-    'Hex': 'C6H10O5',
-    'dHex': 'C6H10O4',
-    'NeuAc': 'C11H17NO8',
-    'NeuGc': 'C11H17NO9',
-    'Water': 'H2O'}
+    # 'HexNAc': 'C8H13NO5',
+    # 'Hex': 'C6H10O5',
+    # 'dHex': 'C6H10O4',
+    # 'NeuAc': 'C11H17NO8',
+    # 'NeuGc': 'C11H17NO9',
+    # 'Water': 'H2O'
+    }
+
+residue_table["Xle"] = residue_table["Leu"]
 
 
 class Residue(ResidueBase):

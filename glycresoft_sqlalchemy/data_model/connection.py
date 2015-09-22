@@ -86,6 +86,8 @@ class SQLiteConnectionManager(ConnectionManager):
 
     def connect(self):
         engine = super(SQLiteConnectionManager, self).connect()
+        engine.execute("PRAGMA page_size = 5120")
+        engine.execute("PRAGMA cache_size = 4000")
         return engine
 
 

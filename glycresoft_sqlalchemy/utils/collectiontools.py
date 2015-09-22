@@ -34,6 +34,7 @@ class DefaultSqliteDict(sqlitedict.SqliteDict):
 class SqliteSet(object):
     def __init__(self, iterable=()):
         self.store = sqlitedict.open()
+        self.store.clear()
         for x in iterable:
             self.add(x)
 
@@ -48,6 +49,9 @@ class SqliteSet(object):
     def __iter__(self):
         for x in self.store:
             yield pickle.loads(x)
+
+    def __repr__(self):
+        return map(str, self.keys())
 
 
 def _identity(i):
