@@ -2,12 +2,12 @@ from math import fabs
 import operator
 try:
     from ccommon_math import (
-        ppm_error, tol_ppm_error, DPeak, mass_offset_match, MassOffsetFeature,
+        ppm_error, tol_ppm_error, DPeak, MassOffsetFeature,
         search_spectrum, pintensity_ratio_function as intensity_ratio_function,
-        pintensity_rank as intensity_rank)
+        pintensity_rank as intensity_rank, MatchedSpectrum)
 
 except ImportError, e:
-    print e
+    print "common_math", e
 
     get_intensity = operator.attrgetter("intensity")
 
@@ -38,14 +38,30 @@ except ImportError, e:
             self.rank = 0
             self.peak_relations = []
 
+    OUT_OF_RANGE_INT = -999
+
     class MassOffsetFeature(object):
 
-        def __init__(self, offset, tolerance):
+        def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT, from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT):
+            if name is None:
+                name = "F:" + str(offset)
+            if intensity_ratio is not OUT_OF_RANGE_INT:
+                name += ", %r" % (intensity_ratio if intensity_ratio > OUT_OF_RANGE_INT else '')
+
+            self.name = name
             self.offset = offset
             self.tolerance = tolerance
+            self.intensity_ratio = intensity_ratio
+            self.from_charge = from_charge
+            self.to_charge = to_charge
 
-        def test(self, mass, peak):
-            return abs(ppm_error(mass + self.offset, peak.neutral_mass)) <= self.tolerance
+        def test(self, peak1, peak2):
+            if (self.intensity_ratio == OUT_OF_RANGE_INT or intensity_ratio_function(peak1, peak2) == self.intensity_ratio) and\
+               ((self.from_charge == OUT_OF_RANGE_INT and self.to_charge == OUT_OF_RANGE_INT) or
+                (self.from_charge == peak1.charge and self.to_charge == peak2.charge)):
+
+                return abs(ppm_error(peak1.neutral_mass + self.offset, peak2.neutral_mass)) <= self.tolerance
+            return False
 
         __call__ = test
 
@@ -103,3 +119,44 @@ except ImportError, e:
             if rank == 0:
                 break
             p.rank = rank
+
+    class MatchedSpectrum(object):
+
+        def __init__(self, gsm):
+            self.peak_match_map = gsm.peak_match_map
+            self.peak_list = list(gsm)
+            self.scan_time = gsm.scan_time
+            self.peaks_explained = gsm.peaks_explained
+            self.peaks_unexplained = gsm.peaks_unexplained
+            self.id = gsm.id
+            self.glycopeptide_sequence = gsm.glycopeptide_sequence
+
+        def __iter__(self):
+            for o in self.peak_list:
+                yield o
+
+        def peak_explained_by(self, peak_id):
+            explained = set()
+            try:
+                matches = self.peak_match_map[peak_id]
+                for match in matches:
+                    explained.add(match["key"])
+            except KeyError:
+                pass
+            return explained
+
+        def __repr__(self):
+            temp = "<MatchedSpectrum %s @ %d %d|%d>" % (
+                self.glycopeptide_sequence, self.scan_time, self.peaks_explained,
+                self.peaks_unexplained)
+            return temp
+
+        def reindex_peak_matches(self):
+            mass_map = dict()
+            for peak_idx, matches in self.peak_match_map.items():
+                mass_map["%0.4f" % matches[0]['observed_mass']] = peak_idx
+            for peak in self.peak_list:
+                idx = mass_map.get("%0.4f" % peak.neutral_mass)
+                if idx is None:
+                    continue
+                peak.id = idx

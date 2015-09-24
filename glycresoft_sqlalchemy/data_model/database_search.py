@@ -382,6 +382,13 @@ class GlycopeptideSpectrumMatch(Base):
             self.glycopeptide_match.glycopeptide_sequence,
             self.scan_time, len(self.peak_match_map))
 
+    def __iter__(self):
+        return iter(self.spectrum)
+
+    @property
+    def glycopeptide_sequence(self):
+        return self.glycopeptide_match.glycopeptide_sequence
+
     @property
     def spectrum(self):
         session = object_session(self)

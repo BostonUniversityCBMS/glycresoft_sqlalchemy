@@ -1,17 +1,21 @@
 import numpy as np
 
-from glycresoft_sqlalchemy.structure import composition
 from glycresoft_sqlalchemy.utils import collectiontools
+from collections import Counter, defaultdict
 
 from .utils import (
-    Sequence,
+    Sequence, MatchedSpectrum,
     chain_iterable, ppm_error, MassOffsetFeature,
-    DPeak, get_intensity, intensity_ratio_function,
-    intensity_rank, mass_offset_match, search_spectrum)
+    DPeak, intensity_ratio_function,
+    intensity_rank, search_spectrum)
 
 
 # Lacking a reasonable definition of the "space between fragmentation sites"
 SMALLEST_UNIT = 1000 * 2e-5
+
+
+def preprocess_glycopeptide_spectrum_match(gsms):
+    return map(MatchedSpectrum, gsms)
 
 
 # BEGIN REFERENCE Estimation
@@ -22,7 +26,7 @@ def offset_frequency(gsms, kind='b'):
     total_sites = 0
     total_explained = 0
     for gsm in gsms:
-        n_frag_sites = count_fragmentation_sites(gsm.glycopeptide_match.glycopeptide_sequence, kind)
+        n_frag_sites = count_fragmentation_sites(gsm.glycopeptide_sequence, kind)
         kind_explained = sum([1 for i in chain_iterable(gsm.peak_match_map.values()) if i['key'][0] == kind])
         total_sites += n_frag_sites
         total_explained += kind_explained
@@ -34,7 +38,7 @@ def unknown_peak_rate(gsms, kind='b'):
     total_unexplained = 0
 
     for gsm in gsms:
-        sequence = gsm.glycopeptide_match.glycopeptide_sequence
+        sequence = gsm.glycopeptide_sequence
         n_frag_sites = count_fragmentation_sites(sequence, kind)
         kind_explained = sum([1 for i in chain_iterable(gsm.peak_match_map.values()) if i['key'][0] == kind])
         peaks_unexplained = gsm.peaks_unexplained + (gsm.peaks_explained - kind_explained)
@@ -53,13 +57,13 @@ def count_fragmentation_sites(sequence, kind='b'):
 def prior_fragment_probability(gsms, kind='b'):
     hits = 0
     for gsm in gsms:
-        sequence = Sequence(gsm.glycopeptide_match.glycopeptide_sequence)
+        sequence = Sequence(gsm.glycopeptide_sequence)
         random_mass = np.random.uniform(0, sequence.mass)
         for fragment in collectiontools.flatten(sequence.get_fragments(kind)):
             if abs(ppm_error(fragment.mass, random_mass)) <= 2e-5:
                 hits += 1
-            elif fragment.mass - (random_mass + 230.) > 0:
-                break
+            # elif fragment.mass - (random_mass + 230.) > 0:
+            #     break
     return hits / float(len(gsms))
 
 # END REFERENCE Estimation
@@ -78,7 +82,7 @@ def estimate_offset_parameters(gsms, kind='b'):
 
     i = 0.
     for gsm in gsms:
-        sequence = Sequence(gsm.glycopeptide_match.glycopeptide_sequence)
+        sequence = Sequence(gsm.glycopeptide_sequence)
         fragments = collectiontools.flatten(sequence.get_fragments(kind))
 
         n_frag_sites = len(fragments)
@@ -143,8 +147,7 @@ def feature_function_estimator(gsms, feature_function, kind='b'):
     total_off_kind = 0.
     peak_relations = []
     for gsm in gsms:
-        spectrum = gsm.spectrum
-        peaks = list(map(DPeak, spectrum))
+        peaks = list(map(DPeak, gsm))
         intensity_rank(peaks)
         peaks = [p for p in peaks if p.rank > 0]
         related = []
@@ -173,30 +176,88 @@ def feature_function_estimator(gsms, feature_function, kind='b'):
     return total_on_kind_satisfied_normalized, total_off_kind_satisfied_normalized, peak_relations
 
 
-shifts = [
-    make_offset_function(-composition.Composition("NH3").mass, name='Neutral-Loss-Ammonia'),
-    make_offset_function(-composition.Composition("H2O").mass, name='Neutral-Loss-Water'),
-]
+def search_features_on_spectrum(peak, peak_list, features):
+    peak_match_relations = defaultdict(list)
+    for query_peak in peak_list:
+        for feature in features:
+            if feature(peak, query_peak):
+                match_list = peak_match_relations[peak.id]
+                pr = PeakRelation(peak, query_peak, feature, intensity_ratio_function(peak, query_peak), feature.kind)
+                match_list.append(pr)
+    return peak_match_relations
+
+
+def search_features(peak_list, features):
+    peak_match_map = {}
+    for peak in peak_list:
+        r = search_features_on_spectrum(peak, peak_list, features)
+        peak_match_map.update(r)
+    return peak_match_map
 
 
 class FittedFeature(object):
     def __init__(self, feature, kind, on_kind, off_kind, relations=None):
         if relations is None:
             relations = []
-        self.feature
+        self.feature = feature
         self.kind = kind
         self.on_kind = on_kind
         self.off_kind = off_kind
         self.relations = relations
 
+    @property
+    def name(self):
+        return self.feature.name
+
+    def __hash__(self):
+        return hash((self.feature, self.kind))
+
     def __repr__(self):
-        temp = "<FittedFeature ({feature}) u:{on_kind} v{off_kind} @ {kind} {count_relations}>"
+        temp = "<FittedFeature ({feature}) u:{on_kind} v:{off_kind} @ {kind} {count_relations}>"
         return temp.format(
             feature=self.feature, on_kind=self.on_kind, off_kind=self.off_kind,
             kind=self.kind, count_relations=len(self.relations))
 
+    def charge_relations(self):
+        counter = Counter()
+        for rel in self:
+            counter[rel.from_charge, rel.to_charge] += 1
+        return counter
 
-class RelationCollection(object):
-    def __init__(self, features):
-        self.relations = {}
-        self.features = features
+    def intensity_ratio(self):
+        counter = Counter()
+        for rel in self:
+            counter[intensity_ratio_function(rel.from_peak, rel.to_peak)] += 1
+        return counter
+
+    def charge_intensity_ratio(self):
+        counter = Counter()
+        for rel in self:
+            counter[(rel.from_charge, rel.to_charge), intensity_ratio_function(rel.from_peak, rel.to_peak)] += 1
+        return counter
+
+    def peak_relations(self, include_noise=True):
+        for spectrum_match, peak_relations in self.relations:
+            for pr in peak_relations:
+                if not include_noise and pr.kind == "Noise":
+                    continue
+                yield pr
+
+    def __iter__(self):
+        return self.peak_relations(False)
+
+    def __call__(self, *args, **kwargs):
+        return self.feature(*args, **kwargs)
+
+
+class RelatedSpectrum(object):
+    def __init__(self, spectrum, peak_relations=None):
+        if peak_relations is None:
+            peak_relations = {}
+        self.peak_list = list(spectrum)
+        self.peak_match_map = spectrum.peak_match_map
+        self.peak_relation_map = peak_relations
+
+    def peak_relationships(self, peak_id):
+        rels = self.peak_relation_map[peak_id]
+        return rels
