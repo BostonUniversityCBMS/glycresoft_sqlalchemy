@@ -42,7 +42,8 @@ except ImportError, e:
 
     class MassOffsetFeature(object):
 
-        def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT, from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT):
+        def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT,
+                     from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type=''):
             if name is None:
                 name = "F:" + str(offset)
             if intensity_ratio is not OUT_OF_RANGE_INT:
@@ -54,6 +55,7 @@ except ImportError, e:
             self.intensity_ratio = intensity_ratio
             self.from_charge = from_charge
             self.to_charge = to_charge
+            self.feature_type = feature_type
 
         def test(self, peak1, peak2):
             if (self.intensity_ratio == OUT_OF_RANGE_INT or intensity_ratio_function(peak1, peak2) == self.intensity_ratio) and\

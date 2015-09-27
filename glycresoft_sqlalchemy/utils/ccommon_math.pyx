@@ -1,6 +1,10 @@
 from cpython.ref cimport PyObject
 from cpython.string cimport PyString_AsString
 from libc.stdlib cimport abort, malloc, free, realloc
+from libc.math cimport fabs
+
+from cython.parallel cimport parallel, prange # openmp must be enabled at compile time
+
 from cpython.int cimport PyInt_AsLong
 from cpython.float cimport PyFloat_AsDouble
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
@@ -15,8 +19,10 @@ cdef:
 cpdef float ppm_error(float x, float y):
     return _ppm_error(x, y)
 
-cdef inline float _ppm_error(float x, float y):
+
+cdef inline float _ppm_error(float x, float y) nogil:
     return (x - y) / y
+
 
 cpdef object tol_ppm_error(float x, float y, float tolerance):
     cdef float err
@@ -79,9 +85,53 @@ def test_compiled(training_spectrum, features):
                 print cfeature.name, matches.size
 
 
+cdef MSFeatureStructArray* unwrap_feature_functions(list features):
+    cdef:
+        MSFeatureStructArray* ms_features
+        MSFeatureStruct cfeature
+        MassOffsetFeature pfeature
+        size_t i, j
+    j = PyList_GET_SIZE(features)
+    ms_features = <MSFeatureStructArray*>malloc(sizeof(MSFeatureStructArray) * j)
+    for i in range(j):
+        pfeature = <MassOffsetFeature>PyList_GET_ITEM(features, i)
+        cfeature = ms_features.features[i]
+        cfeature.offset = pfeature.offset
+        cfeature.intensity_ratio = pfeature.intensity_ratio
+        cfeature.from_charge = pfeature.from_charge
+        cfeature.to_charge = pfeature.to_charge
+        cfeature.tolerance = pfeature.tolerance
+        cfeature.name = PyString_AsString(pfeature.name)
+        cfeature.feature_type = PyString_AsString(pfeature.feature_type)
+        ms_features.features[i] = cfeature
+    return ms_features
 
 
-cdef inline int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2):
+cdef PeakStructArray* unwrap_peak_list(list py_peaks):
+    cdef:
+        PeakStructArray* peaks
+        PeakStruct cpeak
+        DPeak dpeak
+        size_t i, j
+
+    j = PyList_GET_SIZE(py_peaks)
+    peaks = <PeakStructArray*>malloc(sizeof(PeakStructArray))
+    intensity_rank(py_peaks)
+    peaks.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * j)
+    peaks.size = j
+    for i in range(j):
+        dpeak = <DPeak>py_peaks[i]
+        cpeak.neutral_mass = dpeak.neutral_mass
+        cpeak.id = dpeak.id
+        cpeak.charge = dpeak.charge
+        cpeak.intensity = dpeak.intensity
+        cpeak.rank = dpeak.rank
+        cpeak.mass_charge_ratio = dpeak.mass_charge_ratio
+        peaks.peaks[i] = cpeak
+    return peaks
+
+
+cdef inline int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2) nogil:
     cdef float ratio
     ratio = peak1.intensity / (peak2.intensity)
     if ratio >= 5:
@@ -105,16 +155,17 @@ cdef inline int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2):
     elif 0. <= ratio < 0.2:
         return 5
 
-cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2):
+
+cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2) nogil:
     if (feature.intensity_ratio == OUT_OF_RANGE_INT or _intensity_ratio_function(peak1, peak2) == feature.intensity_ratio) and\
        ((feature.from_charge == OUT_OF_RANGE_INT and feature.to_charge == OUT_OF_RANGE_INT) or
         (feature.from_charge == peak1.charge and feature.to_charge == peak2.charge)):
-        return abs(_ppm_error(peak1.neutral_mass + feature.offset, peak2.neutral_mass)) <= feature.tolerance
+        return fabs(_ppm_error(peak1.neutral_mass + feature.offset, peak2.neutral_mass)) <= feature.tolerance
     else:
         return False
 
 
-cdef PeakStructArray* _search_spectrum(PeakStruct* peak, PeakStructArray* peak_list, MSFeatureStruct* feature):
+cdef PeakStructArray* _search_spectrum(PeakStruct* peak, PeakStructArray* peak_list, MSFeatureStruct* feature) nogil:
     cdef:
         PeakStructArray* matches
         size_t i, j, n
@@ -129,13 +180,40 @@ cdef PeakStructArray* _search_spectrum(PeakStruct* peak, PeakStructArray* peak_l
         if feature_match(feature, peak, &query_peak):
             matches.peaks[n] = query_peak
             n += 1
-    # temp = <PeakStruct*>malloc(sizeof(PeakStruct) * n)
     matches.peaks = <PeakStruct*>realloc(&matches.peaks, sizeof(PeakStruct) * n)
-    #for i in range(n):
-    #    temp[i] = matches.peaks[i]
-    #free(matches.peaks)
-    #matches.peaks = temp
     matches.size = n
+    return matches
+
+
+cdef PeakStructArray* _openmp_search_spectrum(PeakStruct* peak, PeakStructArray* peak_list, MSFeatureStruct* feature) nogil:
+    cdef:
+        PeakStructArray* matches
+        size_t i, j, n
+        PeakStruct query_peak
+        PeakStruct* temp
+        short* did_match
+        long i_p, n_p
+    n = peak_list.size
+    n_p = n
+    did_match = <short*>malloc(sizeof(short)*n)
+    with parallel(num_threads=20):
+        for i_p in prange(n_p, nogil=True, schedule="guided"):
+            if feature_match(feature, peak, &peak_list.peaks[i_p]):
+                did_match[i_p] = 1
+            else:
+                did_match[i_p] = 0
+
+    matches = <PeakStructArray*>malloc(sizeof(PeakStructArray))
+    matches.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peak_list.size)
+    matches.size = peak_list.size
+
+    j = 0
+    for i in range(n):
+        if did_match[i]:
+            matches.peaks[i] = peak_list.peaks[i]
+            j += 1
+    matches.peaks = <PeakStruct*>realloc(&matches.peaks, sizeof(PeakStruct) * j)
+    matches.size = j
     return matches
 
 
@@ -197,9 +275,11 @@ cdef void intensity_rank(list peak_list, float minimum_intensity=100.):
 
 cdef int OUT_OF_RANGE_INT = -999
 
+
 cdef class MassOffsetFeature(object):
 
-    def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT, from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT):
+    def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT,
+                 from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type=""):
         if name is None:
             name = "F:" + str(offset)
             if intensity_ratio is not OUT_OF_RANGE_INT:
@@ -211,6 +291,7 @@ cdef class MassOffsetFeature(object):
         self.intensity_ratio = intensity_ratio
         self.from_charge = from_charge
         self.to_charge = to_charge
+        self.feature_type = feature_type
 
     def __getstate__(self):
         return {
@@ -338,8 +419,21 @@ cpdef list search_spectrum(DPeak peak, list peak_list, MassOffsetFeature feature
             adder(other_peak)
     return matches
 
+
+cpdef object search_spectrum_by_mass(float mass, list peak_list, float tolerance=2e-5):
+    cdef:
+        DPeak other_peak
+        Py_ssize_t i
+    for i in range(PyList_GET_SIZE(peak_list)):
+        other_peak = <DPeak>PyList_GET_ITEM(peak_list, i)
+        if abs(ppm_error(mass, other_peak)) <= tolerance:
+            return other_peak
+    return None
+
+
 def pintensity_rank(list peak_list, float minimum_intensity=100.):
     intensity_rank(peak_list, minimum_intensity)
+
 
 def pintensity_ratio_function(DPeak peak1, DPeak peak2):
     return intensity_ratio_function(peak1, peak2)

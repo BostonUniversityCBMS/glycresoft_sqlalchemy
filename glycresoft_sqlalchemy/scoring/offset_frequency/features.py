@@ -6,6 +6,7 @@ from .peak_relations import (
     MassOffsetFeature,
     feature_function_estimator, FittedFeature)
 from .utils import chain_iterable
+from glypy import MonosaccharideResidue, monosaccharides
 from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2 import residue_counter
 
 logger = logging.getLogger("offset_frequency")
@@ -25,7 +26,7 @@ def get_link_features(database_path, hypothesis_id, score_threshold=0.7):
     counts = job.start()
     link_features = []
     for building_block in counts:
-        f = MassOffsetFeature(building_block.neutral_mass, name=repr(building_block))
+        f = MassOffsetFeature(building_block.neutral_mass, name=repr(building_block), feature_type='link')
         link_features.append(f)
     return link_features
 
@@ -62,12 +63,22 @@ def specialize_features(fitted_features):
 
 
 shifts = [
-    MassOffsetFeature(-composition.Composition("NH3").mass, name='Neutral-Loss-Ammonia', tolerance=2e-5),
-    MassOffsetFeature(-composition.Composition("H2O").mass, name='Neutral-Loss-Water', tolerance=2e-5),
-    MassOffsetFeature(0.0, name="Charge-Increased Species", from_charge=1, to_charge=2, tolerance=2e-5),
-    MassOffsetFeature(0.0, name="Charge-Decreased Species", from_charge=2, to_charge=1, tolerance=2e-5),
+    MassOffsetFeature(
+        -composition.Composition("NH3").mass, name='Neutral-Loss-Ammonia',
+        tolerance=2e-5, feature_type='neutral_loss'),
+    MassOffsetFeature(
+        -composition.Composition("H2O").mass, name='Neutral-Loss-Water',
+        tolerance=2e-5, feature_type='neutral_loss'),
+    MassOffsetFeature(
+        0.0, name="Charge-Increased Species", from_charge=1,
+        to_charge=2, tolerance=2e-5, feature_type='support_relation'),
+    MassOffsetFeature(
+        0.0, name="Charge-Decreased Species", from_charge=2,
+        to_charge=1, tolerance=2e-5, feature_type='support_relation'),
 ]
 
-shifts += [
-    MassOffsetFeature(v, name=k, tolerance=2e-5) for k, v in modification.NGlycanCoreGlycosylation().losses()
-]
+for monosacch_name in ['Hex', 'HexNAc', 'Fuc', 'NeuAc']:
+    m = MonosaccharideResidue.from_monosaccharide(monosaccharides[monosacch_name])
+    shifts.append(
+        MassOffsetFeature(
+            m.mass(), name=monosacch_name, tolerance=2e-5, feature_type='glycosylation'))

@@ -46,7 +46,7 @@ cdef class PeakRelation(object):
         self.kind = d["kind"]
 
     def __reduce__(self):
-        return PeakRelation__new__, (PeakRelation,), self.__getstate__()
+        return PeakRelation, (self.from_peak, self.to_peak, self.feature, self.intensity_ratio, self.kind)
 
 
 cdef object PeakRelation__new__ = PeakRelation.__new__

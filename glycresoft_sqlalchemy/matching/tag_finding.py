@@ -129,10 +129,35 @@ def delta_peak_list(peak_list):
     return deltas
 
 
+class FeatureOffsetBuildingBlockAdapter(object):
+    def __init__(self, feature):
+        self.neutral_mass = feature.offset
+        self.symbol = "F(%s)" % str(feature)
+        self.feature = feature
+
+    def __hash__(self):
+        return hash(self.symbol)
+
+    def __eq__(self, other):
+        if hasattr(other, 'symbol'):
+            return self.symbol == other.symbol
+        else:
+            return self.symbol == other
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __repr__(self):
+        return self.symbol
+
+
 class SequencePath(object):
     def __init__(self, peaks, sequence_=None):
         self.peaks = peaks
-        self.sequence = Sequence(sequence_)
+        try:
+            self.sequence = Sequence(sequence_)
+        except:
+            self.sequence = sequence_
         self.weight = 0.
         for peak in peaks:
             self.weight += peak.intensity

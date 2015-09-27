@@ -2,10 +2,6 @@
 Deprecated Simplisitic Glycan Implementation
 '''
 
-import re
-
-from collections import OrderedDict
-from .composition import Composition
 from .modification import AnonymousModificationRule
 import glypy
 
@@ -18,7 +14,7 @@ oxonium_ions = {
     "Hex": 163.0601,
     "HexHexNAc": 366.1394,
     "NeuAc": 292.1026,
-    "Neu5Ac-H2O": 274.0920,
+    "NeuAc-H2O": 274.0920,
 }
 
 

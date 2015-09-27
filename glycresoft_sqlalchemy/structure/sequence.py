@@ -148,7 +148,7 @@ class Sequence(PeptideSequenceBase):
             except ValueError:
                 if i == 0:
                     n_term = pos
-                elif next_pos == StopIteration:
+                elif next_pos is peekable.sentinel:
                     c_term = pos
                 else:
                     raise

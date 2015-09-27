@@ -4,8 +4,7 @@ from .sequence import Sequence
 from .glycans import oxonium_ions
 import re
 
-Deamidation = 0.9840099999999978
-Carbamidomethyl = 57.0214
+
 Proton = 1.007276035
 HexNAc = 203.07937
 Hex = 162.05282

@@ -723,8 +723,8 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __pyx_v_self-&gt;kind = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 </pre><pre class='cython line score-0'>&#xA0;047: </pre>
-<pre class='cython line score-6' onclick='toggleDiv(this)'>+048:     <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></pre>
-<pre class='cython code score-6'>/* Python wrapper */
+<pre class='cython line score-4' onclick='toggleDiv(this)'>+048:     <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></pre>
+<pre class='cython code score-4'>/* Python wrapper */
 static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation_9__reduce__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
 static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation_9__reduce__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
@@ -746,8 +746,6 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_2);
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_c_api'>__Pyx_AddTraceback</span>("glycresoft_sqlalchemy.scoring.offset_frequency.cpeak_relations.PeakRelation.__reduce__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -755,46 +753,37 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return __pyx_r;
 }
-</pre><pre class='cython line score-35' onclick='toggleDiv(this)'>+049:         <span class="k">return</span> <span class="n">PeakRelation__new__</span><span class="p">,</span> <span class="p">(</span><span class="n">PeakRelation</span><span class="p">,),</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getstate__</span><span class="p">()</span></pre>
-<pre class='cython code score-35'>  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_r);
-  __pyx_t_1 = <span class='py_c_api'>PyTuple_New</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
+</pre><pre class='cython line score-28' onclick='toggleDiv(this)'>+049:         <span class="k">return</span> <span class="n">PeakRelation</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">from_peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity_ratio</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">)</span></pre>
+<pre class='cython code score-28'>  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_r);
+  __pyx_t_1 = <span class='py_c_api'>PyFloat_FromDouble</span>(__pyx_v_self-&gt;intensity_ratio);<span class='error_goto'> if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
+  __pyx_t_2 = <span class='py_c_api'>PyTuple_New</span>(5);<span class='error_goto'> if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  <span class='pyx_macro_api'>__Pyx_INCREF</span>(((PyObject *)__pyx_v_self-&gt;from_peak));
+  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 0, ((PyObject *)__pyx_v_self-&gt;from_peak));
+  <span class='refnanny'>__Pyx_GIVEREF</span>(((PyObject *)__pyx_v_self-&gt;from_peak));
+  <span class='pyx_macro_api'>__Pyx_INCREF</span>(((PyObject *)__pyx_v_self-&gt;to_peak));
+  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 1, ((PyObject *)__pyx_v_self-&gt;to_peak));
+  <span class='refnanny'>__Pyx_GIVEREF</span>(((PyObject *)__pyx_v_self-&gt;to_peak));
+  <span class='pyx_macro_api'>__Pyx_INCREF</span>(((PyObject *)__pyx_v_self-&gt;feature));
+  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 2, ((PyObject *)__pyx_v_self-&gt;feature));
+  <span class='refnanny'>__Pyx_GIVEREF</span>(((PyObject *)__pyx_v_self-&gt;feature));
+  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 3, __pyx_t_1);
+  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_1);
+  <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_v_self-&gt;kind);
+  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 4, __pyx_v_self-&gt;kind);
+  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_v_self-&gt;kind);
+  __pyx_t_1 = 0;
+  __pyx_t_1 = <span class='py_c_api'>PyTuple_New</span>(2);<span class='error_goto'> if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
   <span class='pyx_macro_api'>__Pyx_INCREF</span>(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation)));
   <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_1, 0, ((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation)));
   <span class='refnanny'>__Pyx_GIVEREF</span>(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation)));
-  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(((PyObject *)__pyx_v_self), __pyx_n_s_getstate);<span class='error_goto'> if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  __pyx_t_4 = NULL;
-  if (CYTHON_COMPILING_IN_CPYTHON &amp;&amp; likely(<span class='py_c_api'>PyMethod_Check</span>(__pyx_t_3))) {
-    __pyx_t_4 = <span class='py_macro_api'>PyMethod_GET_SELF</span>(__pyx_t_3);
-    if (likely(__pyx_t_4)) {
-      PyObject* function = <span class='py_macro_api'>PyMethod_GET_FUNCTION</span>(__pyx_t_3);
-      <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_t_4);
-      <span class='pyx_macro_api'>__Pyx_INCREF</span>(function);
-      <span class='pyx_macro_api'>__Pyx_DECREF_SET</span>(__pyx_t_3, function);
-    }
-  }
-  if (__pyx_t_4) {
-    __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyObject_CallOneArg</span>(__pyx_t_3, __pyx_t_4);<span class='error_goto'> if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
-    <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-  } else {
-    __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyObject_CallNoArg</span>(__pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
-  }
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = <span class='py_c_api'>PyTuple_New</span>(3);<span class='error_goto'> if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation__new__);
-  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_3, 0, __pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation__new__);
-  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation__new__);
-  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_3, 1, __pyx_t_1);
-  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_1);
-  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_3, 2, __pyx_t_2);
+  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_1, 1, __pyx_t_2);
   <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_2);
-  __pyx_t_1 = 0;
   __pyx_t_2 = 0;
-  __pyx_r = __pyx_t_3;
-  __pyx_t_3 = 0;
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
   goto __pyx_L0;
 </pre><pre class='cython line score-0'>&#xA0;050: </pre>
 <pre class='cython line score-0'>&#xA0;051: </pre>

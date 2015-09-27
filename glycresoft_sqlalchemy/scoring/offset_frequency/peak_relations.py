@@ -10,12 +10,85 @@ from .utils import (
     intensity_rank, search_spectrum)
 
 
+from glycresoft_sqlalchemy.utils.memoize import memoize
+from glycresoft_sqlalchemy.structure.sequence import (
+    Sequence, fragment_shift, Fragment, Composition,
+    structure_constants)
+
+
 # Lacking a reasonable definition of the "space between fragmentation sites"
 SMALLEST_UNIT = 1000 * 2e-5
 
 
 def preprocess_glycopeptide_spectrum_match(gsms):
     return map(MatchedSpectrum, gsms)
+
+
+def _delta_series(sequence, mass_shift=0.0, step=1):
+    sequence = Sequence(sequence)
+
+    # The set of modification names.
+    mod_dict = {}
+
+    # The key is the position, the value is an array of fragments.
+    # And the first element is always bare fragment.
+    # The total number of HexNAc on the fragment should be recorded.
+
+    sequence = sequence[::step]
+
+    current_mass = 0
+    for idx in range(len(sequence) - 1):
+        for mod in sequence[idx][1]:
+            mod_serial = mod.serialize()
+            if mod_serial in mod_dict:
+                mod_dict[mod_serial] += 1
+            else:
+                mod_dict[mod_serial] = 1
+
+        if idx == 0:
+            current_mass = sequence[0][0].mass + mass_shift
+        else:
+            current_mass = current_mass + sequence[idx][0].mass
+
+        frag_dri = []
+        # If incremental loss of HexNAc is not allowed, only one fragment of a given type is generated
+        if not structure_constants.PARTIAL_HEXNAC_LOSS:
+            frag = Fragment(str(mass_shift), idx + structure_constants.FRAG_OFFSET, (mod_dict).copy(), current_mass)
+            frag_dri.append(frag)
+            bare_dict = (mod_dict).copy()
+            bare_dict["HexNAc"] = 0
+            frag = Fragment(str(mass_shift), idx + structure_constants.FRAG_OFFSET, (bare_dict).copy(), current_mass)
+            frag_dri.append(frag)
+        # Else a fragment for each incremental loss of HexNAc must be generated
+        else:
+            frag = Fragment(str(mass_shift), idx + structure_constants.FRAG_OFFSET, (mod_dict).copy(), current_mass)
+            frag_dri.extend(frag.partial_loss())
+        yield frag_dri
+
+
+def delta_finder(gsms, delta, step=1):
+    total_sites = 0
+    total_explained = 0
+
+    total_sparsity = 0
+    total_unexplained = 0
+    proton = Composition("H+").mass
+    for gsm in gsms:
+        fragments = list(collectiontools.flatten(_delta_series(gsm.glycopeptide_sequence, delta, step)))
+        n_frag_sites = len(fragments)
+        peak_list = list(gsm)
+        match_count = 0
+        for fragment in fragments:
+            for peak in gsm:
+                if abs(ppm_error(fragment.mass - proton, peak.neutral_mass)) <= 2e-5:
+                    match_count += 1
+
+        total_explained += match_count
+        total_sites += n_frag_sites
+        total_unexplained += len(peak_list) - match_count
+        total_sparsity += mass_accuracy_sparsity(gsm.glycopeptide_sequence, 'b') - n_frag_sites
+
+    return total_explained / float(total_sites), total_unexplained / float(total_sparsity)
 
 
 # BEGIN REFERENCE Estimation
@@ -43,7 +116,7 @@ def unknown_peak_rate(gsms, kind='b'):
         kind_explained = sum([1 for i in chain_iterable(gsm.peak_match_map.values()) if i['key'][0] == kind])
         peaks_unexplained = gsm.peaks_unexplained + (gsm.peaks_explained - kind_explained)
         total_unexplained += peaks_unexplained
-        total_sparsity += estimate_fragment_sparsity(sequence, kind) - n_frag_sites
+        total_sparsity += mass_accuracy_sparsity(sequence, kind) - n_frag_sites
 
     return total_unexplained / float(total_sparsity)
 
@@ -58,7 +131,7 @@ def prior_fragment_probability(gsms, kind='b'):
     hits = 0
     for gsm in gsms:
         sequence = Sequence(gsm.glycopeptide_sequence)
-        random_mass = np.random.uniform(0, sequence.mass)
+        random_mass = np.random.uniform(56., sequence.mass)
         for fragment in collectiontools.flatten(sequence.get_fragments(kind)):
             if abs(ppm_error(fragment.mass, random_mass)) <= 2e-5:
                 hits += 1
@@ -73,12 +146,30 @@ def estimate_fragment_sparsity(sequence, kind='b'):
     return Sequence(sequence).mass / SMALLEST_UNIT
 
 
+def mass_accuracy_sparsity(sequence, kind='b', tolerance=2e-5):
+    mass_space, fragment_space = mass_dimensions(sequence, kind, tolerance)
+    return mass_space - fragment_space
+
+
+@memoize(200)
+def mass_dimensions(sequence, kind='b', tolerance=2e-5):
+    sequence = Sequence(sequence)
+    mass_space = sequence.mass
+    fragment_space = 0.
+    for frag in chain_iterable(sequence.get_fragments(kind)):
+        radius = tolerance * frag.mass
+        fragment_space += 2 * radius
+    return mass_space, fragment_space
+
+
 def estimate_offset_parameters(gsms, kind='b'):
+
     total_sites = 0
     total_explained = 0
     total_sparsity = 0
     total_unexplained = 0
-    random_hits = 0
+    mass_space_area = 0
+    fragment_space_area = 0
 
     i = 0.
     for gsm in gsms:
@@ -96,18 +187,15 @@ def estimate_offset_parameters(gsms, kind='b'):
         total_unexplained += peaks_unexplained
         total_sparsity += estimate_fragment_sparsity(sequence, kind) - n_frag_sites
 
-        random_mass = np.random.uniform(56., sequence.mass + 38.)
+        s, f = mass_dimensions(gsm.glycopeptide_sequence, kind=kind)
+        mass_space_area += s
+        fragment_space_area += f
 
-        for fragment in fragments:
-            if abs(ppm_error(fragment.mass, random_mass)) <= (2e-5):
-                random_hits += 1
-            elif fragment.mass - (random_mass + 230.) > 0:
-                break
         i += 1
 
     alpha = total_explained / float(total_sites)
     beta = total_unexplained / float(total_sparsity)
-    prior_fragment_probability = max(random_hits / i, 0.0001)
+    prior_fragment_probability = fragment_space_area / mass_space_area
     return alpha, beta, prior_fragment_probability
 
 
@@ -117,8 +205,22 @@ def probability_of_peak_explained(offset_frequency, unknown_peak_rate, prior_fra
     return a / (a + b)
 
 
-def make_offset_function(offset=.0, tolerance=2e-5, name=None):
-    return MassOffsetFeature(offset=offset, tolerance=tolerance, name=name)
+def fragmentation_probability(peak, probability_of_fragment, features):
+    probability_of_noise = 1 - probability_of_fragment
+    numer = 1
+    denom = 1
+    if len(features) == 0:
+        return probability_of_fragment
+    for feature in features:
+        match = probability_of_fragment * feature.on_kind
+        total = match + (probability_of_noise * feature.off_kind)
+        numer *= match
+        denom *= total
+    return numer / denom
+
+
+def make_offset_function(offset=.0, tolerance=2e-5, name=None, **kwargs):
+    return MassOffsetFeature(offset=offset, tolerance=tolerance, name=name, **kwargs)
 
 
 class PeakRelation(object):

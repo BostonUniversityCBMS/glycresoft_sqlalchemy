@@ -1,6 +1,6 @@
 import sys
 from setuptools import setup, find_packages, Extension
-
+import traceback
 # With gratitude to the SqlAlchemy setup.py authors
 
 from distutils.command.build_ext import build_ext
@@ -23,7 +23,9 @@ extensions = [
     Extension("glycresoft_sqlalchemy.structure.composition.ccomposition",
               ["glycresoft_sqlalchemy/structure/composition/ccomposition." + c_ext]),
     Extension("glycresoft_sqlalchemy.utils.ccommon_math",
-              ["glycresoft_sqlalchemy/utils/ccommon_math." + c_ext]),
+              ["glycresoft_sqlalchemy/utils/ccommon_math." + c_ext],
+              # extra_compile_args=['/openmp']
+              ),
     Extension("glycresoft_sqlalchemy.scoring.offset_frequency.cpeak_relations",
               ["glycresoft_sqlalchemy/scoring/offset_frequency/cpeak_relations." + c_ext])
 ]
@@ -50,15 +52,18 @@ class ve_build_ext(build_ext):
         try:
             build_ext.run(self)
         except DistutilsPlatformError:
+            traceback.print_exc()
             raise BuildFailed()
 
     def build_extension(self, ext):
         try:
             build_ext.build_extension(self, ext)
         except ext_errors:
+            traceback.print_exc()
             raise BuildFailed()
         except ValueError:
             # this can happen on Windows 64 bit, see Python issue 7511
+            traceback.print_exc()
             if "'path'" in str(sys.exc_info()[1]):  # works with both py 2/3
                 raise BuildFailed()
             raise

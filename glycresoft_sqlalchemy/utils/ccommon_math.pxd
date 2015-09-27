@@ -4,7 +4,7 @@ cpdef float ppm_error(float x, float y)
 cpdef object tol_ppm_error(float x, float y, float tolerance)
 
 
-cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2)
+cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2) nogil
 
 cdef int intensity_ratio_function(DPeak peak1, DPeak peak2)
 
@@ -19,6 +19,7 @@ cdef class MassOffsetFeature(object):
         public int intensity_ratio
         public int from_charge
         public int to_charge
+        public str feature_type
 
     cdef bint test(self, DPeak peak1, DPeak peak2)
 
@@ -39,8 +40,6 @@ cdef class DPeak(object):
 
         cdef PeakStruct* as_struct(self)
 
-cpdef DPeak DPeak_from_values(cls, float neutral_mass)
-
 
 cdef public struct PeakStruct:
     float neutral_mass
@@ -58,6 +57,14 @@ cdef public struct MSFeatureStruct:
     int intensity_ratio
     int from_charge
     int to_charge
+    char* feature_type
+
+
+cdef public struct FragmentMatchStruct:
+    float observed_mass
+    float intensity
+    char* key
+    long peak_id
 
 
 cdef public struct PeakStructArray:

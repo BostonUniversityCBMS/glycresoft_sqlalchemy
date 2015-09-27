@@ -33,7 +33,7 @@ from ..spectra.spectrum_model import mass_charge_ratio
 mz_getter = operator.attrgetter("mass_charge_ratio")
 
 
-def plot_scan(scan, ax=None, logscale=False, color='black', **kwargs):
+def plot_scan(scan, ax=None, logscale=False, color='black', labels=None, **kwargs):
     peaks = list(scan)
     if peaks[0].charge is not None:
         for p in peaks:
@@ -55,6 +55,15 @@ def plot_scan(scan, ax=None, logscale=False, color='black', **kwargs):
     kwargs.setdefault("width", 0.1)
     kwargs.setdefault("edgecolor", color)
     ax.bar(mzs, intensities, **kwargs)
+
+    if labels is not None:
+        for p in peaks:
+            if p.id in labels:
+                label = labels[p.id]
+                x = p.mass_charge_ratio - 75
+                y = p.intensity + 700
+                ax.text(x=x, y=y, s=label + " (+%d)" % p.charge, color=color)
+
     return ax
 
 
