@@ -9,6 +9,7 @@ cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, Peak
 cdef int intensity_ratio_function(DPeak peak1, DPeak peak2)
 
 cdef void intensity_rank(list peak_list, float minimum_intensity=*)
+cdef void _intensity_rank(PeakStructArray* peak_list, float minimum_intensity=*) nogil
 
 
 cdef class MassOffsetFeature(object):
@@ -76,6 +77,11 @@ cdef public struct MSFeatureStructArray:
     MSFeatureStruct* features
     Py_ssize_t size
 
+
+cdef public struct FragmentMatchStructArray:
+    FragmentMatchStruct* matches
+    size_t size
+
 cpdef list search_spectrum(DPeak peak, list peak_list, MassOffsetFeature feature)
 
 
@@ -91,3 +97,31 @@ cdef class MatchedSpectrum(object):
         public int id
 
     cpdef set peak_explained_by(self, object peak_id)
+
+
+cdef public struct MatchedSpectrumStruct:
+    FragmentMatchStructArray* peak_match_list
+    PeakStructArray* peak_list
+    char* glycopeptide_sequence
+    int scan_time
+    int peaks_explained
+    int peaks_unexplained
+    int id
+
+
+cdef public struct MatchedSpectrumStructArray:
+    MatchedSpectrumStruct* matches
+    size_t size
+
+
+cdef MatchedSpectrumStruct* unwrap_matched_spectrum(MatchedSpectrum ms)
+cdef MSFeatureStructArray* unwrap_feature_functions(list features)
+
+
+cdef FragmentMatchStructArray* matched_spectrum_struct_peak_explained_by(MatchedSpectrumStruct* ms, long peak_id) nogil
+
+cdef void sort_by_intensity(PeakStructArray* peak_list) nogil
+
+cdef int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2) nogil
+
+cdef PeakStructArray* _search_spectrum(PeakStruct* peak, PeakStructArray* peak_list, MSFeatureStruct* feature) nogil

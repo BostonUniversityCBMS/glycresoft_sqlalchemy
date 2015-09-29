@@ -352,7 +352,7 @@ class IonMatching(PipelineModule):
         cntr = 0
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
-            for res in pool.imap(task_fn, self.stream_theoretical_glycopeptides(500), 500):
+            for res in pool.imap(task_fn, self.stream_theoretical_glycopeptides(500)):
                 cntr += res
                 if cntr % 1000 == 0:
                     logger.info("%d Searches Complete." % cntr)

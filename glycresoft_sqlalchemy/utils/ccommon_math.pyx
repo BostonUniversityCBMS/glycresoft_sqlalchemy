@@ -2,12 +2,16 @@ from cpython.ref cimport PyObject
 from cpython.string cimport PyString_AsString
 from libc.stdlib cimport abort, malloc, free, realloc
 from libc.math cimport fabs
+from libc cimport *
+
+cdef extern from * nogil:
+    void qsort (void *base, unsigned short n, unsigned short w, int (*cmp_func)(void*, void*))
 
 from cython.parallel cimport parallel, prange # openmp must be enabled at compile time
 
 from cpython.int cimport PyInt_AsLong
 from cpython.float cimport PyFloat_AsDouble
-from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
+from cpython.dict cimport PyDict_GetItem, PyDict_SetItem, PyDict_Values
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_Append
 
 import operator
@@ -92,9 +96,12 @@ cdef MSFeatureStructArray* unwrap_feature_functions(list features):
         MassOffsetFeature pfeature
         size_t i, j
     j = PyList_GET_SIZE(features)
-    ms_features = <MSFeatureStructArray*>malloc(sizeof(MSFeatureStructArray) * j)
+    ms_features = <MSFeatureStructArray*>malloc(sizeof(MSFeatureStructArray))
+    ms_features.features = <MSFeatureStruct*>malloc(sizeof(MSFeatureStruct) * j)
     for i in range(j):
+        print i
         pfeature = <MassOffsetFeature>PyList_GET_ITEM(features, i)
+        print pfeature
         cfeature = ms_features.features[i]
         cfeature.offset = pfeature.offset
         cfeature.intensity_ratio = pfeature.intensity_ratio
@@ -131,7 +138,7 @@ cdef PeakStructArray* unwrap_peak_list(list py_peaks):
     return peaks
 
 
-cdef inline int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2) nogil:
+cdef int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2) nogil:
     cdef float ratio
     ratio = peak1.intensity / (peak2.intensity)
     if ratio >= 5:
@@ -215,6 +222,37 @@ cdef PeakStructArray* _openmp_search_spectrum(PeakStruct* peak, PeakStructArray*
     matches.peaks = <PeakStruct*>realloc(&matches.peaks, sizeof(PeakStruct) * j)
     matches.size = j
     return matches
+
+
+cdef void _intensity_rank(PeakStructArray* peak_list, float minimum_intensity=100.) nogil:
+    cdef:
+        size_t i
+        int step, rank, tailing
+        PeakStruct p
+    sort_by_intensity(peak_list)
+    step = 0
+    rank = 10
+    tailing = 6
+    for i in range(peak_list.size):
+        p = peak_list.peaks[i]
+        if p.intensity < minimum_intensity:
+            p.rank = 0
+            continue
+        step += 1
+        if step == 10 and rank != 0:
+            if rank == 1:
+                if tailing != 0:
+                    step = 0
+                    tailing -= 1
+                else:
+                    step = 0
+                    rank -= 1
+            else:
+                step = 0
+                rank -= 1
+        if rank == 0:
+            break
+        p.rank = rank
 
 
 cdef int intensity_ratio_function(DPeak peak1, DPeak peak2):
@@ -517,3 +555,82 @@ cdef class MatchedSpectrum(object):
             self.glycopeptide_sequence, self.scan_time, self.peaks_explained,
             self.peaks_unexplained)
         return temp
+
+
+cdef MatchedSpectrumStruct* unwrap_matched_spectrum(MatchedSpectrum ms):
+    cdef:
+        FragmentMatchStructArray* frag_matches
+        FragmentMatchStruct* current_match
+        MatchedSpectrumStruct* ms_struct
+        size_t i, j, total
+        list matches_list, peak_match_list
+        dict frag_dict
+
+    ms_struct = <MatchedSpectrumStruct*>malloc(sizeof(MatchedSpectrumStruct))
+    ms_struct.peak_list = unwrap_peak_list(ms.peak_list)
+    ms_struct.scan_time = ms.scan_time
+    ms_struct.peaks_explained = ms.peaks_explained
+    ms_struct.peaks_unexplained = ms.peaks_unexplained
+    ms_struct.id = ms.id
+    ms_struct.glycopeptide_sequence = PyString_AsString(ms.glycopeptide_sequence)
+
+    total = 0
+    matches_list = PyDict_Values(ms.peak_match_map)
+    for i in range(PyList_GET_SIZE(matches_list)):
+        peak_match_list = <list>PyList_GET_ITEM(matches_list, i)
+        for j in range(PyList_GET_SIZE(peak_match_list)):
+            total += 1
+
+    frag_matches = <FragmentMatchStructArray*>malloc(sizeof(FragmentMatchStructArray))
+    frag_matches.size = (total)
+    frag_matches.matches = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct) * total)
+
+    total = 0
+    for i in range(PyList_GET_SIZE(matches_list)):
+        peak_match_list = <list>PyList_GET_ITEM(matches_list, i)
+        for j in range(PyList_GET_SIZE(peak_match_list)):
+            current_match = &frag_matches.matches[total]
+            frag_dict = <dict>PyList_GET_ITEM(peak_match_list, j)
+            current_match.observed_mass = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "observed_mass"))
+            current_match.intensity = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "intensity"))
+            current_match.key = PyString_AsString(<str>PyDict_GetItem(frag_dict, "key"))
+            current_match.peak_id = PyInt_AsLong(<object>PyDict_GetItem(frag_dict, "peak_id"))
+            total += 1
+    ms_struct.peak_match_list = frag_matches
+    return ms_struct
+
+
+cdef FragmentMatchStructArray* matched_spectrum_struct_peak_explained_by(MatchedSpectrumStruct* ms, long peak_id) nogil:
+    cdef:
+        size_t i, j
+        FragmentMatchStruct current
+        FragmentMatchStructArray* results
+
+    results = <FragmentMatchStructArray*>malloc(sizeof(FragmentMatchStructArray))
+    results.size = 10
+    results.matches = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct) * 10)
+    j = 0
+
+    for i in range(ms.peak_match_list.size):
+        current = ms.peak_match_list.matches[i]
+        if current.peak_id == peak_id:
+            results.matches[j] = current
+            j += 1
+            if j == 10:
+                break
+
+    results.size = j
+    return results
+
+
+cdef void sort_by_intensity(PeakStructArray* peak_list) nogil:
+    qsort(peak_list.peaks, peak_list.size, sizeof(PeakStruct), compare_by_intensity)
+
+
+cdef int compare_by_intensity(const void * a, const void * b) nogil:
+    if (<PeakStruct*>a).intensity < (<PeakStruct*>b).intensity:
+        return -1
+    elif (<PeakStruct*>a).intensity == (<PeakStruct*>b).intensity:
+        return 0
+    elif (<PeakStruct*>a).intensity > (<PeakStruct*>b).intensity:
+        return 1

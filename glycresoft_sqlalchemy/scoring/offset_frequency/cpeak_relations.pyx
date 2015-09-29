@@ -1,12 +1,22 @@
 from cpython.sequence cimport PySequence_ITEM
+from cpython.string cimport PyString_AsString
 from cpython.ref cimport PyObject
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
 from cpython.list cimport PyList_GET_ITEM, PyList_Append, PyList_GET_SIZE
 from cpython.object cimport PyObject_CallFunctionObjArgs
 
+from libc.stdlib cimport malloc, free, realloc
+
+
 from glycresoft_sqlalchemy.utils.ccommon_math cimport (
     DPeak, MassOffsetFeature, ppm_error, intensity_rank,
-    intensity_ratio_function, search_spectrum, MatchedSpectrum)
+    intensity_ratio_function, search_spectrum, MatchedSpectrum,
+    MatchedSpectrumStruct, matched_spectrum_struct_peak_explained_by,
+    _intensity_rank, _search_spectrum, MatchedSpectrumStructArray,
+    MatchedSpectrumStruct, _intensity_ratio_function, unwrap_matched_spectrum,
+    FragmentMatchStructArray, FragmentMatchStruct, PeakStructArray, unwrap_feature_functions,
+    MSFeatureStructArray
+    )
 
 
 cdef class PeakRelation(object):
@@ -170,3 +180,177 @@ cpdef tuple feature_function_estimator(list gsms, MassOffsetFeature feature_func
     total_off_kind_satisfied_normalized = total_off_kind_satisfied / <float>(max(total_off_kind, 1))
 
     return total_on_kind_satisfied_normalized, total_off_kind_satisfied_normalized, peak_relations
+
+
+cdef inline void make_peak_relation_struct(PeakStruct* from_peak, PeakStruct* to_peak, 
+                                           MSFeatureStruct* feature, float intensity_ratio,
+                                           char* kind, PeakRelationStruct* out) nogil:
+    out.from_peak = from_peak
+    out.to_peak = to_peak
+    out.feature = feature
+    out.intensity_ratio = intensity_ratio
+    out.kind = kind
+
+
+cdef inline void free_peak_relations_array(PeakRelationStructArray* relations) nogil:
+    free(relations.relations)
+    free(relations)
+
+
+cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray* gsms, MSFeatureStruct* feature, char* kind):
+    cdef:
+        double total_on_kind_satisfied
+        double total_off_kind_satisfied
+        double total_on_kind_satisfied_normalized
+        double total_off_kind_satisfied_normalized
+        double temp
+        double total_on_kind
+        double total_off_kind
+        int relation_count, peak_count
+        bint is_on_kind
+        size_t i, j, k, relations_counter, features_found_counter
+        PeakStruct peak
+        PeakStruct match
+        PeakStruct stack_peak
+        PeakRelationStructArray* related
+        RelationSpectrumPairArray* peak_relations
+        PeakStructArray* peaks
+        PeakStructArray* matches
+        PeakStruct* _peaks
+        PeakRelationStruct* pr
+        MatchedSpectrumStruct* gsm
+        FragmentMatchStructArray* peak_explained_by_list
+        FittedFeatureStruct* result
+
+    total_on_kind_satisfied = 0
+    total_off_kind_satisfied = 0
+    total_on_kind = 0
+    total_off_kind = 0
+    features_found_counter = 0
+
+    peak_relations = <RelationSpectrumPairArray*>malloc(sizeof(RelationSpectrumPairArray))
+    peak_relations.pairs = <RelationSpectrumPair*>malloc(sizeof(RelationSpectrumPair) * gsms.size)
+    peak_relations.size = gsms.size
+
+    for i in range(gsms.size):
+        print "On GSM", i
+        gsm = &gsms.matches[i]
+        peaks = gsm.peak_list
+        _intensity_rank(peaks)
+        peak_count = 0
+        print "Filtering Peaks"
+        _peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peaks.size)
+        for j in range(peaks.size):
+            stack_peak = peaks.peaks[j]
+            if stack_peak.rank > 0:
+                _peaks[peak_count] = stack_peak
+                peak_count += 1
+        print "Freed leftover peaks"
+        free(peaks.peaks)
+        peaks.peaks = _peaks
+        peaks.size = peak_count
+
+        # Pre-allocate space for a handful of relations assuming that there won't
+        # be many per spectrum
+        print "Allocating PeakRelationStructs"
+        j = peaks.size / 5
+        related = <PeakRelationStructArray*>malloc(sizeof(PeakRelationStructArray))
+        related.relations = <PeakRelationStruct*>malloc(sizeof(PeakRelationStruct) * j)
+        related.size = j
+
+        # Search all peaks against all other peaks using the given feature
+        for j in range(peaks.size):
+            print "On Peak", j
+            peak = peaks.peaks[j]
+
+            # Determine if peak has been identified as on-kind or off-kind
+            peak_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, peak.id)
+            is_on_kind = False
+            for k in range(peak_explained_by_list.size):
+                print "Explained Ion", k
+                if peak_explained_by_list.matches[k].key[0] == kind[0]:
+                    is_on_kind = True
+                    break
+            print "Freeing list"
+            free(peak_explained_by_list)
+
+            # Perform search
+            print "Performing matching"
+            matches = _search_spectrum(&peak, peaks, feature)
+            relations_counter = 0
+            # For each match, construct a PeakRelationStruct and save it to `related`
+            for k in range(matches.size):
+                match = matches.peaks[k]
+                print "On match", k, related.size
+                # Make sure not to overflow `related.relations`. Should be rare because of pre-allocation
+                if relations_counter == related.size:
+                    related.relations = <PeakRelationStruct*>realloc(related.relations, related.size * 2)
+                    related.size = related.size * 2
+                make_peak_relation_struct(
+                    &peak, &match, feature, _intensity_ratio_function(&peak, &match),
+                    NULL, &related.relations[relations_counter])
+                if is_on_kind:
+                    total_on_kind_satisfied += 1
+                    related.relations[relations_counter].kind = kind
+                else:
+                    total_off_kind_satisfied += 1
+                    related.relations[relations_counter].kind = "Noise"
+
+                # Increment counter
+                relations_counter += 1
+
+            related.relations = <PeakRelationStruct*>realloc(related.relations, relations_counter)
+            related.size = relations_counter
+            if is_on_kind:
+                total_on_kind += 1
+            else:
+                total_off_kind += 1
+            # Save results or free un-needed memory
+            if relations_counter > 0:
+                peak_relations.pairs[features_found_counter].matched_spectrum = gsm
+                peak_relations.pairs[features_found_counter].relations = related
+            else:
+                free_peak_relations_array(related)
+
+    # Ensure no division by zero
+    total_on_kind = total_on_kind if total_on_kind > 0 else 1.0
+    total_off_kind = total_off_kind if total_off_kind > 0 else 1.0
+
+    # Compute feature parameters
+    total_on_kind_satisfied_normalized = total_on_kind_satisfied / total_on_kind
+    total_off_kind_satisfied_normalized = total_off_kind_satisfied / total_off_kind
+
+
+    result = <FittedFeatureStruct*>malloc(sizeof(FittedFeatureStruct))
+
+    result.on_kind = total_on_kind_satisfied_normalized
+    result.off_kind = total_off_kind_satisfied_normalized
+    result.relation_pairs = peak_relations
+
+    return result
+
+def test_compiled(list gsms, MassOffsetFeature feature, str kind):
+    cdef:
+        size_t i
+        MatchedSpectrumStructArray* spectra
+        MSFeatureStruct cfeature
+        MSFeatureStructArray* cfeatures
+        char* ckind
+        FittedFeatureStruct* out
+    spectra = <MatchedSpectrumStructArray*>malloc(sizeof(MatchedSpectrumStructArray))
+    spectra.matches = <MatchedSpectrumStruct*>malloc(sizeof(MatchedSpectrumStruct) * len(gsms))
+    spectra.size = len(gsms)
+
+    print "Unwrapping gsms"
+    for i in range(spectra.size):
+        spectra.matches[i] = unwrap_matched_spectrum(gsms[i])[0]
+
+    print "Unwrapping feature"
+    cfeatures = unwrap_feature_functions([feature])
+    print "1"
+    cfeature = cfeatures.features[0]
+    print "Unwrapping kind"
+    ckind = PyString_AsString(kind)
+    print ckind
+    out = _feature_function_estimator(spectra, &cfeature, ckind)
+
