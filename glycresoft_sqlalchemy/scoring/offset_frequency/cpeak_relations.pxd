@@ -14,7 +14,7 @@ cdef class PeakRelation(object):
         public MassOffsetFeature feature
         public bint same_terminal
 
-cdef struct PeakRelationStruct:
+cdef public struct PeakRelationStruct:
     PeakStruct* from_peak
     PeakStruct* to_peak
     int from_charge
@@ -43,5 +43,6 @@ cdef public struct FittedFeatureStruct:
     RelationSpectrumPairArray* relation_pairs
     double on_kind
     double off_kind
+    MSFeatureStruct* feature
     char* kind
-    
+

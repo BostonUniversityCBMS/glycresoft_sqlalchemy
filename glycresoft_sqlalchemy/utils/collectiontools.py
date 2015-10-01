@@ -51,7 +51,7 @@ class SqliteSet(object):
             yield pickle.loads(x)
 
     def __repr__(self):
-        return map(str, self.keys())
+        return map(str, self.store.keys())
 
 
 def _identity(i):

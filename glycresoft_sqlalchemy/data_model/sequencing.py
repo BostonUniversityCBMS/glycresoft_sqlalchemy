@@ -10,6 +10,7 @@ class SequenceBuildingBlock(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(120), index=True)
     mass = Column(Numeric(10, 6), index=True)
+    hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id"), index=True)
 
 
 class SequenceSegment(Base):
@@ -17,3 +18,4 @@ class SequenceSegment(Base):
     id = Column(Integer, primary_key=True)
     sequence = Column(Unicode(128))
     mass = Column(Numeric(12, 6), index=True)
+    count_n_glycosylation = Column(Integer)

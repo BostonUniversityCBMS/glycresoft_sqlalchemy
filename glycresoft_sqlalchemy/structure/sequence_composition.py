@@ -2,6 +2,7 @@ from glypy import MonosaccharideResidue
 from .residue import Residue as AminoAcidResidue
 from .composition import Composition
 from .modification import Modification
+from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet
 
 
 class AminoAcidSequenceBuildingBlock(object):
@@ -188,3 +189,23 @@ class SequenceComposition(dict):
 
     def __hash__(self):
         return hash(str(self))
+
+
+def all_compositions(blocks, count=20):
+    def extend_segment(base, blocks):
+        for block in blocks:
+            ext = base.clone()
+            ext[block] += 1
+            ext._mass = base.mass + block.neutral_mass
+            yield ext
+
+    candidates = [SequenceComposition()]
+    next_round = SqliteSet()
+    for i in range(count):
+        for candidate in candidates:
+            extents = (extend_segment(candidate, blocks))
+            for case in extents:
+                next_round.add(case)
+        candidates = next_round
+        next_round = SqliteSet()
+    return set(candidates)

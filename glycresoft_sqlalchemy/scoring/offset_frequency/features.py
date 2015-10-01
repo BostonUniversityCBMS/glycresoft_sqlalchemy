@@ -53,7 +53,7 @@ def specialize_features(fitted_features):
             charge_pairs, intensity_ratio = charge_pairs_intensity_ratio
             from_charge, to_charge = charge_pairs
             offset = feat.feature.offset
-            name = feat.feature.name + "_%d->%d_/%d" % (from_charge, to_charge, intensity_ratio)
+            name = feat.feature.name + " %d->%d / %d" % (from_charge, to_charge, intensity_ratio)
             f = MassOffsetFeature(
                 offset=offset, name=name, tolerance=2e-5,
                 from_charge=from_charge, to_charge=to_charge,
