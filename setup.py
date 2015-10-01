@@ -39,6 +39,9 @@ with_openmp = has_option('with-openmp')
 no_openmp = has_option('no-openmp')
 
 
+print with_openmp
+
+
 def configure_openmp(ext):
     # http://www.microsoft.com/en-us/download/confirmation.aspx?id=2092 was required.
     if os.name == 'nt' and with_openmp:

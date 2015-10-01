@@ -9,7 +9,7 @@ cimport cython
 cimport cython.parallel
 from cython.parallel cimport parallel, prange
 from cython.parallel import prange, threadid
-
+from openmp cimport omp_get_num_threads
 
 from libc.stdlib cimport malloc, free, realloc
 from libc cimport *
@@ -383,15 +383,77 @@ def test_compiled(list gsms, list features, str kind):
     n_p = cfeatures.size
     out = <FittedFeatureStruct*>malloc(sizeof(FittedFeatureStruct) * n_p)
     _preprocess_peak_lists(spectra)
-    print threadid()
+
+    print "begin parallel"
     with nogil, parallel(num_threads=10):
         for i_p in prange(n_p, schedule='guided'):
+            printf("Thread id %d\n", omp_get_num_threads())
             out[i_p] = _feature_function_estimator(spectra, &cfeatures.features[i_p], ckind, False)[0]
     print time() - start
     for i in range(n_p):
         ff = out[i]
         print ff.feature.name, ff.on_kind, ff.off_kind, ff.relation_pairs.size
     raw_input("<")
+    copy = list()
     for i in range(n_p):
+        copy.append(wrap_fitted_feature(&out[i]))
+        print copy[i][:2]
         free_fitted_feature(&out[i])
     free(out)
+    return copy
+
+
+cdef DPeak wrap_peak(PeakStruct* peak):
+    cdef DPeak dpeak = DPeak()
+    dpeak.neutral_mass = peak.neutral_mass
+    dpeak.charge = peak.charge
+    dpeak.intensity = peak.intensity
+    dpeak.rank = peak.rank
+    dpeak.id = peak.rank
+    return dpeak
+
+cdef MassOffsetFeature wrap_feature(MSFeatureStruct* feature):
+    cdef MassOffsetFeature pfeature
+    pfeature = MassOffsetFeature(
+        offset=feature.offset,
+        tolerance=feature.tolerance,
+        name=feature.name,
+        intensity_ratio=feature.intensity_ratio,
+        from_charge=feature.from_charge,
+        to_charge=feature.to_charge,
+        feature_type=feature.feature_type)
+    return pfeature
+
+cdef PeakRelation wrap_peak_relation(PeakRelationStruct* peak_relation, MassOffsetFeature feature):
+    cdef PeakRelation py_peak_relation
+    py_peak_relation = PeakRelation(
+        wrap_peak(peak_relation.from_peak),
+        wrap_peak(peak_relation.to_peak),
+        feature,
+        peak_relation.intensity_ratio,
+        peak_relation.kind)
+    return py_peak_relation
+
+cdef tuple wrap_spectrum_relation_pair(RelationSpectrumPair* pair, MassOffsetFeature feature):
+    cdef list relations = []
+    cdef size_t i
+    cdef PeakRelation pr
+
+    for i in range(pair.relations.size):
+        pr = wrap_peak_relation(&pair.relations.relations[i], feature)
+        relations.append(pr)
+    return (None, relations)
+
+cdef tuple wrap_fitted_feature(FittedFeatureStruct* feature):
+    cdef:
+        size_t i, j
+        MassOffsetFeature py_feature
+        PeakRelation py_pr
+        PeakRelationStruct pr
+        tuple relations
+        list pairs = []
+    py_feature = wrap_feature(feature.feature)
+    for i in range(feature.relation_pairs.size):
+        relations = wrap_spectrum_relation_pair(&feature.relation_pairs.pairs[i], py_feature)
+        pairs.append(relations)
+    return feature.on_kind, feature.off_kind, pairs
