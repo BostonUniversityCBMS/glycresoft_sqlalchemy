@@ -15,8 +15,8 @@ cdef class PeakRelation(object):
         public bint same_terminal
 
 cdef public struct PeakRelationStruct:
-    PeakStruct* from_peak
-    PeakStruct* to_peak
+    PeakStruct from_peak
+    PeakStruct to_peak
     int from_charge
     int to_charge
     float intensity_ratio

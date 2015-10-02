@@ -9,7 +9,7 @@ cimport cython
 cimport cython.parallel
 from cython.parallel cimport parallel, prange
 from cython.parallel import prange, threadid
-from openmp cimport omp_get_num_threads
+from openmp cimport omp_get_num_threads, omp_get_thread_num, omp_in_parallel
 
 from libc.stdlib cimport malloc, free, realloc
 from libc cimport *
@@ -279,8 +279,8 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
                     related.relations = <PeakRelationStruct*>realloc(related.relations, sizeof(PeakRelationStruct) * related.size * 2)
                     related.size = related.size * 2
 
-                related.relations[relations_counter].from_peak = &peak
-                related.relations[relations_counter].to_peak = &match
+                related.relations[relations_counter].from_peak = peak
+                related.relations[relations_counter].to_peak = match
                 related.relations[relations_counter].feature = feature
                 related.relations[relations_counter].intensity_ratio = _intensity_ratio_function(&peak, &match)
                 related.relations[relations_counter].kind = "?"
@@ -355,7 +355,7 @@ cdef void _preprocess_peak_lists(MatchedSpectrumStructArray* gsms) nogil:
         peaks.size = peak_count
 
 
-def test_compiled(list gsms, list features, str kind):
+def test_compiled(list gsms, list features, str kind, int n_threads=10):
     cdef:
         size_t i
         long n_p, i_p
@@ -385,10 +385,12 @@ def test_compiled(list gsms, list features, str kind):
     _preprocess_peak_lists(spectra)
 
     print "begin parallel"
-    with nogil, parallel(num_threads=10):
+    with nogil, parallel(num_threads=n_threads):
+
         for i_p in prange(n_p, schedule='guided'):
-            printf("Thread id %d\n", omp_get_num_threads())
+            printf("%d Thread id %d of %d -- %d\n", n_p, omp_get_thread_num(), omp_get_num_threads(), omp_in_parallel())
             out[i_p] = _feature_function_estimator(spectra, &cfeatures.features[i_p], ckind, False)[0]
+
     print time() - start
     for i in range(n_p):
         ff = out[i]
@@ -398,7 +400,7 @@ def test_compiled(list gsms, list features, str kind):
     for i in range(n_p):
         copy.append(wrap_fitted_feature(&out[i]))
         print copy[i][:2]
-        free_fitted_feature(&out[i])
+        # free_fitted_feature(&out[i])
     free(out)
     return copy
 
@@ -409,7 +411,7 @@ cdef DPeak wrap_peak(PeakStruct* peak):
     dpeak.charge = peak.charge
     dpeak.intensity = peak.intensity
     dpeak.rank = peak.rank
-    dpeak.id = peak.rank
+    dpeak.id = peak.id
     return dpeak
 
 cdef MassOffsetFeature wrap_feature(MSFeatureStruct* feature):
@@ -427,8 +429,8 @@ cdef MassOffsetFeature wrap_feature(MSFeatureStruct* feature):
 cdef PeakRelation wrap_peak_relation(PeakRelationStruct* peak_relation, MassOffsetFeature feature):
     cdef PeakRelation py_peak_relation
     py_peak_relation = PeakRelation(
-        wrap_peak(peak_relation.from_peak),
-        wrap_peak(peak_relation.to_peak),
+        wrap_peak(&(peak_relation.from_peak)),
+        wrap_peak(&(peak_relation.to_peak)),
         feature,
         peak_relation.intensity_ratio,
         peak_relation.kind)
