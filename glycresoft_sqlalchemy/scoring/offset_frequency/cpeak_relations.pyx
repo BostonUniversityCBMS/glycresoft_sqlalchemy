@@ -395,12 +395,10 @@ def test_compiled(list gsms, list features, str kind, int n_threads=10):
     for i in range(n_p):
         ff = out[i]
         print ff.feature.name, ff.on_kind, ff.off_kind, ff.relation_pairs.size
-    raw_input("<")
     copy = list()
     for i in range(n_p):
         copy.append(wrap_fitted_feature(&out[i]))
-        print copy[i][:2]
-        # free_fitted_feature(&out[i])
+        free_fitted_feature(&out[i])
     free(out)
     return copy
 
@@ -444,7 +442,7 @@ cdef tuple wrap_spectrum_relation_pair(RelationSpectrumPair* pair, MassOffsetFea
     for i in range(pair.relations.size):
         pr = wrap_peak_relation(&pair.relations.relations[i], feature)
         relations.append(pr)
-    return (None, relations)
+    return (pair.matched_spectrum.id, relations)
 
 cdef tuple wrap_fitted_feature(FittedFeatureStruct* feature):
     cdef:

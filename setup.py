@@ -35,9 +35,10 @@ def has_option(name):
     return False
 
 
-with_openmp = has_option('with-openmp')
+# with_openmp = has_option('with-openmp')
 no_openmp = has_option('no-openmp')
 
+with_openmp = not no_openmp
 
 print with_openmp
 

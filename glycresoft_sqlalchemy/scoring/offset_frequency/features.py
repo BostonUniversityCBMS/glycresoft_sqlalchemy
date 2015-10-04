@@ -3,7 +3,7 @@ import logging
 from glycresoft_sqlalchemy.structure import composition
 from glycresoft_sqlalchemy.structure import modification
 from .peak_relations import (
-    MassOffsetFeature,
+    MassOffsetFeature, search_features_on_spectrum,
     feature_function_estimator, FittedFeature)
 from .utils import chain_iterable
 from glypy import MonosaccharideResidue, monosaccharides
@@ -60,6 +60,14 @@ def specialize_features(fitted_features):
                 intensity_ratio=intensity_ratio)
             specialized.append(f)
     return specialized
+
+
+def peak_probability_distribution(peak_list, features):
+    for peak in peak_list:
+        satisfied_features = search_features_on_spectrum(peak, peak_list, features)
+        distribution = {}
+        
+
 
 
 shifts = [

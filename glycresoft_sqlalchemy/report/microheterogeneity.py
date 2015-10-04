@@ -34,7 +34,7 @@ class GlycoproteinMicroheterogeneitySummary(object):
                     continue
                 scan_id_ranges.add(scan_id_range)
                 species[glycan_composition].append(volume)
-            site_map[site] = {k: sum(v)/float(len(v)) for k, v in species.items()}
+            site_map[site] = {k: sum(v) for k, v in species.items()}
         self.site_to_glycan_map = site_map
         return site_map
 

@@ -42,6 +42,11 @@ class SqliteSet(object):
         value = pickle.dumps(obj, -1)
         self.store[value] = 1
 
+    def update(self, objs):
+        for obj in objs:
+            value = pickle.dumps(obj, -1)
+            self.store[value] = 1
+
     def __contains__(self, obj):
         value = pickle.dumps(obj, -1)
         return value in self.store
@@ -51,7 +56,7 @@ class SqliteSet(object):
             yield pickle.loads(x)
 
     def __repr__(self):
-        return map(str, self.store.keys())
+        return '{%s}' % ', '.join(map(str, self.store.keys()))
 
 
 def _identity(i):

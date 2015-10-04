@@ -9,7 +9,7 @@ from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
     HypothesisSampleMatch, PeakGroupMatch, Protein,
     TheoreticalGlycopeptideGlycanAssociation,
-    TheoreticalGlycopeptide)
+    TheoreticalGlycopeptide, GlycopeptideMatch)
 
 Sequence = sequence.Sequence
 Block = AminoAcidSequenceBuildingBlock = sequence_composition.AminoAcidSequenceBuildingBlock
@@ -24,7 +24,7 @@ def melt_sequence(sequence_string, counter=None):
     return counter
 
 
-def get_residues_from_sequences(sequence_ids, manager, source=TheoreticalGlycopeptide):
+def get_residues_from_sequences(sequence_ids, manager, source=GlycopeptideMatch):
     session = manager.session()
     counter = Counter()
     for sid in sequence_ids:
@@ -33,7 +33,7 @@ def get_residues_from_sequences(sequence_ids, manager, source=TheoreticalGlycope
     return counter
 
 
-def yield_ids(session, hypothesis_id, chunk_size=1000, filter=lambda q: q, source=TheoreticalGlycopeptide):
+def yield_ids(session, hypothesis_id, chunk_size=1000, filter=lambda q: q, source=GlycopeptideMatch):
     base_query = filter(session.query(source.id).filter(
         source.protein_id == Protein.id,
         Protein.hypothesis_id == hypothesis_id))
@@ -47,10 +47,10 @@ def yield_ids(session, hypothesis_id, chunk_size=1000, filter=lambda q: q, sourc
 
 
 class ResidueCounter(PipelineModule):
-    def __init__(self, database_path, hypothesis_id, filter=lambda q: q, n_processes=4):
+    def __init__(self, database_path, hypothesis_id, filter=lambda q: q, n_processes=4, source=GlycopeptideMatch):
         self.manager = self.manager_type(database_path)
         self.hypothesis_id = hypothesis_id
-        self.source = TheoreticalGlycopeptide
+        self.source = source
         self.filter = filter
         self.n_processes = n_processes
 

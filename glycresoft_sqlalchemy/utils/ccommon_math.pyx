@@ -127,7 +127,9 @@ cpdef list search_spectrum_by_mass(float mass, list peak_list, float tolerance=2
 cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2) nogil:
     if (feature.intensity_ratio == OUT_OF_RANGE_INT or _intensity_ratio_function(peak1, peak2) == feature.intensity_ratio) and\
        ((feature.from_charge == OUT_OF_RANGE_INT and feature.to_charge == OUT_OF_RANGE_INT) or
-        (feature.from_charge == peak1.charge and feature.to_charge == peak2.charge)):
+        (feature.from_charge == peak1.charge and feature.to_charge == peak2.charge)) and\
+       ((feature.min_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank >= feature.min_peak_rank)) and\
+       ((feature.max_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank <= feature.max_peak_rank)):
         return fabs(_ppm_error(peak1.neutral_mass + feature.offset, peak2.neutral_mass)) <= feature.tolerance
     else:
         return False
@@ -255,7 +257,8 @@ cdef int OUT_OF_RANGE_INT = -999
 cdef class MassOffsetFeature(object):
 
     def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT,
-                 from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type=""):
+                 from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type="",
+                 min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT):
         if name is None:
             name = "F:" + str(offset)
             if intensity_ratio is not OUT_OF_RANGE_INT:
@@ -268,6 +271,8 @@ cdef class MassOffsetFeature(object):
         self.from_charge = from_charge
         self.to_charge = to_charge
         self.feature_type = feature_type
+        self.min_peak_rank = min_peak_rank
+        self.max_peak_rank = max_peak_rank
 
     def __getstate__(self):
         return {
@@ -276,7 +281,9 @@ cdef class MassOffsetFeature(object):
             "name": self.name,
             "intensity_ratio": self.intensity_ratio,
             "from_charge": self.from_charge,
-            "to_charge": self.to_charge
+            "to_charge": self.to_charge,
+            "min_peak_rank": self.min_peak_rank,
+            "max_peak_rank": self.max_peak_rank
         }
 
     def __setstate__(self, d):
@@ -286,6 +293,8 @@ cdef class MassOffsetFeature(object):
         self.intensity_ratio = d['intensity_ratio']
         self.from_charge = d['from_charge']
         self.to_charge = d['to_charge']
+        self.min_peak_rank = d["min_peak_rank"]
+        self.max_peak_rank = d["max_peak_rank"]
 
     def __reduce__(self):
         return MassOffsetFeature, (0, 0), self.__getstate__()
@@ -296,7 +305,9 @@ cdef class MassOffsetFeature(object):
     cdef bint test(self, DPeak peak1, DPeak peak2):
         if (self.intensity_ratio == OUT_OF_RANGE_INT or intensity_ratio_function(peak1, peak2) == self.intensity_ratio) and\
            ((self.from_charge == OUT_OF_RANGE_INT and self.to_charge == OUT_OF_RANGE_INT) or
-            (self.from_charge == peak1.charge and self.to_charge == peak2.charge)):
+            (self.from_charge == peak1.charge and self.to_charge == peak2.charge)) and\
+           ((self.min_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank >= self.min_peak_rank)) and\
+           ((self.max_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank <= self.max_peak_rank)):
             return abs(ppm_error(peak1.neutral_mass + self.offset, peak2.neutral_mass)) <= self.tolerance
         else:
             return False
@@ -305,7 +316,8 @@ cdef class MassOffsetFeature(object):
         return self.name
 
     def __hash__(self):
-        return hash((self.name, self.offset, self.intensity_ratio, self.from_charge, self.to_charge))
+        return hash((self.name, self.offset, self.intensity_ratio, self.from_charge,
+                     self.to_charge, self.min_peak_rank, self.max_peak_rank))
 
 
 cdef class DPeak(object):
@@ -485,6 +497,8 @@ cdef MSFeatureStructArray* unwrap_feature_functions(list features):
         cfeature.tolerance = pfeature.tolerance
         cfeature.name = PyString_AsString(pfeature.name)
         cfeature.feature_type = PyString_AsString(pfeature.feature_type)
+        cfeature.min_peak_rank = pfeature.min_peak_rank
+        cfeature.max_peak_rank = pfeature.max_peak_rank
         ms_features.features[i] = cfeature
     return ms_features
 

@@ -24,6 +24,8 @@ cdef class MassOffsetFeature(object):
         public int from_charge
         public int to_charge
         public str feature_type
+        public int min_peak_rank
+        public int max_peak_rank
 
     cdef bint test(self, DPeak peak1, DPeak peak2)
 
@@ -85,6 +87,8 @@ cdef public struct MSFeatureStruct:
     int from_charge
     int to_charge
     char* feature_type
+    int min_peak_rank
+    int max_peak_rank
 
 
 cdef public struct TheoreticalFragmentStruct:
