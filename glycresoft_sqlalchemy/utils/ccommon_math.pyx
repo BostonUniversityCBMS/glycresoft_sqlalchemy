@@ -1,7 +1,8 @@
 from cpython.ref cimport PyObject
-from cpython.string cimport PyString_AsString
-from libc.stdlib cimport abort, malloc, free, realloc
+from cpython.string cimport PyString_AsString, PyString_FromString
+from libc.stdlib cimport abort, malloc, free, realloc, calloc
 from libc.math cimport fabs
+from libc.string cimport strcmp
 from libc cimport *
 
 cdef extern from * nogil:
@@ -12,14 +13,20 @@ from cython.parallel cimport parallel, prange # openmp must be enabled at compil
 
 
 from cpython.int cimport PyInt_AsLong
-from cpython.float cimport PyFloat_AsDouble
+from cpython.float cimport PyFloat_AsDouble, PyFloat_FromDouble
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem, PyDict_Values
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_Append
 
 import operator
+from collections import defaultdict
+from glycresoft_sqlalchemy.structure.sequence import Sequence as GlycopeptideSequence, Composition
 
 cdef:
     object get_intensity = operator.attrgetter("intensity")
+    int OUT_OF_RANGE_INT = 999
+    char* OTHER = "other"
+    char* NOISE = "noise"
+    double WATER_MASS = Composition("H2O").mass
 
 
 cpdef float ppm_error(float x, float y):
@@ -37,6 +44,15 @@ cpdef object tol_ppm_error(float x, float y, float tolerance):
         return err
     else:
         return None
+
+
+cpdef str interpolate_fragment_ion_type(str ion_key):
+    if ion_key[0] in ['b', 'c', 'y', 'z']:
+        return ion_key[0]
+    elif "peptide" in ion_key:
+        return "stub_ion"
+    else:
+        return "oxonium"
 
 
 cdef int intensity_ratio_function(DPeak peak1, DPeak peak2):
@@ -61,6 +77,37 @@ cdef int intensity_ratio_function(DPeak peak1, DPeak peak2):
     elif 0.2 <= ratio < 0.4:
         return 4
     elif 0. <= ratio < 0.2:
+        return 5
+
+
+cdef int peptide_mass_rank(double mass):
+    cdef double unit = 121.6
+    cdef int ratio = <int>(mass / unit)
+    if ratio < 9:
+        return 1
+    elif ratio < 13:
+        return 2
+    elif ratio < 17:
+        return 3
+    elif ratio < 20:
+        return 4
+    else:
+        return 5
+
+
+cdef int glycan_peptide_ratio(double glycan_mass, double peptide_mass):
+    cdef double ratio = (glycan_mass / peptide_mass)
+    if ratio < 0.4:
+        return 0
+    elif 0.4 <= ratio < 0.8:
+        return 1
+    elif 0.8 <= ratio < 1.2:
+        return 2
+    elif 1.2 <= ratio < 1.6:
+        return 3
+    elif 1.6 <= ratio < 2.0:
+        return 4
+    elif ratio >= 2.0:
         return 5
 
 
@@ -135,6 +182,11 @@ cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, Peak
         return False
 
 
+cdef bint _precursor_context(MSFeatureStruct* feature, MatchedSpectrumStruct* ms) nogil:
+    return (feature.glycan_peptide_ratio == OUT_OF_RANGE_INT or feature.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+       (feature.peptide_mass_rank == OUT_OF_RANGE_INT or feature.peptide_mass_rank == ms.peptide_mass_rank)
+
+
 cdef PeakStructArray* _search_spectrum(PeakStruct* peak, PeakStructArray* peak_list, MSFeatureStruct* feature) nogil:
     cdef:
         PeakStructArray* matches
@@ -166,7 +218,7 @@ cdef PeakStructArray* _openmp_search_spectrum(PeakStruct* peak, PeakStructArray*
     n = peak_list.size
     n_p = n
     did_match = <int*>malloc(sizeof(int)*n)
-    for i_p in prange(n_p, schedule="guided", num_threads=12):
+    for i_p in prange(n_p, schedule="guided", num_threads=8):
         if feature_match(feature, peak, &peak_list.peaks[i_p]):
             did_match[i_p] = 1
         else:
@@ -248,9 +300,6 @@ cdef void intensity_rank(list peak_list, float minimum_intensity=100.):
         p.rank = rank
 
 
-cdef int OUT_OF_RANGE_INT = -999
-
-
 # cdef classes
 
 
@@ -258,7 +307,8 @@ cdef class MassOffsetFeature(object):
 
     def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT,
                  from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type="",
-                 min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT):
+                 min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT,
+                 glycan_peptide_ratio=OUT_OF_RANGE_INT, peptide_mass_rank=OUT_OF_RANGE_INT):
         if name is None:
             name = "F:" + str(offset)
             if intensity_ratio is not OUT_OF_RANGE_INT:
@@ -273,6 +323,10 @@ cdef class MassOffsetFeature(object):
         self.feature_type = feature_type
         self.min_peak_rank = min_peak_rank
         self.max_peak_rank = max_peak_rank
+        self.ion_type_matches = dict()
+        self.ion_type_totals = dict()
+        self.glycan_peptide_ratio = glycan_peptide_ratio
+        self.peptide_mass_rank = peptide_mass_rank
 
     def __getstate__(self):
         return {
@@ -283,7 +337,12 @@ cdef class MassOffsetFeature(object):
             "from_charge": self.from_charge,
             "to_charge": self.to_charge,
             "min_peak_rank": self.min_peak_rank,
-            "max_peak_rank": self.max_peak_rank
+            "max_peak_rank": self.max_peak_rank,
+            "ion_type_matches": self.ion_type_matches,
+            "ion_type_totals": self.ion_type_totals,
+            "feature_type": self.feature_type,
+            "glycan_peptide_ratio": self.glycan_peptide_ratio,
+            "peptide_mass_rank": self.peptide_mass_rank
         }
 
     def __setstate__(self, d):
@@ -295,6 +354,11 @@ cdef class MassOffsetFeature(object):
         self.to_charge = d['to_charge']
         self.min_peak_rank = d["min_peak_rank"]
         self.max_peak_rank = d["max_peak_rank"]
+        self.ion_type_matches = d["ion_type_matches"]
+        self.ion_type_totals = d["ion_type_totals"]
+        self.feature_type = d["feature_type"]
+        self.glycan_peptide_ratio = d['glycan_peptide_ratio']
+        self.peptide_mass_rank = d['peptide_mass_rank']
 
     def __reduce__(self):
         return MassOffsetFeature, (0, 0), self.__getstate__()
@@ -312,12 +376,62 @@ cdef class MassOffsetFeature(object):
         else:
             return False
 
+    def precursor_context(self, ms):
+        return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+           (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
+
+    cdef bint _precursor_context(self, MatchedSpectrum ms):
+        return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+           (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
+
     def __repr__(self):
-        return self.name
+        fields = {}
+        fields['offset'] = self.offset
+        if self.glycan_peptide_ratio != OUT_OF_RANGE_INT:
+            fields['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+        if self.peptide_mass_rank != OUT_OF_RANGE_INT:
+            fields['peptide_mass_rank'] = self.peptide_mass_rank
+        if self.from_charge != OUT_OF_RANGE_INT:
+            fields["from_charge"] = self.from_charge
+        if self.to_charge != OUT_OF_RANGE_INT:
+            fields['to_charge'] = self.to_charge
+        if self.min_peak_rank != OUT_OF_RANGE_INT and self.min_peak_rank == self.max_peak_rank:
+            fields['base_peak_intensity'] = self.min_peak_rank
+        if self.intensity_ratio != OUT_OF_RANGE_INT:
+            fields["intensity_ratio"] = self.intensity_ratio
+        terms = []
+        for k, v in fields.items():
+            if isinstance(v, int):
+                terms.append("%s=%d" % (k, v))
+            elif isinstance(v, float):
+                terms.append("%s=%0.4f" % (k, v))
+            else:
+                terms.append("%s=%r" % (k, v))
+        return "<{} {}>".format(self.name, ", ".join(terms))
+
 
     def __hash__(self):
-        return hash((self.name, self.offset, self.intensity_ratio, self.from_charge,
+        return hash((self.glycan_peptide_ratio, self.peptide_mass_rank, self.offset,
+                     self.intensity_ratio, self.from_charge,
                      self.to_charge, self.min_peak_rank, self.max_peak_rank))
+
+    cpdef ion_type_increment(self, str name, str slot="matches"):
+        cdef:
+            double value
+            PyObject* pvalue
+            dict dist
+
+        if slot == "matches":
+            dist = self.ion_type_matches
+        elif slot == "totals":
+            dist = self.ion_type_totals
+        pvalue = PyDict_GetItem(dist, name)
+        if pvalue == NULL:
+            value = 0.
+        else:
+            value = PyFloat_AsDouble(<object>pvalue)
+        value += 1
+        PyDict_SetItem(dist, name , value)
 
 
 cdef class DPeak(object):
@@ -392,13 +506,26 @@ cdef class MatchedSpectrum(object):
 
     def __init__(self, gsm=None):
         if gsm is not None:
-            self.peak_match_map = dict(gsm.peak_match_map)
+            self.peak_match_map = {
+                pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list]
+                for pid, fragment_list in gsm.peak_match_map.items()
+            }
             self.peak_list = list(gsm)
             self.scan_time = gsm.scan_time
             self.peaks_explained = gsm.peaks_explained
             self.peaks_unexplained = gsm.peaks_unexplained
             self.id = gsm.id
             self.glycopeptide_sequence = str(gsm.glycopeptide_sequence)
+
+            total_mass = gsm.glycopeptide_match.calculated_mass
+            site_count = gsm.glycopeptide_match.count_glycosylation_sites
+            glycan_mass = gsm.glycopeptide_match.glycan_composition.mass() - (site_count * WATER_MASS)
+            peptide_mass = total_mass - glycan_mass
+
+            self.peptide_mass = peptide_mass
+            self.glycan_mass = glycan_mass
+            self.peptide_mass_rank = peptide_mass_rank(peptide_mass)
+            self.glycan_peptide_ratio = glycan_peptide_ratio(glycan_mass, peptide_mass)            
 
     def reindex_peak_matches(self):
         mass_map = dict()
@@ -447,6 +574,10 @@ cdef class MatchedSpectrum(object):
         d['peaks_unexplained'] = self.peaks_unexplained
         d['id'] = self.id
         d['glycopeptide_sequence'] = self.glycopeptide_sequence
+        d['peptide_mass'] = self.peptide_mass
+        d['glycan_mass'] = self.glycan_mass
+        d['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+        d['peptide_mass_rank'] = self.peptide_mass_rank
         return d
 
     def __setstate__(self, d):
@@ -457,6 +588,10 @@ cdef class MatchedSpectrum(object):
         self.peaks_unexplained = d['peaks_unexplained']
         self.id = d['id']
         self.glycopeptide_sequence = d['glycopeptide_sequence']
+        self.peptide_mass = d['peptide_mass']
+        self.glycan_mass = d['glycan_mass']
+        self.glycan_peptide_ratio = d['glycan_peptide_ratio']
+        self.peptide_mass_rank = d['peptide_mass_rank']
 
     def __reduce__(self):
         return MatchedSpectrum, (None,), self.__getstate__()
@@ -468,6 +603,23 @@ cdef class MatchedSpectrum(object):
         return temp
 
 
+cdef class FragmentMatch(object):
+    def __init__(self, observed_mass, intensity, key, peak_id, ion_type=None, **kwargs):
+        if ion_type is None:
+            ion_type = interpolate_fragment_ion_type(key)
+        self.observed_mass = observed_mass
+        self.intensity = intensity
+        self.key = key
+        self.peak_id = peak_id
+        self.ion_type = ion_type
+
+    def __repr__(self):
+        return "<FragmentMatch {} {} {}>".format(self.observed_mass, self.intensity, self.key)
+
+    def __reduce__(self):
+        return FragmentMatch, (self.observed_mass, self.intensity, self.key, self.peak_id, self.ion_type)
+
+
 cpdef DPeak DPeak_from_values(cls, float neutral_mass):
     cdef DPeak peak
     peak = DPeak()
@@ -476,6 +628,7 @@ cpdef DPeak DPeak_from_values(cls, float neutral_mass):
 
 
 # cdef class to Struct unwrapper
+
 
 cdef MSFeatureStructArray* unwrap_feature_functions(list features):
     cdef:
@@ -499,9 +652,12 @@ cdef MSFeatureStructArray* unwrap_feature_functions(list features):
         cfeature.feature_type = PyString_AsString(pfeature.feature_type)
         cfeature.min_peak_rank = pfeature.min_peak_rank
         cfeature.max_peak_rank = pfeature.max_peak_rank
+        cfeature.ion_type_matches = new_ion_type_double_map_from_dict(pfeature.ion_type_matches)
+        cfeature.ion_type_totals = new_ion_type_double_map_from_dict(pfeature.ion_type_totals)
+        cfeature.glycan_peptide_ratio = pfeature.glycan_peptide_ratio
+        cfeature.peptide_mass_rank = pfeature.peptide_mass_rank
         ms_features.features[i] = cfeature
     return ms_features
-
 
 cdef PeakStructArray* unwrap_peak_list(list py_peaks):
     cdef:
@@ -526,12 +682,12 @@ cdef PeakStructArray* unwrap_peak_list(list py_peaks):
         peaks.peaks[i] = cpeak
     return peaks
 
-
 cdef MatchedSpectrumStruct* unwrap_matched_spectrum(MatchedSpectrum ms):
     cdef:
         FragmentMatchStructArray* frag_matches
         FragmentMatchStruct* current_match
         MatchedSpectrumStruct* ms_struct
+        FragmentMatch fm
         size_t i, j, total
         list matches_list, peak_match_list
         dict frag_dict
@@ -543,6 +699,11 @@ cdef MatchedSpectrumStruct* unwrap_matched_spectrum(MatchedSpectrum ms):
     ms_struct.peaks_unexplained = ms.peaks_unexplained
     ms_struct.id = ms.id
     ms_struct.glycopeptide_sequence = PyString_AsString(ms.glycopeptide_sequence)
+
+    ms_struct.peptide_mass = ms.peptide_mass
+    ms_struct.glycan_mass = ms.glycan_mass
+    ms_struct.peptide_mass_rank = ms.peptide_mass_rank
+    ms_struct.glycan_peptide_ratio = ms.glycan_peptide_ratio
 
     total = 0
     matches_list = PyDict_Values(ms.peak_match_map)
@@ -560,14 +721,101 @@ cdef MatchedSpectrumStruct* unwrap_matched_spectrum(MatchedSpectrum ms):
         peak_match_list = <list>PyList_GET_ITEM(matches_list, i)
         for j in range(PyList_GET_SIZE(peak_match_list)):
             current_match = &frag_matches.matches[total]
-            frag_dict = <dict>PyList_GET_ITEM(peak_match_list, j)
-            current_match.observed_mass = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "observed_mass"))
-            current_match.intensity = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "intensity"))
-            current_match.key = PyString_AsString(<str>PyDict_GetItem(frag_dict, "key"))
-            current_match.peak_id = PyInt_AsLong(<object>PyDict_GetItem(frag_dict, "peak_id"))
+            fm = <FragmentMatch>PyList_GET_ITEM(peak_match_list, j)
+            current_match.observed_mass = fm.observed_mass
+            current_match.intensity = fm.intensity
+            current_match.key = PyString_AsString(fm.key)
+            current_match.ion_type = PyString_AsString(fm.ion_type)
+            current_match.peak_id = fm.peak_id
             total += 1
     ms_struct.peak_match_list = frag_matches
     return ms_struct
+
+cdef FragmentMatchStruct* unwrap_fragment_match(FragmentMatch fm):
+    cdef FragmentMatchStruct* result = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct))
+    result.observed_mass = fm.observed_mass
+    result.intensity = fm.intensity
+    result.key = PyString_AsString(fm.key)
+    result.ion_type = PyString_AsString(fm.ion_type)
+    result.peak_id = fm.peak_id
+    return result
+
+
+# struct to cdef class wrapper
+cdef DPeak wrap_peak(PeakStruct* peak):
+    cdef DPeak dpeak = DPeak()
+    dpeak.neutral_mass = peak.neutral_mass
+    dpeak.charge = peak.charge
+    dpeak.intensity = peak.intensity
+    dpeak.rank = peak.rank
+    dpeak.id = peak.id
+    return dpeak
+
+
+cdef MassOffsetFeature wrap_feature(MSFeatureStruct* feature):
+    cdef MassOffsetFeature pfeature
+    pfeature = MassOffsetFeature(
+        offset=feature.offset,
+        tolerance=feature.tolerance,
+        name=feature.name,
+        intensity_ratio=feature.intensity_ratio,
+        from_charge=feature.from_charge,
+        to_charge=feature.to_charge,
+        feature_type=feature.feature_type,
+        min_peak_rank=feature.min_peak_rank,
+        max_peak_rank=feature.max_peak_rank,
+        glycan_peptide_ratio=feature.glycan_peptide_ratio,
+        peptide_mass_rank=feature.peptide_mass_rank)
+    pfeature.ion_type_matches = dict_from_ion_type_double_map(feature.ion_type_matches)
+    pfeature.ion_type_totals = dict_from_ion_type_double_map(feature.ion_type_totals)
+    return pfeature
+
+
+cdef MatchedSpectrum wrap_matched_spectrum_struct(MatchedSpectrumStruct* ms):
+    cdef:
+        MatchedSpectrum result
+        PeakStruct peak
+        DPeak dpeak
+        FragmentMatchStruct frag_match
+        dict frag_matches
+        size_t i, j, total
+        list matches_list, peak_match_list
+        FragmentMatch frag_match_obj
+
+    frag_matches = dict()
+
+    result = MatchedSpectrum()
+    result.glycopeptide_sequence = PyString_FromString(ms.glycopeptide_sequence)
+    result.peak_list = [None] * ms.peak_list.size
+    result.scan_time = ms.scan_time
+    result.peaks_explained = ms.peaks_explained
+    result.peaks_unexplained = ms.peaks_unexplained
+    result.peptide_mass = ms.peptide_mass
+    result.glycan_mass = ms.glycan_mass
+    result.glycan_peptide_ratio = ms.glycan_peptide_ratio
+    result.peptide_mass_rank = ms.peptide_mass_rank
+    result.id = ms.id
+
+    for i in range(ms.peak_list.size):
+        peak = ms.peak_list.peaks[i]
+        dpeak = wrap_peak(&peak)
+        result.peak_list[i] = dpeak
+
+    for i in range(ms.peak_match_list.size):
+        frag_match = ms.peak_match_list.matches[i]
+        frag_match_obj = FragmentMatch(
+            frag_match.observed_mass, frag_match.intensity,
+            PyString_FromString(frag_match.key), frag_match.peak_id,
+            PyString_FromString(frag_match.ion_type))
+        matches_list = frag_matches.setdefault(frag_match.peak_id, [])
+        matches_list.append(frag_match_obj)
+
+    result.peak_match_map = frag_matches
+
+    return result
+
+
+# 
 
 
 cdef FragmentMatchStructArray* matched_spectrum_struct_peak_explained_by(MatchedSpectrumStruct* ms, long peak_id) nogil:
@@ -599,10 +847,8 @@ cdef FragmentMatchStructArray* matched_spectrum_struct_peak_explained_by(Matched
 cdef void sort_by_intensity(PeakStructArray* peak_list) nogil:
     qsort(peak_list.peaks, peak_list.size, sizeof(PeakStruct), compare_by_intensity)
 
-
 cdef void sort_by_neutral_mass(PeakStructArray* peak_list) nogil:
     qsort(peak_list, peak_list.size, sizeof(PeakStruct), compare_by_neutral_mass)
-
 
 cdef int compare_by_neutral_mass(const void * a, const void * b) nogil:
     if (<PeakStruct*>a).neutral_mass < (<PeakStruct*>b).neutral_mass:
@@ -612,7 +858,6 @@ cdef int compare_by_neutral_mass(const void * a, const void * b) nogil:
     elif (<PeakStruct*>a).neutral_mass > (<PeakStruct*>b).neutral_mass:
         return 1
 
-
 cdef int compare_by_intensity(const void * a, const void * b) nogil:
     if (<PeakStruct*>a).intensity < (<PeakStruct*>b).intensity:
         return -1
@@ -620,6 +865,148 @@ cdef int compare_by_intensity(const void * a, const void * b) nogil:
         return 0
     elif (<PeakStruct*>a).intensity > (<PeakStruct*>b).intensity:
         return 1
+
+
+# IonType Mappings
+
+
+cdef IonTypeIndex* new_ion_type_index(char** names, size_t size) nogil:
+    cdef IonTypeIndex* result = <IonTypeIndex*>malloc(sizeof(IonTypeIndex))
+    cdef size_t i
+
+    result.names = <char**>malloc(sizeof(char*) * 0)
+    result.indices = <size_t*>malloc(sizeof(size_t) * 0)
+    result.size = 0
+
+    for i in range(size):
+        ion_type_add(result, names[i])
+
+    return result
+
+
+cdef IonTypeDoubleMap* _new_ion_type_double_map(IonTypeIndex* index) nogil:
+    cdef IonTypeDoubleMap* result
+    result = <IonTypeDoubleMap*>malloc(sizeof(IonTypeDoubleMap))
+    result.index_ref = index
+    result.values = <double*>calloc(index.size, sizeof(double))
+    return result
+
+
+cdef IonTypeDoubleMap* new_ion_type_double_map() nogil:
+    return _new_ion_type_double_map(ION_TYPE_INDEX)
+
+
+cdef IonTypeDoubleMap* new_ion_type_double_map_from_dict(dict mapper):
+    cdef:
+        size_t i, j
+        char* name
+        IonTypeDoubleMap* result
+        str pname
+        double pvalue
+
+    result = new_ion_type_double_map()
+    j = 0
+    for  pname, pvalue in mapper.items():
+        name = PyString_AsString(pname)
+        if not ion_type_exists(ION_TYPE_INDEX, name):
+            ion_type_add(ION_TYPE_INDEX, name)
+        i = ion_type_index(ION_TYPE_INDEX, name)
+        ion_type_double_set(result, i, pvalue)
+        j += 1
+
+    return result
+
+
+cdef dict dict_from_ion_type_double_map(IonTypeDoubleMap* mapper):
+    cdef:
+        size_t i, j
+        char* name
+        dict result
+        str pname
+        double pvalue
+
+    result = dict()
+    for i in range(mapper.index_ref.size):
+        pname = PyString_FromString(ion_type_name(mapper.index_ref, i))
+        pvalue = ion_type_double_get(mapper, i)
+        result[pname] = pvalue
+
+    return result
+
+
+cdef size_t ion_type_index(IonTypeIndex* mapper, char* name) nogil:
+    cdef size_t ix
+    for ix in range(mapper.size):
+        if strcmp(mapper.names[ix], name) == 0:
+            return mapper.indices[ix]
+    return OUT_OF_RANGE_INT
+
+
+cdef char* ion_type_name(IonTypeIndex* mapper, size_t index) nogil:
+    if index == OUT_OF_RANGE_INT:
+        return OTHER
+    return mapper.names[index]
+
+
+cdef void ion_type_add(IonTypeIndex* mapper, char* name) nogil:
+    mapper.names = <char**>realloc(mapper.names, sizeof(char*) * (mapper.size + 1))
+    mapper.indices = <size_t*>realloc(mapper.indices, sizeof(size_t) * (mapper.size + 1))
+    mapper.names[mapper.size] = name
+    mapper.indices[mapper.size] = mapper.size
+    mapper.size += 1
+
+
+cdef bint ion_type_exists(IonTypeIndex* mapper, char* name) nogil:
+    return OUT_OF_RANGE_INT == ion_type_index(mapper, name)
+
+
+cdef double ion_type_double_get(IonTypeDoubleMap* mapper, size_t index) nogil:
+    return mapper.values[index]
+
+
+cdef void ion_type_double_set(IonTypeDoubleMap* mapper, size_t index, double value) nogil:
+    mapper.values[index] = value
+
+
+cdef void ion_type_double_inc(IonTypeDoubleMap* mapper, size_t index) nogil:
+    mapper.values[index] += 1
+
+
+cdef void ion_type_double_inc_name(IonTypeDoubleMap* mapper, char* name) nogil:
+    cdef:
+        size_t ix
+    ix = ion_type_index(mapper.index_ref, name)
+    if ix == OUT_OF_RANGE_INT:
+        ix = ion_type_index(mapper.index_ref, OTHER)
+    mapper.values[ix] += 1
+
+
+cdef void print_ion_type_double(IonTypeDoubleMap* mapper) nogil:
+    cdef:
+        size_t i
+    for i in range(mapper.index_ref.size):
+        printf("%s -> %f\n", ion_type_name(mapper.index_ref, i), ion_type_double_get(mapper, i))
+
+
+cdef void print_ion_type_index(IonTypeIndex* mapper) nogil:
+    cdef:
+        size_t i
+    for i in range(mapper.size):
+        printf("%s -> %d\n", ion_type_name(mapper, i), i)
+
+
+cdef IonTypeIndex* ION_TYPE_INDEX
+ION_TYPE_INDEX = new_ion_type_index(["b", "y", "stub_ion", "oxonium", "c", "z", "noise", "other"], 8)
+
+
+cdef double sum_ion_double_map(IonTypeDoubleMap* mapper) nogil:
+    cdef:
+        double total
+        size_t i
+    total = 0.
+    for i in range(mapper.index_ref.size):
+        total += ion_type_double_get(mapper, i)
+    return total
 
 
 # Struct Free Functions
@@ -639,6 +1026,31 @@ cdef void free_matched_spectrum_struct(MatchedSpectrumStruct* ms) nogil:
     free_peak_struct_array(ms.peak_list)
     free_fragment_match_struct_array(ms.peak_match_list)
 
+
+cdef void free_ion_type_index(IonTypeIndex* mapper) nogil:
+    free(mapper.indices)
+    free(mapper.names)
+    free(mapper)
+
+
+cdef void free_ion_type_double_map(IonTypeDoubleMap* mapper) nogil:
+    free(mapper.values)
+    free(mapper)
+
+
+cdef void free_ms_feature_struct(MSFeatureStruct* feature) nogil:
+    free(feature.ion_type_matches)
+    free(feature.ion_type_totals)
+    free(feature)
+
+
+cdef void free_ms_feature_struct_array(MSFeatureStructArray* features) nogil:
+    cdef:
+        size_t i
+    for i in range(features.size):
+        free_ms_feature_struct(&features.features[i])
+    free(features.features)
+    free(features)
 
 # Python Wrappers
 

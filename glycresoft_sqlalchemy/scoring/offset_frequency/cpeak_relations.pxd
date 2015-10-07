@@ -13,6 +13,13 @@ cdef class PeakRelation(object):
         public str kind
         public MassOffsetFeature feature
         public bint same_terminal
+        public MatchedSpectrum annotation
+
+cdef class FittedFeature(object):
+    cdef:
+        public MassOffsetFeature feature
+        public list relations
+
 
 cdef public struct PeakRelationStruct:
     PeakStruct from_peak
@@ -23,6 +30,7 @@ cdef public struct PeakRelationStruct:
     char* kind
     MSFeatureStruct* feature
     bint same_terminal
+    MatchedSpectrumStruct* annotation
 
 
 cdef public struct PeakRelationStructArray:

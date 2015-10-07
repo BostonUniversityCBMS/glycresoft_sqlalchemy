@@ -449,14 +449,18 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature
 struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak;
 struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment;
 struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum;
+struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch;
 struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struct____iter__;
 struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank;
 struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rank;
+struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment;
 struct PeakStruct;
 struct MSFeatureStruct;
 struct TheoreticalFragmentStruct;
 struct FragmentMatchStruct;
 struct MatchedSpectrumStruct;
+struct IonTypeIndex;
+struct IonTypeDoubleMap;
 struct PeakStructArray;
 struct MSFeatureStructArray;
 struct FragmentMatchStructArray;
@@ -466,7 +470,7 @@ struct MatchedSpectrumStructArray;
 struct PeakToPeakShiftMatches;
 struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum_by_mass;
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":14
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":16
  * 
  * 
  * cdef void intensity_rank(list peak_list, float minimum_intensity=*)             # <<<<<<<<<<<<<<
@@ -478,7 +482,7 @@ struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ra
   float minimum_intensity;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":15
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":17
  * 
  * cdef void intensity_rank(list peak_list, float minimum_intensity=*)
  * cdef void _intensity_rank(PeakStructArray* peak_list, float minimum_intensity=*) nogil             # <<<<<<<<<<<<<<
@@ -490,7 +494,19 @@ struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_r
   float minimum_intensity;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":73
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":37
+ * 
+ *     cdef bint test(self, DPeak peak1, DPeak peak2)
+ *     cpdef ion_type_increment(self, str name, str slot=*)             # <<<<<<<<<<<<<<
+ *     cdef bint _precursor_context(self, MatchedSpectrum ms)
+ * 
+ */
+struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment {
+  int __pyx_n;
+  PyObject *slot;
+};
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":90
  * # Scalar Structs
  * 
  * cdef public struct PeakStruct:             # <<<<<<<<<<<<<<
@@ -506,8 +522,8 @@ struct PeakStruct {
   float mass_charge_ratio;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":82
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":98
+ *     float mass_charge_ratio
  * 
  * cdef public struct MSFeatureStruct:             # <<<<<<<<<<<<<<
  *     float offset
@@ -523,10 +539,14 @@ struct MSFeatureStruct {
   char *feature_type;
   int min_peak_rank;
   int max_peak_rank;
+  struct IonTypeDoubleMap *ion_type_matches;
+  struct IonTypeDoubleMap *ion_type_totals;
+  int glycan_peptide_ratio;
+  int peptide_mass_rank;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":94
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":113
+ *     int peptide_mass_rank
  * 
  * cdef public struct TheoreticalFragmentStruct:             # <<<<<<<<<<<<<<
  *     float neutral_mass
@@ -537,22 +557,23 @@ struct TheoreticalFragmentStruct {
   char *key;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":99
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":117
+ *     char* key
  * 
  * cdef public struct FragmentMatchStruct:             # <<<<<<<<<<<<<<
- *     float observed_mass
- *     float intensity
+ *     double observed_mass
+ *     double intensity
  */
 struct FragmentMatchStruct {
-  float observed_mass;
-  float intensity;
+  double observed_mass;
+  double intensity;
   char *key;
+  char *ion_type;
   long peak_id;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":106
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":124
+ *     long peak_id
  * 
  * cdef public struct MatchedSpectrumStruct:             # <<<<<<<<<<<<<<
  *     FragmentMatchStructArray* peak_match_list
@@ -566,9 +587,38 @@ struct MatchedSpectrumStruct {
   int peaks_explained;
   int peaks_unexplained;
   int id;
+  double peptide_mass;
+  double glycan_mass;
+  int peptide_mass_rank;
+  int glycan_peptide_ratio;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":118
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":137
+ *     int glycan_peptide_ratio
+ * 
+ * cdef public struct IonTypeIndex:             # <<<<<<<<<<<<<<
+ *     char** names
+ *     size_t* indices
+ */
+struct IonTypeIndex {
+  char **names;
+  size_t *indices;
+  size_t size;
+};
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":142
+ *     size_t size
+ * 
+ * cdef public struct IonTypeDoubleMap:             # <<<<<<<<<<<<<<
+ *     IonTypeIndex* index_ref
+ *     double* values
+ */
+struct IonTypeDoubleMap {
+  struct IonTypeIndex *index_ref;
+  double *values;
+};
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":149
  * # Array Structs
  * 
  * cdef public struct PeakStructArray:             # <<<<<<<<<<<<<<
@@ -580,8 +630,8 @@ struct PeakStructArray {
   Py_ssize_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":123
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":153
+ *     Py_ssize_t size
  * 
  * cdef public struct MSFeatureStructArray:             # <<<<<<<<<<<<<<
  *     MSFeatureStruct* features
@@ -592,8 +642,8 @@ struct MSFeatureStructArray {
   Py_ssize_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":128
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":157
+ *     Py_ssize_t size
  * 
  * cdef public struct FragmentMatchStructArray:             # <<<<<<<<<<<<<<
  *     FragmentMatchStruct* matches
@@ -604,8 +654,8 @@ struct FragmentMatchStructArray {
   size_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":133
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":161
+ *     size_t size
  * 
  * cdef public struct TheoreticalFragmentStructArray:             # <<<<<<<<<<<<<<
  *     TheoreticalFragmentStruct* fragments
@@ -617,8 +667,8 @@ struct TheoreticalFragmentStructArray {
   char *ion_series;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":139
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":166
+ *     char* ion_series
  * 
  * cdef public struct IonSeriesSuite:             # <<<<<<<<<<<<<<
  *     char** ion_series_names
@@ -631,8 +681,8 @@ struct IonSeriesSuite {
   size_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":146
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":172
+ *     size_t size
  * 
  * cdef public struct MatchedSpectrumStructArray:             # <<<<<<<<<<<<<<
  *     MatchedSpectrumStruct* matches
@@ -643,8 +693,8 @@ struct MatchedSpectrumStructArray {
   size_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":151
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":176
+ *     size_t size
  * 
  * cdef public struct PeakToPeakShiftMatches:             # <<<<<<<<<<<<<<
  *     PeakStruct* peaks
@@ -657,7 +707,7 @@ struct PeakToPeakShiftMatches {
   struct PeakStruct *reference;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":112
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":159
  * 
  * 
  * cpdef list search_spectrum_by_mass(float mass, list peak_list, float tolerance=2e-5):             # <<<<<<<<<<<<<<
@@ -669,7 +719,7 @@ struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spect
   float tolerance;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":18
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":20
  * 
  * 
  * cdef class MassOffsetFeature(object):             # <<<<<<<<<<<<<<
@@ -688,11 +738,15 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature
   PyObject *feature_type;
   int min_peak_rank;
   int max_peak_rank;
+  PyObject *ion_type_matches;
+  PyObject *ion_type_totals;
+  int glycan_peptide_ratio;
+  int peptide_mass_rank;
 };
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":33
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":40
+ *     cdef bint _precursor_context(self, MatchedSpectrum ms)
  * 
  * cdef class DPeak(object):             # <<<<<<<<<<<<<<
  *     '''
@@ -711,8 +765,8 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak {
 };
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":51
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":57
+ *         cdef PeakStruct* as_struct(self)
  * 
  * cdef class TheoreticalFragment(object):             # <<<<<<<<<<<<<<
  *     cdef:
@@ -725,8 +779,8 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragme
 };
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":57
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":62
+ *         public str key
  * 
  * cdef class MatchedSpectrum(object):             # <<<<<<<<<<<<<<
  *     cdef:
@@ -742,10 +796,31 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum {
   int peaks_explained;
   int peaks_unexplained;
   int id;
+  double peptide_mass;
+  double glycan_mass;
+  int peptide_mass_rank;
+  int glycan_peptide_ratio;
 };
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":414
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":79
+ *     cpdef set peak_explained_by(self, object peak_id)
+ * 
+ * cdef class FragmentMatch(object):             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         public double observed_mass
+ */
+struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch {
+  PyObject_HEAD
+  double observed_mass;
+  double intensity;
+  PyObject *key;
+  PyObject *ion_type;
+  long peak_id;
+};
+
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":541
  * 
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -763,7 +838,7 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struc
 
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":257
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":306
  * 
  * 
  * cdef class MassOffsetFeature(object):             # <<<<<<<<<<<<<<
@@ -773,11 +848,13 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struc
 
 struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature {
   int (*test)(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *);
+  PyObject *(*ion_type_increment)(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, PyObject *, int __pyx_skip_dispatch, struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment *__pyx_optional_args);
+  int (*_precursor_context)(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *);
 };
 static struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature;
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":323
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":437
  * 
  * 
  * cdef class DPeak(object):             # <<<<<<<<<<<<<<
@@ -791,7 +868,7 @@ struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak {
 static struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak;
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":391
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":505
  * 
  * 
  * cdef class MatchedSpectrum(object):             # <<<<<<<<<<<<<<
@@ -904,31 +981,6 @@ static void __Pyx_WriteUnraisable(const char *name, int clineno,
                                   int lineno, const char *filename,
                                   int full_traceback);
 
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE int __Pyx_PyList_Append(PyObject* list, PyObject* x) {
-    PyListObject* L = (PyListObject*) list;
-    Py_ssize_t len = Py_SIZE(list);
-    if (likely(L->allocated > len) & likely(len > (L->allocated >> 1))) {
-        Py_INCREF(x);
-        PyList_SET_ITEM(list, len, x);
-        Py_SIZE(list) = len+1;
-        return 0;
-    }
-    return PyList_Append(list, x);
-}
-#else
-#define __Pyx_PyList_Append(L,x) PyList_Append(L,x)
-#endif
-
-static CYTHON_INLINE int __Pyx_ArgTypeTest(PyObject *obj, PyTypeObject *type, int none_allowed,
-    const char *name, int exact);
-
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
-#else
-#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
-#endif
-
 #define __Pyx_GetItemInt(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck) \
     (__Pyx_fits_Py_ssize_t(i, type, is_signed) ? \
     __Pyx_GetItemInt_Fast(o, (Py_ssize_t)i, is_list, wraparound, boundscheck) : \
@@ -950,6 +1002,48 @@ static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j
 static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i,
                                                      int is_list, int wraparound, int boundscheck);
 
+#include <string.h>
+
+static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals);
+
+static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals);
+
+#if PY_MAJOR_VERSION >= 3
+#define __Pyx_PyString_Equals __Pyx_PyUnicode_Equals
+#else
+#define __Pyx_PyString_Equals __Pyx_PyBytes_Equals
+#endif
+
+static CYTHON_INLINE int __Pyx_PySequence_Contains(PyObject* item, PyObject* seq, int eq) {
+    int result = PySequence_Contains(seq, item);
+    return unlikely(result < 0) ? result : (result == (eq == Py_EQ));
+}
+
+static CYTHON_INLINE int __Pyx_ArgTypeTest(PyObject *obj, PyTypeObject *type, int none_allowed,
+    const char *name, int exact);
+
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE int __Pyx_PyList_Append(PyObject* list, PyObject* x) {
+    PyListObject* L = (PyListObject*) list;
+    Py_ssize_t len = Py_SIZE(list);
+    if (likely(L->allocated > len) & likely(len > (L->allocated >> 1))) {
+        Py_INCREF(x);
+        PyList_SET_ITEM(list, len, x);
+        Py_SIZE(list) = len+1;
+        return 0;
+    }
+    return PyList_Append(list, x);
+}
+#else
+#define __Pyx_PyList_Append(L,x) PyList_Append(L,x)
+#endif
+
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
+#else
+#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
+#endif
+
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
 #endif
@@ -961,6 +1055,37 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
 #else
 #define __Pyx_PyObject_CallNoArg(func) __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL)
 #endif
+
+static PyObject* __Pyx_PyObject_CallMethod1(PyObject* obj, PyObject* method_name, PyObject* arg);
+
+static CYTHON_INLINE PyObject* __Pyx_PyDict_Items(PyObject* d);
+
+static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected);
+
+static CYTHON_INLINE void __Pyx_RaiseNeedMoreValuesError(Py_ssize_t index);
+
+static CYTHON_INLINE int __Pyx_IterFinish(void);
+
+static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected);
+
+#if PY_MAJOR_VERSION < 3
+#define __Pyx_PyString_Join __Pyx_PyBytes_Join
+#define __Pyx_PyBaseString_Join(s, v) (PyUnicode_CheckExact(s) ? PyUnicode_Join(s, v) : __Pyx_PyBytes_Join(s, v))
+#else
+#define __Pyx_PyString_Join PyUnicode_Join
+#define __Pyx_PyBaseString_Join PyUnicode_Join
+#endif
+#if CYTHON_COMPILING_IN_CPYTHON
+    #if PY_MAJOR_VERSION < 3
+    #define __Pyx_PyBytes_Join _PyString_Join
+    #else
+    #define __Pyx_PyBytes_Join _PyBytes_Join
+    #endif
+#else
+static CYTHON_INLINE PyObject* __Pyx_PyBytes_Join(PyObject* sep, PyObject* values);
+#endif
+
+static CYTHON_INLINE void __Pyx_RaiseUnboundLocalError(const char *varname);
 
 #if PY_MAJOR_VERSION >= 3
 static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key) {
@@ -982,17 +1107,21 @@ static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key) {
     #define __Pyx_PyDict_GetItem(d, key) PyObject_GetItem(d, key)
 #endif
 
-static PyObject* __Pyx_PyObject_CallMethod1(PyObject* obj, PyObject* method_name, PyObject* arg);
-
-static CYTHON_INLINE PyObject* __Pyx_PyDict_Items(PyObject* d);
-
-static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected);
-
-static CYTHON_INLINE void __Pyx_RaiseNeedMoreValuesError(Py_ssize_t index);
-
-static CYTHON_INLINE int __Pyx_IterFinish(void);
-
-static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected);
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE int __Pyx_ListComp_Append(PyObject* list, PyObject* x) {
+    PyListObject* L = (PyListObject*) list;
+    Py_ssize_t len = Py_SIZE(list);
+    if (likely(L->allocated > len)) {
+        Py_INCREF(x);
+        PyList_SET_ITEM(list, len, x);
+        Py_SIZE(list) = len+1;
+        return 0;
+    }
+    return PyList_Append(list, x);
+}
+#else
+#define __Pyx_ListComp_Append(L,x) PyList_Append(L,x)
+#endif
 
 static PyObject* __Pyx_PyDict_GetItemDefault(PyObject* d, PyObject* key, PyObject* default_value);
 
@@ -1013,9 +1142,22 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
 #define __Pyx_PyObject_SetAttrStr(o,n,v) PyObject_SetAttr(o,n,v)
 #endif
 
-#include <string.h>
+#define __Pyx_SetItemInt(o, i, v, type, is_signed, to_py_func, is_list, wraparound, boundscheck) \
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ? \
+    __Pyx_SetItemInt_Fast(o, (Py_ssize_t)i, v, is_list, wraparound, boundscheck) : \
+    (is_list ? (PyErr_SetString(PyExc_IndexError, "list assignment index out of range"), -1) : \
+               __Pyx_SetItemInt_Generic(o, to_py_func(i), v)))
+static CYTHON_INLINE int __Pyx_SetItemInt_Generic(PyObject *o, PyObject *j, PyObject *v);
+static CYTHON_INLINE int __Pyx_SetItemInt_Fast(PyObject *o, Py_ssize_t i, PyObject *v,
+                                               int is_list, int wraparound, int boundscheck);
+
+static PyObject* __Pyx_PyObject_CallMethod2(PyObject* obj, PyObject* method_name, PyObject* arg1, PyObject* arg2);
+
+static CYTHON_INLINE PyObject *__Pyx_PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *default_value, int is_safe_type);
 
 static int __Pyx_SetVtable(PyObject *dict, void *vtable);
+
+static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name);
 
 static CYTHON_INLINE PyObject *__Pyx_GetModuleGlobalName(PyObject *name);
 
@@ -1042,9 +1184,9 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value);
 
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
 
-static CYTHON_INLINE size_t __Pyx_PyInt_As_size_t(PyObject *);
-
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
+
+static CYTHON_INLINE size_t __Pyx_PyInt_As_size_t(PyObject *);
 
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
 
@@ -1085,11 +1227,15 @@ static int __Pyx_PyGen_FetchStopIterationValue(PyObject **pvalue);
 
 static int __Pyx_check_binary_version(void);
 
+static int __Pyx_ExportVoidPtr(PyObject *name, void *p, const char *sig);
+
 static int __Pyx_ExportFunction(const char *name, void (*f)(void), const char *sig);
 
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_test(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak1, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak2); /* proto*/
+static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature__precursor_context(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_ms); /* proto*/
+static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_name, int __pyx_skip_dispatch, struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment *__pyx_optional_args); /* proto*/
 static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_as_struct(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_self); /* proto*/
 static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peak_explained_by(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_peak_id, int __pyx_skip_dispatch); /* proto*/
 
@@ -1118,9 +1264,14 @@ static PyTypeObject *__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_M
 static PyTypeObject *__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak = 0;
 static PyTypeObject *__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment = 0;
 static PyTypeObject *__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum = 0;
+static PyTypeObject *__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch = 0;
 static PyTypeObject *__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struct____iter__ = 0;
+static char *__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_NOISE;
+static struct IonTypeIndex *__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX;
 static PyObject *__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_get_intensity = 0;
 static int __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT;
+static char *__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OTHER;
+static double __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_WATER_MASS;
 static float __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_error(float, float, int __pyx_skip_dispatch); /*proto*/
 static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_error(float, float, float, int __pyx_skip_dispatch); /*proto*/
 static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_feature_match(struct MSFeatureStruct *, struct PeakStruct *, struct PeakStruct *); /*proto*/
@@ -1128,15 +1279,31 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
 static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ratio_function(struct PeakStruct *, struct PeakStruct *); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank(PyObject *, struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank *__pyx_optional_args); /*proto*/
 static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_unwrap_peak_list(PyObject *); /*proto*/
+static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_peak(struct PeakStruct *); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sort_by_intensity(struct PeakStructArray *); /*proto*/
 static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, PyObject *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, int __pyx_skip_dispatch); /*proto*/
+static struct IonTypeIndex *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_index(char **, size_t); /*proto*/
+static size_t __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_index(struct IonTypeIndex *, char *); /*proto*/
+static char *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_name(struct IonTypeIndex *, size_t); /*proto*/
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_add(struct IonTypeIndex *, char *); /*proto*/
+static struct IonTypeDoubleMap *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map(void); /*proto*/
+static struct IonTypeDoubleMap *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map_from_dict(PyObject *); /*proto*/
+static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_dict_from_ion_type_double_map(struct IonTypeDoubleMap *); /*proto*/
+static double __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_get(struct IonTypeDoubleMap *, size_t); /*proto*/
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_set(struct IonTypeDoubleMap *, size_t, double); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_match_struct_array(struct FragmentMatchStructArray *); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_peak_struct_array(struct PeakStructArray *); /*proto*/
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ms_feature_struct(struct MSFeatureStruct *); /*proto*/
 static CYTHON_INLINE float __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__ppm_error(float, float); /*proto*/
+static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_interpolate_fragment_ion_type(PyObject *, int __pyx_skip_dispatch); /*proto*/
+static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_peptide_mass_rank(double); /*proto*/
+static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_glycan_peptide_ratio(double, double); /*proto*/
 static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum_by_mass(float, PyObject *, int __pyx_skip_dispatch, struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum_by_mass *__pyx_optional_args); /*proto*/
 static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak_from_values(PyObject *, float, int __pyx_skip_dispatch); /*proto*/
 static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_neutral_mass(void const *, void const *); /*proto*/
 static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_intensity(void const *, void const *); /*proto*/
+static struct IonTypeDoubleMap *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__new_ion_type_double_map(struct IonTypeIndex *); /*proto*/
+static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_exists(struct IonTypeIndex *, char *); /*proto*/
 #define __Pyx_MODULE_NAME "glycresoft_sqlalchemy.utils.ccommon_math"
 int __pyx_module_is_main_glycresoft_sqlalchemy__utils__ccommon_math = 0;
 
@@ -1145,15 +1312,18 @@ static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_sorted;
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_error(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_x, float __pyx_v_y); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_2tol_ppm_error(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_x, float __pyx_v_y, float __pyx_v_tolerance); /* proto */
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_4search_spectrum(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak, PyObject *__pyx_v_peak_list, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature); /* proto */
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum_by_mass(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_mass, PyObject *__pyx_v_peak_list, float __pyx_v_tolerance); /* proto */
-static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature___init__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_offset, PyObject *__pyx_v_tolerance, PyObject *__pyx_v_name, PyObject *__pyx_v_intensity_ratio, PyObject *__pyx_v_from_charge, PyObject *__pyx_v_to_charge, PyObject *__pyx_v_feature_type, PyObject *__pyx_v_min_peak_rank, PyObject *__pyx_v_max_peak_rank); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_4interpolate_fragment_ion_type(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ion_key); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak, PyObject *__pyx_v_peak_list, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_8search_spectrum_by_mass(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_mass, PyObject *__pyx_v_peak_list, float __pyx_v_tolerance); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature___init__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_offset, PyObject *__pyx_v_tolerance, PyObject *__pyx_v_name, PyObject *__pyx_v_intensity_ratio, PyObject *__pyx_v_from_charge, PyObject *__pyx_v_to_charge, PyObject *__pyx_v_feature_type, PyObject *__pyx_v_min_peak_rank, PyObject *__pyx_v_max_peak_rank, PyObject *__pyx_v_glycan_peptide_ratio, PyObject *__pyx_v_peptide_mass_rank); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_2__getstate__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_4__setstate__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_d); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_6__reduce__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_8__call__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_query, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak); /* proto */
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_10__repr__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
-static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_12__hash__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_10precursor_context(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_ms); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_12__repr__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
+static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_14__hash__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_increment(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_slot); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_6offset___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
 static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_6offset_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_9tolerance___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
@@ -1174,6 +1344,16 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
 static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_13min_peak_rank_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_13max_peak_rank___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
 static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_13max_peak_rank_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_4__del__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_4__del__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
 static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak___init__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_self, PyObject *__pyx_v_peak); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2__repr__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_4__getstate__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_self); /* proto */
@@ -1221,55 +1401,102 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
 static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peaks_unexplained_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_2id___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self); /* proto */
 static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_2id_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_8DPeak_from_values(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_cls, float __pyx_v_neutral_mass); /* proto */
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_10pintensity_rank(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_peak_list, float __pyx_v_minimum_intensity); /* proto */
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_ratio_function(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak1, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak2); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch___init__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_observed_mass, PyObject *__pyx_v_intensity, PyObject *__pyx_v_key, PyObject *__pyx_v_peak_id, PyObject *__pyx_v_ion_type, CYTHON_UNUSED PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_2__repr__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_4__reduce__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_4__del__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_4__del__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_10DPeak_from_values(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_cls, float __pyx_v_neutral_mass); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_rank(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_peak_list, float __pyx_v_minimum_intensity); /* proto */
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_14pintensity_ratio_function(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak1, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak2); /* proto */
 static PyObject *__pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struct____iter__(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static char __pyx_k_F[] = "F:";
+static char __pyx_k_b[] = "b";
+static char __pyx_k_c[] = "c";
 static char __pyx_k_r[] = ", %r";
 static char __pyx_k_x[] = "x";
 static char __pyx_k_y[] = "y";
+static char __pyx_k_z[] = "z";
 static char __pyx_k__4[] = "";
 static char __pyx_k_id[] = "id";
 static char __pyx_k_op[] = "op";
+static char __pyx_k_H2O[] = "H2O";
+static char __pyx_k__10[] = "<{} {}>";
+static char __pyx_k__11[] = ", ";
 static char __pyx_k_cls[] = "cls";
 static char __pyx_k_get[] = "get";
 static char __pyx_k_gsm[] = "gsm";
 static char __pyx_k_key[] = "key";
+static char __pyx_k_s_d[] = "%s=%d";
+static char __pyx_k_s_f[] = "%s -> %f\n";
+static char __pyx_k_s_r[] = "%s=%r";
 static char __pyx_k_0_4f[] = "%0.4f";
 static char __pyx_k_args[] = "args";
 static char __pyx_k_iter[] = "__iter__";
+static char __pyx_k_join[] = "join";
 static char __pyx_k_main[] = "__main__";
 static char __pyx_k_mass[] = "mass";
 static char __pyx_k_name[] = "name";
 static char __pyx_k_peak[] = "peak";
 static char __pyx_k_rank[] = "rank";
 static char __pyx_k_send[] = "send";
+static char __pyx_k_slot[] = "slot";
 static char __pyx_k_test[] = "__test__";
 static char __pyx_k_DPeak[] = "<DPeak {} {} {}>";
+static char __pyx_k_NOISE[] = "NOISE";
 static char __pyx_k_close[] = "close";
 static char __pyx_k_items[] = "items";
+static char __pyx_k_noise[] = "noise";
 static char __pyx_k_other[] = "other";
 static char __pyx_k_peak1[] = "peak1";
 static char __pyx_k_peak2[] = "peak2";
 static char __pyx_k_query[] = "query";
 static char __pyx_k_range[] = "range";
+static char __pyx_k_s_d_2[] = "%s -> %d\n";
 static char __pyx_k_throw[] = "throw";
 static char __pyx_k_append[] = "append";
 static char __pyx_k_charge[] = "charge";
 static char __pyx_k_format[] = "format";
 static char __pyx_k_import[] = "__import__";
 static char __pyx_k_offset[] = "offset";
+static char __pyx_k_s_0_4f[] = "%s=%0.4f";
 static char __pyx_k_sorted[] = "sorted";
+static char __pyx_k_totals[] = "totals";
 static char __pyx_k_feature[] = "feature";
+static char __pyx_k_matches[] = "matches";
+static char __pyx_k_oxonium[] = "oxonium";
 static char __pyx_k_peak_id[] = "peak_id";
+static char __pyx_k_peptide[] = "peptide";
 static char __pyx_k_reverse[] = "reverse";
+static char __pyx_k_Sequence[] = "Sequence";
 static char __pyx_k_getstate[] = "__getstate__";
+static char __pyx_k_ion_type[] = "ion_type";
 static char __pyx_k_operator[] = "operator";
+static char __pyx_k_pyx_capi[] = "__pyx_capi__";
+static char __pyx_k_stub_ion[] = "stub_ion";
 static char __pyx_k_intensity[] = "intensity";
 static char __pyx_k_peak_list[] = "peak_list";
 static char __pyx_k_scan_time[] = "scan_time";
@@ -1277,59 +1504,106 @@ static char __pyx_k_to_charge[] = "to_charge";
 static char __pyx_k_tolerance[] = "tolerance";
 static char __pyx_k_attrgetter[] = "attrgetter";
 static char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
+static char __pyx_k_setdefault[] = "setdefault";
+static char __pyx_k_Composition[] = "Composition";
+static char __pyx_k_collections[] = "collections";
+static char __pyx_k_defaultdict[] = "defaultdict";
 static char __pyx_k_from_charge[] = "from_charge";
+static char __pyx_k_glycan_mass[] = "glycan_mass";
 static char __pyx_k_feature_type[] = "feature_type";
 static char __pyx_k_neutral_mass[] = "neutral_mass";
+static char __pyx_k_peptide_mass[] = "peptide_mass";
+static char __pyx_k_FragmentMatch[] = "<FragmentMatch {} {} {}>";
 static char __pyx_k_max_peak_rank[] = "max_peak_rank";
 static char __pyx_k_min_peak_rank[] = "min_peak_rank";
 static char __pyx_k_observed_mass[] = "observed_mass";
+static char __pyx_k_ION_TYPE_INDEX[] = "ION_TYPE_INDEX";
 static char __pyx_k_peak_match_map[] = "peak_match_map";
 static char __pyx_k_peak_relations[] = "peak_relations";
+static char __pyx_k_calculated_mass[] = "calculated_mass";
 static char __pyx_k_intensity_ratio[] = "intensity_ratio";
+static char __pyx_k_ion_type_totals[] = "ion_type_totals";
 static char __pyx_k_peaks_explained[] = "peaks_explained";
 static char __pyx_k_pintensity_rank[] = "pintensity_rank";
+static char __pyx_k_ion_type_matches[] = "ion_type_matches";
 static char __pyx_k_mass_charge_ratio[] = "mass_charge_ratio";
 static char __pyx_k_minimum_intensity[] = "minimum_intensity";
 static char __pyx_k_peak_explained_by[] = "peak_explained_by";
 static char __pyx_k_peaks_unexplained[] = "peaks_unexplained";
+static char __pyx_k_peptide_mass_rank[] = "peptide_mass_rank";
+static char __pyx_k_glycan_composition[] = "glycan_composition";
+static char __pyx_k_glycopeptide_match[] = "glycopeptide_match";
+static char __pyx_k_ion_type_increment[] = "ion_type_increment";
+static char __pyx_k_base_peak_intensity[] = "base_peak_intensity";
+static char __pyx_k_GlycopeptideSequence[] = "GlycopeptideSequence";
+static char __pyx_k_glycan_peptide_ratio[] = "glycan_peptide_ratio";
 static char __pyx_k_glycopeptide_sequence[] = "glycopeptide_sequence";
 static char __pyx_k_MatchedSpectrum___iter[] = "MatchedSpectrum.__iter__";
 static char __pyx_k_MatchedSpectrum_s_d_d_d[] = "<MatchedSpectrum %s @ %d %d|%d>";
+static char __pyx_k_count_glycosylation_sites[] = "count_glycosylation_sites";
 static char __pyx_k_pintensity_ratio_function[] = "pintensity_ratio_function";
+static char __pyx_k_glycresoft_sqlalchemy_structure[] = "glycresoft_sqlalchemy.structure.sequence";
 static char __pyx_k_D_Programming_exploration_glycre[] = "D:\\Programming\\exploration\\glycresoft_sqlalchemy\\glycresoft_sqlalchemy\\utils\\ccommon_math.pyx";
 static char __pyx_k_glycresoft_sqlalchemy_utils_ccom[] = "glycresoft_sqlalchemy.utils.ccommon_math";
 static PyObject *__pyx_kp_s_0_4f;
+static PyObject *__pyx_n_s_Composition;
 static PyObject *__pyx_kp_s_DPeak;
 static PyObject *__pyx_kp_s_D_Programming_exploration_glycre;
 static PyObject *__pyx_kp_s_F;
+static PyObject *__pyx_kp_s_FragmentMatch;
+static PyObject *__pyx_n_s_GlycopeptideSequence;
+static PyObject *__pyx_n_s_H2O;
+static PyObject *__pyx_n_s_ION_TYPE_INDEX;
 static PyObject *__pyx_n_s_MatchedSpectrum___iter;
 static PyObject *__pyx_kp_s_MatchedSpectrum_s_d_d_d;
+static PyObject *__pyx_n_s_NOISE;
+static PyObject *__pyx_n_s_Sequence;
+static PyObject *__pyx_kp_s__10;
+static PyObject *__pyx_kp_s__11;
 static PyObject *__pyx_kp_s__4;
 static PyObject *__pyx_n_s_append;
 static PyObject *__pyx_n_s_args;
 static PyObject *__pyx_n_s_attrgetter;
+static PyObject *__pyx_n_s_b;
+static PyObject *__pyx_n_s_base_peak_intensity;
+static PyObject *__pyx_n_s_c;
+static PyObject *__pyx_n_s_calculated_mass;
 static PyObject *__pyx_n_s_charge;
 static PyObject *__pyx_n_s_close;
 static PyObject *__pyx_n_s_cls;
+static PyObject *__pyx_n_s_collections;
+static PyObject *__pyx_n_s_count_glycosylation_sites;
+static PyObject *__pyx_n_s_defaultdict;
 static PyObject *__pyx_n_s_feature;
 static PyObject *__pyx_n_s_feature_type;
 static PyObject *__pyx_n_s_format;
 static PyObject *__pyx_n_s_from_charge;
 static PyObject *__pyx_n_s_get;
 static PyObject *__pyx_n_s_getstate;
+static PyObject *__pyx_n_s_glycan_composition;
+static PyObject *__pyx_n_s_glycan_mass;
+static PyObject *__pyx_n_s_glycan_peptide_ratio;
+static PyObject *__pyx_n_s_glycopeptide_match;
 static PyObject *__pyx_n_s_glycopeptide_sequence;
+static PyObject *__pyx_n_s_glycresoft_sqlalchemy_structure;
 static PyObject *__pyx_n_s_glycresoft_sqlalchemy_utils_ccom;
 static PyObject *__pyx_n_s_gsm;
 static PyObject *__pyx_n_s_id;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_intensity;
 static PyObject *__pyx_n_s_intensity_ratio;
+static PyObject *__pyx_n_s_ion_type;
+static PyObject *__pyx_n_s_ion_type_increment;
+static PyObject *__pyx_n_s_ion_type_matches;
+static PyObject *__pyx_n_s_ion_type_totals;
 static PyObject *__pyx_n_s_items;
 static PyObject *__pyx_n_s_iter;
+static PyObject *__pyx_n_s_join;
 static PyObject *__pyx_n_s_key;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_mass;
 static PyObject *__pyx_n_s_mass_charge_ratio;
+static PyObject *__pyx_n_s_matches;
 static PyObject *__pyx_n_s_max_peak_rank;
 static PyObject *__pyx_n_s_min_peak_rank;
 static PyObject *__pyx_n_s_minimum_intensity;
@@ -1340,6 +1614,7 @@ static PyObject *__pyx_n_s_offset;
 static PyObject *__pyx_n_s_op;
 static PyObject *__pyx_n_s_operator;
 static PyObject *__pyx_n_s_other;
+static PyObject *__pyx_n_s_oxonium;
 static PyObject *__pyx_n_s_peak;
 static PyObject *__pyx_n_s_peak1;
 static PyObject *__pyx_n_s_peak2;
@@ -1350,39 +1625,54 @@ static PyObject *__pyx_n_s_peak_match_map;
 static PyObject *__pyx_n_s_peak_relations;
 static PyObject *__pyx_n_s_peaks_explained;
 static PyObject *__pyx_n_s_peaks_unexplained;
+static PyObject *__pyx_n_s_peptide;
+static PyObject *__pyx_n_s_peptide_mass;
+static PyObject *__pyx_n_s_peptide_mass_rank;
 static PyObject *__pyx_n_s_pintensity_rank;
 static PyObject *__pyx_n_s_pintensity_ratio_function;
+static PyObject *__pyx_n_s_pyx_capi;
 static PyObject *__pyx_n_s_pyx_vtable;
 static PyObject *__pyx_n_s_query;
 static PyObject *__pyx_kp_s_r;
 static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_rank;
 static PyObject *__pyx_n_s_reverse;
+static PyObject *__pyx_kp_s_s_0_4f;
+static PyObject *__pyx_kp_s_s_d;
+static PyObject *__pyx_kp_s_s_r;
 static PyObject *__pyx_n_s_scan_time;
 static PyObject *__pyx_n_s_send;
+static PyObject *__pyx_n_s_setdefault;
+static PyObject *__pyx_n_s_slot;
 static PyObject *__pyx_n_s_sorted;
+static PyObject *__pyx_n_s_stub_ion;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_throw;
 static PyObject *__pyx_n_s_to_charge;
 static PyObject *__pyx_n_s_tolerance;
+static PyObject *__pyx_n_s_totals;
 static PyObject *__pyx_n_s_x;
 static PyObject *__pyx_n_s_y;
+static PyObject *__pyx_n_s_z;
 static PyObject *__pyx_int_0;
 static PyObject *__pyx_k_;
 static PyObject *__pyx_k__2;
 static PyObject *__pyx_k__3;
 static PyObject *__pyx_k__5;
 static PyObject *__pyx_k__6;
-static PyObject *__pyx_tuple__7;
-static PyObject *__pyx_tuple__8;
+static PyObject *__pyx_k__7;
+static PyObject *__pyx_k__8;
 static PyObject *__pyx_tuple__9;
-static PyObject *__pyx_tuple__10;
-static PyObject *__pyx_tuple__11;
+static PyObject *__pyx_tuple__12;
 static PyObject *__pyx_tuple__13;
-static PyObject *__pyx_codeobj__12;
-static PyObject *__pyx_codeobj__14;
+static PyObject *__pyx_tuple__14;
+static PyObject *__pyx_tuple__15;
+static PyObject *__pyx_tuple__16;
+static PyObject *__pyx_tuple__18;
+static PyObject *__pyx_codeobj__17;
+static PyObject *__pyx_codeobj__19;
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":25
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":32
  * 
  * 
  * cpdef float ppm_error(float x, float y):             # <<<<<<<<<<<<<<
@@ -1396,7 +1686,7 @@ static float __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_error(flo
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("ppm_error", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":26
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":33
  * 
  * cpdef float ppm_error(float x, float y):
  *     return _ppm_error(x, y)             # <<<<<<<<<<<<<<
@@ -1406,7 +1696,7 @@ static float __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_error(flo
   __pyx_r = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__ppm_error(__pyx_v_x, __pyx_v_y);
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":25
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":32
  * 
  * 
  * cpdef float ppm_error(float x, float y):             # <<<<<<<<<<<<<<
@@ -1451,11 +1741,11 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_1ppm_err
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("ppm_error", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("ppm_error", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "ppm_error") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "ppm_error") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -1463,12 +1753,12 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_1ppm_err
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_x = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_x == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_y = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_y == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_x = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_x == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_y = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_y == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("ppm_error", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("ppm_error", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.ppm_error", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -1490,7 +1780,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_erro
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("ppm_error", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_error(__pyx_v_x, __pyx_v_y, 0)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_error(__pyx_v_x, __pyx_v_y, 0)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1507,7 +1797,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_erro
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":29
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":36
  * 
  * 
  * cdef inline float _ppm_error(float x, float y) nogil:             # <<<<<<<<<<<<<<
@@ -1522,7 +1812,7 @@ static CYTHON_INLINE float __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":30
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":37
  * 
  * cdef inline float _ppm_error(float x, float y) nogil:
  *     return (x - y) / y             # <<<<<<<<<<<<<<
@@ -1538,12 +1828,12 @@ static CYTHON_INLINE float __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math
     #ifdef WITH_THREAD
     PyGILState_Release(__pyx_gilstate_save);
     #endif
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 30; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __pyx_r = (__pyx_t_1 / __pyx_v_y);
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":29
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":36
  * 
  * 
  * cdef inline float _ppm_error(float x, float y) nogil:             # <<<<<<<<<<<<<<
@@ -1559,7 +1849,7 @@ static CYTHON_INLINE float __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":33
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":40
  * 
  * 
  * cpdef object tol_ppm_error(float x, float y, float tolerance):             # <<<<<<<<<<<<<<
@@ -1580,7 +1870,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_e
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("tol_ppm_error", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":35
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":42
  * cpdef object tol_ppm_error(float x, float y, float tolerance):
  *     cdef float err
  *     err = (x - y) / y             # <<<<<<<<<<<<<<
@@ -1596,11 +1886,11 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_e
     #ifdef WITH_THREAD
     PyGILState_Release(__pyx_gilstate_save);
     #endif
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 42; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __pyx_v_err = (__pyx_t_1 / __pyx_v_y);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":36
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":43
  *     cdef float err
  *     err = (x - y) / y
  *     if abs(err) <= tolerance:             # <<<<<<<<<<<<<<
@@ -1610,7 +1900,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_e
   __pyx_t_2 = ((fabsf(__pyx_v_err) <= __pyx_v_tolerance) != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":37
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":44
  *     err = (x - y) / y
  *     if abs(err) <= tolerance:
  *         return err             # <<<<<<<<<<<<<<
@@ -1618,7 +1908,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_e
  *         return None
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_err); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_err); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 44; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -1626,7 +1916,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_e
   }
   /*else*/ {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":39
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":46
  *         return err
  *     else:
  *         return None             # <<<<<<<<<<<<<<
@@ -1639,7 +1929,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_e
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":33
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":40
  * 
  * 
  * cpdef object tol_ppm_error(float x, float y, float tolerance):             # <<<<<<<<<<<<<<
@@ -1691,16 +1981,16 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_3tol_ppm
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("tol_ppm_error", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("tol_ppm_error", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_tolerance)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("tol_ppm_error", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("tol_ppm_error", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "tol_ppm_error") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "tol_ppm_error") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -1709,13 +1999,13 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_3tol_ppm
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
-    __pyx_v_x = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_x == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_y = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_y == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_tolerance = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_tolerance == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_x = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_x == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_y = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_y == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_tolerance = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_tolerance == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("tol_ppm_error", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("tol_ppm_error", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.tol_ppm_error", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -1737,7 +2027,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_2tol_ppm
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("tol_ppm_error", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_error(__pyx_v_x, __pyx_v_y, __pyx_v_tolerance, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_error(__pyx_v_x, __pyx_v_y, __pyx_v_tolerance, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1754,7 +2044,181 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_2tol_ppm
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":42
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":49
+ * 
+ * 
+ * cpdef str interpolate_fragment_ion_type(str ion_key):             # <<<<<<<<<<<<<<
+ *     if ion_key[0] in ['b', 'c', 'y', 'z']:
+ *         return ion_key[0]
+ */
+
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5interpolate_fragment_ion_type(PyObject *__pyx_self, PyObject *__pyx_v_ion_key); /*proto*/
+static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_interpolate_fragment_ion_type(PyObject *__pyx_v_ion_key, CYTHON_UNUSED int __pyx_skip_dispatch) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_2;
+  int __pyx_t_3;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("interpolate_fragment_ion_type", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":50
+ * 
+ * cpdef str interpolate_fragment_ion_type(str ion_key):
+ *     if ion_key[0] in ['b', 'c', 'y', 'z']:             # <<<<<<<<<<<<<<
+ *         return ion_key[0]
+ *     elif "peptide" in ion_key:
+ */
+  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_ion_key, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_n_s_b, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!__pyx_t_3) {
+  } else {
+    __pyx_t_2 = __pyx_t_3;
+    goto __pyx_L4_bool_binop_done;
+  }
+  __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_n_s_c, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!__pyx_t_3) {
+  } else {
+    __pyx_t_2 = __pyx_t_3;
+    goto __pyx_L4_bool_binop_done;
+  }
+  __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_n_s_y, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!__pyx_t_3) {
+  } else {
+    __pyx_t_2 = __pyx_t_3;
+    goto __pyx_L4_bool_binop_done;
+  }
+  __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_n_s_z, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_t_3;
+  __pyx_L4_bool_binop_done:;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_3 = (__pyx_t_2 != 0);
+  if (__pyx_t_3) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":51
+ * cpdef str interpolate_fragment_ion_type(str ion_key):
+ *     if ion_key[0] in ['b', 'c', 'y', 'z']:
+ *         return ion_key[0]             # <<<<<<<<<<<<<<
+ *     elif "peptide" in ion_key:
+ *         return "stub_ion"
+ */
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_ion_key, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __Pyx_GOTREF(__pyx_t_1);
+    if (!(likely(PyString_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_r = ((PyObject*)__pyx_t_1);
+    __pyx_t_1 = 0;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":52
+ *     if ion_key[0] in ['b', 'c', 'y', 'z']:
+ *         return ion_key[0]
+ *     elif "peptide" in ion_key:             # <<<<<<<<<<<<<<
+ *         return "stub_ion"
+ *     else:
+ */
+  __pyx_t_3 = (__Pyx_PySequence_Contains(__pyx_n_s_peptide, __pyx_v_ion_key, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = (__pyx_t_3 != 0);
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":53
+ *         return ion_key[0]
+ *     elif "peptide" in ion_key:
+ *         return "stub_ion"             # <<<<<<<<<<<<<<
+ *     else:
+ *         return "oxonium"
+ */
+    __Pyx_XDECREF(__pyx_r);
+    __Pyx_INCREF(__pyx_n_s_stub_ion);
+    __pyx_r = __pyx_n_s_stub_ion;
+    goto __pyx_L0;
+  }
+  /*else*/ {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":55
+ *         return "stub_ion"
+ *     else:
+ *         return "oxonium"             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+    __Pyx_XDECREF(__pyx_r);
+    __Pyx_INCREF(__pyx_n_s_oxonium);
+    __pyx_r = __pyx_n_s_oxonium;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":49
+ * 
+ * 
+ * cpdef str interpolate_fragment_ion_type(str ion_key):             # <<<<<<<<<<<<<<
+ *     if ion_key[0] in ['b', 'c', 'y', 'z']:
+ *         return ion_key[0]
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.interpolate_fragment_ion_type", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5interpolate_fragment_ion_type(PyObject *__pyx_self, PyObject *__pyx_v_ion_key); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5interpolate_fragment_ion_type(PyObject *__pyx_self, PyObject *__pyx_v_ion_key) {
+  CYTHON_UNUSED int __pyx_lineno = 0;
+  CYTHON_UNUSED const char *__pyx_filename = NULL;
+  CYTHON_UNUSED int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("interpolate_fragment_ion_type (wrapper)", 0);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_ion_key), (&PyString_Type), 1, "ion_key", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_4interpolate_fragment_ion_type(__pyx_self, ((PyObject*)__pyx_v_ion_key));
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_4interpolate_fragment_ion_type(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ion_key) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("interpolate_fragment_ion_type", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_interpolate_fragment_ion_type(__pyx_v_ion_key, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.interpolate_fragment_ion_type", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":58
  * 
  * 
  * cdef int intensity_ratio_function(DPeak peak1, DPeak peak2):             # <<<<<<<<<<<<<<
@@ -1773,7 +2237,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("intensity_ratio_function", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":44
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":60
  * cdef int intensity_ratio_function(DPeak peak1, DPeak peak2):
  *     cdef float ratio
  *     ratio = peak1.intensity / (peak2.intensity)             # <<<<<<<<<<<<<<
@@ -1788,11 +2252,11 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     #ifdef WITH_THREAD
     PyGILState_Release(__pyx_gilstate_save);
     #endif
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 44; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 60; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __pyx_v_ratio = (__pyx_v_peak1->intensity / __pyx_v_peak2->intensity);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":45
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":61
  *     cdef float ratio
  *     ratio = peak1.intensity / (peak2.intensity)
  *     if ratio >= 5:             # <<<<<<<<<<<<<<
@@ -1802,7 +2266,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_1 = ((__pyx_v_ratio >= 5.0) != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":46
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":62
  *     ratio = peak1.intensity / (peak2.intensity)
  *     if ratio >= 5:
  *         return -4             # <<<<<<<<<<<<<<
@@ -1813,7 +2277,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":47
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":63
  *     if ratio >= 5:
  *         return -4
  *     elif 2.5 <= ratio < 5:             # <<<<<<<<<<<<<<
@@ -1827,7 +2291,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":48
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":64
  *         return -4
  *     elif 2.5 <= ratio < 5:
  *         return -3             # <<<<<<<<<<<<<<
@@ -1838,7 +2302,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":49
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":65
  *     elif 2.5 <= ratio < 5:
  *         return -3
  *     elif 1.7 <= ratio < 2.5:             # <<<<<<<<<<<<<<
@@ -1852,7 +2316,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":50
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":66
  *         return -3
  *     elif 1.7 <= ratio < 2.5:
  *         return -2             # <<<<<<<<<<<<<<
@@ -1863,7 +2327,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":51
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":67
  *     elif 1.7 <= ratio < 2.5:
  *         return -2
  *     elif 1.3 <= ratio < 1.7:             # <<<<<<<<<<<<<<
@@ -1877,7 +2341,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":52
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":68
  *         return -2
  *     elif 1.3 <= ratio < 1.7:
  *         return -1             # <<<<<<<<<<<<<<
@@ -1888,7 +2352,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":53
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":69
  *     elif 1.3 <= ratio < 1.7:
  *         return -1
  *     elif 1.0 <= ratio < 1.3:             # <<<<<<<<<<<<<<
@@ -1902,7 +2366,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":54
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":70
  *         return -1
  *     elif 1.0 <= ratio < 1.3:
  *         return 0             # <<<<<<<<<<<<<<
@@ -1913,7 +2377,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":55
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":71
  *     elif 1.0 <= ratio < 1.3:
  *         return 0
  *     elif 0.8 <= ratio < 1.0:             # <<<<<<<<<<<<<<
@@ -1927,7 +2391,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":56
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":72
  *         return 0
  *     elif 0.8 <= ratio < 1.0:
  *         return 1             # <<<<<<<<<<<<<<
@@ -1938,7 +2402,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":57
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":73
  *     elif 0.8 <= ratio < 1.0:
  *         return 1
  *     elif 0.6 <= ratio < 0.8:             # <<<<<<<<<<<<<<
@@ -1952,7 +2416,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":58
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":74
  *         return 1
  *     elif 0.6 <= ratio < 0.8:
  *         return 2             # <<<<<<<<<<<<<<
@@ -1963,7 +2427,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":59
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":75
  *     elif 0.6 <= ratio < 0.8:
  *         return 2
  *     elif 0.4 <= ratio < 0.6:             # <<<<<<<<<<<<<<
@@ -1977,7 +2441,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":60
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":76
  *         return 2
  *     elif 0.4 <= ratio < 0.6:
  *         return 3             # <<<<<<<<<<<<<<
@@ -1988,7 +2452,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":61
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":77
  *     elif 0.4 <= ratio < 0.6:
  *         return 3
  *     elif 0.2 <= ratio < 0.4:             # <<<<<<<<<<<<<<
@@ -2002,7 +2466,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":62
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":78
  *         return 3
  *     elif 0.2 <= ratio < 0.4:
  *         return 4             # <<<<<<<<<<<<<<
@@ -2013,7 +2477,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":63
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":79
  *     elif 0.2 <= ratio < 0.4:
  *         return 4
  *     elif 0. <= ratio < 0.2:             # <<<<<<<<<<<<<<
@@ -2027,7 +2491,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":64
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":80
  *         return 4
  *     elif 0. <= ratio < 0.2:
  *         return 5             # <<<<<<<<<<<<<<
@@ -2038,7 +2502,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":42
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":58
  * 
  * 
  * cdef int intensity_ratio_function(DPeak peak1, DPeak peak2):             # <<<<<<<<<<<<<<
@@ -2057,7 +2521,366 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":67
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":83
+ * 
+ * 
+ * cdef int peptide_mass_rank(double mass):             # <<<<<<<<<<<<<<
+ *     cdef double unit = 121.6
+ *     cdef int ratio = <int>(mass / unit)
+ */
+
+static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_peptide_mass_rank(double __pyx_v_mass) {
+  double __pyx_v_unit;
+  int __pyx_v_ratio;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("peptide_mass_rank", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":84
+ * 
+ * cdef int peptide_mass_rank(double mass):
+ *     cdef double unit = 121.6             # <<<<<<<<<<<<<<
+ *     cdef int ratio = <int>(mass / unit)
+ *     if ratio < 9:
+ */
+  __pyx_v_unit = 121.6;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":85
+ * cdef int peptide_mass_rank(double mass):
+ *     cdef double unit = 121.6
+ *     cdef int ratio = <int>(mass / unit)             # <<<<<<<<<<<<<<
+ *     if ratio < 9:
+ *         return 1
+ */
+  if (unlikely(__pyx_v_unit == 0)) {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 85; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  }
+  __pyx_v_ratio = ((int)(__pyx_v_mass / __pyx_v_unit));
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":86
+ *     cdef double unit = 121.6
+ *     cdef int ratio = <int>(mass / unit)
+ *     if ratio < 9:             # <<<<<<<<<<<<<<
+ *         return 1
+ *     elif ratio < 13:
+ */
+  __pyx_t_1 = ((__pyx_v_ratio < 9) != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":87
+ *     cdef int ratio = <int>(mass / unit)
+ *     if ratio < 9:
+ *         return 1             # <<<<<<<<<<<<<<
+ *     elif ratio < 13:
+ *         return 2
+ */
+    __pyx_r = 1;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":88
+ *     if ratio < 9:
+ *         return 1
+ *     elif ratio < 13:             # <<<<<<<<<<<<<<
+ *         return 2
+ *     elif ratio < 17:
+ */
+  __pyx_t_1 = ((__pyx_v_ratio < 13) != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":89
+ *         return 1
+ *     elif ratio < 13:
+ *         return 2             # <<<<<<<<<<<<<<
+ *     elif ratio < 17:
+ *         return 3
+ */
+    __pyx_r = 2;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":90
+ *     elif ratio < 13:
+ *         return 2
+ *     elif ratio < 17:             # <<<<<<<<<<<<<<
+ *         return 3
+ *     elif ratio < 20:
+ */
+  __pyx_t_1 = ((__pyx_v_ratio < 17) != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":91
+ *         return 2
+ *     elif ratio < 17:
+ *         return 3             # <<<<<<<<<<<<<<
+ *     elif ratio < 20:
+ *         return 4
+ */
+    __pyx_r = 3;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":92
+ *     elif ratio < 17:
+ *         return 3
+ *     elif ratio < 20:             # <<<<<<<<<<<<<<
+ *         return 4
+ *     else:
+ */
+  __pyx_t_1 = ((__pyx_v_ratio < 20) != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":93
+ *         return 3
+ *     elif ratio < 20:
+ *         return 4             # <<<<<<<<<<<<<<
+ *     else:
+ *         return 5
+ */
+    __pyx_r = 4;
+    goto __pyx_L0;
+  }
+  /*else*/ {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":95
+ *         return 4
+ *     else:
+ *         return 5             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+    __pyx_r = 5;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":83
+ * 
+ * 
+ * cdef int peptide_mass_rank(double mass):             # <<<<<<<<<<<<<<
+ *     cdef double unit = 121.6
+ *     cdef int ratio = <int>(mass / unit)
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_WriteUnraisable("glycresoft_sqlalchemy.utils.ccommon_math.peptide_mass_rank", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":98
+ * 
+ * 
+ * cdef int glycan_peptide_ratio(double glycan_mass, double peptide_mass):             # <<<<<<<<<<<<<<
+ *     cdef double ratio = (glycan_mass / peptide_mass)
+ *     if ratio < 0.4:
+ */
+
+static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_glycan_peptide_ratio(double __pyx_v_glycan_mass, double __pyx_v_peptide_mass) {
+  double __pyx_v_ratio;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("glycan_peptide_ratio", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":99
+ * 
+ * cdef int glycan_peptide_ratio(double glycan_mass, double peptide_mass):
+ *     cdef double ratio = (glycan_mass / peptide_mass)             # <<<<<<<<<<<<<<
+ *     if ratio < 0.4:
+ *         return 0
+ */
+  if (unlikely(__pyx_v_peptide_mass == 0)) {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 99; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  }
+  __pyx_v_ratio = (__pyx_v_glycan_mass / __pyx_v_peptide_mass);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":100
+ * cdef int glycan_peptide_ratio(double glycan_mass, double peptide_mass):
+ *     cdef double ratio = (glycan_mass / peptide_mass)
+ *     if ratio < 0.4:             # <<<<<<<<<<<<<<
+ *         return 0
+ *     elif 0.4 <= ratio < 0.8:
+ */
+  __pyx_t_1 = ((__pyx_v_ratio < 0.4) != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":101
+ *     cdef double ratio = (glycan_mass / peptide_mass)
+ *     if ratio < 0.4:
+ *         return 0             # <<<<<<<<<<<<<<
+ *     elif 0.4 <= ratio < 0.8:
+ *         return 1
+ */
+    __pyx_r = 0;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":102
+ *     if ratio < 0.4:
+ *         return 0
+ *     elif 0.4 <= ratio < 0.8:             # <<<<<<<<<<<<<<
+ *         return 1
+ *     elif 0.8 <= ratio < 1.2:
+ */
+  __pyx_t_1 = (0.4 <= __pyx_v_ratio);
+  if (__pyx_t_1) {
+    __pyx_t_1 = (__pyx_v_ratio < 0.8);
+  }
+  __pyx_t_2 = (__pyx_t_1 != 0);
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":103
+ *         return 0
+ *     elif 0.4 <= ratio < 0.8:
+ *         return 1             # <<<<<<<<<<<<<<
+ *     elif 0.8 <= ratio < 1.2:
+ *         return 2
+ */
+    __pyx_r = 1;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":104
+ *     elif 0.4 <= ratio < 0.8:
+ *         return 1
+ *     elif 0.8 <= ratio < 1.2:             # <<<<<<<<<<<<<<
+ *         return 2
+ *     elif 1.2 <= ratio < 1.6:
+ */
+  __pyx_t_2 = (0.8 <= __pyx_v_ratio);
+  if (__pyx_t_2) {
+    __pyx_t_2 = (__pyx_v_ratio < 1.2);
+  }
+  __pyx_t_1 = (__pyx_t_2 != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":105
+ *         return 1
+ *     elif 0.8 <= ratio < 1.2:
+ *         return 2             # <<<<<<<<<<<<<<
+ *     elif 1.2 <= ratio < 1.6:
+ *         return 3
+ */
+    __pyx_r = 2;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":106
+ *     elif 0.8 <= ratio < 1.2:
+ *         return 2
+ *     elif 1.2 <= ratio < 1.6:             # <<<<<<<<<<<<<<
+ *         return 3
+ *     elif 1.6 <= ratio < 2.0:
+ */
+  __pyx_t_1 = (1.2 <= __pyx_v_ratio);
+  if (__pyx_t_1) {
+    __pyx_t_1 = (__pyx_v_ratio < 1.6);
+  }
+  __pyx_t_2 = (__pyx_t_1 != 0);
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":107
+ *         return 2
+ *     elif 1.2 <= ratio < 1.6:
+ *         return 3             # <<<<<<<<<<<<<<
+ *     elif 1.6 <= ratio < 2.0:
+ *         return 4
+ */
+    __pyx_r = 3;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":108
+ *     elif 1.2 <= ratio < 1.6:
+ *         return 3
+ *     elif 1.6 <= ratio < 2.0:             # <<<<<<<<<<<<<<
+ *         return 4
+ *     elif ratio >= 2.0:
+ */
+  __pyx_t_2 = (1.6 <= __pyx_v_ratio);
+  if (__pyx_t_2) {
+    __pyx_t_2 = (__pyx_v_ratio < 2.0);
+  }
+  __pyx_t_1 = (__pyx_t_2 != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":109
+ *         return 3
+ *     elif 1.6 <= ratio < 2.0:
+ *         return 4             # <<<<<<<<<<<<<<
+ *     elif ratio >= 2.0:
+ *         return 5
+ */
+    __pyx_r = 4;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":110
+ *     elif 1.6 <= ratio < 2.0:
+ *         return 4
+ *     elif ratio >= 2.0:             # <<<<<<<<<<<<<<
+ *         return 5
+ * 
+ */
+  __pyx_t_1 = ((__pyx_v_ratio >= 2.0) != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":111
+ *         return 4
+ *     elif ratio >= 2.0:
+ *         return 5             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+    __pyx_r = 5;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":98
+ * 
+ * 
+ * cdef int glycan_peptide_ratio(double glycan_mass, double peptide_mass):             # <<<<<<<<<<<<<<
+ *     cdef double ratio = (glycan_mass / peptide_mass)
+ *     if ratio < 0.4:
+ */
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_WriteUnraisable("glycresoft_sqlalchemy.utils.ccommon_math.glycan_peptide_ratio", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":114
  * 
  * 
  * cdef int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2) nogil:             # <<<<<<<<<<<<<<
@@ -2074,7 +2897,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":69
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":116
  * cdef int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2) nogil:
  *     cdef float ratio
  *     ratio = peak1.intensity / (peak2.intensity)             # <<<<<<<<<<<<<<
@@ -2089,11 +2912,11 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     #ifdef WITH_THREAD
     PyGILState_Release(__pyx_gilstate_save);
     #endif
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 116; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __pyx_v_ratio = (__pyx_v_peak1->intensity / __pyx_v_peak2->intensity);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":70
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":117
  *     cdef float ratio
  *     ratio = peak1.intensity / (peak2.intensity)
  *     if ratio >= 5:             # <<<<<<<<<<<<<<
@@ -2103,7 +2926,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_1 = ((__pyx_v_ratio >= 5.0) != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":71
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":118
  *     ratio = peak1.intensity / (peak2.intensity)
  *     if ratio >= 5:
  *         return -4             # <<<<<<<<<<<<<<
@@ -2114,7 +2937,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":72
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":119
  *     if ratio >= 5:
  *         return -4
  *     elif 2.5 <= ratio < 5:             # <<<<<<<<<<<<<<
@@ -2128,7 +2951,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":73
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":120
  *         return -4
  *     elif 2.5 <= ratio < 5:
  *         return -3             # <<<<<<<<<<<<<<
@@ -2139,7 +2962,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":74
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":121
  *     elif 2.5 <= ratio < 5:
  *         return -3
  *     elif 1.7 <= ratio < 2.5:             # <<<<<<<<<<<<<<
@@ -2153,7 +2976,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":75
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":122
  *         return -3
  *     elif 1.7 <= ratio < 2.5:
  *         return -2             # <<<<<<<<<<<<<<
@@ -2164,7 +2987,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":76
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":123
  *     elif 1.7 <= ratio < 2.5:
  *         return -2
  *     elif 1.3 <= ratio < 1.7:             # <<<<<<<<<<<<<<
@@ -2178,7 +3001,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":77
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":124
  *         return -2
  *     elif 1.3 <= ratio < 1.7:
  *         return -1             # <<<<<<<<<<<<<<
@@ -2189,7 +3012,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":78
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":125
  *     elif 1.3 <= ratio < 1.7:
  *         return -1
  *     elif 1.0 <= ratio < 1.3:             # <<<<<<<<<<<<<<
@@ -2203,7 +3026,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":79
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":126
  *         return -1
  *     elif 1.0 <= ratio < 1.3:
  *         return 0             # <<<<<<<<<<<<<<
@@ -2214,7 +3037,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":80
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":127
  *     elif 1.0 <= ratio < 1.3:
  *         return 0
  *     elif 0.8 <= ratio < 1.0:             # <<<<<<<<<<<<<<
@@ -2228,7 +3051,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":81
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":128
  *         return 0
  *     elif 0.8 <= ratio < 1.0:
  *         return 1             # <<<<<<<<<<<<<<
@@ -2239,7 +3062,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":82
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":129
  *     elif 0.8 <= ratio < 1.0:
  *         return 1
  *     elif 0.6 <= ratio < 0.8:             # <<<<<<<<<<<<<<
@@ -2253,7 +3076,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":83
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":130
  *         return 1
  *     elif 0.6 <= ratio < 0.8:
  *         return 2             # <<<<<<<<<<<<<<
@@ -2264,7 +3087,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":84
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":131
  *     elif 0.6 <= ratio < 0.8:
  *         return 2
  *     elif 0.4 <= ratio < 0.6:             # <<<<<<<<<<<<<<
@@ -2278,7 +3101,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":85
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":132
  *         return 2
  *     elif 0.4 <= ratio < 0.6:
  *         return 3             # <<<<<<<<<<<<<<
@@ -2289,7 +3112,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":86
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":133
  *     elif 0.4 <= ratio < 0.6:
  *         return 3
  *     elif 0.2 <= ratio < 0.4:             # <<<<<<<<<<<<<<
@@ -2303,7 +3126,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":87
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":134
  *         return 3
  *     elif 0.2 <= ratio < 0.4:
  *         return 4             # <<<<<<<<<<<<<<
@@ -2314,7 +3137,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":88
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":135
  *     elif 0.2 <= ratio < 0.4:
  *         return 4
  *     elif 0. <= ratio < 0.2:             # <<<<<<<<<<<<<<
@@ -2328,7 +3151,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":89
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":136
  *         return 4
  *     elif 0. <= ratio < 0.2:
  *         return 5             # <<<<<<<<<<<<<<
@@ -2339,7 +3162,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":67
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":114
  * 
  * 
  * cdef int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2) nogil:             # <<<<<<<<<<<<<<
@@ -2357,7 +3180,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":95
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":142
  * 
  * 
  * cpdef list search_spectrum(DPeak peak, list peak_list, MassOffsetFeature feature):             # <<<<<<<<<<<<<<
@@ -2365,7 +3188,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rati
  *     Search one DPeak instance against a list of DPeaks, returning all which satisfy a
  */
 
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5search_spectrum(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_spectrum(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak, PyObject *__pyx_v_peak_list, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature, CYTHON_UNUSED int __pyx_skip_dispatch) {
   PyObject *__pyx_v_matches = 0;
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_other_peak = 0;
@@ -2384,31 +3207,31 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("search_spectrum", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":101
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":148
  *     '''
  *     cdef:
  *         list matches = []             # <<<<<<<<<<<<<<
  *         DPeak other_peak
  *         Py_ssize_t i
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 101; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_matches = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":104
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":151
  *         DPeak other_peak
  *         Py_ssize_t i
  *         object adder = matches.append             # <<<<<<<<<<<<<<
  *     for i in range(PyList_GET_SIZE(peak_list)):
  *         other_peak = <DPeak>PyList_GET_ITEM(peak_list, i)
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_matches, __pyx_n_s_append); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 104; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_matches, __pyx_n_s_append); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 151; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_adder = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":105
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":152
  *         Py_ssize_t i
  *         object adder = matches.append
  *     for i in range(PyList_GET_SIZE(peak_list)):             # <<<<<<<<<<<<<<
@@ -2419,7 +3242,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":106
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":153
  *         object adder = matches.append
  *     for i in range(PyList_GET_SIZE(peak_list)):
  *         other_peak = <DPeak>PyList_GET_ITEM(peak_list, i)             # <<<<<<<<<<<<<<
@@ -2432,7 +3255,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
     __Pyx_XDECREF_SET(__pyx_v_other_peak, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":107
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":154
  *     for i in range(PyList_GET_SIZE(peak_list)):
  *         other_peak = <DPeak>PyList_GET_ITEM(peak_list, i)
  *         if feature.test(peak, other_peak):             # <<<<<<<<<<<<<<
@@ -2442,20 +3265,20 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
     __pyx_t_5 = (((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature->__pyx_vtab)->test(__pyx_v_feature, __pyx_v_peak, __pyx_v_other_peak) != 0);
     if (__pyx_t_5) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":108
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":155
  *         other_peak = <DPeak>PyList_GET_ITEM(peak_list, i)
  *         if feature.test(peak, other_peak):
  *             adder(other_peak)             # <<<<<<<<<<<<<<
  *     return matches
  * 
  */
-      __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_matches, ((PyObject *)__pyx_v_other_peak)); if (unlikely(__pyx_t_6 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 108; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_matches, ((PyObject *)__pyx_v_other_peak)); if (unlikely(__pyx_t_6 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 155; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       goto __pyx_L5;
     }
     __pyx_L5:;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":109
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":156
  *         if feature.test(peak, other_peak):
  *             adder(other_peak)
  *     return matches             # <<<<<<<<<<<<<<
@@ -2467,7 +3290,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
   __pyx_r = __pyx_v_matches;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":95
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":142
  * 
  * 
  * cpdef list search_spectrum(DPeak peak, list peak_list, MassOffsetFeature feature):             # <<<<<<<<<<<<<<
@@ -2490,9 +3313,9 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5search_spectrum(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_4search_spectrum[] = "\n    Search one DPeak instance against a list of DPeaks, returning all which satisfy a\n    single MassOffsetFeature.\n    ";
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5search_spectrum(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_spectrum(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum[] = "\n    Search one DPeak instance against a list of DPeaks, returning all which satisfy a\n    single MassOffsetFeature.\n    ";
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_spectrum(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak = 0;
   PyObject *__pyx_v_peak_list = 0;
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature = 0;
@@ -2523,16 +3346,16 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5search_
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_peak_list)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("search_spectrum", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("search_spectrum", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 142; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_feature)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("search_spectrum", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("search_spectrum", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 142; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "search_spectrum") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "search_spectrum") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 142; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -2547,16 +3370,16 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5search_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("search_spectrum", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("search_spectrum", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 142; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.search_spectrum", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_list), (&PyList_Type), 1, "peak_list", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_feature), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature, 1, "feature", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_4search_spectrum(__pyx_self, __pyx_v_peak, __pyx_v_peak_list, __pyx_v_feature);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 142; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_list), (&PyList_Type), 1, "peak_list", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 142; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_feature), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature, 1, "feature", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 142; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum(__pyx_self, __pyx_v_peak, __pyx_v_peak_list, __pyx_v_feature);
 
   /* function exit code */
   goto __pyx_L0;
@@ -2567,7 +3390,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5search_
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_4search_spectrum(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak, PyObject *__pyx_v_peak_list, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature) {
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak, PyObject *__pyx_v_peak_list, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2576,7 +3399,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_4search_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("search_spectrum", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum(__pyx_v_peak, __pyx_v_peak_list, __pyx_v_feature, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum(__pyx_v_peak, __pyx_v_peak_list, __pyx_v_feature, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 142; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -2593,7 +3416,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_4search_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":112
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":159
  * 
  * 
  * cpdef list search_spectrum_by_mass(float mass, list peak_list, float tolerance=2e-5):             # <<<<<<<<<<<<<<
@@ -2601,7 +3424,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_4search_
  *     Search a mass against a list of DPeaks
  */
 
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_spectrum_by_mass(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9search_spectrum_by_mass(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum_by_mass(float __pyx_v_mass, PyObject *__pyx_v_peak_list, CYTHON_UNUSED int __pyx_skip_dispatch, struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum_by_mass *__pyx_optional_args) {
   float __pyx_v_tolerance = ((float)2e-5);
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_other_peak = 0;
@@ -2626,19 +3449,19 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
     }
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":119
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":166
  *         DPeak other_peak
  *         Py_ssize_t i
  *         list matches = []             # <<<<<<<<<<<<<<
  *     for i in range(PyList_GET_SIZE(peak_list)):
  *         other_peak = <DPeak>PyList_GET_ITEM(peak_list, i)
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 166; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_matches = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":120
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":167
  *         Py_ssize_t i
  *         list matches = []
  *     for i in range(PyList_GET_SIZE(peak_list)):             # <<<<<<<<<<<<<<
@@ -2649,7 +3472,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":121
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":168
  *         list matches = []
  *     for i in range(PyList_GET_SIZE(peak_list)):
  *         other_peak = <DPeak>PyList_GET_ITEM(peak_list, i)             # <<<<<<<<<<<<<<
@@ -2662,31 +3485,31 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
     __Pyx_XDECREF_SET(__pyx_v_other_peak, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":122
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":169
  *     for i in range(PyList_GET_SIZE(peak_list)):
  *         other_peak = <DPeak>PyList_GET_ITEM(peak_list, i)
  *         if abs(ppm_error(mass, other_peak)) <= tolerance:             # <<<<<<<<<<<<<<
  *             PyList_Append(matches, other_peak)
  *     return matches
  */
-    __pyx_t_5 = __pyx_PyFloat_AsFloat(((PyObject *)__pyx_v_other_peak)); if (unlikely((__pyx_t_5 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 122; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = __pyx_PyFloat_AsFloat(((PyObject *)__pyx_v_other_peak)); if (unlikely((__pyx_t_5 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 169; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_t_6 = ((fabsf(__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_error(__pyx_v_mass, __pyx_t_5, 0)) <= __pyx_v_tolerance) != 0);
     if (__pyx_t_6) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":123
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":170
  *         other_peak = <DPeak>PyList_GET_ITEM(peak_list, i)
  *         if abs(ppm_error(mass, other_peak)) <= tolerance:
  *             PyList_Append(matches, other_peak)             # <<<<<<<<<<<<<<
  *     return matches
  * 
  */
-      __pyx_t_7 = PyList_Append(__pyx_v_matches, ((PyObject *)__pyx_v_other_peak)); if (unlikely(__pyx_t_7 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = PyList_Append(__pyx_v_matches, ((PyObject *)__pyx_v_other_peak)); if (unlikely(__pyx_t_7 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 170; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       goto __pyx_L5;
     }
     __pyx_L5:;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":124
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":171
  *         if abs(ppm_error(mass, other_peak)) <= tolerance:
  *             PyList_Append(matches, other_peak)
  *     return matches             # <<<<<<<<<<<<<<
@@ -2698,7 +3521,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
   __pyx_r = __pyx_v_matches;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":112
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":159
  * 
  * 
  * cpdef list search_spectrum_by_mass(float mass, list peak_list, float tolerance=2e-5):             # <<<<<<<<<<<<<<
@@ -2720,9 +3543,9 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_sp
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_spectrum_by_mass(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum_by_mass[] = "\n    Search a mass against a list of DPeaks\n    ";
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_spectrum_by_mass(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9search_spectrum_by_mass(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_8search_spectrum_by_mass[] = "\n    Search a mass against a list of DPeaks\n    ";
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9search_spectrum_by_mass(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   float __pyx_v_mass;
   PyObject *__pyx_v_peak_list = 0;
   float __pyx_v_tolerance;
@@ -2753,7 +3576,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_peak_list)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("search_spectrum_by_mass", 0, 2, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("search_spectrum_by_mass", 0, 2, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 159; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (kw_args > 0) {
@@ -2762,7 +3585,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "search_spectrum_by_mass") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "search_spectrum_by_mass") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 159; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -2773,24 +3596,24 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_
         default: goto __pyx_L5_argtuple_error;
       }
     }
-    __pyx_v_mass = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_mass == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_mass = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_mass == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 159; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     __pyx_v_peak_list = ((PyObject*)values[1]);
     if (values[2]) {
-      __pyx_v_tolerance = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_tolerance == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_tolerance = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_tolerance == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 159; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_tolerance = ((float)2e-5);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("search_spectrum_by_mass", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("search_spectrum_by_mass", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 159; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.search_spectrum_by_mass", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_list), (&PyList_Type), 1, "peak_list", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum_by_mass(__pyx_self, __pyx_v_mass, __pyx_v_peak_list, __pyx_v_tolerance);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_list), (&PyList_Type), 1, "peak_list", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 159; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_8search_spectrum_by_mass(__pyx_self, __pyx_v_mass, __pyx_v_peak_list, __pyx_v_tolerance);
 
   /* function exit code */
   goto __pyx_L0;
@@ -2801,7 +3624,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum_by_mass(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_mass, PyObject *__pyx_v_peak_list, float __pyx_v_tolerance) {
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_8search_spectrum_by_mass(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_mass, PyObject *__pyx_v_peak_list, float __pyx_v_tolerance) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2813,7 +3636,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.tolerance = __pyx_v_tolerance;
-  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum_by_mass(__pyx_v_mass, __pyx_v_peak_list, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum_by_mass(__pyx_v_mass, __pyx_v_peak_list, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 159; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -2830,7 +3653,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":127
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":174
  * 
  * 
  * cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2) nogil:             # <<<<<<<<<<<<<<
@@ -2843,7 +3666,7 @@ static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_f
   int __pyx_t_1;
   int __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":128
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":175
  * 
  * cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2) nogil:
  *     if (feature.intensity_ratio == OUT_OF_RANGE_INT or _intensity_ratio_function(peak1, peak2) == feature.intensity_ratio) and\             # <<<<<<<<<<<<<<
@@ -2863,7 +3686,7 @@ static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_f
   }
   __pyx_L5_next_and:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":129
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":176
  * cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2) nogil:
  *     if (feature.intensity_ratio == OUT_OF_RANGE_INT or _intensity_ratio_function(peak1, peak2) == feature.intensity_ratio) and\
  *        ((feature.from_charge == OUT_OF_RANGE_INT and feature.to_charge == OUT_OF_RANGE_INT) or             # <<<<<<<<<<<<<<
@@ -2882,7 +3705,7 @@ static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_f
   }
   __pyx_L8_next_or:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":130
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":177
  *     if (feature.intensity_ratio == OUT_OF_RANGE_INT or _intensity_ratio_function(peak1, peak2) == feature.intensity_ratio) and\
  *        ((feature.from_charge == OUT_OF_RANGE_INT and feature.to_charge == OUT_OF_RANGE_INT) or
  *         (feature.from_charge == peak1.charge and feature.to_charge == peak2.charge)) and\             # <<<<<<<<<<<<<<
@@ -2903,7 +3726,7 @@ static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_f
   }
   __pyx_L7_next_and:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":131
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":178
  *        ((feature.from_charge == OUT_OF_RANGE_INT and feature.to_charge == OUT_OF_RANGE_INT) or
  *         (feature.from_charge == peak1.charge and feature.to_charge == peak2.charge)) and\
  *        ((feature.min_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank >= feature.min_peak_rank)) and\             # <<<<<<<<<<<<<<
@@ -2923,7 +3746,7 @@ static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_f
   }
   __pyx_L11_next_and:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":132
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":179
  *         (feature.from_charge == peak1.charge and feature.to_charge == peak2.charge)) and\
  *        ((feature.min_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank >= feature.min_peak_rank)) and\
  *        ((feature.max_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank <= feature.max_peak_rank)):             # <<<<<<<<<<<<<<
@@ -2941,7 +3764,7 @@ static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_f
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":133
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":180
  *        ((feature.min_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank >= feature.min_peak_rank)) and\
  *        ((feature.max_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank <= feature.max_peak_rank)):
  *         return fabs(_ppm_error(peak1.neutral_mass + feature.offset, peak2.neutral_mass)) <= feature.tolerance             # <<<<<<<<<<<<<<
@@ -2953,7 +3776,7 @@ static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_f
   }
   /*else*/ {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":135
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":182
  *         return fabs(_ppm_error(peak1.neutral_mass + feature.offset, peak2.neutral_mass)) <= feature.tolerance
  *     else:
  *         return False             # <<<<<<<<<<<<<<
@@ -2964,7 +3787,7 @@ static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_f
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":127
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":174
  * 
  * 
  * cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2) nogil:             # <<<<<<<<<<<<<<
@@ -2977,7 +3800,72 @@ static CYTHON_INLINE int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_f
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":138
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":185
+ * 
+ * 
+ * cdef bint _precursor_context(MSFeatureStruct* feature, MatchedSpectrumStruct* ms) nogil:             # <<<<<<<<<<<<<<
+ *     return (feature.glycan_peptide_ratio == OUT_OF_RANGE_INT or feature.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+ *        (feature.peptide_mass_rank == OUT_OF_RANGE_INT or feature.peptide_mass_rank == ms.peptide_mass_rank)
+ */
+
+static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__precursor_context(struct MSFeatureStruct *__pyx_v_feature, struct MatchedSpectrumStruct *__pyx_v_ms) {
+  int __pyx_r;
+  int __pyx_t_1;
+  int __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":186
+ * 
+ * cdef bint _precursor_context(MSFeatureStruct* feature, MatchedSpectrumStruct* ms) nogil:
+ *     return (feature.glycan_peptide_ratio == OUT_OF_RANGE_INT or feature.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\             # <<<<<<<<<<<<<<
+ *        (feature.peptide_mass_rank == OUT_OF_RANGE_INT or feature.peptide_mass_rank == ms.peptide_mass_rank)
+ * 
+ */
+  __pyx_t_2 = ((__pyx_v_feature->glycan_peptide_ratio == __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (!__pyx_t_2) {
+  } else {
+    goto __pyx_L4_next_and;
+  }
+  __pyx_t_2 = ((__pyx_v_feature->glycan_peptide_ratio == __pyx_v_ms->glycan_peptide_ratio) != 0);
+  if (__pyx_t_2) {
+  } else {
+    __pyx_t_1 = __pyx_t_2;
+    goto __pyx_L3_bool_binop_done;
+  }
+  __pyx_L4_next_and:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":187
+ * cdef bint _precursor_context(MSFeatureStruct* feature, MatchedSpectrumStruct* ms) nogil:
+ *     return (feature.glycan_peptide_ratio == OUT_OF_RANGE_INT or feature.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+ *        (feature.peptide_mass_rank == OUT_OF_RANGE_INT or feature.peptide_mass_rank == ms.peptide_mass_rank)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_2 = ((__pyx_v_feature->peptide_mass_rank == __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (!__pyx_t_2) {
+  } else {
+    __pyx_t_1 = __pyx_t_2;
+    goto __pyx_L3_bool_binop_done;
+  }
+  __pyx_t_2 = ((__pyx_v_feature->peptide_mass_rank == __pyx_v_ms->peptide_mass_rank) != 0);
+  __pyx_t_1 = __pyx_t_2;
+  __pyx_L3_bool_binop_done:;
+  __pyx_r = __pyx_t_1;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":185
+ * 
+ * 
+ * cdef bint _precursor_context(MSFeatureStruct* feature, MatchedSpectrumStruct* ms) nogil:             # <<<<<<<<<<<<<<
+ *     return (feature.glycan_peptide_ratio == OUT_OF_RANGE_INT or feature.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+ *        (feature.peptide_mass_rank == OUT_OF_RANGE_INT or feature.peptide_mass_rank == ms.peptide_mass_rank)
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":190
  * 
  * 
  * cdef PeakStructArray* _search_spectrum(PeakStruct* peak, PeakStructArray* peak_list, MSFeatureStruct* feature) nogil:             # <<<<<<<<<<<<<<
@@ -2995,7 +3883,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   size_t __pyx_t_2;
   int __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":144
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":196
  *         PeakStruct query_peak
  * 
  *     matches = <PeakStructArray*>malloc(sizeof(PeakStructArray))             # <<<<<<<<<<<<<<
@@ -3004,7 +3892,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_matches = ((struct PeakStructArray *)malloc((sizeof(struct PeakStructArray))));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":145
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":197
  * 
  *     matches = <PeakStructArray*>malloc(sizeof(PeakStructArray))
  *     matches.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peak_list.size)             # <<<<<<<<<<<<<<
@@ -3013,7 +3901,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_matches->peaks = ((struct PeakStruct *)malloc(((sizeof(struct PeakStruct)) * __pyx_v_peak_list->size)));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":146
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":198
  *     matches = <PeakStructArray*>malloc(sizeof(PeakStructArray))
  *     matches.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peak_list.size)
  *     matches.size = peak_list.size             # <<<<<<<<<<<<<<
@@ -3023,7 +3911,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   __pyx_t_1 = __pyx_v_peak_list->size;
   __pyx_v_matches->size = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":147
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":199
  *     matches.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peak_list.size)
  *     matches.size = peak_list.size
  *     n = 0             # <<<<<<<<<<<<<<
@@ -3032,7 +3920,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_n = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":148
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":200
  *     matches.size = peak_list.size
  *     n = 0
  *     for i in range(peak_list.size):             # <<<<<<<<<<<<<<
@@ -3043,7 +3931,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":149
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":201
  *     n = 0
  *     for i in range(peak_list.size):
  *         query_peak = peak_list.peaks[i]             # <<<<<<<<<<<<<<
@@ -3052,7 +3940,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
     __pyx_v_query_peak = (__pyx_v_peak_list->peaks[__pyx_v_i]);
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":150
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":202
  *     for i in range(peak_list.size):
  *         query_peak = peak_list.peaks[i]
  *         if feature_match(feature, peak, &query_peak):             # <<<<<<<<<<<<<<
@@ -3062,7 +3950,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_t_3 = (__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_feature_match(__pyx_v_feature, __pyx_v_peak, (&__pyx_v_query_peak)) != 0);
     if (__pyx_t_3) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":151
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":203
  *         query_peak = peak_list.peaks[i]
  *         if feature_match(feature, peak, &query_peak):
  *             matches.peaks[n] = query_peak             # <<<<<<<<<<<<<<
@@ -3071,7 +3959,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
       (__pyx_v_matches->peaks[__pyx_v_n]) = __pyx_v_query_peak;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":152
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":204
  *         if feature_match(feature, peak, &query_peak):
  *             matches.peaks[n] = query_peak
  *             n += 1             # <<<<<<<<<<<<<<
@@ -3084,7 +3972,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_L5:;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":153
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":205
  *             matches.peaks[n] = query_peak
  *             n += 1
  *     matches.peaks = <PeakStruct*>realloc(matches.peaks, sizeof(PeakStruct) * n)             # <<<<<<<<<<<<<<
@@ -3093,7 +3981,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_matches->peaks = ((struct PeakStruct *)realloc(__pyx_v_matches->peaks, ((sizeof(struct PeakStruct)) * __pyx_v_n)));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":154
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":206
  *             n += 1
  *     matches.peaks = <PeakStruct*>realloc(matches.peaks, sizeof(PeakStruct) * n)
  *     matches.size = n             # <<<<<<<<<<<<<<
@@ -3102,7 +3990,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_matches->size = __pyx_v_n;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":155
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":207
  *     matches.peaks = <PeakStruct*>realloc(matches.peaks, sizeof(PeakStruct) * n)
  *     matches.size = n
  *     return matches             # <<<<<<<<<<<<<<
@@ -3112,7 +4000,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   __pyx_r = __pyx_v_matches;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":138
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":190
  * 
  * 
  * cdef PeakStructArray* _search_spectrum(PeakStruct* peak, PeakStructArray* peak_list, MSFeatureStruct* feature) nogil:             # <<<<<<<<<<<<<<
@@ -3125,7 +4013,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":158
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":210
  * 
  * 
  * cdef PeakStructArray* _openmp_search_spectrum(PeakStruct* peak, PeakStructArray* peak_list, MSFeatureStruct* feature) nogil:             # <<<<<<<<<<<<<<
@@ -3150,7 +4038,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   size_t __pyx_t_6;
   size_t __pyx_t_7;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":166
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":218
  *         int* did_match
  *         long i_p, n_p
  *     n = peak_list.size             # <<<<<<<<<<<<<<
@@ -3160,28 +4048,28 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   __pyx_t_1 = __pyx_v_peak_list->size;
   __pyx_v_n = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":167
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":219
  *         long i_p, n_p
  *     n = peak_list.size
  *     n_p = n             # <<<<<<<<<<<<<<
  *     did_match = <int*>malloc(sizeof(int)*n)
- *     for i_p in prange(n_p, schedule="guided", num_threads=12):
+ *     for i_p in prange(n_p, schedule="guided", num_threads=8):
  */
   __pyx_v_n_p = __pyx_v_n;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":168
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":220
  *     n = peak_list.size
  *     n_p = n
  *     did_match = <int*>malloc(sizeof(int)*n)             # <<<<<<<<<<<<<<
- *     for i_p in prange(n_p, schedule="guided", num_threads=12):
+ *     for i_p in prange(n_p, schedule="guided", num_threads=8):
  *         if feature_match(feature, peak, &peak_list.peaks[i_p]):
  */
   __pyx_v_did_match = ((int *)malloc(((sizeof(int)) * __pyx_v_n)));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":169
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":221
  *     n_p = n
  *     did_match = <int*>malloc(sizeof(int)*n)
- *     for i_p in prange(n_p, schedule="guided", num_threads=12):             # <<<<<<<<<<<<<<
+ *     for i_p in prange(n_p, schedule="guided", num_threads=8):             # <<<<<<<<<<<<<<
  *         if feature_match(feature, peak, &peak_list.peaks[i_p]):
  *             did_match[i_p] = 1
  */
@@ -3198,7 +4086,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
       if (__pyx_t_4 > 0)
       {
           #ifdef _OPENMP
-          #pragma omp parallel num_threads(12) private(__pyx_t_5)
+          #pragma omp parallel num_threads(8) private(__pyx_t_5)
           #endif /* _OPENMP */
           {
               #ifdef _OPENMP
@@ -3208,9 +4096,9 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
                   {
                       __pyx_v_i_p = 0 + 1 * __pyx_t_3;
 
-                      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":170
+                      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":222
  *     did_match = <int*>malloc(sizeof(int)*n)
- *     for i_p in prange(n_p, schedule="guided", num_threads=12):
+ *     for i_p in prange(n_p, schedule="guided", num_threads=8):
  *         if feature_match(feature, peak, &peak_list.peaks[i_p]):             # <<<<<<<<<<<<<<
  *             did_match[i_p] = 1
  *         else:
@@ -3218,8 +4106,8 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
                       __pyx_t_5 = (__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_feature_match(__pyx_v_feature, __pyx_v_peak, (&(__pyx_v_peak_list->peaks[__pyx_v_i_p]))) != 0);
                       if (__pyx_t_5) {
 
-                        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":171
- *     for i_p in prange(n_p, schedule="guided", num_threads=12):
+                        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":223
+ *     for i_p in prange(n_p, schedule="guided", num_threads=8):
  *         if feature_match(feature, peak, &peak_list.peaks[i_p]):
  *             did_match[i_p] = 1             # <<<<<<<<<<<<<<
  *         else:
@@ -3230,7 +4118,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
                       }
                       /*else*/ {
 
-                        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":173
+                        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":225
  *             did_match[i_p] = 1
  *         else:
  *             did_match[i_p] = 0             # <<<<<<<<<<<<<<
@@ -3252,7 +4140,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
       #define unlikely(x) __builtin_expect(!!(x), 0)
   #endif
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":174
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":226
  *         else:
  *             did_match[i_p] = 0
  *     matches = <PeakStructArray*>malloc(sizeof(PeakStructArray))             # <<<<<<<<<<<<<<
@@ -3261,7 +4149,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_matches = ((struct PeakStructArray *)malloc((sizeof(struct PeakStructArray))));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":175
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":227
  *             did_match[i_p] = 0
  *     matches = <PeakStructArray*>malloc(sizeof(PeakStructArray))
  *     matches.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peak_list.size)             # <<<<<<<<<<<<<<
@@ -3270,7 +4158,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_matches->peaks = ((struct PeakStruct *)malloc(((sizeof(struct PeakStruct)) * __pyx_v_peak_list->size)));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":176
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":228
  *     matches = <PeakStructArray*>malloc(sizeof(PeakStructArray))
  *     matches.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peak_list.size)
  *     matches.size = peak_list.size             # <<<<<<<<<<<<<<
@@ -3280,7 +4168,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   __pyx_t_1 = __pyx_v_peak_list->size;
   __pyx_v_matches->size = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":178
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":230
  *     matches.size = peak_list.size
  * 
  *     j = 0             # <<<<<<<<<<<<<<
@@ -3289,7 +4177,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_j = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":179
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":231
  * 
  *     j = 0
  *     for i in range(n):             # <<<<<<<<<<<<<<
@@ -3300,7 +4188,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
     __pyx_v_i = __pyx_t_7;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":180
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":232
  *     j = 0
  *     for i in range(n):
  *         if did_match[i]:             # <<<<<<<<<<<<<<
@@ -3310,7 +4198,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_t_5 = ((__pyx_v_did_match[__pyx_v_i]) != 0);
     if (__pyx_t_5) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":181
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":233
  *     for i in range(n):
  *         if did_match[i]:
  *             matches.peaks[j] = peak_list.peaks[i]             # <<<<<<<<<<<<<<
@@ -3319,7 +4207,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
       (__pyx_v_matches->peaks[__pyx_v_j]) = (__pyx_v_peak_list->peaks[__pyx_v_i]);
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":182
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":234
  *         if did_match[i]:
  *             matches.peaks[j] = peak_list.peaks[i]
  *             j += 1             # <<<<<<<<<<<<<<
@@ -3332,7 +4220,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_L12:;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":183
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":235
  *             matches.peaks[j] = peak_list.peaks[i]
  *             j += 1
  *     matches.peaks = <PeakStruct*>realloc(matches.peaks, sizeof(PeakStruct) * j)             # <<<<<<<<<<<<<<
@@ -3341,7 +4229,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_matches->peaks = ((struct PeakStruct *)realloc(__pyx_v_matches->peaks, ((sizeof(struct PeakStruct)) * __pyx_v_j)));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":184
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":236
  *             j += 1
  *     matches.peaks = <PeakStruct*>realloc(matches.peaks, sizeof(PeakStruct) * j)
  *     matches.size = j             # <<<<<<<<<<<<<<
@@ -3350,7 +4238,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_matches->size = __pyx_v_j;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":185
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":237
  *     matches.peaks = <PeakStruct*>realloc(matches.peaks, sizeof(PeakStruct) * j)
  *     matches.size = j
  *     free(did_match)             # <<<<<<<<<<<<<<
@@ -3359,7 +4247,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   free(__pyx_v_did_match);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":186
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":238
  *     matches.size = j
  *     free(did_match)
  *     return matches             # <<<<<<<<<<<<<<
@@ -3369,7 +4257,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   __pyx_r = __pyx_v_matches;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":158
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":210
  * 
  * 
  * cdef PeakStructArray* _openmp_search_spectrum(PeakStruct* peak, PeakStructArray* peak_list, MSFeatureStruct* feature) nogil:             # <<<<<<<<<<<<<<
@@ -3382,7 +4270,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":189
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":241
  * 
  * 
  * cdef void _intensity_rank(PeakStructArray* peak_list, float minimum_intensity=100.) nogil:             # <<<<<<<<<<<<<<
@@ -3407,7 +4295,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
     }
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":194
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":246
  *         int step, rank, tailing
  *         PeakStruct p
  *     sort_by_intensity(peak_list)             # <<<<<<<<<<<<<<
@@ -3416,7 +4304,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
   __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sort_by_intensity(__pyx_v_peak_list);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":195
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":247
  *         PeakStruct p
  *     sort_by_intensity(peak_list)
  *     step = 0             # <<<<<<<<<<<<<<
@@ -3425,7 +4313,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
   __pyx_v_step = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":196
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":248
  *     sort_by_intensity(peak_list)
  *     step = 0
  *     rank = 10             # <<<<<<<<<<<<<<
@@ -3434,7 +4322,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
   __pyx_v_rank = 10;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":197
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":249
  *     step = 0
  *     rank = 10
  *     tailing = 6             # <<<<<<<<<<<<<<
@@ -3443,7 +4331,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
   __pyx_v_tailing = 6;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":198
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":250
  *     rank = 10
  *     tailing = 6
  *     for i in range(peak_list.size):             # <<<<<<<<<<<<<<
@@ -3454,7 +4342,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":199
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":251
  *     tailing = 6
  *     for i in range(peak_list.size):
  *         p = peak_list.peaks[i]             # <<<<<<<<<<<<<<
@@ -3463,7 +4351,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
     __pyx_v_p = (__pyx_v_peak_list->peaks[__pyx_v_i]);
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":200
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":252
  *     for i in range(peak_list.size):
  *         p = peak_list.peaks[i]
  *         if p.intensity < minimum_intensity:             # <<<<<<<<<<<<<<
@@ -3473,7 +4361,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
     __pyx_t_3 = ((__pyx_v_p.intensity < __pyx_v_minimum_intensity) != 0);
     if (__pyx_t_3) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":201
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":253
  *         p = peak_list.peaks[i]
  *         if p.intensity < minimum_intensity:
  *             p.rank = 0             # <<<<<<<<<<<<<<
@@ -3482,7 +4370,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
       __pyx_v_p.rank = 0;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":202
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":254
  *         if p.intensity < minimum_intensity:
  *             p.rank = 0
  *             continue             # <<<<<<<<<<<<<<
@@ -3492,7 +4380,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
       goto __pyx_L3_continue;
     }
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":203
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":255
  *             p.rank = 0
  *             continue
  *         step += 1             # <<<<<<<<<<<<<<
@@ -3501,7 +4389,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
     __pyx_v_step = (__pyx_v_step + 1);
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":204
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":256
  *             continue
  *         step += 1
  *         if step == 10 and rank != 0:             # <<<<<<<<<<<<<<
@@ -3519,7 +4407,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
     __pyx_L7_bool_binop_done:;
     if (__pyx_t_3) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":205
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":257
  *         step += 1
  *         if step == 10 and rank != 0:
  *             if rank == 1:             # <<<<<<<<<<<<<<
@@ -3529,7 +4417,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
       __pyx_t_3 = ((__pyx_v_rank == 1) != 0);
       if (__pyx_t_3) {
 
-        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":206
+        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":258
  *         if step == 10 and rank != 0:
  *             if rank == 1:
  *                 if tailing != 0:             # <<<<<<<<<<<<<<
@@ -3539,7 +4427,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
         __pyx_t_3 = ((__pyx_v_tailing != 0) != 0);
         if (__pyx_t_3) {
 
-          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":207
+          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":259
  *             if rank == 1:
  *                 if tailing != 0:
  *                     step = 0             # <<<<<<<<<<<<<<
@@ -3548,7 +4436,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
           __pyx_v_step = 0;
 
-          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":208
+          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":260
  *                 if tailing != 0:
  *                     step = 0
  *                     tailing -= 1             # <<<<<<<<<<<<<<
@@ -3560,7 +4448,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
         }
         /*else*/ {
 
-          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":210
+          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":262
  *                     tailing -= 1
  *                 else:
  *                     step = 0             # <<<<<<<<<<<<<<
@@ -3569,7 +4457,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
           __pyx_v_step = 0;
 
-          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":211
+          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":263
  *                 else:
  *                     step = 0
  *                     rank -= 1             # <<<<<<<<<<<<<<
@@ -3583,7 +4471,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
       }
       /*else*/ {
 
-        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":213
+        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":265
  *                     rank -= 1
  *             else:
  *                 step = 0             # <<<<<<<<<<<<<<
@@ -3592,7 +4480,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
  */
         __pyx_v_step = 0;
 
-        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":214
+        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":266
  *             else:
  *                 step = 0
  *                 rank -= 1             # <<<<<<<<<<<<<<
@@ -3606,7 +4494,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
     }
     __pyx_L6:;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":215
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":267
  *                 step = 0
  *                 rank -= 1
  *         if rank == 0:             # <<<<<<<<<<<<<<
@@ -3616,7 +4504,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
     __pyx_t_3 = ((__pyx_v_rank == 0) != 0);
     if (__pyx_t_3) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":216
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":268
  *                 rank -= 1
  *         if rank == 0:
  *             break             # <<<<<<<<<<<<<<
@@ -3626,7 +4514,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
       goto __pyx_L4_break;
     }
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":217
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":269
  *         if rank == 0:
  *             break
  *         p.rank = rank             # <<<<<<<<<<<<<<
@@ -3638,7 +4526,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
   }
   __pyx_L4_break:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":189
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":241
  * 
  * 
  * cdef void _intensity_rank(PeakStructArray* peak_list, float minimum_intensity=100.) nogil:             # <<<<<<<<<<<<<<
@@ -3649,7 +4537,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ran
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":220
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":272
  * 
  * 
  * cdef void intensity_rank(list peak_list, float minimum_intensity=100.):             # <<<<<<<<<<<<<<
@@ -3683,7 +4571,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
   }
   __Pyx_INCREF(__pyx_v_peak_list);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":222
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":274
  * cdef void intensity_rank(list peak_list, float minimum_intensity=100.):
  *     cdef:
  *         Py_ssize_t i = 0             # <<<<<<<<<<<<<<
@@ -3692,31 +4580,31 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
   __pyx_v_i = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":225
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":277
  *         int step, rank, tailing
  *         DPeak p
  *     peak_list = sorted(peak_list, key=get_intensity, reverse=True)             # <<<<<<<<<<<<<<
  *     step = 0
  *     rank = 10
  */
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_peak_list);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_peak_list);
   __Pyx_GIVEREF(__pyx_v_peak_list);
-  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_key, __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_get_intensity) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_reverse, Py_True) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_sorted, __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_key, __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_get_intensity) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_reverse, Py_True) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_sorted, __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF_SET(__pyx_v_peak_list, ((PyObject*)__pyx_t_3));
   __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":226
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":278
  *         DPeak p
  *     peak_list = sorted(peak_list, key=get_intensity, reverse=True)
  *     step = 0             # <<<<<<<<<<<<<<
@@ -3725,7 +4613,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
   __pyx_v_step = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":227
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":279
  *     peak_list = sorted(peak_list, key=get_intensity, reverse=True)
  *     step = 0
  *     rank = 10             # <<<<<<<<<<<<<<
@@ -3734,7 +4622,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
   __pyx_v_rank = 10;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":228
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":280
  *     step = 0
  *     rank = 10
  *     tailing = 6             # <<<<<<<<<<<<<<
@@ -3743,7 +4631,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
   __pyx_v_tailing = 6;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":229
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":281
  *     rank = 10
  *     tailing = 6
  *     for i in range(len(peak_list)):             # <<<<<<<<<<<<<<
@@ -3752,13 +4640,13 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
   if (unlikely(__pyx_v_peak_list == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 229; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 281; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_4 = PyList_GET_SIZE(__pyx_v_peak_list); if (unlikely(__pyx_t_4 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 229; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyList_GET_SIZE(__pyx_v_peak_list); if (unlikely(__pyx_t_4 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 281; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
     __pyx_v_i = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":230
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":282
  *     tailing = 6
  *     for i in range(len(peak_list)):
  *         p = <DPeak>peak_list[i]             # <<<<<<<<<<<<<<
@@ -3767,9 +4655,9 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
     if (unlikely(__pyx_v_peak_list == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 230; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
-    __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_peak_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 230; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_peak_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_2 = __pyx_t_3;
     __Pyx_INCREF(__pyx_t_2);
@@ -3777,7 +4665,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
     __Pyx_XDECREF_SET(__pyx_v_p, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_2));
     __pyx_t_2 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":231
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":283
  *     for i in range(len(peak_list)):
  *         p = <DPeak>peak_list[i]
  *         if p.intensity < minimum_intensity:             # <<<<<<<<<<<<<<
@@ -3787,7 +4675,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
     __pyx_t_6 = ((__pyx_v_p->intensity < __pyx_v_minimum_intensity) != 0);
     if (__pyx_t_6) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":232
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":284
  *         p = <DPeak>peak_list[i]
  *         if p.intensity < minimum_intensity:
  *             p.rank = 0             # <<<<<<<<<<<<<<
@@ -3796,7 +4684,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
       __pyx_v_p->rank = 0;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":233
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":285
  *         if p.intensity < minimum_intensity:
  *             p.rank = 0
  *             continue             # <<<<<<<<<<<<<<
@@ -3806,7 +4694,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
       goto __pyx_L3_continue;
     }
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":234
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":286
  *             p.rank = 0
  *             continue
  *         step += 1             # <<<<<<<<<<<<<<
@@ -3815,7 +4703,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
     __pyx_v_step = (__pyx_v_step + 1);
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":235
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":287
  *             continue
  *         step += 1
  *         if step == 10 and rank != 0:             # <<<<<<<<<<<<<<
@@ -3833,7 +4721,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
     __pyx_L7_bool_binop_done:;
     if (__pyx_t_6) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":236
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":288
  *         step += 1
  *         if step == 10 and rank != 0:
  *             if rank == 1:             # <<<<<<<<<<<<<<
@@ -3843,7 +4731,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
       __pyx_t_6 = ((__pyx_v_rank == 1) != 0);
       if (__pyx_t_6) {
 
-        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":237
+        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":289
  *         if step == 10 and rank != 0:
  *             if rank == 1:
  *                 if tailing != 0:             # <<<<<<<<<<<<<<
@@ -3853,7 +4741,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
         __pyx_t_6 = ((__pyx_v_tailing != 0) != 0);
         if (__pyx_t_6) {
 
-          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":238
+          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":290
  *             if rank == 1:
  *                 if tailing != 0:
  *                     step = 0             # <<<<<<<<<<<<<<
@@ -3862,7 +4750,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
           __pyx_v_step = 0;
 
-          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":239
+          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":291
  *                 if tailing != 0:
  *                     step = 0
  *                     tailing -= 1             # <<<<<<<<<<<<<<
@@ -3874,7 +4762,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
         }
         /*else*/ {
 
-          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":241
+          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":293
  *                     tailing -= 1
  *                 else:
  *                     step = 0             # <<<<<<<<<<<<<<
@@ -3883,7 +4771,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
           __pyx_v_step = 0;
 
-          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":242
+          /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":294
  *                 else:
  *                     step = 0
  *                     rank -= 1             # <<<<<<<<<<<<<<
@@ -3897,7 +4785,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
       }
       /*else*/ {
 
-        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":244
+        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":296
  *                     rank -= 1
  *             else:
  *                 step = 0             # <<<<<<<<<<<<<<
@@ -3906,7 +4794,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
  */
         __pyx_v_step = 0;
 
-        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":245
+        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":297
  *             else:
  *                 step = 0
  *                 rank -= 1             # <<<<<<<<<<<<<<
@@ -3920,7 +4808,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
     }
     __pyx_L6:;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":246
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":298
  *                 step = 0
  *                 rank -= 1
  *         if rank == 0:             # <<<<<<<<<<<<<<
@@ -3930,7 +4818,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
     __pyx_t_6 = ((__pyx_v_rank == 0) != 0);
     if (__pyx_t_6) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":247
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":299
  *                 rank -= 1
  *         if rank == 0:
  *             break             # <<<<<<<<<<<<<<
@@ -3940,7 +4828,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
       goto __pyx_L4_break;
     }
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":248
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":300
  *         if rank == 0:
  *             break
  *         p.rank = rank             # <<<<<<<<<<<<<<
@@ -3952,7 +4840,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
   }
   __pyx_L4_break:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":220
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":272
  * 
  * 
  * cdef void intensity_rank(list peak_list, float minimum_intensity=100.):             # <<<<<<<<<<<<<<
@@ -3973,12 +4861,12 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank
   __Pyx_RefNannyFinishContext();
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":259
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":308
  * cdef class MassOffsetFeature(object):
  * 
  *     def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT,             # <<<<<<<<<<<<<<
  *                  from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type="",
- *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT):
+ *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT,
  */
 
 /* Python wrapper */
@@ -3993,6 +4881,8 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   PyObject *__pyx_v_feature_type = 0;
   PyObject *__pyx_v_min_peak_rank = 0;
   PyObject *__pyx_v_max_peak_rank = 0;
+  PyObject *__pyx_v_glycan_peptide_ratio = 0;
+  PyObject *__pyx_v_peptide_mass_rank = 0;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -4000,8 +4890,8 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__ (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_offset,&__pyx_n_s_tolerance,&__pyx_n_s_name,&__pyx_n_s_intensity_ratio,&__pyx_n_s_from_charge,&__pyx_n_s_to_charge,&__pyx_n_s_feature_type,&__pyx_n_s_min_peak_rank,&__pyx_n_s_max_peak_rank,0};
-    PyObject* values[9] = {0,0,0,0,0,0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_offset,&__pyx_n_s_tolerance,&__pyx_n_s_name,&__pyx_n_s_intensity_ratio,&__pyx_n_s_from_charge,&__pyx_n_s_to_charge,&__pyx_n_s_feature_type,&__pyx_n_s_min_peak_rank,&__pyx_n_s_max_peak_rank,&__pyx_n_s_glycan_peptide_ratio,&__pyx_n_s_peptide_mass_rank,0};
+    PyObject* values[11] = {0,0,0,0,0,0,0,0,0,0,0};
     values[2] = ((PyObject *)Py_None);
     values[3] = __pyx_k_;
     values[4] = __pyx_k__2;
@@ -4009,10 +4899,14 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
     values[6] = ((PyObject *)__pyx_kp_s__4);
     values[7] = __pyx_k__5;
     values[8] = __pyx_k__6;
+    values[9] = __pyx_k__7;
+    values[10] = __pyx_k__8;
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case 11: values[10] = PyTuple_GET_ITEM(__pyx_args, 10);
+        case 10: values[9] = PyTuple_GET_ITEM(__pyx_args, 9);
         case  9: values[8] = PyTuple_GET_ITEM(__pyx_args, 8);
         case  8: values[7] = PyTuple_GET_ITEM(__pyx_args, 7);
         case  7: values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
@@ -4033,7 +4927,7 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_tolerance)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 0, 2, 9, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 259; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("__init__", 0, 2, 11, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 308; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (kw_args > 0) {
@@ -4070,12 +4964,24 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
           PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_max_peak_rank);
           if (value) { values[8] = value; kw_args--; }
         }
+        case  9:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_glycan_peptide_ratio);
+          if (value) { values[9] = value; kw_args--; }
+        }
+        case 10:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_peptide_mass_rank);
+          if (value) { values[10] = value; kw_args--; }
+        }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 259; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 308; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case 11: values[10] = PyTuple_GET_ITEM(__pyx_args, 10);
+        case 10: values[9] = PyTuple_GET_ITEM(__pyx_args, 9);
         case  9: values[8] = PyTuple_GET_ITEM(__pyx_args, 8);
         case  8: values[7] = PyTuple_GET_ITEM(__pyx_args, 7);
         case  7: values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
@@ -4098,23 +5004,25 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
     __pyx_v_feature_type = values[6];
     __pyx_v_min_peak_rank = values[7];
     __pyx_v_max_peak_rank = values[8];
+    __pyx_v_glycan_peptide_ratio = values[9];
+    __pyx_v_peptide_mass_rank = values[10];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 2, 9, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 259; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 2, 11, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 308; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature___init__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self), __pyx_v_offset, __pyx_v_tolerance, __pyx_v_name, __pyx_v_intensity_ratio, __pyx_v_from_charge, __pyx_v_to_charge, __pyx_v_feature_type, __pyx_v_min_peak_rank, __pyx_v_max_peak_rank);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature___init__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self), __pyx_v_offset, __pyx_v_tolerance, __pyx_v_name, __pyx_v_intensity_ratio, __pyx_v_from_charge, __pyx_v_to_charge, __pyx_v_feature_type, __pyx_v_min_peak_rank, __pyx_v_max_peak_rank, __pyx_v_glycan_peptide_ratio, __pyx_v_peptide_mass_rank);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature___init__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_offset, PyObject *__pyx_v_tolerance, PyObject *__pyx_v_name, PyObject *__pyx_v_intensity_ratio, PyObject *__pyx_v_from_charge, PyObject *__pyx_v_to_charge, PyObject *__pyx_v_feature_type, PyObject *__pyx_v_min_peak_rank, PyObject *__pyx_v_max_peak_rank) {
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature___init__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_offset, PyObject *__pyx_v_tolerance, PyObject *__pyx_v_name, PyObject *__pyx_v_intensity_ratio, PyObject *__pyx_v_from_charge, PyObject *__pyx_v_to_charge, PyObject *__pyx_v_feature_type, PyObject *__pyx_v_min_peak_rank, PyObject *__pyx_v_max_peak_rank, PyObject *__pyx_v_glycan_peptide_ratio, PyObject *__pyx_v_peptide_mass_rank) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -4130,9 +5038,9 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   __Pyx_RefNannySetupContext("__init__", 0);
   __Pyx_INCREF(__pyx_v_name);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":262
- *                  from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type="",
- *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT):
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":312
+ *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT,
+ *                  glycan_peptide_ratio=OUT_OF_RANGE_INT, peptide_mass_rank=OUT_OF_RANGE_INT):
  *         if name is None:             # <<<<<<<<<<<<<<
  *             name = "F:" + str(offset)
  *             if intensity_ratio is not OUT_OF_RANGE_INT:
@@ -4141,53 +5049,53 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":263
- *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT):
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":313
+ *                  glycan_peptide_ratio=OUT_OF_RANGE_INT, peptide_mass_rank=OUT_OF_RANGE_INT):
  *         if name is None:
  *             name = "F:" + str(offset)             # <<<<<<<<<<<<<<
  *             if intensity_ratio is not OUT_OF_RANGE_INT:
  *                 name += ", %r" % (intensity_ratio if intensity_ratio > OUT_OF_RANGE_INT else '')
  */
-    __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 313; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_INCREF(__pyx_v_offset);
     PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_offset);
     __Pyx_GIVEREF(__pyx_v_offset);
-    __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)(&PyString_Type))), __pyx_t_3, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)(&PyString_Type))), __pyx_t_3, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 313; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PyNumber_Add(__pyx_kp_s_F, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = PyNumber_Add(__pyx_kp_s_F, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 313; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF_SET(__pyx_v_name, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":264
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":314
  *         if name is None:
  *             name = "F:" + str(offset)
  *             if intensity_ratio is not OUT_OF_RANGE_INT:             # <<<<<<<<<<<<<<
  *                 name += ", %r" % (intensity_ratio if intensity_ratio > OUT_OF_RANGE_INT else '')
  * 
  */
-    __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 264; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 314; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_2 = (__pyx_v_intensity_ratio != __pyx_t_3);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_1 = (__pyx_t_2 != 0);
     if (__pyx_t_1) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":265
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":315
  *             name = "F:" + str(offset)
  *             if intensity_ratio is not OUT_OF_RANGE_INT:
  *                 name += ", %r" % (intensity_ratio if intensity_ratio > OUT_OF_RANGE_INT else '')             # <<<<<<<<<<<<<<
  * 
  *         self.offset = offset
  */
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 315; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_5 = PyObject_RichCompare(__pyx_v_intensity_ratio, __pyx_t_4, Py_GT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = PyObject_RichCompare(__pyx_v_intensity_ratio, __pyx_t_4, Py_GT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 315; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_1 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_1 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 315; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       if (__pyx_t_1) {
         __Pyx_INCREF(__pyx_v_intensity_ratio);
@@ -4196,10 +5104,10 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
         __Pyx_INCREF(__pyx_kp_s__4);
         __pyx_t_3 = __pyx_kp_s__4;
       }
-      __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_r, __pyx_t_3); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = __Pyx_PyString_Format(__pyx_kp_s_r, __pyx_t_3); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 315; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_3 = PyNumber_InPlaceAdd(__pyx_v_name, __pyx_t_5); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_3 = PyNumber_InPlaceAdd(__pyx_v_name, __pyx_t_5); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 315; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF_SET(__pyx_v_name, __pyx_t_3);
@@ -4211,34 +5119,34 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   }
   __pyx_L3:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":267
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":317
  *                 name += ", %r" % (intensity_ratio if intensity_ratio > OUT_OF_RANGE_INT else '')
  * 
  *         self.offset = offset             # <<<<<<<<<<<<<<
  *         self.tolerance = tolerance
  *         self.name = name
  */
-  __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_v_offset); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 267; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_v_offset); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 317; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->offset = __pyx_t_6;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":268
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":318
  * 
  *         self.offset = offset
  *         self.tolerance = tolerance             # <<<<<<<<<<<<<<
  *         self.name = name
  *         self.intensity_ratio = intensity_ratio
  */
-  __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_v_tolerance); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 268; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_v_tolerance); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 318; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->tolerance = __pyx_t_6;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":269
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":319
  *         self.offset = offset
  *         self.tolerance = tolerance
  *         self.name = name             # <<<<<<<<<<<<<<
  *         self.intensity_ratio = intensity_ratio
  *         self.from_charge = from_charge
  */
-  if (!(likely(PyString_CheckExact(__pyx_v_name))||((__pyx_v_name) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_name)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 269; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyString_CheckExact(__pyx_v_name))||((__pyx_v_name) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_name)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 319; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_3 = __pyx_v_name;
   __Pyx_INCREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_3);
@@ -4247,44 +5155,44 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   __pyx_v_self->name = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":270
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":320
  *         self.tolerance = tolerance
  *         self.name = name
  *         self.intensity_ratio = intensity_ratio             # <<<<<<<<<<<<<<
  *         self.from_charge = from_charge
  *         self.to_charge = to_charge
  */
-  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_intensity_ratio); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 270; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_intensity_ratio); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 320; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->intensity_ratio = __pyx_t_7;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":271
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":321
  *         self.name = name
  *         self.intensity_ratio = intensity_ratio
  *         self.from_charge = from_charge             # <<<<<<<<<<<<<<
  *         self.to_charge = to_charge
  *         self.feature_type = feature_type
  */
-  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_from_charge); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 271; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_from_charge); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 321; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->from_charge = __pyx_t_7;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":272
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":322
  *         self.intensity_ratio = intensity_ratio
  *         self.from_charge = from_charge
  *         self.to_charge = to_charge             # <<<<<<<<<<<<<<
  *         self.feature_type = feature_type
  *         self.min_peak_rank = min_peak_rank
  */
-  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_to_charge); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_to_charge); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 322; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->to_charge = __pyx_t_7;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":273
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":323
  *         self.from_charge = from_charge
  *         self.to_charge = to_charge
  *         self.feature_type = feature_type             # <<<<<<<<<<<<<<
  *         self.min_peak_rank = min_peak_rank
  *         self.max_peak_rank = max_peak_rank
  */
-  if (!(likely(PyString_CheckExact(__pyx_v_feature_type))||((__pyx_v_feature_type) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_feature_type)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 273; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyString_CheckExact(__pyx_v_feature_type))||((__pyx_v_feature_type) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_feature_type)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 323; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_3 = __pyx_v_feature_type;
   __Pyx_INCREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_3);
@@ -4293,32 +5201,82 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   __pyx_v_self->feature_type = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":274
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":324
  *         self.to_charge = to_charge
  *         self.feature_type = feature_type
  *         self.min_peak_rank = min_peak_rank             # <<<<<<<<<<<<<<
  *         self.max_peak_rank = max_peak_rank
- * 
+ *         self.ion_type_matches = dict()
  */
-  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_min_peak_rank); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 274; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_min_peak_rank); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 324; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->min_peak_rank = __pyx_t_7;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":275
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":325
  *         self.feature_type = feature_type
  *         self.min_peak_rank = min_peak_rank
  *         self.max_peak_rank = max_peak_rank             # <<<<<<<<<<<<<<
+ *         self.ion_type_matches = dict()
+ *         self.ion_type_totals = dict()
+ */
+  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_max_peak_rank); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 325; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->max_peak_rank = __pyx_t_7;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":326
+ *         self.min_peak_rank = min_peak_rank
+ *         self.max_peak_rank = max_peak_rank
+ *         self.ion_type_matches = dict()             # <<<<<<<<<<<<<<
+ *         self.ion_type_totals = dict()
+ *         self.glycan_peptide_ratio = glycan_peptide_ratio
+ */
+  __pyx_t_3 = PyDict_New(); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 326; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_3);
+  __Pyx_GOTREF(__pyx_v_self->ion_type_matches);
+  __Pyx_DECREF(__pyx_v_self->ion_type_matches);
+  __pyx_v_self->ion_type_matches = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":327
+ *         self.max_peak_rank = max_peak_rank
+ *         self.ion_type_matches = dict()
+ *         self.ion_type_totals = dict()             # <<<<<<<<<<<<<<
+ *         self.glycan_peptide_ratio = glycan_peptide_ratio
+ *         self.peptide_mass_rank = peptide_mass_rank
+ */
+  __pyx_t_3 = PyDict_New(); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 327; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_3);
+  __Pyx_GOTREF(__pyx_v_self->ion_type_totals);
+  __Pyx_DECREF(__pyx_v_self->ion_type_totals);
+  __pyx_v_self->ion_type_totals = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":328
+ *         self.ion_type_matches = dict()
+ *         self.ion_type_totals = dict()
+ *         self.glycan_peptide_ratio = glycan_peptide_ratio             # <<<<<<<<<<<<<<
+ *         self.peptide_mass_rank = peptide_mass_rank
+ * 
+ */
+  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_glycan_peptide_ratio); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 328; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->glycan_peptide_ratio = __pyx_t_7;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":329
+ *         self.ion_type_totals = dict()
+ *         self.glycan_peptide_ratio = glycan_peptide_ratio
+ *         self.peptide_mass_rank = peptide_mass_rank             # <<<<<<<<<<<<<<
  * 
  *     def __getstate__(self):
  */
-  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_max_peak_rank); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 275; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_v_self->max_peak_rank = __pyx_t_7;
+  __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_peptide_mass_rank); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 329; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->peptide_mass_rank = __pyx_t_7;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":259
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":308
  * cdef class MassOffsetFeature(object):
  * 
  *     def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT,             # <<<<<<<<<<<<<<
  *                  from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type="",
- *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT):
+ *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT,
  */
 
   /* function exit code */
@@ -4336,8 +5294,8 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":277
- *         self.max_peak_rank = max_peak_rank
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":331
+ *         self.peptide_mass_rank = peptide_mass_rank
  * 
  *     def __getstate__(self):             # <<<<<<<<<<<<<<
  *         return {
@@ -4367,7 +5325,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__getstate__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":278
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":332
  * 
  *     def __getstate__(self):
  *         return {             # <<<<<<<<<<<<<<
@@ -4375,107 +5333,158 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
  *             "tolerance": self.tolerance,
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":279
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":333
  *     def __getstate__(self):
  *         return {
  *             "offset": self.offset,             # <<<<<<<<<<<<<<
  *             "tolerance": self.tolerance,
  *             "name": self.name,
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->offset); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->offset); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 333; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_offset, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_offset, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":280
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":334
  *         return {
  *             "offset": self.offset,
  *             "tolerance": self.tolerance,             # <<<<<<<<<<<<<<
  *             "name": self.name,
  *             "intensity_ratio": self.intensity_ratio,
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->tolerance); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->tolerance); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 334; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_tolerance, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_tolerance, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":281
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":335
  *             "offset": self.offset,
  *             "tolerance": self.tolerance,
  *             "name": self.name,             # <<<<<<<<<<<<<<
  *             "intensity_ratio": self.intensity_ratio,
  *             "from_charge": self.from_charge,
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_name, __pyx_v_self->name) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_name, __pyx_v_self->name) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":282
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":336
  *             "tolerance": self.tolerance,
  *             "name": self.name,
  *             "intensity_ratio": self.intensity_ratio,             # <<<<<<<<<<<<<<
  *             "from_charge": self.from_charge,
  *             "to_charge": self.to_charge,
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 336; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_intensity_ratio, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_intensity_ratio, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":283
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":337
  *             "name": self.name,
  *             "intensity_ratio": self.intensity_ratio,
  *             "from_charge": self.from_charge,             # <<<<<<<<<<<<<<
  *             "to_charge": self.to_charge,
  *             "min_peak_rank": self.min_peak_rank,
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->from_charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 283; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->from_charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 337; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_from_charge, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_from_charge, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":284
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":338
  *             "intensity_ratio": self.intensity_ratio,
  *             "from_charge": self.from_charge,
  *             "to_charge": self.to_charge,             # <<<<<<<<<<<<<<
  *             "min_peak_rank": self.min_peak_rank,
- *             "max_peak_rank": self.max_peak_rank
+ *             "max_peak_rank": self.max_peak_rank,
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->to_charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->to_charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 338; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_to_charge, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_to_charge, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":285
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":339
  *             "from_charge": self.from_charge,
  *             "to_charge": self.to_charge,
  *             "min_peak_rank": self.min_peak_rank,             # <<<<<<<<<<<<<<
- *             "max_peak_rank": self.max_peak_rank
- *         }
+ *             "max_peak_rank": self.max_peak_rank,
+ *             "ion_type_matches": self.ion_type_matches,
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->min_peak_rank); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->min_peak_rank); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 339; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_min_peak_rank, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_min_peak_rank, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":286
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":340
  *             "to_charge": self.to_charge,
  *             "min_peak_rank": self.min_peak_rank,
- *             "max_peak_rank": self.max_peak_rank             # <<<<<<<<<<<<<<
+ *             "max_peak_rank": self.max_peak_rank,             # <<<<<<<<<<<<<<
+ *             "ion_type_matches": self.ion_type_matches,
+ *             "ion_type_totals": self.ion_type_totals,
+ */
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->max_peak_rank); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 340; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_peak_rank, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":341
+ *             "min_peak_rank": self.min_peak_rank,
+ *             "max_peak_rank": self.max_peak_rank,
+ *             "ion_type_matches": self.ion_type_matches,             # <<<<<<<<<<<<<<
+ *             "ion_type_totals": self.ion_type_totals,
+ *             "feature_type": self.feature_type,
+ */
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_ion_type_matches, __pyx_v_self->ion_type_matches) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":342
+ *             "max_peak_rank": self.max_peak_rank,
+ *             "ion_type_matches": self.ion_type_matches,
+ *             "ion_type_totals": self.ion_type_totals,             # <<<<<<<<<<<<<<
+ *             "feature_type": self.feature_type,
+ *             "glycan_peptide_ratio": self.glycan_peptide_ratio,
+ */
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_ion_type_totals, __pyx_v_self->ion_type_totals) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":343
+ *             "ion_type_matches": self.ion_type_matches,
+ *             "ion_type_totals": self.ion_type_totals,
+ *             "feature_type": self.feature_type,             # <<<<<<<<<<<<<<
+ *             "glycan_peptide_ratio": self.glycan_peptide_ratio,
+ *             "peptide_mass_rank": self.peptide_mass_rank
+ */
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_feature_type, __pyx_v_self->feature_type) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":344
+ *             "ion_type_totals": self.ion_type_totals,
+ *             "feature_type": self.feature_type,
+ *             "glycan_peptide_ratio": self.glycan_peptide_ratio,             # <<<<<<<<<<<<<<
+ *             "peptide_mass_rank": self.peptide_mass_rank
+ *         }
+ */
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->glycan_peptide_ratio); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 344; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_glycan_peptide_ratio, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":345
+ *             "feature_type": self.feature_type,
+ *             "glycan_peptide_ratio": self.glycan_peptide_ratio,
+ *             "peptide_mass_rank": self.peptide_mass_rank             # <<<<<<<<<<<<<<
  *         }
  * 
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->max_peak_rank); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->peptide_mass_rank); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 345; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_peak_rank, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_peptide_mass_rank, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 332; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":277
- *         self.max_peak_rank = max_peak_rank
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":331
+ *         self.peptide_mass_rank = peptide_mass_rank
  * 
  *     def __getstate__(self):             # <<<<<<<<<<<<<<
  *         return {
@@ -4494,7 +5503,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":289
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":348
  *         }
  * 
  *     def __setstate__(self, d):             # <<<<<<<<<<<<<<
@@ -4526,114 +5535,188 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__setstate__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":290
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":349
  * 
  *     def __setstate__(self, d):
  *         self.name = d['name']             # <<<<<<<<<<<<<<
  *         self.offset = d['offset']
  *         self.tolerance = d['tolerance']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_name); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 290; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_name); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 349; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(PyString_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 290; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyString_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 349; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->name);
   __Pyx_DECREF(__pyx_v_self->name);
   __pyx_v_self->name = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":291
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":350
  *     def __setstate__(self, d):
  *         self.name = d['name']
  *         self.offset = d['offset']             # <<<<<<<<<<<<<<
  *         self.tolerance = d['tolerance']
  *         self.intensity_ratio = d['intensity_ratio']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_offset); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_offset); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 350; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 350; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->offset = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":292
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":351
  *         self.name = d['name']
  *         self.offset = d['offset']
  *         self.tolerance = d['tolerance']             # <<<<<<<<<<<<<<
  *         self.intensity_ratio = d['intensity_ratio']
  *         self.from_charge = d['from_charge']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_tolerance); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 292; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_tolerance); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 351; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 292; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 351; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->tolerance = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":293
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":352
  *         self.offset = d['offset']
  *         self.tolerance = d['tolerance']
  *         self.intensity_ratio = d['intensity_ratio']             # <<<<<<<<<<<<<<
  *         self.from_charge = d['from_charge']
  *         self.to_charge = d['to_charge']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_intensity_ratio); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_intensity_ratio); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 352; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 352; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->intensity_ratio = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":294
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":353
  *         self.tolerance = d['tolerance']
  *         self.intensity_ratio = d['intensity_ratio']
  *         self.from_charge = d['from_charge']             # <<<<<<<<<<<<<<
  *         self.to_charge = d['to_charge']
  *         self.min_peak_rank = d["min_peak_rank"]
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_from_charge); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 294; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_from_charge); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 353; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 294; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 353; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->from_charge = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":295
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":354
  *         self.intensity_ratio = d['intensity_ratio']
  *         self.from_charge = d['from_charge']
  *         self.to_charge = d['to_charge']             # <<<<<<<<<<<<<<
  *         self.min_peak_rank = d["min_peak_rank"]
  *         self.max_peak_rank = d["max_peak_rank"]
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_to_charge); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 295; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_to_charge); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 354; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 295; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 354; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->to_charge = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":296
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":355
  *         self.from_charge = d['from_charge']
  *         self.to_charge = d['to_charge']
  *         self.min_peak_rank = d["min_peak_rank"]             # <<<<<<<<<<<<<<
  *         self.max_peak_rank = d["max_peak_rank"]
- * 
+ *         self.ion_type_matches = d["ion_type_matches"]
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_min_peak_rank); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 296; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_min_peak_rank); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 355; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 296; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 355; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->min_peak_rank = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":297
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":356
  *         self.to_charge = d['to_charge']
  *         self.min_peak_rank = d["min_peak_rank"]
  *         self.max_peak_rank = d["max_peak_rank"]             # <<<<<<<<<<<<<<
- * 
- *     def __reduce__(self):
+ *         self.ion_type_matches = d["ion_type_matches"]
+ *         self.ion_type_totals = d["ion_type_totals"]
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_max_peak_rank); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 297; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_max_peak_rank); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 356; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 297; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 356; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->max_peak_rank = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":289
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":357
+ *         self.min_peak_rank = d["min_peak_rank"]
+ *         self.max_peak_rank = d["max_peak_rank"]
+ *         self.ion_type_matches = d["ion_type_matches"]             # <<<<<<<<<<<<<<
+ *         self.ion_type_totals = d["ion_type_totals"]
+ *         self.feature_type = d["feature_type"]
+ */
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_ion_type_matches); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 357; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 357; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_self->ion_type_matches);
+  __Pyx_DECREF(__pyx_v_self->ion_type_matches);
+  __pyx_v_self->ion_type_matches = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":358
+ *         self.max_peak_rank = d["max_peak_rank"]
+ *         self.ion_type_matches = d["ion_type_matches"]
+ *         self.ion_type_totals = d["ion_type_totals"]             # <<<<<<<<<<<<<<
+ *         self.feature_type = d["feature_type"]
+ *         self.glycan_peptide_ratio = d['glycan_peptide_ratio']
+ */
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_ion_type_totals); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 358; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 358; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_self->ion_type_totals);
+  __Pyx_DECREF(__pyx_v_self->ion_type_totals);
+  __pyx_v_self->ion_type_totals = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":359
+ *         self.ion_type_matches = d["ion_type_matches"]
+ *         self.ion_type_totals = d["ion_type_totals"]
+ *         self.feature_type = d["feature_type"]             # <<<<<<<<<<<<<<
+ *         self.glycan_peptide_ratio = d['glycan_peptide_ratio']
+ *         self.peptide_mass_rank = d['peptide_mass_rank']
+ */
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_feature_type); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 359; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  if (!(likely(PyString_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 359; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_self->feature_type);
+  __Pyx_DECREF(__pyx_v_self->feature_type);
+  __pyx_v_self->feature_type = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":360
+ *         self.ion_type_totals = d["ion_type_totals"]
+ *         self.feature_type = d["feature_type"]
+ *         self.glycan_peptide_ratio = d['glycan_peptide_ratio']             # <<<<<<<<<<<<<<
+ *         self.peptide_mass_rank = d['peptide_mass_rank']
+ * 
+ */
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_glycan_peptide_ratio); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 360; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 360; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_self->glycan_peptide_ratio = __pyx_t_3;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":361
+ *         self.feature_type = d["feature_type"]
+ *         self.glycan_peptide_ratio = d['glycan_peptide_ratio']
+ *         self.peptide_mass_rank = d['peptide_mass_rank']             # <<<<<<<<<<<<<<
+ * 
+ *     def __reduce__(self):
+ */
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peptide_mass_rank); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 361; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 361; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_self->peptide_mass_rank = __pyx_t_3;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":348
  *         }
  * 
  *     def __setstate__(self, d):             # <<<<<<<<<<<<<<
@@ -4654,8 +5737,8 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":299
- *         self.max_peak_rank = d["max_peak_rank"]
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":363
+ *         self.peptide_mass_rank = d['peptide_mass_rank']
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
  *         return MassOffsetFeature, (0, 0), self.__getstate__()
@@ -4686,7 +5769,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__reduce__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":300
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":364
  * 
  *     def __reduce__(self):
  *         return MassOffsetFeature, (0, 0), self.__getstate__()             # <<<<<<<<<<<<<<
@@ -4694,7 +5777,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
  *     def __call__(self, DPeak query, DPeak peak):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_getstate); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 300; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_getstate); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 364; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_2))) {
@@ -4707,21 +5790,21 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
     }
   }
   if (__pyx_t_3) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 300; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 364; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
-    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 300; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 364; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 300; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 364; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature)));
   PyTuple_SET_ITEM(__pyx_t_2, 0, ((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature)));
   __Pyx_GIVEREF(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature)));
-  __Pyx_INCREF(__pyx_tuple__7);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
+  __Pyx_INCREF(__pyx_tuple__9);
+  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_tuple__9);
+  __Pyx_GIVEREF(__pyx_tuple__9);
   PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
@@ -4729,8 +5812,8 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":299
- *         self.max_peak_rank = d["max_peak_rank"]
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":363
+ *         self.peptide_mass_rank = d['peptide_mass_rank']
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
  *         return MassOffsetFeature, (0, 0), self.__getstate__()
@@ -4750,7 +5833,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":302
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":366
  *         return MassOffsetFeature, (0, 0), self.__getstate__()
  * 
  *     def __call__(self, DPeak query, DPeak peak):             # <<<<<<<<<<<<<<
@@ -4789,11 +5872,11 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_peak)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__call__", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 302; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("__call__", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 366; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__call__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 302; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__call__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 366; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -4806,14 +5889,14 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__call__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 302; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("__call__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 366; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.__call__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_query), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "query", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 302; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 302; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_query), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "query", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 366; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 366; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_8__call__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self), __pyx_v_query, __pyx_v_peak);
 
   /* function exit code */
@@ -4834,7 +5917,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__call__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":303
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":367
  * 
  *     def __call__(self, DPeak query, DPeak peak):
  *         return self.test(query, peak)             # <<<<<<<<<<<<<<
@@ -4842,13 +5925,13 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
  *     cdef bint test(self, DPeak peak1, DPeak peak2):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyBool_FromLong(((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self->__pyx_vtab)->test(__pyx_v_self, __pyx_v_query, __pyx_v_peak)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 303; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyBool_FromLong(((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self->__pyx_vtab)->test(__pyx_v_self, __pyx_v_query, __pyx_v_peak)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 367; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":302
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":366
  *         return MassOffsetFeature, (0, 0), self.__getstate__()
  * 
  *     def __call__(self, DPeak query, DPeak peak):             # <<<<<<<<<<<<<<
@@ -4867,7 +5950,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":305
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":369
  *         return self.test(query, peak)
  * 
  *     cdef bint test(self, DPeak peak1, DPeak peak2):             # <<<<<<<<<<<<<<
@@ -4882,7 +5965,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFea
   int __pyx_t_2;
   __Pyx_RefNannySetupContext("test", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":306
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":370
  * 
  *     cdef bint test(self, DPeak peak1, DPeak peak2):
  *         if (self.intensity_ratio == OUT_OF_RANGE_INT or intensity_ratio_function(peak1, peak2) == self.intensity_ratio) and\             # <<<<<<<<<<<<<<
@@ -4902,7 +5985,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFea
   }
   __pyx_L5_next_and:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":307
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":371
  *     cdef bint test(self, DPeak peak1, DPeak peak2):
  *         if (self.intensity_ratio == OUT_OF_RANGE_INT or intensity_ratio_function(peak1, peak2) == self.intensity_ratio) and\
  *            ((self.from_charge == OUT_OF_RANGE_INT and self.to_charge == OUT_OF_RANGE_INT) or             # <<<<<<<<<<<<<<
@@ -4921,7 +6004,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFea
   }
   __pyx_L8_next_or:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":308
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":372
  *         if (self.intensity_ratio == OUT_OF_RANGE_INT or intensity_ratio_function(peak1, peak2) == self.intensity_ratio) and\
  *            ((self.from_charge == OUT_OF_RANGE_INT and self.to_charge == OUT_OF_RANGE_INT) or
  *             (self.from_charge == peak1.charge and self.to_charge == peak2.charge)) and\             # <<<<<<<<<<<<<<
@@ -4942,7 +6025,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFea
   }
   __pyx_L7_next_and:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":309
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":373
  *            ((self.from_charge == OUT_OF_RANGE_INT and self.to_charge == OUT_OF_RANGE_INT) or
  *             (self.from_charge == peak1.charge and self.to_charge == peak2.charge)) and\
  *            ((self.min_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank >= self.min_peak_rank)) and\             # <<<<<<<<<<<<<<
@@ -4962,7 +6045,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFea
   }
   __pyx_L11_next_and:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":310
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":374
  *             (self.from_charge == peak1.charge and self.to_charge == peak2.charge)) and\
  *            ((self.min_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank >= self.min_peak_rank)) and\
  *            ((self.max_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank <= self.max_peak_rank)):             # <<<<<<<<<<<<<<
@@ -4980,7 +6063,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFea
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":311
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":375
  *            ((self.min_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank >= self.min_peak_rank)) and\
  *            ((self.max_peak_rank == OUT_OF_RANGE_INT) or (peak1.rank <= self.max_peak_rank)):
  *             return abs(ppm_error(peak1.neutral_mass + self.offset, peak2.neutral_mass)) <= self.tolerance             # <<<<<<<<<<<<<<
@@ -4992,18 +6075,18 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFea
   }
   /*else*/ {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":313
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":377
  *             return abs(ppm_error(peak1.neutral_mass + self.offset, peak2.neutral_mass)) <= self.tolerance
  *         else:
  *             return False             # <<<<<<<<<<<<<<
  * 
- *     def __repr__(self):
+ *     def precursor_context(self, ms):
  */
     __pyx_r = 0;
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":305
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":369
  *         return self.test(query, peak)
  * 
  *     cdef bint test(self, DPeak peak1, DPeak peak2):             # <<<<<<<<<<<<<<
@@ -5017,81 +6100,726 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFea
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":315
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":379
  *             return False
  * 
- *     def __repr__(self):             # <<<<<<<<<<<<<<
- *         return self.name
- * 
+ *     def precursor_context(self, ms):             # <<<<<<<<<<<<<<
+ *         return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_11__repr__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_11__repr__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_11precursor_context(PyObject *__pyx_v_self, PyObject *__pyx_v_ms); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_11precursor_context(PyObject *__pyx_v_self, PyObject *__pyx_v_ms) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("__repr__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_10__repr__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
+  __Pyx_RefNannySetupContext("precursor_context (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_10precursor_context(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self), ((PyObject *)__pyx_v_ms));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_10__repr__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_10precursor_context(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_ms) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("__repr__", 0);
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("precursor_context", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":316
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":380
  * 
- *     def __repr__(self):
- *         return self.name             # <<<<<<<<<<<<<<
+ *     def precursor_context(self, ms):
+ *         return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\             # <<<<<<<<<<<<<<
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
  * 
- *     def __hash__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __Pyx_INCREF(__pyx_v_self->name);
-  __pyx_r = __pyx_v_self->name;
+  __pyx_t_2 = (__pyx_v_self->glycan_peptide_ratio == __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT);
+  if (!__pyx_t_2) {
+  } else {
+    goto __pyx_L4_next_and;
+  }
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->glycan_peptide_ratio); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 380; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_ms, __pyx_n_s_glycan_peptide_ratio); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 380; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = PyObject_RichCompare(__pyx_t_3, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 380; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_2 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 380; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__pyx_t_2) {
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  } else {
+    __Pyx_INCREF(__pyx_t_5);
+    __pyx_t_1 = __pyx_t_5;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    goto __pyx_L3_bool_binop_done;
+  }
+  __pyx_L4_next_and:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":381
+ *     def precursor_context(self, ms):
+ *         return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)             # <<<<<<<<<<<<<<
+ * 
+ *     cdef bint _precursor_context(self, MatchedSpectrum ms):
+ */
+  __pyx_t_2 = (__pyx_v_self->peptide_mass_rank == __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT);
+  if (!__pyx_t_2) {
+  } else {
+    __pyx_t_5 = __Pyx_PyBool_FromLong(__pyx_t_2); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 381; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_1 = __pyx_t_5;
+    __pyx_t_5 = 0;
+    goto __pyx_L3_bool_binop_done;
+  }
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_self->peptide_mass_rank); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 381; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_ms, __pyx_n_s_peptide_mass_rank); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 381; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_3 = PyObject_RichCompare(__pyx_t_5, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 381; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_INCREF(__pyx_t_3);
+  __pyx_t_1 = __pyx_t_3;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_L3_bool_binop_done:;
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":315
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":379
  *             return False
  * 
- *     def __repr__(self):             # <<<<<<<<<<<<<<
- *         return self.name
- * 
+ *     def precursor_context(self, ms):             # <<<<<<<<<<<<<<
+ *         return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
  */
 
   /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.precursor_context", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":318
- *         return self.name
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":383
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
  * 
- *     def __hash__(self):             # <<<<<<<<<<<<<<
- *         return hash((self.name, self.offset, self.intensity_ratio, self.from_charge,
- *                      self.to_charge, self.min_peak_rank, self.max_peak_rank))
+ *     cdef bint _precursor_context(self, MatchedSpectrum ms):             # <<<<<<<<<<<<<<
+ *         return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
+ */
+
+static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature__precursor_context(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_ms) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  __Pyx_RefNannySetupContext("_precursor_context", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":384
+ * 
+ *     cdef bint _precursor_context(self, MatchedSpectrum ms):
+ *         return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\             # <<<<<<<<<<<<<<
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
+ * 
+ */
+  __pyx_t_2 = ((__pyx_v_self->glycan_peptide_ratio == __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (!__pyx_t_2) {
+  } else {
+    goto __pyx_L4_next_and;
+  }
+  __pyx_t_2 = ((__pyx_v_self->glycan_peptide_ratio == __pyx_v_ms->glycan_peptide_ratio) != 0);
+  if (__pyx_t_2) {
+  } else {
+    __pyx_t_1 = __pyx_t_2;
+    goto __pyx_L3_bool_binop_done;
+  }
+  __pyx_L4_next_and:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":385
+ *     cdef bint _precursor_context(self, MatchedSpectrum ms):
+ *         return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)             # <<<<<<<<<<<<<<
+ * 
+ *     def __repr__(self):
+ */
+  __pyx_t_2 = ((__pyx_v_self->peptide_mass_rank == __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (!__pyx_t_2) {
+  } else {
+    __pyx_t_1 = __pyx_t_2;
+    goto __pyx_L3_bool_binop_done;
+  }
+  __pyx_t_2 = ((__pyx_v_self->peptide_mass_rank == __pyx_v_ms->peptide_mass_rank) != 0);
+  __pyx_t_1 = __pyx_t_2;
+  __pyx_L3_bool_binop_done:;
+  __pyx_r = __pyx_t_1;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":383
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
+ * 
+ *     cdef bint _precursor_context(self, MatchedSpectrum ms):             # <<<<<<<<<<<<<<
+ *         return (self.glycan_peptide_ratio == OUT_OF_RANGE_INT or self.glycan_peptide_ratio == ms.glycan_peptide_ratio) and\
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":387
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
+ * 
+ *     def __repr__(self):             # <<<<<<<<<<<<<<
+ *         fields = {}
+ *         fields['offset'] = self.offset
  */
 
 /* Python wrapper */
-static Py_hash_t __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_13__hash__(PyObject *__pyx_v_self); /*proto*/
-static Py_hash_t __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_13__hash__(PyObject *__pyx_v_self) {
-  Py_hash_t __pyx_r;
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_13__repr__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_13__repr__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("__hash__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_12__hash__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
+  __Pyx_RefNannySetupContext("__repr__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_12__repr__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_12__hash__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_12__repr__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
+  PyObject *__pyx_v_fields = NULL;
+  PyObject *__pyx_v_terms = NULL;
+  PyObject *__pyx_v_k = NULL;
+  PyObject *__pyx_v_v = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_2;
+  int __pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
+  Py_ssize_t __pyx_t_5;
+  PyObject *(*__pyx_t_6)(PyObject *);
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  PyObject *(*__pyx_t_10)(PyObject *);
+  int __pyx_t_11;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__repr__", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":388
+ * 
+ *     def __repr__(self):
+ *         fields = {}             # <<<<<<<<<<<<<<
+ *         fields['offset'] = self.offset
+ *         if self.glycan_peptide_ratio != OUT_OF_RANGE_INT:
+ */
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 388; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_fields = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":389
+ *     def __repr__(self):
+ *         fields = {}
+ *         fields['offset'] = self.offset             # <<<<<<<<<<<<<<
+ *         if self.glycan_peptide_ratio != OUT_OF_RANGE_INT:
+ *             fields['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+ */
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->offset); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 389; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (unlikely(PyDict_SetItem(__pyx_v_fields, __pyx_n_s_offset, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 389; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":390
+ *         fields = {}
+ *         fields['offset'] = self.offset
+ *         if self.glycan_peptide_ratio != OUT_OF_RANGE_INT:             # <<<<<<<<<<<<<<
+ *             fields['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+ *         if self.peptide_mass_rank != OUT_OF_RANGE_INT:
+ */
+  __pyx_t_2 = ((__pyx_v_self->glycan_peptide_ratio != __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":391
+ *         fields['offset'] = self.offset
+ *         if self.glycan_peptide_ratio != OUT_OF_RANGE_INT:
+ *             fields['glycan_peptide_ratio'] = self.glycan_peptide_ratio             # <<<<<<<<<<<<<<
+ *         if self.peptide_mass_rank != OUT_OF_RANGE_INT:
+ *             fields['peptide_mass_rank'] = self.peptide_mass_rank
+ */
+    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->glycan_peptide_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 391; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    if (unlikely(PyDict_SetItem(__pyx_v_fields, __pyx_n_s_glycan_peptide_ratio, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 391; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    goto __pyx_L3;
+  }
+  __pyx_L3:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":392
+ *         if self.glycan_peptide_ratio != OUT_OF_RANGE_INT:
+ *             fields['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+ *         if self.peptide_mass_rank != OUT_OF_RANGE_INT:             # <<<<<<<<<<<<<<
+ *             fields['peptide_mass_rank'] = self.peptide_mass_rank
+ *         if self.from_charge != OUT_OF_RANGE_INT:
+ */
+  __pyx_t_2 = ((__pyx_v_self->peptide_mass_rank != __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":393
+ *             fields['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+ *         if self.peptide_mass_rank != OUT_OF_RANGE_INT:
+ *             fields['peptide_mass_rank'] = self.peptide_mass_rank             # <<<<<<<<<<<<<<
+ *         if self.from_charge != OUT_OF_RANGE_INT:
+ *             fields["from_charge"] = self.from_charge
+ */
+    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peptide_mass_rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 393; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    if (unlikely(PyDict_SetItem(__pyx_v_fields, __pyx_n_s_peptide_mass_rank, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 393; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    goto __pyx_L4;
+  }
+  __pyx_L4:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":394
+ *         if self.peptide_mass_rank != OUT_OF_RANGE_INT:
+ *             fields['peptide_mass_rank'] = self.peptide_mass_rank
+ *         if self.from_charge != OUT_OF_RANGE_INT:             # <<<<<<<<<<<<<<
+ *             fields["from_charge"] = self.from_charge
+ *         if self.to_charge != OUT_OF_RANGE_INT:
+ */
+  __pyx_t_2 = ((__pyx_v_self->from_charge != __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":395
+ *             fields['peptide_mass_rank'] = self.peptide_mass_rank
+ *         if self.from_charge != OUT_OF_RANGE_INT:
+ *             fields["from_charge"] = self.from_charge             # <<<<<<<<<<<<<<
+ *         if self.to_charge != OUT_OF_RANGE_INT:
+ *             fields['to_charge'] = self.to_charge
+ */
+    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->from_charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 395; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    if (unlikely(PyDict_SetItem(__pyx_v_fields, __pyx_n_s_from_charge, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 395; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    goto __pyx_L5;
+  }
+  __pyx_L5:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":396
+ *         if self.from_charge != OUT_OF_RANGE_INT:
+ *             fields["from_charge"] = self.from_charge
+ *         if self.to_charge != OUT_OF_RANGE_INT:             # <<<<<<<<<<<<<<
+ *             fields['to_charge'] = self.to_charge
+ *         if self.min_peak_rank != OUT_OF_RANGE_INT and self.min_peak_rank == self.max_peak_rank:
+ */
+  __pyx_t_2 = ((__pyx_v_self->to_charge != __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":397
+ *             fields["from_charge"] = self.from_charge
+ *         if self.to_charge != OUT_OF_RANGE_INT:
+ *             fields['to_charge'] = self.to_charge             # <<<<<<<<<<<<<<
+ *         if self.min_peak_rank != OUT_OF_RANGE_INT and self.min_peak_rank == self.max_peak_rank:
+ *             fields['base_peak_intensity'] = self.min_peak_rank
+ */
+    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->to_charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 397; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    if (unlikely(PyDict_SetItem(__pyx_v_fields, __pyx_n_s_to_charge, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 397; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    goto __pyx_L6;
+  }
+  __pyx_L6:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":398
+ *         if self.to_charge != OUT_OF_RANGE_INT:
+ *             fields['to_charge'] = self.to_charge
+ *         if self.min_peak_rank != OUT_OF_RANGE_INT and self.min_peak_rank == self.max_peak_rank:             # <<<<<<<<<<<<<<
+ *             fields['base_peak_intensity'] = self.min_peak_rank
+ *         if self.intensity_ratio != OUT_OF_RANGE_INT:
+ */
+  __pyx_t_3 = ((__pyx_v_self->min_peak_rank != __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (__pyx_t_3) {
+  } else {
+    __pyx_t_2 = __pyx_t_3;
+    goto __pyx_L8_bool_binop_done;
+  }
+  __pyx_t_3 = ((__pyx_v_self->min_peak_rank == __pyx_v_self->max_peak_rank) != 0);
+  __pyx_t_2 = __pyx_t_3;
+  __pyx_L8_bool_binop_done:;
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":399
+ *             fields['to_charge'] = self.to_charge
+ *         if self.min_peak_rank != OUT_OF_RANGE_INT and self.min_peak_rank == self.max_peak_rank:
+ *             fields['base_peak_intensity'] = self.min_peak_rank             # <<<<<<<<<<<<<<
+ *         if self.intensity_ratio != OUT_OF_RANGE_INT:
+ *             fields["intensity_ratio"] = self.intensity_ratio
+ */
+    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->min_peak_rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 399; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    if (unlikely(PyDict_SetItem(__pyx_v_fields, __pyx_n_s_base_peak_intensity, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 399; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    goto __pyx_L7;
+  }
+  __pyx_L7:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":400
+ *         if self.min_peak_rank != OUT_OF_RANGE_INT and self.min_peak_rank == self.max_peak_rank:
+ *             fields['base_peak_intensity'] = self.min_peak_rank
+ *         if self.intensity_ratio != OUT_OF_RANGE_INT:             # <<<<<<<<<<<<<<
+ *             fields["intensity_ratio"] = self.intensity_ratio
+ *         terms = []
+ */
+  __pyx_t_2 = ((__pyx_v_self->intensity_ratio != __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":401
+ *             fields['base_peak_intensity'] = self.min_peak_rank
+ *         if self.intensity_ratio != OUT_OF_RANGE_INT:
+ *             fields["intensity_ratio"] = self.intensity_ratio             # <<<<<<<<<<<<<<
+ *         terms = []
+ *         for k, v in fields.items():
+ */
+    __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 401; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    if (unlikely(PyDict_SetItem(__pyx_v_fields, __pyx_n_s_intensity_ratio, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 401; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    goto __pyx_L10;
+  }
+  __pyx_L10:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":402
+ *         if self.intensity_ratio != OUT_OF_RANGE_INT:
+ *             fields["intensity_ratio"] = self.intensity_ratio
+ *         terms = []             # <<<<<<<<<<<<<<
+ *         for k, v in fields.items():
+ *             if isinstance(v, int):
+ */
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 402; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_terms = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":403
+ *             fields["intensity_ratio"] = self.intensity_ratio
+ *         terms = []
+ *         for k, v in fields.items():             # <<<<<<<<<<<<<<
+ *             if isinstance(v, int):
+ *                 terms.append("%s=%d" % (k, v))
+ */
+  __pyx_t_1 = __Pyx_PyDict_Items(__pyx_v_fields); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
+    __pyx_t_4 = __pyx_t_1; __Pyx_INCREF(__pyx_t_4); __pyx_t_5 = 0;
+    __pyx_t_6 = NULL;
+  } else {
+    __pyx_t_5 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_6 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  for (;;) {
+    if (likely(!__pyx_t_6)) {
+      if (likely(PyList_CheckExact(__pyx_t_4))) {
+        if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_4)) break;
+        #if CYTHON_COMPILING_IN_CPYTHON
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_5); __Pyx_INCREF(__pyx_t_1); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        #else
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        #endif
+      } else {
+        if (__pyx_t_5 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
+        #if CYTHON_COMPILING_IN_CPYTHON
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_5); __Pyx_INCREF(__pyx_t_1); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        #else
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        #endif
+      }
+    } else {
+      __pyx_t_1 = __pyx_t_6(__pyx_t_4);
+      if (unlikely(!__pyx_t_1)) {
+        PyObject* exc_type = PyErr_Occurred();
+        if (exc_type) {
+          if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        }
+        break;
+      }
+      __Pyx_GOTREF(__pyx_t_1);
+    }
+    if ((likely(PyTuple_CheckExact(__pyx_t_1))) || (PyList_CheckExact(__pyx_t_1))) {
+      PyObject* sequence = __pyx_t_1;
+      #if CYTHON_COMPILING_IN_CPYTHON
+      Py_ssize_t size = Py_SIZE(sequence);
+      #else
+      Py_ssize_t size = PySequence_Size(sequence);
+      #endif
+      if (unlikely(size != 2)) {
+        if (size > 2) __Pyx_RaiseTooManyValuesError(2);
+        else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
+        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      }
+      #if CYTHON_COMPILING_IN_CPYTHON
+      if (likely(PyTuple_CheckExact(sequence))) {
+        __pyx_t_7 = PyTuple_GET_ITEM(sequence, 0); 
+        __pyx_t_8 = PyTuple_GET_ITEM(sequence, 1); 
+      } else {
+        __pyx_t_7 = PyList_GET_ITEM(sequence, 0); 
+        __pyx_t_8 = PyList_GET_ITEM(sequence, 1); 
+      }
+      __Pyx_INCREF(__pyx_t_7);
+      __Pyx_INCREF(__pyx_t_8);
+      #else
+      __pyx_t_7 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_7);
+      __pyx_t_8 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_8);
+      #endif
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    } else {
+      Py_ssize_t index = -1;
+      __pyx_t_9 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_9);
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_10 = Py_TYPE(__pyx_t_9)->tp_iternext;
+      index = 0; __pyx_t_7 = __pyx_t_10(__pyx_t_9); if (unlikely(!__pyx_t_7)) goto __pyx_L13_unpacking_failed;
+      __Pyx_GOTREF(__pyx_t_7);
+      index = 1; __pyx_t_8 = __pyx_t_10(__pyx_t_9); if (unlikely(!__pyx_t_8)) goto __pyx_L13_unpacking_failed;
+      __Pyx_GOTREF(__pyx_t_8);
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_10(__pyx_t_9), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_10 = NULL;
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      goto __pyx_L14_unpacking_done;
+      __pyx_L13_unpacking_failed:;
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      __pyx_t_10 = NULL;
+      if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_L14_unpacking_done:;
+    }
+    __Pyx_XDECREF_SET(__pyx_v_k, __pyx_t_7);
+    __pyx_t_7 = 0;
+    __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_8);
+    __pyx_t_8 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":404
+ *         terms = []
+ *         for k, v in fields.items():
+ *             if isinstance(v, int):             # <<<<<<<<<<<<<<
+ *                 terms.append("%s=%d" % (k, v))
+ *             elif isinstance(v, float):
+ */
+    __pyx_t_2 = PyInt_Check(__pyx_v_v); 
+    __pyx_t_3 = (__pyx_t_2 != 0);
+    if (__pyx_t_3) {
+
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":405
+ *         for k, v in fields.items():
+ *             if isinstance(v, int):
+ *                 terms.append("%s=%d" % (k, v))             # <<<<<<<<<<<<<<
+ *             elif isinstance(v, float):
+ *                 terms.append("%s=%0.4f" % (k, v))
+ */
+      __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_INCREF(__pyx_v_k);
+      PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_k);
+      __Pyx_GIVEREF(__pyx_v_k);
+      __Pyx_INCREF(__pyx_v_v);
+      PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_v);
+      __Pyx_GIVEREF(__pyx_v_v);
+      __pyx_t_8 = __Pyx_PyString_Format(__pyx_kp_s_s_d, __pyx_t_1); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_8);
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_terms, __pyx_t_8); if (unlikely(__pyx_t_11 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      goto __pyx_L15;
+    }
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":406
+ *             if isinstance(v, int):
+ *                 terms.append("%s=%d" % (k, v))
+ *             elif isinstance(v, float):             # <<<<<<<<<<<<<<
+ *                 terms.append("%s=%0.4f" % (k, v))
+ *             else:
+ */
+    __pyx_t_3 = PyFloat_Check(__pyx_v_v); 
+    __pyx_t_2 = (__pyx_t_3 != 0);
+    if (__pyx_t_2) {
+
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":407
+ *                 terms.append("%s=%d" % (k, v))
+ *             elif isinstance(v, float):
+ *                 terms.append("%s=%0.4f" % (k, v))             # <<<<<<<<<<<<<<
+ *             else:
+ *                 terms.append("%s=%r" % (k, v))
+ */
+      __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 407; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_8);
+      __Pyx_INCREF(__pyx_v_k);
+      PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_v_k);
+      __Pyx_GIVEREF(__pyx_v_k);
+      __Pyx_INCREF(__pyx_v_v);
+      PyTuple_SET_ITEM(__pyx_t_8, 1, __pyx_v_v);
+      __Pyx_GIVEREF(__pyx_v_v);
+      __pyx_t_1 = __Pyx_PyString_Format(__pyx_kp_s_s_0_4f, __pyx_t_8); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 407; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_terms, __pyx_t_1); if (unlikely(__pyx_t_11 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 407; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      goto __pyx_L15;
+    }
+    /*else*/ {
+
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":409
+ *                 terms.append("%s=%0.4f" % (k, v))
+ *             else:
+ *                 terms.append("%s=%r" % (k, v))             # <<<<<<<<<<<<<<
+ *         return "<{} {}>".format(self.name, ", ".join(terms))
+ * 
+ */
+      __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 409; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_INCREF(__pyx_v_k);
+      PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_k);
+      __Pyx_GIVEREF(__pyx_v_k);
+      __Pyx_INCREF(__pyx_v_v);
+      PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_v);
+      __Pyx_GIVEREF(__pyx_v_v);
+      __pyx_t_8 = __Pyx_PyString_Format(__pyx_kp_s_s_r, __pyx_t_1); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 409; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_8);
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_terms, __pyx_t_8); if (unlikely(__pyx_t_11 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 409; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    }
+    __pyx_L15:;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":403
+ *             fields["intensity_ratio"] = self.intensity_ratio
+ *         terms = []
+ *         for k, v in fields.items():             # <<<<<<<<<<<<<<
+ *             if isinstance(v, int):
+ *                 terms.append("%s=%d" % (k, v))
+ */
+  }
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":410
+ *             else:
+ *                 terms.append("%s=%r" % (k, v))
+ *         return "<{} {}>".format(self.name, ", ".join(terms))             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_kp_s__10, __pyx_n_s_format); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 410; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_8);
+  __pyx_t_1 = __Pyx_PyString_Join(__pyx_kp_s__11, __pyx_v_terms); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 410; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_7 = NULL;
+  __pyx_t_5 = 0;
+  if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_8))) {
+    __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_8);
+    if (likely(__pyx_t_7)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
+      __Pyx_INCREF(__pyx_t_7);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_8, function);
+      __pyx_t_5 = 1;
+    }
+  }
+  __pyx_t_9 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 410; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_9);
+  if (__pyx_t_7) {
+    PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_t_7); __Pyx_GIVEREF(__pyx_t_7); __pyx_t_7 = NULL;
+  }
+  __Pyx_INCREF(__pyx_v_self->name);
+  PyTuple_SET_ITEM(__pyx_t_9, 0+__pyx_t_5, __pyx_v_self->name);
+  __Pyx_GIVEREF(__pyx_v_self->name);
+  PyTuple_SET_ITEM(__pyx_t_9, 1+__pyx_t_5, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_8, __pyx_t_9, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 410; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+  __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+  __pyx_r = __pyx_t_4;
+  __pyx_t_4 = 0;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":387
+ *            (self.peptide_mass_rank == OUT_OF_RANGE_INT or self.peptide_mass_rank == ms.peptide_mass_rank)
+ * 
+ *     def __repr__(self):             # <<<<<<<<<<<<<<
+ *         fields = {}
+ *         fields['offset'] = self.offset
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.__repr__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_fields);
+  __Pyx_XDECREF(__pyx_v_terms);
+  __Pyx_XDECREF(__pyx_v_k);
+  __Pyx_XDECREF(__pyx_v_v);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":413
+ * 
+ * 
+ *     def __hash__(self):             # <<<<<<<<<<<<<<
+ *         return hash((self.glycan_peptide_ratio, self.peptide_mass_rank, self.offset,
+ *                      self.intensity_ratio, self.from_charge,
+ */
+
+/* Python wrapper */
+static Py_hash_t __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15__hash__(PyObject *__pyx_v_self); /*proto*/
+static Py_hash_t __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15__hash__(PyObject *__pyx_v_self) {
+  Py_hash_t __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__hash__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_14__hash__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_14__hash__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
   Py_hash_t __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -5101,81 +6829,98 @@ static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   PyObject *__pyx_t_5 = NULL;
   PyObject *__pyx_t_6 = NULL;
   PyObject *__pyx_t_7 = NULL;
-  Py_hash_t __pyx_t_8;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  Py_hash_t __pyx_t_10;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__hash__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":319
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":414
  * 
  *     def __hash__(self):
- *         return hash((self.name, self.offset, self.intensity_ratio, self.from_charge,             # <<<<<<<<<<<<<<
+ *         return hash((self.glycan_peptide_ratio, self.peptide_mass_rank, self.offset,             # <<<<<<<<<<<<<<
+ *                      self.intensity_ratio, self.from_charge,
  *                      self.to_charge, self.min_peak_rank, self.max_peak_rank))
- * 
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->offset); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 319; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->glycan_peptide_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 319; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->peptide_mass_rank); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->from_charge); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 319; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->offset); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":320
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":415
  *     def __hash__(self):
- *         return hash((self.name, self.offset, self.intensity_ratio, self.from_charge,
- *                      self.to_charge, self.min_peak_rank, self.max_peak_rank))             # <<<<<<<<<<<<<<
- * 
- * 
- */
-  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_self->to_charge); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 320; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_self->min_peak_rank); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 320; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_self->max_peak_rank); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 320; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_6);
-
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":319
- * 
- *     def __hash__(self):
- *         return hash((self.name, self.offset, self.intensity_ratio, self.from_charge,             # <<<<<<<<<<<<<<
+ *         return hash((self.glycan_peptide_ratio, self.peptide_mass_rank, self.offset,
+ *                      self.intensity_ratio, self.from_charge,             # <<<<<<<<<<<<<<
  *                      self.to_charge, self.min_peak_rank, self.max_peak_rank))
  * 
  */
-  __pyx_t_7 = PyTuple_New(7); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 319; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 415; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_self->from_charge); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 415; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_5);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":416
+ *         return hash((self.glycan_peptide_ratio, self.peptide_mass_rank, self.offset,
+ *                      self.intensity_ratio, self.from_charge,
+ *                      self.to_charge, self.min_peak_rank, self.max_peak_rank))             # <<<<<<<<<<<<<<
+ * 
+ *     cpdef ion_type_increment(self, str name, str slot="matches"):
+ */
+  __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_self->to_charge); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 416; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_self->min_peak_rank); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 416; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_INCREF(__pyx_v_self->name);
-  PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_v_self->name);
-  __Pyx_GIVEREF(__pyx_v_self->name);
-  PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_1);
+  __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_self->max_peak_rank); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 416; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_8);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":414
+ * 
+ *     def __hash__(self):
+ *         return hash((self.glycan_peptide_ratio, self.peptide_mass_rank, self.offset,             # <<<<<<<<<<<<<<
+ *                      self.intensity_ratio, self.from_charge,
+ *                      self.to_charge, self.min_peak_rank, self.max_peak_rank))
+ */
+  __pyx_t_9 = PyTuple_New(8); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_9);
+  PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
-  PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_t_2);
+  PyTuple_SET_ITEM(__pyx_t_9, 1, __pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_2);
-  PyTuple_SET_ITEM(__pyx_t_7, 3, __pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_9, 2, __pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_3);
-  PyTuple_SET_ITEM(__pyx_t_7, 4, __pyx_t_4);
+  PyTuple_SET_ITEM(__pyx_t_9, 3, __pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_4);
-  PyTuple_SET_ITEM(__pyx_t_7, 5, __pyx_t_5);
+  PyTuple_SET_ITEM(__pyx_t_9, 4, __pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_5);
-  PyTuple_SET_ITEM(__pyx_t_7, 6, __pyx_t_6);
+  PyTuple_SET_ITEM(__pyx_t_9, 5, __pyx_t_6);
   __Pyx_GIVEREF(__pyx_t_6);
+  PyTuple_SET_ITEM(__pyx_t_9, 6, __pyx_t_7);
+  __Pyx_GIVEREF(__pyx_t_7);
+  PyTuple_SET_ITEM(__pyx_t_9, 7, __pyx_t_8);
+  __Pyx_GIVEREF(__pyx_t_8);
   __pyx_t_1 = 0;
   __pyx_t_2 = 0;
   __pyx_t_3 = 0;
   __pyx_t_4 = 0;
   __pyx_t_5 = 0;
   __pyx_t_6 = 0;
-  __pyx_t_8 = PyObject_Hash(__pyx_t_7); if (unlikely(__pyx_t_8 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 319; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_r = __pyx_t_8;
+  __pyx_t_7 = 0;
+  __pyx_t_8 = 0;
+  __pyx_t_10 = PyObject_Hash(__pyx_t_9); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+  __pyx_r = __pyx_t_10;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":318
- *         return self.name
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":413
+ * 
  * 
  *     def __hash__(self):             # <<<<<<<<<<<<<<
- *         return hash((self.name, self.offset, self.intensity_ratio, self.from_charge,
- *                      self.to_charge, self.min_peak_rank, self.max_peak_rank))
+ *         return hash((self.glycan_peptide_ratio, self.peptide_mass_rank, self.offset,
+ *                      self.intensity_ratio, self.from_charge,
  */
 
   /* function exit code */
@@ -5187,6 +6932,8 @@ static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.__hash__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
@@ -5195,7 +6942,328 @@ static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":20
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":418
+ *                      self.to_charge, self.min_peak_rank, self.max_peak_rank))
+ * 
+ *     cpdef ion_type_increment(self, str name, str slot="matches"):             # <<<<<<<<<<<<<<
+ *         cdef:
+ *             double value
+ */
+
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17ion_type_increment(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_name, int __pyx_skip_dispatch, struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment *__pyx_optional_args) {
+  PyObject *__pyx_v_slot = ((PyObject*)__pyx_n_s_matches);
+  double __pyx_v_value;
+  PyObject *__pyx_v_pvalue;
+  PyObject *__pyx_v_dist = 0;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  Py_ssize_t __pyx_t_5;
+  PyObject *__pyx_t_6 = NULL;
+  int __pyx_t_7;
+  int __pyx_t_8;
+  double __pyx_t_9;
+  int __pyx_t_10;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("ion_type_increment", 0);
+  if (__pyx_optional_args) {
+    if (__pyx_optional_args->__pyx_n > 0) {
+      __pyx_v_slot = __pyx_optional_args->slot;
+    }
+  }
+  /* Check if called by wrapper */
+  if (unlikely(__pyx_skip_dispatch)) ;
+  /* Check if overridden in Python */
+  else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ion_type_increment); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 418; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17ion_type_increment)) {
+      __Pyx_XDECREF(__pyx_r);
+      __Pyx_INCREF(__pyx_t_1);
+      __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
+      __pyx_t_5 = 0;
+      if (CYTHON_COMPILING_IN_CPYTHON && unlikely(PyMethod_Check(__pyx_t_3))) {
+        __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
+        if (likely(__pyx_t_4)) {
+          PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+          __Pyx_INCREF(__pyx_t_4);
+          __Pyx_INCREF(function);
+          __Pyx_DECREF_SET(__pyx_t_3, function);
+          __pyx_t_5 = 1;
+        }
+      }
+      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 418; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_6);
+      if (__pyx_t_4) {
+        PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
+      }
+      __Pyx_INCREF(__pyx_v_name);
+      PyTuple_SET_ITEM(__pyx_t_6, 0+__pyx_t_5, __pyx_v_name);
+      __Pyx_GIVEREF(__pyx_v_name);
+      __Pyx_INCREF(__pyx_v_slot);
+      PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_v_slot);
+      __Pyx_GIVEREF(__pyx_v_slot);
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 418; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __pyx_r = __pyx_t_2;
+      __pyx_t_2 = 0;
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      goto __pyx_L0;
+    }
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":424
+ *             dict dist
+ * 
+ *         if slot == "matches":             # <<<<<<<<<<<<<<
+ *             dist = self.ion_type_matches
+ *         elif slot == "totals":
+ */
+  __pyx_t_7 = (__Pyx_PyString_Equals(__pyx_v_slot, __pyx_n_s_matches, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 424; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_8 = (__pyx_t_7 != 0);
+  if (__pyx_t_8) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":425
+ * 
+ *         if slot == "matches":
+ *             dist = self.ion_type_matches             # <<<<<<<<<<<<<<
+ *         elif slot == "totals":
+ *             dist = self.ion_type_totals
+ */
+    __pyx_t_1 = __pyx_v_self->ion_type_matches;
+    __Pyx_INCREF(__pyx_t_1);
+    __pyx_v_dist = ((PyObject*)__pyx_t_1);
+    __pyx_t_1 = 0;
+    goto __pyx_L3;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":426
+ *         if slot == "matches":
+ *             dist = self.ion_type_matches
+ *         elif slot == "totals":             # <<<<<<<<<<<<<<
+ *             dist = self.ion_type_totals
+ *         pvalue = PyDict_GetItem(dist, name)
+ */
+  __pyx_t_8 = (__Pyx_PyString_Equals(__pyx_v_slot, __pyx_n_s_totals, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 426; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_7 = (__pyx_t_8 != 0);
+  if (__pyx_t_7) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":427
+ *             dist = self.ion_type_matches
+ *         elif slot == "totals":
+ *             dist = self.ion_type_totals             # <<<<<<<<<<<<<<
+ *         pvalue = PyDict_GetItem(dist, name)
+ *         if pvalue == NULL:
+ */
+    __pyx_t_1 = __pyx_v_self->ion_type_totals;
+    __Pyx_INCREF(__pyx_t_1);
+    __pyx_v_dist = ((PyObject*)__pyx_t_1);
+    __pyx_t_1 = 0;
+    goto __pyx_L3;
+  }
+  __pyx_L3:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":428
+ *         elif slot == "totals":
+ *             dist = self.ion_type_totals
+ *         pvalue = PyDict_GetItem(dist, name)             # <<<<<<<<<<<<<<
+ *         if pvalue == NULL:
+ *             value = 0.
+ */
+  if (unlikely(!__pyx_v_dist)) { __Pyx_RaiseUnboundLocalError("dist"); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 428; __pyx_clineno = __LINE__; goto __pyx_L1_error;} }
+  __pyx_v_pvalue = PyDict_GetItem(__pyx_v_dist, __pyx_v_name);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":429
+ *             dist = self.ion_type_totals
+ *         pvalue = PyDict_GetItem(dist, name)
+ *         if pvalue == NULL:             # <<<<<<<<<<<<<<
+ *             value = 0.
+ *         else:
+ */
+  __pyx_t_7 = ((__pyx_v_pvalue == NULL) != 0);
+  if (__pyx_t_7) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":430
+ *         pvalue = PyDict_GetItem(dist, name)
+ *         if pvalue == NULL:
+ *             value = 0.             # <<<<<<<<<<<<<<
+ *         else:
+ *             value = PyFloat_AsDouble(<object>pvalue)
+ */
+    __pyx_v_value = 0.;
+    goto __pyx_L4;
+  }
+  /*else*/ {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":432
+ *             value = 0.
+ *         else:
+ *             value = PyFloat_AsDouble(<object>pvalue)             # <<<<<<<<<<<<<<
+ *         value += 1
+ *         PyDict_SetItem(dist, name , value)
+ */
+    __pyx_t_9 = PyFloat_AsDouble(((PyObject *)__pyx_v_pvalue)); if (unlikely(__pyx_t_9 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 432; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_v_value = __pyx_t_9;
+  }
+  __pyx_L4:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":433
+ *         else:
+ *             value = PyFloat_AsDouble(<object>pvalue)
+ *         value += 1             # <<<<<<<<<<<<<<
+ *         PyDict_SetItem(dist, name , value)
+ * 
+ */
+  __pyx_v_value = (__pyx_v_value + 1.0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":434
+ *             value = PyFloat_AsDouble(<object>pvalue)
+ *         value += 1
+ *         PyDict_SetItem(dist, name , value)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  if (unlikely(!__pyx_v_dist)) { __Pyx_RaiseUnboundLocalError("dist"); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 434; __pyx_clineno = __LINE__; goto __pyx_L1_error;} }
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 434; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_10 = PyDict_SetItem(__pyx_v_dist, __pyx_v_name, __pyx_t_1); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 434; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":418
+ *                      self.to_charge, self.min_peak_rank, self.max_peak_rank))
+ * 
+ *     cpdef ion_type_increment(self, str name, str slot="matches"):             # <<<<<<<<<<<<<<
+ *         cdef:
+ *             double value
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.ion_type_increment", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_dist);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17ion_type_increment(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17ion_type_increment(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_name = 0;
+  PyObject *__pyx_v_slot = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("ion_type_increment (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_name,&__pyx_n_s_slot,0};
+    PyObject* values[2] = {0,0};
+    values[1] = ((PyObject*)__pyx_n_s_matches);
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_name)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        case  1:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_slot);
+          if (value) { values[1] = value; kw_args--; }
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "ion_type_increment") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 418; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      }
+    } else {
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+    }
+    __pyx_v_name = ((PyObject*)values[0]);
+    __pyx_v_slot = ((PyObject*)values[1]);
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("ion_type_increment", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 418; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.ion_type_increment", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyString_Type), 1, "name", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 418; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_slot), (&PyString_Type), 1, "slot", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 418; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_increment(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self), __pyx_v_name, __pyx_v_slot);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_increment(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_slot) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("ion_type_increment", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_2.__pyx_n = 1;
+  __pyx_t_2.slot = __pyx_v_slot;
+  __pyx_t_1 = __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature->ion_type_increment(__pyx_v_self, __pyx_v_name, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 418; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.ion_type_increment", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":22
  * cdef class MassOffsetFeature(object):
  *     cdef:
  *         public float offset             # <<<<<<<<<<<<<<
@@ -5225,7 +7293,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->offset); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 20; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->offset); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5263,7 +7331,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 20; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->offset = __pyx_t_1;
 
   /* function exit code */
@@ -5277,7 +7345,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":21
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":23
  *     cdef:
  *         public float offset
  *         public float tolerance             # <<<<<<<<<<<<<<
@@ -5307,7 +7375,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->tolerance); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->tolerance); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 23; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5345,7 +7413,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 23; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->tolerance = __pyx_t_1;
 
   /* function exit code */
@@ -5359,7 +7427,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":22
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":24
  *         public float offset
  *         public float tolerance
  *         public str name             # <<<<<<<<<<<<<<
@@ -5417,7 +7485,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 24; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -5467,7 +7535,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":23
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":25
  *         public float tolerance
  *         public str name
  *         public int intensity_ratio             # <<<<<<<<<<<<<<
@@ -5497,7 +7565,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 23; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5535,7 +7603,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 23; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->intensity_ratio = __pyx_t_1;
 
   /* function exit code */
@@ -5549,7 +7617,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":24
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":26
  *         public str name
  *         public int intensity_ratio
  *         public int from_charge             # <<<<<<<<<<<<<<
@@ -5579,7 +7647,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->from_charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 24; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->from_charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5617,7 +7685,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 24; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->from_charge = __pyx_t_1;
 
   /* function exit code */
@@ -5631,7 +7699,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":25
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":27
  *         public int intensity_ratio
  *         public int from_charge
  *         public int to_charge             # <<<<<<<<<<<<<<
@@ -5661,7 +7729,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->to_charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->to_charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5699,7 +7767,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->to_charge = __pyx_t_1;
 
   /* function exit code */
@@ -5713,7 +7781,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":26
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":28
  *         public int from_charge
  *         public int to_charge
  *         public str feature_type             # <<<<<<<<<<<<<<
@@ -5771,7 +7839,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 28; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -5821,12 +7889,12 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":27
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":29
  *         public int to_charge
  *         public str feature_type
  *         public int min_peak_rank             # <<<<<<<<<<<<<<
  *         public int max_peak_rank
- * 
+ *         public dict ion_type_matches
  */
 
 /* Python wrapper */
@@ -5851,7 +7919,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->min_peak_rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->min_peak_rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5889,7 +7957,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->min_peak_rank = __pyx_t_1;
 
   /* function exit code */
@@ -5903,12 +7971,12 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":28
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":30
  *         public str feature_type
  *         public int min_peak_rank
  *         public int max_peak_rank             # <<<<<<<<<<<<<<
- * 
- *     cdef bint test(self, DPeak peak1, DPeak peak2)
+ *         public dict ion_type_matches
+ *         public dict ion_type_totals
  */
 
 /* Python wrapper */
@@ -5933,7 +8001,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->max_peak_rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 28; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->max_peak_rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 30; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5971,7 +8039,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 28; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 30; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->max_peak_rank = __pyx_t_1;
 
   /* function exit code */
@@ -5985,7 +8053,387 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFe
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":331
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":31
+ *         public int min_peak_rank
+ *         public int max_peak_rank
+ *         public dict ion_type_matches             # <<<<<<<<<<<<<<
+ *         public dict ion_type_totals
+ *         public int glycan_peptide_ratio
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_self->ion_type_matches);
+  __pyx_r = __pyx_v_self->ion_type_matches;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  if (!(likely(PyDict_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_v_value;
+  __Pyx_INCREF(__pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_self->ion_type_matches);
+  __Pyx_DECREF(__pyx_v_self->ion_type_matches);
+  __pyx_v_self->ion_type_matches = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.ion_type_matches.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_5__del__(PyObject *__pyx_v_self) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_4__del__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_4__del__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__del__", 0);
+  __Pyx_INCREF(Py_None);
+  __Pyx_GIVEREF(Py_None);
+  __Pyx_GOTREF(__pyx_v_self->ion_type_matches);
+  __Pyx_DECREF(__pyx_v_self->ion_type_matches);
+  __pyx_v_self->ion_type_matches = ((PyObject*)Py_None);
+
+  /* function exit code */
+  __pyx_r = 0;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":32
+ *         public int max_peak_rank
+ *         public dict ion_type_matches
+ *         public dict ion_type_totals             # <<<<<<<<<<<<<<
+ *         public int glycan_peptide_ratio
+ *         public int peptide_mass_rank
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_self->ion_type_totals);
+  __pyx_r = __pyx_v_self->ion_type_totals;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  if (!(likely(PyDict_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 32; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_v_value;
+  __Pyx_INCREF(__pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_self->ion_type_totals);
+  __Pyx_DECREF(__pyx_v_self->ion_type_totals);
+  __pyx_v_self->ion_type_totals = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.ion_type_totals.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_5__del__(PyObject *__pyx_v_self) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_4__del__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_4__del__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__del__", 0);
+  __Pyx_INCREF(Py_None);
+  __Pyx_GIVEREF(Py_None);
+  __Pyx_GOTREF(__pyx_v_self->ion_type_totals);
+  __Pyx_DECREF(__pyx_v_self->ion_type_totals);
+  __pyx_v_self->ion_type_totals = ((PyObject*)Py_None);
+
+  /* function exit code */
+  __pyx_r = 0;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":33
+ *         public dict ion_type_matches
+ *         public dict ion_type_totals
+ *         public int glycan_peptide_ratio             # <<<<<<<<<<<<<<
+ *         public int peptide_mass_rank
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->glycan_peptide_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.glycan_peptide_ratio.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->glycan_peptide_ratio = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.glycan_peptide_ratio.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":34
+ *         public dict ion_type_totals
+ *         public int glycan_peptide_ratio
+ *         public int peptide_mass_rank             # <<<<<<<<<<<<<<
+ * 
+ *     cdef bint test(self, DPeak peak1, DPeak peak2)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peptide_mass_rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 34; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.peptide_mass_rank.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 34; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->peptide_mass_rank = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MassOffsetFeature.peptide_mass_rank.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":445
  * 
  * 
  *     def __init__(self, peak=None):             # <<<<<<<<<<<<<<
@@ -6024,7 +8472,7 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1__init
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 331; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 445; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -6037,7 +8485,7 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1__init
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 331; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 445; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.DPeak.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6063,7 +8511,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak___init_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":332
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":446
  * 
  *     def __init__(self, peak=None):
  *         if peak is not None:             # <<<<<<<<<<<<<<
@@ -6074,69 +8522,69 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak___init_
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":333
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":447
  *     def __init__(self, peak=None):
  *         if peak is not None:
  *             self.neutral_mass = PyFloat_AsDouble(peak.neutral_mass)             # <<<<<<<<<<<<<<
  *             self.id = PyInt_AsLong(peak.id)
  *             self.charge = PyInt_AsLong(peak.charge)
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_neutral_mass); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 333; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_neutral_mass); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 447; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyFloat_AsDouble(__pyx_t_3); if (unlikely(__pyx_t_4 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 333; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = PyFloat_AsDouble(__pyx_t_3); if (unlikely(__pyx_t_4 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 447; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_self->neutral_mass = __pyx_t_4;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":334
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":448
  *         if peak is not None:
  *             self.neutral_mass = PyFloat_AsDouble(peak.neutral_mass)
  *             self.id = PyInt_AsLong(peak.id)             # <<<<<<<<<<<<<<
  *             self.charge = PyInt_AsLong(peak.charge)
  *             self.intensity = PyFloat_AsDouble(peak.intensity)
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_id); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 334; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_id); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 448; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = PyInt_AsLong(__pyx_t_3); if (unlikely(__pyx_t_5 == -1 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 334; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = PyInt_AsLong(__pyx_t_3); if (unlikely(__pyx_t_5 == -1 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 448; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_self->id = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":335
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":449
  *             self.neutral_mass = PyFloat_AsDouble(peak.neutral_mass)
  *             self.id = PyInt_AsLong(peak.id)
  *             self.charge = PyInt_AsLong(peak.charge)             # <<<<<<<<<<<<<<
  *             self.intensity = PyFloat_AsDouble(peak.intensity)
  *         self.peak_relations = []
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_charge); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 335; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_charge); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 449; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = PyInt_AsLong(__pyx_t_3); if (unlikely(__pyx_t_5 == -1 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 335; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = PyInt_AsLong(__pyx_t_3); if (unlikely(__pyx_t_5 == -1 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 449; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_self->charge = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":336
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":450
  *             self.id = PyInt_AsLong(peak.id)
  *             self.charge = PyInt_AsLong(peak.charge)
  *             self.intensity = PyFloat_AsDouble(peak.intensity)             # <<<<<<<<<<<<<<
  *         self.peak_relations = []
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_intensity); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 336; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_intensity); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 450; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyFloat_AsDouble(__pyx_t_3); if (unlikely(__pyx_t_4 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 336; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = PyFloat_AsDouble(__pyx_t_3); if (unlikely(__pyx_t_4 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 450; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_self->intensity = __pyx_t_4;
     goto __pyx_L3;
   }
   __pyx_L3:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":337
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":451
  *             self.charge = PyInt_AsLong(peak.charge)
  *             self.intensity = PyFloat_AsDouble(peak.intensity)
  *         self.peak_relations = []             # <<<<<<<<<<<<<<
  * 
  *     def __repr__(self):
  */
-  __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 337; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 451; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_3);
   __Pyx_GOTREF(__pyx_v_self->peak_relations);
@@ -6144,7 +8592,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak___init_
   __pyx_v_self->peak_relations = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":331
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":445
  * 
  * 
  *     def __init__(self, peak=None):             # <<<<<<<<<<<<<<
@@ -6164,7 +8612,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak___init_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":339
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":453
  *         self.peak_relations = []
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -6201,7 +8649,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":340
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":454
  * 
  *     def __repr__(self):
  *         return "<DPeak {} {} {}>".format(self.neutral_mass, self.charge, self.intensity)             # <<<<<<<<<<<<<<
@@ -6209,13 +8657,13 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2
  *     cdef PeakStruct* as_struct(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_kp_s_DPeak, __pyx_n_s_format); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 340; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_kp_s_DPeak, __pyx_n_s_format); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 454; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 340; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 454; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 340; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 454; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 340; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 454; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_6 = NULL;
   __pyx_t_7 = 0;
@@ -6229,7 +8677,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2
       __pyx_t_7 = 1;
     }
   }
-  __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 340; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 454; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_8);
   if (__pyx_t_6) {
     PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __Pyx_GIVEREF(__pyx_t_6); __pyx_t_6 = NULL;
@@ -6243,7 +8691,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2
   __pyx_t_3 = 0;
   __pyx_t_4 = 0;
   __pyx_t_5 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_8, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 340; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_8, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 454; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -6251,7 +8699,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":339
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":453
  *         self.peak_relations = []
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -6276,7 +8724,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":342
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":456
  *         return "<DPeak {} {} {}>".format(self.neutral_mass, self.charge, self.intensity)
  * 
  *     cdef PeakStruct* as_struct(self):             # <<<<<<<<<<<<<<
@@ -6293,7 +8741,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
   int __pyx_t_3;
   __Pyx_RefNannySetupContext("as_struct", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":344
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":458
  *     cdef PeakStruct* as_struct(self):
  *         cdef PeakStruct* result
  *         result = <PeakStruct*>malloc(sizeof(PeakStruct))             # <<<<<<<<<<<<<<
@@ -6302,7 +8750,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
  */
   __pyx_v_result = ((struct PeakStruct *)malloc((sizeof(struct PeakStruct))));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":345
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":459
  *         cdef PeakStruct* result
  *         result = <PeakStruct*>malloc(sizeof(PeakStruct))
  *         result.neutral_mass = self.neutral_mass             # <<<<<<<<<<<<<<
@@ -6312,7 +8760,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
   __pyx_t_1 = __pyx_v_self->neutral_mass;
   __pyx_v_result->neutral_mass = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":346
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":460
  *         result = <PeakStruct*>malloc(sizeof(PeakStruct))
  *         result.neutral_mass = self.neutral_mass
  *         result.id = self.id             # <<<<<<<<<<<<<<
@@ -6322,7 +8770,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
   __pyx_t_2 = __pyx_v_self->id;
   __pyx_v_result->id = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":347
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":461
  *         result.neutral_mass = self.neutral_mass
  *         result.id = self.id
  *         result.charge = self.charge             # <<<<<<<<<<<<<<
@@ -6332,7 +8780,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
   __pyx_t_3 = __pyx_v_self->charge;
   __pyx_v_result->charge = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":348
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":462
  *         result.id = self.id
  *         result.charge = self.charge
  *         result.intensity = self.intensity             # <<<<<<<<<<<<<<
@@ -6342,7 +8790,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
   __pyx_t_1 = __pyx_v_self->intensity;
   __pyx_v_result->intensity = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":349
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":463
  *         result.charge = self.charge
  *         result.intensity = self.intensity
  *         result.rank = self.rank             # <<<<<<<<<<<<<<
@@ -6352,7 +8800,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
   __pyx_t_3 = __pyx_v_self->rank;
   __pyx_v_result->rank = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":350
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":464
  *         result.intensity = self.intensity
  *         result.rank = self.rank
  *         result.mass_charge_ratio = self.mass_charge_ratio             # <<<<<<<<<<<<<<
@@ -6362,7 +8810,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
   __pyx_t_1 = __pyx_v_self->mass_charge_ratio;
   __pyx_v_result->mass_charge_ratio = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":351
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":465
  *         result.rank = self.rank
  *         result.mass_charge_ratio = self.mass_charge_ratio
  *         return result             # <<<<<<<<<<<<<<
@@ -6372,7 +8820,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
   __pyx_r = __pyx_v_result;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":342
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":456
  *         return "<DPeak {} {} {}>".format(self.neutral_mass, self.charge, self.intensity)
  * 
  *     cdef PeakStruct* as_struct(self):             # <<<<<<<<<<<<<<
@@ -6386,7 +8834,7 @@ static struct PeakStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":353
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":467
  *         return result
  * 
  *     def __getstate__(self):             # <<<<<<<<<<<<<<
@@ -6417,91 +8865,91 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_4
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__getstate__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":355
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":469
  *     def __getstate__(self):
  *         cdef dict d
  *         d = dict()             # <<<<<<<<<<<<<<
  *         d['neutral_mass'] = self.neutral_mass
  *         d['id'] = self.id
  */
-  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 355; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 469; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_d = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":356
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":470
  *         cdef dict d
  *         d = dict()
  *         d['neutral_mass'] = self.neutral_mass             # <<<<<<<<<<<<<<
  *         d['id'] = self.id
  *         d['charge'] = self.charge
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 356; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 470; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_neutral_mass, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 356; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_neutral_mass, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 470; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":357
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":471
  *         d = dict()
  *         d['neutral_mass'] = self.neutral_mass
  *         d['id'] = self.id             # <<<<<<<<<<<<<<
  *         d['charge'] = self.charge
  *         d['intensity'] = self.intensity
  */
-  __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_self->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 357; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_self->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 471; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_id, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 357; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_id, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 471; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":358
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":472
  *         d['neutral_mass'] = self.neutral_mass
  *         d['id'] = self.id
  *         d['charge'] = self.charge             # <<<<<<<<<<<<<<
  *         d['intensity'] = self.intensity
  *         d['rank'] = self.rank
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 358; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 472; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_charge, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 358; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_charge, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 472; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":359
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":473
  *         d['id'] = self.id
  *         d['charge'] = self.charge
  *         d['intensity'] = self.intensity             # <<<<<<<<<<<<<<
  *         d['rank'] = self.rank
  *         d['mass_charge_ratio'] = self.mass_charge_ratio
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 359; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 473; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_intensity, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 359; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_intensity, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 473; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":360
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":474
  *         d['charge'] = self.charge
  *         d['intensity'] = self.intensity
  *         d['rank'] = self.rank             # <<<<<<<<<<<<<<
  *         d['mass_charge_ratio'] = self.mass_charge_ratio
  *         d['peak_relations'] = self.peak_relations
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 360; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 474; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_rank, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 360; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_rank, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 474; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":361
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":475
  *         d['intensity'] = self.intensity
  *         d['rank'] = self.rank
  *         d['mass_charge_ratio'] = self.mass_charge_ratio             # <<<<<<<<<<<<<<
  *         d['peak_relations'] = self.peak_relations
  *         return d
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->mass_charge_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 361; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->mass_charge_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 475; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_mass_charge_ratio, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 361; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_mass_charge_ratio, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 475; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":362
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":476
  *         d['rank'] = self.rank
  *         d['mass_charge_ratio'] = self.mass_charge_ratio
  *         d['peak_relations'] = self.peak_relations             # <<<<<<<<<<<<<<
@@ -6510,10 +8958,10 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_4
  */
   __pyx_t_1 = __pyx_v_self->peak_relations;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peak_relations, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 362; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peak_relations, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 476; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":363
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":477
  *         d['mass_charge_ratio'] = self.mass_charge_ratio
  *         d['peak_relations'] = self.peak_relations
  *         return d             # <<<<<<<<<<<<<<
@@ -6525,7 +8973,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_4
   __pyx_r = __pyx_v_d;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":353
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":467
  *         return result
  * 
  *     def __getstate__(self):             # <<<<<<<<<<<<<<
@@ -6545,7 +8993,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_4
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":365
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":479
  *         return d
  * 
  *     def __setstate__(self, dict d):             # <<<<<<<<<<<<<<
@@ -6562,7 +9010,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_7
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__setstate__ (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_d), (&PyDict_Type), 1, "d", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 365; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_d), (&PyDict_Type), 1, "d", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 479; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6__setstate__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_v_self), ((PyObject*)__pyx_v_d));
 
   /* function exit code */
@@ -6586,7 +9034,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__setstate__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":366
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":480
  * 
  *     def __setstate__(self, dict d):
  *         self.neutral_mass = d['neutral_mass']             # <<<<<<<<<<<<<<
@@ -6595,15 +9043,15 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
  */
   if (unlikely(__pyx_v_d == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 366; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 480; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_neutral_mass); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 366; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_neutral_mass); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 480; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 366; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 480; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->neutral_mass = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":367
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":481
  *     def __setstate__(self, dict d):
  *         self.neutral_mass = d['neutral_mass']
  *         self.id = d['id']             # <<<<<<<<<<<<<<
@@ -6612,15 +9060,15 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
  */
   if (unlikely(__pyx_v_d == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 367; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 481; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_id); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 367; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_id); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 481; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_As_long(__pyx_t_1); if (unlikely((__pyx_t_3 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 367; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_As_long(__pyx_t_1); if (unlikely((__pyx_t_3 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 481; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->id = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":368
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":482
  *         self.neutral_mass = d['neutral_mass']
  *         self.id = d['id']
  *         self.charge = d['charge']             # <<<<<<<<<<<<<<
@@ -6629,15 +9077,15 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
  */
   if (unlikely(__pyx_v_d == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 368; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 482; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_charge); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 368; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_charge); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 482; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 368; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 482; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->charge = __pyx_t_4;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":369
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":483
  *         self.id = d['id']
  *         self.charge = d['charge']
  *         self.intensity = d['intensity']             # <<<<<<<<<<<<<<
@@ -6646,15 +9094,15 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
  */
   if (unlikely(__pyx_v_d == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 369; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 483; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_intensity); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 369; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_intensity); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 483; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 369; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 483; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->intensity = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":370
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":484
  *         self.charge = d['charge']
  *         self.intensity = d['intensity']
  *         self.rank = d['rank']             # <<<<<<<<<<<<<<
@@ -6663,15 +9111,15 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
  */
   if (unlikely(__pyx_v_d == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 370; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 484; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_rank); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 370; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_rank); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 484; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 370; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 484; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->rank = __pyx_t_4;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":371
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":485
  *         self.intensity = d['intensity']
  *         self.rank = d['rank']
  *         self.mass_charge_ratio = d['mass_charge_ratio']             # <<<<<<<<<<<<<<
@@ -6680,15 +9128,15 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
  */
   if (unlikely(__pyx_v_d == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 371; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 485; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_mass_charge_ratio); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 371; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_mass_charge_ratio); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 485; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 371; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_2 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 485; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->mass_charge_ratio = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":372
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":486
  *         self.rank = d['rank']
  *         self.mass_charge_ratio = d['mass_charge_ratio']
  *         self.peak_relations = d['peak_relations']             # <<<<<<<<<<<<<<
@@ -6697,18 +9145,18 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
  */
   if (unlikely(__pyx_v_d == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 372; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 486; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_peak_relations); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 372; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_n_s_peak_relations); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 486; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 372; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 486; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->peak_relations);
   __Pyx_DECREF(__pyx_v_self->peak_relations);
   __pyx_v_self->peak_relations = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":365
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":479
  *         return d
  * 
  *     def __setstate__(self, dict d):             # <<<<<<<<<<<<<<
@@ -6729,7 +9177,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":374
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":488
  *         self.peak_relations = d['peak_relations']
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
@@ -6761,7 +9209,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_8
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__reduce__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":375
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":489
  * 
  *     def __reduce__(self):
  *         return DPeak, (None,), self.__getstate__()             # <<<<<<<<<<<<<<
@@ -6769,7 +9217,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_8
  *     def __hash__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_getstate); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 375; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_getstate); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 489; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_2))) {
@@ -6782,21 +9230,21 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_8
     }
   }
   if (__pyx_t_3) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 375; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 489; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
-    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 375; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 489; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 375; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 489; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak)));
   PyTuple_SET_ITEM(__pyx_t_2, 0, ((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak)));
   __Pyx_GIVEREF(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak)));
-  __Pyx_INCREF(__pyx_tuple__8);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
+  __Pyx_INCREF(__pyx_tuple__12);
+  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_tuple__12);
+  __Pyx_GIVEREF(__pyx_tuple__12);
   PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
@@ -6804,7 +9252,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_8
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":374
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":488
  *         self.peak_relations = d['peak_relations']
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
@@ -6825,7 +9273,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_8
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":377
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":491
  *         return DPeak, (None,), self.__getstate__()
  * 
  *     def __hash__(self):             # <<<<<<<<<<<<<<
@@ -6859,20 +9307,20 @@ static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__hash__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":378
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":492
  * 
  *     def __hash__(self):
  *         return hash((self.neutral_mass, self.intensity, self.charge))             # <<<<<<<<<<<<<<
  * 
  *     def __richmp__(self, other, int op):
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 378; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 492; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 378; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 492; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 378; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 492; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 378; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 492; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -6883,12 +9331,12 @@ static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
   __pyx_t_1 = 0;
   __pyx_t_2 = 0;
   __pyx_t_3 = 0;
-  __pyx_t_5 = PyObject_Hash(__pyx_t_4); if (unlikely(__pyx_t_5 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 378; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = PyObject_Hash(__pyx_t_4); if (unlikely(__pyx_t_5 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 492; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_r = __pyx_t_5;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":377
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":491
  *         return DPeak, (None,), self.__getstate__()
  * 
  *     def __hash__(self):             # <<<<<<<<<<<<<<
@@ -6910,7 +9358,7 @@ static Py_hash_t __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":380
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":494
  *         return hash((self.neutral_mass, self.intensity, self.charge))
  * 
  *     def __richmp__(self, other, int op):             # <<<<<<<<<<<<<<
@@ -6949,11 +9397,11 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_op)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__richmp__", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 380; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("__richmp__", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 494; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__richmp__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 380; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__richmp__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 494; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -6962,11 +9410,11 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
     __pyx_v_other = values[0];
-    __pyx_v_op = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_op == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 380; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_op = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_op == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 494; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__richmp__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 380; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("__richmp__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 494; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.DPeak.__richmp__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6993,7 +9441,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__richmp__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":381
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":495
  * 
  *     def __richmp__(self, other, int op):
  *         cdef bint res = True             # <<<<<<<<<<<<<<
@@ -7002,7 +9450,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
  */
   __pyx_v_res = 1;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":387
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":501
  *             res &= self.charge == other.charge
  *             return res
  *         elif op == 3:             # <<<<<<<<<<<<<<
@@ -7011,7 +9459,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
  */
   switch (__pyx_v_op) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":382
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":496
  *     def __richmp__(self, other, int op):
  *         cdef bint res = True
  *         if op == 2:             # <<<<<<<<<<<<<<
@@ -7020,79 +9468,79 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
  */
     case 2:
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":383
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":497
  *         cdef bint res = True
  *         if op == 2:
  *             res &= self.neutral_mass == other.neutral_mass             # <<<<<<<<<<<<<<
  *             res &= self.intensity == other.intensity
  *             res &= self.charge == other.charge
  */
-    __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_res); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 383; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_res); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 497; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 383; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 497; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_other, __pyx_n_s_neutral_mass); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 383; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_other, __pyx_n_s_neutral_mass); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 497; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyObject_RichCompare(__pyx_t_2, __pyx_t_3, Py_EQ); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 383; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = PyObject_RichCompare(__pyx_t_2, __pyx_t_3, Py_EQ); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 497; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PyNumber_InPlaceAnd(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 383; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = PyNumber_InPlaceAnd(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 497; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 383; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 497; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_res = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":384
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":498
  *         if op == 2:
  *             res &= self.neutral_mass == other.neutral_mass
  *             res &= self.intensity == other.intensity             # <<<<<<<<<<<<<<
  *             res &= self.charge == other.charge
  *             return res
  */
-    __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_v_res); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 384; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_v_res); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 498; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 384; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 498; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_other, __pyx_n_s_intensity); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 384; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_other, __pyx_n_s_intensity); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 498; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = PyObject_RichCompare(__pyx_t_4, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 384; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PyObject_RichCompare(__pyx_t_4, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 498; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = PyNumber_InPlaceAnd(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 384; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = PyNumber_InPlaceAnd(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 498; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 384; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 498; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_v_res = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":385
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":499
  *             res &= self.neutral_mass == other.neutral_mass
  *             res &= self.intensity == other.intensity
  *             res &= self.charge == other.charge             # <<<<<<<<<<<<<<
  *             return res
  *         elif op == 3:
  */
-    __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_res); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 385; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_res); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 499; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 385; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 499; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_other, __pyx_n_s_charge); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 385; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_other, __pyx_n_s_charge); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 499; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyObject_RichCompare(__pyx_t_2, __pyx_t_3, Py_EQ); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 385; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = PyObject_RichCompare(__pyx_t_2, __pyx_t_3, Py_EQ); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 499; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PyNumber_InPlaceAnd(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 385; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = PyNumber_InPlaceAnd(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 499; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 385; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 499; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_res = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":386
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":500
  *             res &= self.intensity == other.intensity
  *             res &= self.charge == other.charge
  *             return res             # <<<<<<<<<<<<<<
@@ -7100,14 +9548,14 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
  *             return not self == other
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_v_res); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 386; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_v_res); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 500; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
     goto __pyx_L0;
     break;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":387
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":501
  *             res &= self.charge == other.charge
  *             return res
  *         elif op == 3:             # <<<<<<<<<<<<<<
@@ -7116,7 +9564,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
  */
     case 3:
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":388
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":502
  *             return res
  *         elif op == 3:
  *             return not self == other             # <<<<<<<<<<<<<<
@@ -7124,10 +9572,10 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
  * 
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_3 = PyObject_RichCompare(((PyObject *)__pyx_v_self), __pyx_v_other, Py_EQ); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 388; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_5 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 388; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = PyObject_RichCompare(((PyObject *)__pyx_v_self), __pyx_v_other, Py_EQ); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 502; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_5 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 502; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyBool_FromLong((!__pyx_t_5)); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 388; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyBool_FromLong((!__pyx_t_5)); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 502; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -7136,7 +9584,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
     default: break;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":380
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":494
  *         return hash((self.neutral_mass, self.intensity, self.charge))
  * 
  *     def __richmp__(self, other, int op):             # <<<<<<<<<<<<<<
@@ -7160,7 +9608,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":40
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":47
  *     '''
  *     cdef:
  *         public float neutral_mass             # <<<<<<<<<<<<<<
@@ -7190,7 +9638,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->neutral_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 47; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7228,7 +9676,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_12neutr
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 47; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->neutral_mass = __pyx_t_1;
 
   /* function exit code */
@@ -7242,7 +9690,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_12neutr
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":41
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":48
  *     cdef:
  *         public float neutral_mass
  *         public long id             # <<<<<<<<<<<<<<
@@ -7272,7 +9720,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_self->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_self->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7310,7 +9758,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2id_2__
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_long(__pyx_v_value); if (unlikely((__pyx_t_1 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_long(__pyx_v_value); if (unlikely((__pyx_t_1 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 48; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->id = __pyx_t_1;
 
   /* function exit code */
@@ -7324,7 +9772,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_2id_2__
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":42
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":49
  *         public float neutral_mass
  *         public long id
  *         public int charge             # <<<<<<<<<<<<<<
@@ -7354,7 +9802,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 42; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->charge); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7392,7 +9840,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6charge
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 42; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->charge = __pyx_t_1;
 
   /* function exit code */
@@ -7406,7 +9854,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_6charge
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":43
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":50
  *         public long id
  *         public int charge
  *         public float intensity             # <<<<<<<<<<<<<<
@@ -7436,7 +9884,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_9
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 43; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7474,7 +9922,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_9intens
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 43; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->intensity = __pyx_t_1;
 
   /* function exit code */
@@ -7488,7 +9936,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_9intens
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":44
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":51
  *         public int charge
  *         public float intensity
  *         public int rank             # <<<<<<<<<<<<<<
@@ -7518,7 +9966,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_4
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 44; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7556,7 +10004,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_4rank_2
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 44; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->rank = __pyx_t_1;
 
   /* function exit code */
@@ -7570,7 +10018,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_4rank_2
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":45
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":52
  *         public float intensity
  *         public int rank
  *         public float mass_charge_ratio             # <<<<<<<<<<<<<<
@@ -7600,7 +10048,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_1
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->mass_charge_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 45; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->mass_charge_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7638,7 +10086,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_17mass_
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 45; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->mass_charge_ratio = __pyx_t_1;
 
   /* function exit code */
@@ -7652,7 +10100,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_17mass_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":46
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":53
  *         public int rank
  *         public float mass_charge_ratio
  *         public list peak_relations             # <<<<<<<<<<<<<<
@@ -7710,7 +10158,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_14peak_
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  if (!(likely(PyList_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 46; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyList_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -7760,12 +10208,12 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_14peak_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":393
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":507
  * cdef class MatchedSpectrum(object):
  * 
  *     def __init__(self, gsm=None):             # <<<<<<<<<<<<<<
  *         if gsm is not None:
- *             self.peak_match_map = dict(gsm.peak_match_map)
+ *             self.peak_match_map = {
  */
 
 /* Python wrapper */
@@ -7799,7 +10247,7 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 393; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 507; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -7812,7 +10260,7 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 393; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 507; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -7826,60 +10274,292 @@ static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
 }
 
 static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum___init__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_gsm) {
+  PyObject *__pyx_v_total_mass = NULL;
+  PyObject *__pyx_v_site_count = NULL;
+  PyObject *__pyx_v_glycan_mass = NULL;
+  PyObject *__pyx_v_peptide_mass = NULL;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
   PyObject *__pyx_t_3 = NULL;
   PyObject *__pyx_t_4 = NULL;
-  int __pyx_t_5;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  Py_ssize_t __pyx_t_7;
+  PyObject *(*__pyx_t_8)(PyObject *);
+  PyObject *__pyx_t_9 = NULL;
+  PyObject *__pyx_t_10 = NULL;
+  PyObject *(*__pyx_t_11)(PyObject *);
+  Py_ssize_t __pyx_t_12;
+  PyObject *(*__pyx_t_13)(PyObject *);
+  int __pyx_t_14;
+  double __pyx_t_15;
+  double __pyx_t_16;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":394
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":508
  * 
  *     def __init__(self, gsm=None):
  *         if gsm is not None:             # <<<<<<<<<<<<<<
- *             self.peak_match_map = dict(gsm.peak_match_map)
- *             self.peak_list = list(gsm)
+ *             self.peak_match_map = {
+ *                 pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list]
  */
   __pyx_t_1 = (__pyx_v_gsm != Py_None);
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":395
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":509
  *     def __init__(self, gsm=None):
  *         if gsm is not None:
- *             self.peak_match_map = dict(gsm.peak_match_map)             # <<<<<<<<<<<<<<
- *             self.peak_list = list(gsm)
- *             self.scan_time = gsm.scan_time
+ *             self.peak_match_map = {             # <<<<<<<<<<<<<<
+ *                 pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list]
+ *                 for pid, fragment_list in gsm.peak_match_map.items()
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_peak_match_map); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 395; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 395; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_4);
-    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
-    __Pyx_GIVEREF(__pyx_t_3);
-    __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)(&PyDict_Type))), __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 395; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    { /* enter inner scope */
+      PyObject *__pyx_7genexpr__pyx_v_pid = NULL;
+      PyObject *__pyx_7genexpr__pyx_v_fragment_list = NULL;
+      PyObject *__pyx_7genexpr__pyx_v_frag_dict = NULL;
+      __pyx_t_3 = PyDict_New(); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 509; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+      __Pyx_GOTREF(__pyx_t_3);
+
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":511
+ *             self.peak_match_map = {
+ *                 pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list]
+ *                 for pid, fragment_list in gsm.peak_match_map.items()             # <<<<<<<<<<<<<<
+ *             }
+ *             self.peak_list = list(gsm)
+ */
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_peak_match_map); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_items); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+      __Pyx_GOTREF(__pyx_t_6);
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_5 = NULL;
+      if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_6))) {
+        __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_6);
+        if (likely(__pyx_t_5)) {
+          PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_6);
+          __Pyx_INCREF(__pyx_t_5);
+          __Pyx_INCREF(function);
+          __Pyx_DECREF_SET(__pyx_t_6, function);
+        }
+      }
+      if (__pyx_t_5) {
+        __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      } else {
+        __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_6); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+      }
+      __Pyx_GOTREF(__pyx_t_4);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      if (likely(PyList_CheckExact(__pyx_t_4)) || PyTuple_CheckExact(__pyx_t_4)) {
+        __pyx_t_6 = __pyx_t_4; __Pyx_INCREF(__pyx_t_6); __pyx_t_7 = 0;
+        __pyx_t_8 = NULL;
+      } else {
+        __pyx_t_7 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+        __Pyx_GOTREF(__pyx_t_6);
+        __pyx_t_8 = Py_TYPE(__pyx_t_6)->tp_iternext; if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+      }
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      for (;;) {
+        if (likely(!__pyx_t_8)) {
+          if (likely(PyList_CheckExact(__pyx_t_6))) {
+            if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_6)) break;
+            #if CYTHON_COMPILING_IN_CPYTHON
+            __pyx_t_4 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_7); __Pyx_INCREF(__pyx_t_4); __pyx_t_7++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+            #else
+            __pyx_t_4 = PySequence_ITEM(__pyx_t_6, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+            #endif
+          } else {
+            if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_6)) break;
+            #if CYTHON_COMPILING_IN_CPYTHON
+            __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_7); __Pyx_INCREF(__pyx_t_4); __pyx_t_7++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+            #else
+            __pyx_t_4 = PySequence_ITEM(__pyx_t_6, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+            #endif
+          }
+        } else {
+          __pyx_t_4 = __pyx_t_8(__pyx_t_6);
+          if (unlikely(!__pyx_t_4)) {
+            PyObject* exc_type = PyErr_Occurred();
+            if (exc_type) {
+              if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+              else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+            }
+            break;
+          }
+          __Pyx_GOTREF(__pyx_t_4);
+        }
+        if ((likely(PyTuple_CheckExact(__pyx_t_4))) || (PyList_CheckExact(__pyx_t_4))) {
+          PyObject* sequence = __pyx_t_4;
+          #if CYTHON_COMPILING_IN_CPYTHON
+          Py_ssize_t size = Py_SIZE(sequence);
+          #else
+          Py_ssize_t size = PySequence_Size(sequence);
+          #endif
+          if (unlikely(size != 2)) {
+            if (size > 2) __Pyx_RaiseTooManyValuesError(2);
+            else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
+            {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          }
+          #if CYTHON_COMPILING_IN_CPYTHON
+          if (likely(PyTuple_CheckExact(sequence))) {
+            __pyx_t_5 = PyTuple_GET_ITEM(sequence, 0); 
+            __pyx_t_9 = PyTuple_GET_ITEM(sequence, 1); 
+          } else {
+            __pyx_t_5 = PyList_GET_ITEM(sequence, 0); 
+            __pyx_t_9 = PyList_GET_ITEM(sequence, 1); 
+          }
+          __Pyx_INCREF(__pyx_t_5);
+          __Pyx_INCREF(__pyx_t_9);
+          #else
+          __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          __Pyx_GOTREF(__pyx_t_5);
+          __pyx_t_9 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          __Pyx_GOTREF(__pyx_t_9);
+          #endif
+          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+        } else {
+          Py_ssize_t index = -1;
+          __pyx_t_10 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          __Pyx_GOTREF(__pyx_t_10);
+          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+          __pyx_t_11 = Py_TYPE(__pyx_t_10)->tp_iternext;
+          index = 0; __pyx_t_5 = __pyx_t_11(__pyx_t_10); if (unlikely(!__pyx_t_5)) goto __pyx_L9_unpacking_failed;
+          __Pyx_GOTREF(__pyx_t_5);
+          index = 1; __pyx_t_9 = __pyx_t_11(__pyx_t_10); if (unlikely(!__pyx_t_9)) goto __pyx_L9_unpacking_failed;
+          __Pyx_GOTREF(__pyx_t_9);
+          if (__Pyx_IternextUnpackEndCheck(__pyx_t_11(__pyx_t_10), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          __pyx_t_11 = NULL;
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          goto __pyx_L10_unpacking_done;
+          __pyx_L9_unpacking_failed:;
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __pyx_t_11 = NULL;
+          if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
+          {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          __pyx_L10_unpacking_done:;
+        }
+        __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_pid, __pyx_t_5);
+        __pyx_t_5 = 0;
+        __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_fragment_list, __pyx_t_9);
+        __pyx_t_9 = 0;
+
+        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":510
+ *         if gsm is not None:
+ *             self.peak_match_map = {
+ *                 pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list]             # <<<<<<<<<<<<<<
+ *                 for pid, fragment_list in gsm.peak_match_map.items()
+ *             }
+ */
+        __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+        __Pyx_GOTREF(__pyx_t_4);
+        if (likely(PyList_CheckExact(__pyx_7genexpr__pyx_v_fragment_list)) || PyTuple_CheckExact(__pyx_7genexpr__pyx_v_fragment_list)) {
+          __pyx_t_9 = __pyx_7genexpr__pyx_v_fragment_list; __Pyx_INCREF(__pyx_t_9); __pyx_t_12 = 0;
+          __pyx_t_13 = NULL;
+        } else {
+          __pyx_t_12 = -1; __pyx_t_9 = PyObject_GetIter(__pyx_7genexpr__pyx_v_fragment_list); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          __Pyx_GOTREF(__pyx_t_9);
+          __pyx_t_13 = Py_TYPE(__pyx_t_9)->tp_iternext; if (unlikely(!__pyx_t_13)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+        }
+        for (;;) {
+          if (likely(!__pyx_t_13)) {
+            if (likely(PyList_CheckExact(__pyx_t_9))) {
+              if (__pyx_t_12 >= PyList_GET_SIZE(__pyx_t_9)) break;
+              #if CYTHON_COMPILING_IN_CPYTHON
+              __pyx_t_5 = PyList_GET_ITEM(__pyx_t_9, __pyx_t_12); __Pyx_INCREF(__pyx_t_5); __pyx_t_12++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+              #else
+              __pyx_t_5 = PySequence_ITEM(__pyx_t_9, __pyx_t_12); __pyx_t_12++; if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+              #endif
+            } else {
+              if (__pyx_t_12 >= PyTuple_GET_SIZE(__pyx_t_9)) break;
+              #if CYTHON_COMPILING_IN_CPYTHON
+              __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_9, __pyx_t_12); __Pyx_INCREF(__pyx_t_5); __pyx_t_12++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+              #else
+              __pyx_t_5 = PySequence_ITEM(__pyx_t_9, __pyx_t_12); __pyx_t_12++; if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+              #endif
+            }
+          } else {
+            __pyx_t_5 = __pyx_t_13(__pyx_t_9);
+            if (unlikely(!__pyx_t_5)) {
+              PyObject* exc_type = PyErr_Occurred();
+              if (exc_type) {
+                if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+                else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+              }
+              break;
+            }
+            __Pyx_GOTREF(__pyx_t_5);
+          }
+          __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_frag_dict, __pyx_t_5);
+          __pyx_t_5 = 0;
+          if (unlikely(__pyx_7genexpr__pyx_v_frag_dict == Py_None)) {
+            PyErr_SetString(PyExc_TypeError, "argument after ** must be a mapping, not NoneType");
+            {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          }
+          if (likely(PyDict_Check(__pyx_7genexpr__pyx_v_frag_dict))) {
+            __pyx_t_5 = __pyx_7genexpr__pyx_v_frag_dict;
+            __Pyx_INCREF(__pyx_t_5);
+          } else {
+            __pyx_t_5 = PyObject_CallFunctionObjArgs((PyObject*)&PyDict_Type, __pyx_7genexpr__pyx_v_frag_dict, NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+            __Pyx_GOTREF(__pyx_t_5);
+          }
+          __pyx_t_10 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch)), __pyx_empty_tuple, __pyx_t_5); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          __Pyx_GOTREF(__pyx_t_10);
+          __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+          if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_10))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+        }
+        __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+        if (unlikely(PyDict_SetItem(__pyx_t_3, (PyObject*)__pyx_7genexpr__pyx_v_pid, (PyObject*)__pyx_t_4))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 510; __pyx_clineno = __LINE__; goto __pyx_L6_error;}
+        __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":511
+ *             self.peak_match_map = {
+ *                 pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list]
+ *                 for pid, fragment_list in gsm.peak_match_map.items()             # <<<<<<<<<<<<<<
+ *             }
+ *             self.peak_list = list(gsm)
+ */
+      }
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_XDECREF(__pyx_7genexpr__pyx_v_pid);
+      __Pyx_XDECREF(__pyx_7genexpr__pyx_v_fragment_list);
+      __Pyx_XDECREF(__pyx_7genexpr__pyx_v_frag_dict);
+      goto __pyx_L13_exit_scope;
+      __pyx_L6_error:;
+      __Pyx_XDECREF(__pyx_7genexpr__pyx_v_pid);
+      __Pyx_XDECREF(__pyx_7genexpr__pyx_v_fragment_list);
+      __Pyx_XDECREF(__pyx_7genexpr__pyx_v_frag_dict);
+      goto __pyx_L1_error;
+      __pyx_L13_exit_scope:;
+    } /* exit inner scope */
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":509
+ *     def __init__(self, gsm=None):
+ *         if gsm is not None:
+ *             self.peak_match_map = {             # <<<<<<<<<<<<<<
+ *                 pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list]
+ *                 for pid, fragment_list in gsm.peak_match_map.items()
+ */
     __Pyx_GIVEREF(__pyx_t_3);
     __Pyx_GOTREF(__pyx_v_self->peak_match_map);
     __Pyx_DECREF(__pyx_v_self->peak_match_map);
     __pyx_v_self->peak_match_map = ((PyObject*)__pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":396
- *         if gsm is not None:
- *             self.peak_match_map = dict(gsm.peak_match_map)
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":513
+ *                 for pid, fragment_list in gsm.peak_match_map.items()
+ *             }
  *             self.peak_list = list(gsm)             # <<<<<<<<<<<<<<
  *             self.scan_time = gsm.scan_time
  *             self.peaks_explained = gsm.peaks_explained
  */
-    __pyx_t_3 = PySequence_List(__pyx_v_gsm); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 396; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = PySequence_List(__pyx_v_gsm); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_3);
     __Pyx_GOTREF(__pyx_v_self->peak_list);
@@ -7887,91 +10567,219 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
     __pyx_v_self->peak_list = ((PyObject*)__pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":397
- *             self.peak_match_map = dict(gsm.peak_match_map)
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":514
+ *             }
  *             self.peak_list = list(gsm)
  *             self.scan_time = gsm.scan_time             # <<<<<<<<<<<<<<
  *             self.peaks_explained = gsm.peaks_explained
  *             self.peaks_unexplained = gsm.peaks_unexplained
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_scan_time); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 397; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_scan_time); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 397; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_v_self->scan_time = __pyx_t_5;
+    __pyx_v_self->scan_time = __pyx_t_14;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":398
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":515
  *             self.peak_list = list(gsm)
  *             self.scan_time = gsm.scan_time
  *             self.peaks_explained = gsm.peaks_explained             # <<<<<<<<<<<<<<
  *             self.peaks_unexplained = gsm.peaks_unexplained
  *             self.id = gsm.id
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_peaks_explained); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 398; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_peaks_explained); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 515; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 398; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 515; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_v_self->peaks_explained = __pyx_t_5;
+    __pyx_v_self->peaks_explained = __pyx_t_14;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":399
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":516
  *             self.scan_time = gsm.scan_time
  *             self.peaks_explained = gsm.peaks_explained
  *             self.peaks_unexplained = gsm.peaks_unexplained             # <<<<<<<<<<<<<<
  *             self.id = gsm.id
  *             self.glycopeptide_sequence = str(gsm.glycopeptide_sequence)
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_peaks_unexplained); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 399; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_peaks_unexplained); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 516; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 399; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 516; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_v_self->peaks_unexplained = __pyx_t_5;
+    __pyx_v_self->peaks_unexplained = __pyx_t_14;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":400
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":517
  *             self.peaks_explained = gsm.peaks_explained
  *             self.peaks_unexplained = gsm.peaks_unexplained
  *             self.id = gsm.id             # <<<<<<<<<<<<<<
  *             self.glycopeptide_sequence = str(gsm.glycopeptide_sequence)
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_id); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 400; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_id); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 517; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 400; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 517; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_v_self->id = __pyx_t_5;
+    __pyx_v_self->id = __pyx_t_14;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":401
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":518
  *             self.peaks_unexplained = gsm.peaks_unexplained
  *             self.id = gsm.id
  *             self.glycopeptide_sequence = str(gsm.glycopeptide_sequence)             # <<<<<<<<<<<<<<
  * 
- *     def reindex_peak_matches(self):
+ *             total_mass = gsm.glycopeptide_match.calculated_mass
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_glycopeptide_sequence); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 401; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_glycopeptide_sequence); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 518; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 401; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_4);
-    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
+    __pyx_t_6 = PyTuple_New(1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 518; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_6);
+    PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_3);
     __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)(&PyString_Type))), __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 401; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)(&PyString_Type))), __pyx_t_6, NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 518; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (!(likely(PyString_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_3)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 401; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    if (!(likely(PyString_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_3)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 518; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GIVEREF(__pyx_t_3);
     __Pyx_GOTREF(__pyx_v_self->glycopeptide_sequence);
     __Pyx_DECREF(__pyx_v_self->glycopeptide_sequence);
     __pyx_v_self->glycopeptide_sequence = ((PyObject*)__pyx_t_3);
     __pyx_t_3 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":520
+ *             self.glycopeptide_sequence = str(gsm.glycopeptide_sequence)
+ * 
+ *             total_mass = gsm.glycopeptide_match.calculated_mass             # <<<<<<<<<<<<<<
+ *             site_count = gsm.glycopeptide_match.count_glycosylation_sites
+ *             glycan_mass = gsm.glycopeptide_match.glycan_composition.mass() - (site_count * WATER_MASS)
+ */
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_glycopeptide_match); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 520; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_calculated_mass); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 520; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_6);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_v_total_mass = __pyx_t_6;
+    __pyx_t_6 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":521
+ * 
+ *             total_mass = gsm.glycopeptide_match.calculated_mass
+ *             site_count = gsm.glycopeptide_match.count_glycosylation_sites             # <<<<<<<<<<<<<<
+ *             glycan_mass = gsm.glycopeptide_match.glycan_composition.mass() - (site_count * WATER_MASS)
+ *             peptide_mass = total_mass - glycan_mass
+ */
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_glycopeptide_match); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 521; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_count_glycosylation_sites); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 521; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_v_site_count = __pyx_t_3;
+    __pyx_t_3 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":522
+ *             total_mass = gsm.glycopeptide_match.calculated_mass
+ *             site_count = gsm.glycopeptide_match.count_glycosylation_sites
+ *             glycan_mass = gsm.glycopeptide_match.glycan_composition.mass() - (site_count * WATER_MASS)             # <<<<<<<<<<<<<<
+ *             peptide_mass = total_mass - glycan_mass
+ * 
+ */
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_gsm, __pyx_n_s_glycopeptide_match); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 522; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_glycan_composition); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 522; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_mass); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 522; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_6);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_4 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_6))) {
+      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_6);
+      if (likely(__pyx_t_4)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_6);
+        __Pyx_INCREF(__pyx_t_4);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_6, function);
+      }
+    }
+    if (__pyx_t_4) {
+      __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 522; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    } else {
+      __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_6); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 522; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_WATER_MASS); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 522; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_4 = PyNumber_Multiply(__pyx_v_site_count, __pyx_t_6); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 522; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_t_6 = PyNumber_Subtract(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 522; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_6);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_v_glycan_mass = __pyx_t_6;
+    __pyx_t_6 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":523
+ *             site_count = gsm.glycopeptide_match.count_glycosylation_sites
+ *             glycan_mass = gsm.glycopeptide_match.glycan_composition.mass() - (site_count * WATER_MASS)
+ *             peptide_mass = total_mass - glycan_mass             # <<<<<<<<<<<<<<
+ * 
+ *             self.peptide_mass = peptide_mass
+ */
+    __pyx_t_6 = PyNumber_Subtract(__pyx_v_total_mass, __pyx_v_glycan_mass); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 523; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_v_peptide_mass = __pyx_t_6;
+    __pyx_t_6 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":525
+ *             peptide_mass = total_mass - glycan_mass
+ * 
+ *             self.peptide_mass = peptide_mass             # <<<<<<<<<<<<<<
+ *             self.glycan_mass = glycan_mass
+ *             self.peptide_mass_rank = peptide_mass_rank(peptide_mass)
+ */
+    __pyx_t_15 = __pyx_PyFloat_AsDouble(__pyx_v_peptide_mass); if (unlikely((__pyx_t_15 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 525; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_v_self->peptide_mass = __pyx_t_15;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":526
+ * 
+ *             self.peptide_mass = peptide_mass
+ *             self.glycan_mass = glycan_mass             # <<<<<<<<<<<<<<
+ *             self.peptide_mass_rank = peptide_mass_rank(peptide_mass)
+ *             self.glycan_peptide_ratio = glycan_peptide_ratio(glycan_mass, peptide_mass)
+ */
+    __pyx_t_15 = __pyx_PyFloat_AsDouble(__pyx_v_glycan_mass); if (unlikely((__pyx_t_15 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 526; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_v_self->glycan_mass = __pyx_t_15;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":527
+ *             self.peptide_mass = peptide_mass
+ *             self.glycan_mass = glycan_mass
+ *             self.peptide_mass_rank = peptide_mass_rank(peptide_mass)             # <<<<<<<<<<<<<<
+ *             self.glycan_peptide_ratio = glycan_peptide_ratio(glycan_mass, peptide_mass)
+ * 
+ */
+    __pyx_t_15 = __pyx_PyFloat_AsDouble(__pyx_v_peptide_mass); if (unlikely((__pyx_t_15 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 527; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_v_self->peptide_mass_rank = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_peptide_mass_rank(__pyx_t_15);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":528
+ *             self.glycan_mass = glycan_mass
+ *             self.peptide_mass_rank = peptide_mass_rank(peptide_mass)
+ *             self.glycan_peptide_ratio = glycan_peptide_ratio(glycan_mass, peptide_mass)             # <<<<<<<<<<<<<<
+ * 
+ *     def reindex_peak_matches(self):
+ */
+    __pyx_t_15 = __pyx_PyFloat_AsDouble(__pyx_v_glycan_mass); if (unlikely((__pyx_t_15 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_16 = __pyx_PyFloat_AsDouble(__pyx_v_peptide_mass); if (unlikely((__pyx_t_16 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_v_self->glycan_peptide_ratio = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_glycan_peptide_ratio(__pyx_t_15, __pyx_t_16);
     goto __pyx_L3;
   }
   __pyx_L3:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":393
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":507
  * cdef class MatchedSpectrum(object):
  * 
  *     def __init__(self, gsm=None):             # <<<<<<<<<<<<<<
  *         if gsm is not None:
- *             self.peak_match_map = dict(gsm.peak_match_map)
+ *             self.peak_match_map = {
  */
 
   /* function exit code */
@@ -7980,15 +10788,23 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_10);
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_total_mass);
+  __Pyx_XDECREF(__pyx_v_site_count);
+  __Pyx_XDECREF(__pyx_v_glycan_mass);
+  __Pyx_XDECREF(__pyx_v_peptide_mass);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":403
- *             self.glycopeptide_sequence = str(gsm.glycopeptide_sequence)
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":530
+ *             self.glycan_peptide_ratio = glycan_peptide_ratio(glycan_mass, peptide_mass)
  * 
  *     def reindex_peak_matches(self):             # <<<<<<<<<<<<<<
  *         mass_map = dict()
@@ -8031,19 +10847,19 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("reindex_peak_matches", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":404
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":531
  * 
  *     def reindex_peak_matches(self):
  *         mass_map = dict()             # <<<<<<<<<<<<<<
  *         for peak_idx, matches in self.peak_match_map.items():
  *             mass_map["%0.4f" % matches[0]['observed_mass']] = peak_idx
  */
-  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 404; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 531; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_mass_map = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":405
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":532
  *     def reindex_peak_matches(self):
  *         mass_map = dict()
  *         for peak_idx, matches in self.peak_match_map.items():             # <<<<<<<<<<<<<<
@@ -8052,17 +10868,17 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
  */
   if (unlikely(__pyx_v_self->peak_match_map == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "items");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyDict_Items(__pyx_v_self->peak_match_map); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyDict_Items(__pyx_v_self->peak_match_map); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
     __pyx_t_2 = __pyx_t_1; __Pyx_INCREF(__pyx_t_2); __pyx_t_3 = 0;
     __pyx_t_4 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   for (;;) {
@@ -8070,16 +10886,16 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
       if (likely(PyList_CheckExact(__pyx_t_2))) {
         if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_1); __pyx_t_3++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_1); __pyx_t_3++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #endif
       } else {
         if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_1); __pyx_t_3++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_1); __pyx_t_3++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #endif
       }
     } else {
@@ -8088,7 +10904,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         }
         break;
       }
@@ -8104,7 +10920,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       }
       #if CYTHON_COMPILING_IN_CPYTHON
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -8117,15 +10933,15 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
       __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(__pyx_t_6);
       #else
-      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_6);
       #endif
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_7 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_t_8 = Py_TYPE(__pyx_t_7)->tp_iternext;
@@ -8133,7 +10949,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
       __Pyx_GOTREF(__pyx_t_5);
       index = 1; __pyx_t_6 = __pyx_t_8(__pyx_t_7); if (unlikely(!__pyx_t_6)) goto __pyx_L5_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_6);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_t_8 = NULL;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       goto __pyx_L6_unpacking_done;
@@ -8141,7 +10957,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __pyx_t_8 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 532; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_L6_unpacking_done:;
     }
     __Pyx_XDECREF_SET(__pyx_v_peak_idx, __pyx_t_5);
@@ -8149,25 +10965,25 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
     __Pyx_XDECREF_SET(__pyx_v_matches, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":406
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":533
  *         mass_map = dict()
  *         for peak_idx, matches in self.peak_match_map.items():
  *             mass_map["%0.4f" % matches[0]['observed_mass']] = peak_idx             # <<<<<<<<<<<<<<
  *         for peak in self.peak_list:
  *             idx = mass_map.get("%0.4f" % peak.neutral_mass)
  */
-    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_matches, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 406; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_matches, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 533; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = PyObject_GetItem(__pyx_t_1, __pyx_n_s_observed_mass); if (unlikely(__pyx_t_6 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 406; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_6 = PyObject_GetItem(__pyx_t_1, __pyx_n_s_observed_mass); if (unlikely(__pyx_t_6 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 533; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyString_Format(__pyx_kp_s_0_4f, __pyx_t_6); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 406; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyString_Format(__pyx_kp_s_0_4f, __pyx_t_6); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 533; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(PyDict_SetItem(__pyx_v_mass_map, __pyx_t_1, __pyx_v_peak_idx) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 406; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (unlikely(PyDict_SetItem(__pyx_v_mass_map, __pyx_t_1, __pyx_v_peak_idx) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 533; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":405
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":532
  *     def reindex_peak_matches(self):
  *         mass_map = dict()
  *         for peak_idx, matches in self.peak_match_map.items():             # <<<<<<<<<<<<<<
@@ -8177,7 +10993,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":407
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":534
  *         for peak_idx, matches in self.peak_match_map.items():
  *             mass_map["%0.4f" % matches[0]['observed_mass']] = peak_idx
  *         for peak in self.peak_list:             # <<<<<<<<<<<<<<
@@ -8186,38 +11002,38 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
  */
   if (unlikely(__pyx_v_self->peak_list == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 407; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 534; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __pyx_t_2 = __pyx_v_self->peak_list; __Pyx_INCREF(__pyx_t_2); __pyx_t_3 = 0;
   for (;;) {
     if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_2)) break;
     #if CYTHON_COMPILING_IN_CPYTHON
-    __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_1); __pyx_t_3++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 407; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_1); __pyx_t_3++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 534; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     #else
-    __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 407; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 534; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     #endif
     __Pyx_XDECREF_SET(__pyx_v_peak, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":408
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":535
  *             mass_map["%0.4f" % matches[0]['observed_mass']] = peak_idx
  *         for peak in self.peak_list:
  *             idx = mass_map.get("%0.4f" % peak.neutral_mass)             # <<<<<<<<<<<<<<
  *             if idx is None:
  *                 continue
  */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_neutral_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 408; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_peak, __pyx_n_s_neutral_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 535; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_0_4f, __pyx_t_1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 408; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_6 = __Pyx_PyString_Format(__pyx_kp_s_0_4f, __pyx_t_1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 535; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_mass_map, __pyx_t_6, Py_None); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 408; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_mass_map, __pyx_t_6, Py_None); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 535; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_XDECREF_SET(__pyx_v_idx, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":409
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":536
  *         for peak in self.peak_list:
  *             idx = mass_map.get("%0.4f" % peak.neutral_mass)
  *             if idx is None:             # <<<<<<<<<<<<<<
@@ -8228,7 +11044,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
     __pyx_t_10 = (__pyx_t_9 != 0);
     if (__pyx_t_10) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":410
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":537
  *             idx = mass_map.get("%0.4f" % peak.neutral_mass)
  *             if idx is None:
  *                 continue             # <<<<<<<<<<<<<<
@@ -8238,16 +11054,16 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
       goto __pyx_L7_continue;
     }
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":411
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":538
  *             if idx is None:
  *                 continue
  *             peak.id = idx             # <<<<<<<<<<<<<<
  * 
  * 
  */
-    if (__Pyx_PyObject_SetAttrStr(__pyx_v_peak, __pyx_n_s_id, __pyx_v_idx) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 411; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_peak, __pyx_n_s_id, __pyx_v_idx) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 538; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":407
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":534
  *         for peak_idx, matches in self.peak_match_map.items():
  *             mass_map["%0.4f" % matches[0]['observed_mass']] = peak_idx
  *         for peak in self.peak_list:             # <<<<<<<<<<<<<<
@@ -8258,8 +11074,8 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":403
- *             self.glycopeptide_sequence = str(gsm.glycopeptide_sequence)
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":530
+ *             self.glycan_peptide_ratio = glycan_peptide_ratio(glycan_mass, peptide_mass)
  * 
  *     def reindex_peak_matches(self):             # <<<<<<<<<<<<<<
  *         mass_map = dict()
@@ -8289,7 +11105,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
 }
 static PyObject *__pyx_gb_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_6generator(__pyx_GeneratorObject *__pyx_generator, PyObject *__pyx_sent_value); /* proto */
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":414
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":541
  * 
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -8328,7 +11144,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   __Pyx_INCREF((PyObject *)__pyx_cur_scope->__pyx_v_self);
   __Pyx_GIVEREF((PyObject *)__pyx_cur_scope->__pyx_v_self);
   {
-    __pyx_GeneratorObject *gen = __Pyx_Generator_New((__pyx_generator_body_t) __pyx_gb_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_6generator, (PyObject *) __pyx_cur_scope, __pyx_n_s_iter, __pyx_n_s_MatchedSpectrum___iter); if (unlikely(!gen)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_GeneratorObject *gen = __Pyx_Generator_New((__pyx_generator_body_t) __pyx_gb_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_6generator, (PyObject *) __pyx_cur_scope, __pyx_n_s_iter, __pyx_n_s_MatchedSpectrum___iter); if (unlikely(!gen)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 541; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -8365,9 +11181,9 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__pyx_sent_value)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 541; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":418
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":545
  *             Py_ssize_t i
  *             DPeak o
  *         for i in range(PyList_GET_SIZE(self.peak_list)):             # <<<<<<<<<<<<<<
@@ -8381,7 +11197,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_cur_scope->__pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":419
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":546
  *             DPeak o
  *         for i in range(PyList_GET_SIZE(self.peak_list)):
  *             o = <DPeak>PyList_GET_ITEM(self.peak_list, i)             # <<<<<<<<<<<<<<
@@ -8399,7 +11215,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
     __Pyx_GIVEREF(__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":420
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":547
  *         for i in range(PyList_GET_SIZE(self.peak_list)):
  *             o = <DPeak>PyList_GET_ITEM(self.peak_list, i)
  *             yield o             # <<<<<<<<<<<<<<
@@ -8418,10 +11234,10 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
     __pyx_L6_resume_from_yield:;
     __pyx_t_2 = __pyx_cur_scope->__pyx_t_0;
     __pyx_t_3 = __pyx_cur_scope->__pyx_t_1;
-    if (unlikely(!__pyx_sent_value)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 420; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (unlikely(!__pyx_sent_value)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 547; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":414
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":541
  * 
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -8443,7 +11259,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   return NULL;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":422
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":549
  *             yield o
  * 
  *     cpdef set peak_explained_by(self, object peak_id):             # <<<<<<<<<<<<<<
@@ -8478,7 +11294,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_peak_explained_by); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 422; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_peak_explained_by); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_8peak_explained_by)) {
       __Pyx_XDECREF(__pyx_r);
@@ -8494,21 +11310,21 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
         }
       }
       if (!__pyx_t_4) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_peak_id); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 422; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_peak_id); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
       } else {
-        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 422; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_5);
         PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
         __Pyx_INCREF(__pyx_v_peak_id);
         PyTuple_SET_ITEM(__pyx_t_5, 0+1, __pyx_v_peak_id);
         __Pyx_GIVEREF(__pyx_v_peak_id);
-        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 422; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       }
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (!(likely(PySet_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "set", Py_TYPE(__pyx_t_2)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 422; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (!(likely(PySet_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "set", Py_TYPE(__pyx_t_2)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_r = ((PyObject*)__pyx_t_2);
       __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -8517,19 +11333,19 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":430
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":557
  *             Py_ssize_t i
  * 
  *         explained = set()             # <<<<<<<<<<<<<<
  *         temp = PyDict_GetItem(self.peak_match_map, peak_id)
  *         if temp == NULL:
  */
-  __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 430; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 557; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_explained = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":431
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":558
  * 
  *         explained = set()
  *         temp = PyDict_GetItem(self.peak_match_map, peak_id)             # <<<<<<<<<<<<<<
@@ -8541,7 +11357,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
   __pyx_v_temp = PyDict_GetItem(__pyx_t_1, __pyx_v_peak_id);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":432
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":559
  *         explained = set()
  *         temp = PyDict_GetItem(self.peak_match_map, peak_id)
  *         if temp == NULL:             # <<<<<<<<<<<<<<
@@ -8551,7 +11367,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
   __pyx_t_6 = ((__pyx_v_temp == NULL) != 0);
   if (__pyx_t_6) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":433
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":560
  *         temp = PyDict_GetItem(self.peak_match_map, peak_id)
  *         if temp == NULL:
  *             return explained             # <<<<<<<<<<<<<<
@@ -8564,7 +11380,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":434
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":561
  *         if temp == NULL:
  *             return explained
  *         matches = <list>temp             # <<<<<<<<<<<<<<
@@ -8576,7 +11392,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
   __pyx_v_matches = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":435
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":562
  *             return explained
  *         matches = <list>temp
  *         for i in range(PyList_GET_SIZE(matches)):             # <<<<<<<<<<<<<<
@@ -8587,7 +11403,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
   for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
     __pyx_v_i = __pyx_t_8;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":436
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":563
  *         matches = <list>temp
  *         for i in range(PyList_GET_SIZE(matches)):
  *             match = <dict>PyList_GET_ITEM(matches, i)             # <<<<<<<<<<<<<<
@@ -8600,7 +11416,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
     __Pyx_XDECREF_SET(__pyx_v_match, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":437
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":564
  *         for i in range(PyList_GET_SIZE(matches)):
  *             match = <dict>PyList_GET_ITEM(matches, i)
  *             explained.add(<str>PyDict_GetItem(match, "key"))             # <<<<<<<<<<<<<<
@@ -8608,10 +11424,10 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
  *         return explained
  */
     __pyx_t_9 = PyDict_GetItem(__pyx_v_match, __pyx_n_s_key);
-    __pyx_t_10 = PySet_Add(__pyx_v_explained, ((PyObject *)__pyx_t_9)); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 437; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_10 = PySet_Add(__pyx_v_explained, ((PyObject *)__pyx_t_9)); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 564; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":439
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":566
  *             explained.add(<str>PyDict_GetItem(match, "key"))
  * 
  *         return explained             # <<<<<<<<<<<<<<
@@ -8623,7 +11439,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
   __pyx_r = __pyx_v_explained;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":422
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":549
  *             yield o
  * 
  *     cpdef set peak_explained_by(self, object peak_id):             # <<<<<<<<<<<<<<
@@ -8671,7 +11487,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("peak_explained_by", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peak_explained_by(__pyx_v_self, __pyx_v_peak_id, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 422; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peak_explained_by(__pyx_v_self, __pyx_v_peak_id, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8688,7 +11504,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":441
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":568
  *         return explained
  * 
  *     def __getstate__(self):             # <<<<<<<<<<<<<<
@@ -8719,19 +11535,19 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__getstate__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":442
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":569
  * 
  *     def __getstate__(self):
  *         d = {}             # <<<<<<<<<<<<<<
  *         d['peak_match_map'] = self.peak_match_map
  *         d['peak_list'] = self.peak_list
  */
-  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 442; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 569; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_d = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":443
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":570
  *     def __getstate__(self):
  *         d = {}
  *         d['peak_match_map'] = self.peak_match_map             # <<<<<<<<<<<<<<
@@ -8740,10 +11556,10 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
  */
   __pyx_t_1 = __pyx_v_self->peak_match_map;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peak_match_map, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 443; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peak_match_map, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 570; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":444
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":571
  *         d = {}
  *         d['peak_match_map'] = self.peak_match_map
  *         d['peak_list'] = self.peak_list             # <<<<<<<<<<<<<<
@@ -8752,72 +11568,120 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
  */
   __pyx_t_1 = __pyx_v_self->peak_list;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peak_list, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 444; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peak_list, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 571; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":445
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":572
  *         d['peak_match_map'] = self.peak_match_map
  *         d['peak_list'] = self.peak_list
  *         d['scan_time'] = self.scan_time             # <<<<<<<<<<<<<<
  *         d['peaks_explained'] = self.peaks_explained
  *         d['peaks_unexplained'] = self.peaks_unexplained
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->scan_time); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 445; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->scan_time); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 572; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_scan_time, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 445; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_scan_time, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 572; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":446
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":573
  *         d['peak_list'] = self.peak_list
  *         d['scan_time'] = self.scan_time
  *         d['peaks_explained'] = self.peaks_explained             # <<<<<<<<<<<<<<
  *         d['peaks_unexplained'] = self.peaks_unexplained
  *         d['id'] = self.id
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_explained); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 446; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_explained); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 573; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peaks_explained, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 446; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peaks_explained, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 573; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":447
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":574
  *         d['scan_time'] = self.scan_time
  *         d['peaks_explained'] = self.peaks_explained
  *         d['peaks_unexplained'] = self.peaks_unexplained             # <<<<<<<<<<<<<<
  *         d['id'] = self.id
  *         d['glycopeptide_sequence'] = self.glycopeptide_sequence
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_unexplained); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 447; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_unexplained); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 574; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peaks_unexplained, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 447; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peaks_unexplained, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 574; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":448
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":575
  *         d['peaks_explained'] = self.peaks_explained
  *         d['peaks_unexplained'] = self.peaks_unexplained
  *         d['id'] = self.id             # <<<<<<<<<<<<<<
  *         d['glycopeptide_sequence'] = self.glycopeptide_sequence
- *         return d
+ *         d['peptide_mass'] = self.peptide_mass
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 448; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 575; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_id, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 448; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_id, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 575; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":449
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":576
  *         d['peaks_unexplained'] = self.peaks_unexplained
  *         d['id'] = self.id
  *         d['glycopeptide_sequence'] = self.glycopeptide_sequence             # <<<<<<<<<<<<<<
- *         return d
- * 
+ *         d['peptide_mass'] = self.peptide_mass
+ *         d['glycan_mass'] = self.glycan_mass
  */
   __pyx_t_1 = __pyx_v_self->glycopeptide_sequence;
   __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_glycopeptide_sequence, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 449; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_glycopeptide_sequence, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 576; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":450
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":577
  *         d['id'] = self.id
  *         d['glycopeptide_sequence'] = self.glycopeptide_sequence
+ *         d['peptide_mass'] = self.peptide_mass             # <<<<<<<<<<<<<<
+ *         d['glycan_mass'] = self.glycan_mass
+ *         d['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+ */
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->peptide_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 577; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peptide_mass, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 577; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":578
+ *         d['glycopeptide_sequence'] = self.glycopeptide_sequence
+ *         d['peptide_mass'] = self.peptide_mass
+ *         d['glycan_mass'] = self.glycan_mass             # <<<<<<<<<<<<<<
+ *         d['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+ *         d['peptide_mass_rank'] = self.peptide_mass_rank
+ */
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->glycan_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 578; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_glycan_mass, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 578; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":579
+ *         d['peptide_mass'] = self.peptide_mass
+ *         d['glycan_mass'] = self.glycan_mass
+ *         d['glycan_peptide_ratio'] = self.glycan_peptide_ratio             # <<<<<<<<<<<<<<
+ *         d['peptide_mass_rank'] = self.peptide_mass_rank
+ *         return d
+ */
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->glycan_peptide_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 579; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_glycan_peptide_ratio, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 579; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":580
+ *         d['glycan_mass'] = self.glycan_mass
+ *         d['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+ *         d['peptide_mass_rank'] = self.peptide_mass_rank             # <<<<<<<<<<<<<<
+ *         return d
+ * 
+ */
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peptide_mass_rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 580; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_peptide_mass_rank, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 580; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":581
+ *         d['glycan_peptide_ratio'] = self.glycan_peptide_ratio
+ *         d['peptide_mass_rank'] = self.peptide_mass_rank
  *         return d             # <<<<<<<<<<<<<<
  * 
  *     def __setstate__(self, d):
@@ -8827,7 +11691,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   __pyx_r = __pyx_v_d;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":441
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":568
  *         return explained
  * 
  *     def __getstate__(self):             # <<<<<<<<<<<<<<
@@ -8847,7 +11711,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":452
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":583
  *         return d
  * 
  *     def __setstate__(self, d):             # <<<<<<<<<<<<<<
@@ -8873,112 +11737,165 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
+  double __pyx_t_3;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__setstate__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":453
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":584
  * 
  *     def __setstate__(self, d):
  *         self.peak_match_map = d['peak_match_map']             # <<<<<<<<<<<<<<
  *         self.peak_list = d['peak_list']
  *         self.scan_time = d['scan_time']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peak_match_map); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 453; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peak_match_map); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 584; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 453; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 584; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->peak_match_map);
   __Pyx_DECREF(__pyx_v_self->peak_match_map);
   __pyx_v_self->peak_match_map = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":454
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":585
  *     def __setstate__(self, d):
  *         self.peak_match_map = d['peak_match_map']
  *         self.peak_list = d['peak_list']             # <<<<<<<<<<<<<<
  *         self.scan_time = d['scan_time']
  *         self.peaks_explained = d['peaks_explained']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peak_list); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 454; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peak_list); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 585; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 454; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 585; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->peak_list);
   __Pyx_DECREF(__pyx_v_self->peak_list);
   __pyx_v_self->peak_list = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":455
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":586
  *         self.peak_match_map = d['peak_match_map']
  *         self.peak_list = d['peak_list']
  *         self.scan_time = d['scan_time']             # <<<<<<<<<<<<<<
  *         self.peaks_explained = d['peaks_explained']
  *         self.peaks_unexplained = d['peaks_unexplained']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_scan_time); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 455; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_scan_time); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 586; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 455; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 586; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->scan_time = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":456
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":587
  *         self.peak_list = d['peak_list']
  *         self.scan_time = d['scan_time']
  *         self.peaks_explained = d['peaks_explained']             # <<<<<<<<<<<<<<
  *         self.peaks_unexplained = d['peaks_unexplained']
  *         self.id = d['id']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peaks_explained); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 456; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peaks_explained); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 587; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 456; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 587; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->peaks_explained = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":457
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":588
  *         self.scan_time = d['scan_time']
  *         self.peaks_explained = d['peaks_explained']
  *         self.peaks_unexplained = d['peaks_unexplained']             # <<<<<<<<<<<<<<
  *         self.id = d['id']
  *         self.glycopeptide_sequence = d['glycopeptide_sequence']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peaks_unexplained); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 457; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peaks_unexplained); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 588; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 457; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 588; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->peaks_unexplained = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":458
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":589
  *         self.peaks_explained = d['peaks_explained']
  *         self.peaks_unexplained = d['peaks_unexplained']
  *         self.id = d['id']             # <<<<<<<<<<<<<<
  *         self.glycopeptide_sequence = d['glycopeptide_sequence']
- * 
+ *         self.peptide_mass = d['peptide_mass']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_id); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 458; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_id); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 589; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 458; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 589; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_self->id = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":459
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":590
  *         self.peaks_unexplained = d['peaks_unexplained']
  *         self.id = d['id']
  *         self.glycopeptide_sequence = d['glycopeptide_sequence']             # <<<<<<<<<<<<<<
- * 
- *     def __reduce__(self):
+ *         self.peptide_mass = d['peptide_mass']
+ *         self.glycan_mass = d['glycan_mass']
  */
-  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_glycopeptide_sequence); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 459; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_glycopeptide_sequence); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 590; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(PyString_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 459; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyString_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 590; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->glycopeptide_sequence);
   __Pyx_DECREF(__pyx_v_self->glycopeptide_sequence);
   __pyx_v_self->glycopeptide_sequence = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":452
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":591
+ *         self.id = d['id']
+ *         self.glycopeptide_sequence = d['glycopeptide_sequence']
+ *         self.peptide_mass = d['peptide_mass']             # <<<<<<<<<<<<<<
+ *         self.glycan_mass = d['glycan_mass']
+ *         self.glycan_peptide_ratio = d['glycan_peptide_ratio']
+ */
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peptide_mass); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 591; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 591; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_self->peptide_mass = __pyx_t_3;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":592
+ *         self.glycopeptide_sequence = d['glycopeptide_sequence']
+ *         self.peptide_mass = d['peptide_mass']
+ *         self.glycan_mass = d['glycan_mass']             # <<<<<<<<<<<<<<
+ *         self.glycan_peptide_ratio = d['glycan_peptide_ratio']
+ *         self.peptide_mass_rank = d['peptide_mass_rank']
+ */
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_glycan_mass); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 592; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 592; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_self->glycan_mass = __pyx_t_3;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":593
+ *         self.peptide_mass = d['peptide_mass']
+ *         self.glycan_mass = d['glycan_mass']
+ *         self.glycan_peptide_ratio = d['glycan_peptide_ratio']             # <<<<<<<<<<<<<<
+ *         self.peptide_mass_rank = d['peptide_mass_rank']
+ * 
+ */
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_glycan_peptide_ratio); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 593; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 593; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_self->glycan_peptide_ratio = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":594
+ *         self.glycan_mass = d['glycan_mass']
+ *         self.glycan_peptide_ratio = d['glycan_peptide_ratio']
+ *         self.peptide_mass_rank = d['peptide_mass_rank']             # <<<<<<<<<<<<<<
+ * 
+ *     def __reduce__(self):
+ */
+  __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_peptide_mass_rank); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 594; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 594; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_self->peptide_mass_rank = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":583
  *         return d
  * 
  *     def __setstate__(self, d):             # <<<<<<<<<<<<<<
@@ -8999,8 +11916,8 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":461
- *         self.glycopeptide_sequence = d['glycopeptide_sequence']
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":596
+ *         self.peptide_mass_rank = d['peptide_mass_rank']
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
  *         return MatchedSpectrum, (None,), self.__getstate__()
@@ -9031,7 +11948,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__reduce__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":462
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":597
  * 
  *     def __reduce__(self):
  *         return MatchedSpectrum, (None,), self.__getstate__()             # <<<<<<<<<<<<<<
@@ -9039,7 +11956,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
  *     def __repr__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_getstate); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 462; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_getstate); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 597; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_2))) {
@@ -9052,21 +11969,21 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
     }
   }
   if (__pyx_t_3) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 462; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 597; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
-    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 462; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 597; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 462; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 597; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum)));
   PyTuple_SET_ITEM(__pyx_t_2, 0, ((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum)));
   __Pyx_GIVEREF(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum)));
-  __Pyx_INCREF(__pyx_tuple__9);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
+  __Pyx_INCREF(__pyx_tuple__13);
+  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_tuple__13);
+  __Pyx_GIVEREF(__pyx_tuple__13);
   PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
@@ -9074,8 +11991,8 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":461
- *         self.glycopeptide_sequence = d['glycopeptide_sequence']
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":596
+ *         self.peptide_mass_rank = d['peptide_mass_rank']
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
  *         return MatchedSpectrum, (None,), self.__getstate__()
@@ -9095,7 +12012,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":464
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":599
  *         return MatchedSpectrum, (None,), self.__getstate__()
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -9129,36 +12046,36 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":466
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":601
  *     def __repr__(self):
  *         temp = "<MatchedSpectrum %s @ %d %d|%d>" % (
  *             self.glycopeptide_sequence, self.scan_time, self.peaks_explained,             # <<<<<<<<<<<<<<
  *             self.peaks_unexplained)
  *         return temp
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->scan_time); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 466; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->scan_time); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 601; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_explained); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 466; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_explained); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 601; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":467
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":602
  *         temp = "<MatchedSpectrum %s @ %d %d|%d>" % (
  *             self.glycopeptide_sequence, self.scan_time, self.peaks_explained,
  *             self.peaks_unexplained)             # <<<<<<<<<<<<<<
  *         return temp
  * 
  */
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_unexplained); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 467; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_unexplained); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 602; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":466
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":601
  *     def __repr__(self):
  *         temp = "<MatchedSpectrum %s @ %d %d|%d>" % (
  *             self.glycopeptide_sequence, self.scan_time, self.peaks_explained,             # <<<<<<<<<<<<<<
  *             self.peaks_unexplained)
  *         return temp
  */
-  __pyx_t_4 = PyTuple_New(4); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 466; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyTuple_New(4); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 601; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_INCREF(__pyx_v_self->glycopeptide_sequence);
   PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_self->glycopeptide_sequence);
@@ -9173,20 +12090,20 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   __pyx_t_2 = 0;
   __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":465
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":600
  * 
  *     def __repr__(self):
  *         temp = "<MatchedSpectrum %s @ %d %d|%d>" % (             # <<<<<<<<<<<<<<
  *             self.glycopeptide_sequence, self.scan_time, self.peaks_explained,
  *             self.peaks_unexplained)
  */
-  __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_MatchedSpectrum_s_d_d_d, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 465; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_MatchedSpectrum_s_d_d_d, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 600; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_temp = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":468
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":603
  *             self.glycopeptide_sequence, self.scan_time, self.peaks_explained,
  *             self.peaks_unexplained)
  *         return temp             # <<<<<<<<<<<<<<
@@ -9198,7 +12115,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   __pyx_r = __pyx_v_temp;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":464
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":599
  *         return MatchedSpectrum, (None,), self.__getstate__()
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -9221,11 +12138,11 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":59
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":64
  * cdef class MatchedSpectrum(object):
  *     cdef:
  *         public dict peak_match_map             # <<<<<<<<<<<<<<
- *         #: Should be a list of DPeak instances
+ *         #: list of DPeak instances
  *         public list peak_list
  */
 
@@ -9279,7 +12196,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  if (!(likely(PyDict_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyDict_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 64; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -9329,9 +12246,9 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":61
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":66
  *         public dict peak_match_map
- *         #: Should be a list of DPeak instances
+ *         #: list of DPeak instances
  *         public list peak_list             # <<<<<<<<<<<<<<
  *         public str glycopeptide_sequence
  *         public int scan_time
@@ -9387,7 +12304,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  if (!(likely(PyList_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyList_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -9437,8 +12354,8 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":62
- *         #: Should be a list of DPeak instances
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":67
+ *         #: list of DPeak instances
  *         public list peak_list
  *         public str glycopeptide_sequence             # <<<<<<<<<<<<<<
  *         public int scan_time
@@ -9495,7 +12412,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 67; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -9545,7 +12462,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":63
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":68
  *         public list peak_list
  *         public str glycopeptide_sequence
  *         public int scan_time             # <<<<<<<<<<<<<<
@@ -9575,7 +12492,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->scan_time); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->scan_time); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 68; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9613,7 +12530,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 68; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->scan_time = __pyx_t_1;
 
   /* function exit code */
@@ -9627,7 +12544,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":64
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":69
  *         public str glycopeptide_sequence
  *         public int scan_time
  *         public int peaks_explained             # <<<<<<<<<<<<<<
@@ -9657,7 +12574,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_explained); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 64; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_explained); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9695,7 +12612,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 64; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->peaks_explained = __pyx_t_1;
 
   /* function exit code */
@@ -9709,12 +12626,12 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":65
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":70
  *         public int scan_time
  *         public int peaks_explained
  *         public int peaks_unexplained             # <<<<<<<<<<<<<<
  *         public int id
- * 
+ *         public double peptide_mass
  */
 
 /* Python wrapper */
@@ -9739,7 +12656,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_unexplained); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peaks_unexplained); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9777,7 +12694,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->peaks_unexplained = __pyx_t_1;
 
   /* function exit code */
@@ -9791,12 +12708,12 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":66
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":71
  *         public int peaks_explained
  *         public int peaks_unexplained
  *         public int id             # <<<<<<<<<<<<<<
- * 
- *     cpdef set peak_explained_by(self, object peak_id)
+ *         public double peptide_mass
+ *         public double glycan_mass
  */
 
 /* Python wrapper */
@@ -9821,7 +12738,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matche
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9859,7 +12776,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->id = __pyx_t_1;
 
   /* function exit code */
@@ -9873,7 +12790,1231 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":471
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":72
+ *         public int peaks_unexplained
+ *         public int id
+ *         public double peptide_mass             # <<<<<<<<<<<<<<
+ *         public double glycan_mass
+ *         public int peptide_mass_rank
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->peptide_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.peptide_mass.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  double __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->peptide_mass = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.peptide_mass.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":73
+ *         public int id
+ *         public double peptide_mass
+ *         public double glycan_mass             # <<<<<<<<<<<<<<
+ *         public int peptide_mass_rank
+ *         public int glycan_peptide_ratio
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->glycan_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.glycan_mass.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  double __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->glycan_mass = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.glycan_mass.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":74
+ *         public double peptide_mass
+ *         public double glycan_mass
+ *         public int peptide_mass_rank             # <<<<<<<<<<<<<<
+ *         public int glycan_peptide_ratio
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->peptide_mass_rank); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.peptide_mass_rank.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->peptide_mass_rank = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.peptide_mass_rank.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":75
+ *         public double glycan_mass
+ *         public int peptide_mass_rank
+ *         public int glycan_peptide_ratio             # <<<<<<<<<<<<<<
+ * 
+ *     cpdef set peak_explained_by(self, object peak_id)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->glycan_peptide_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.glycan_peptide_ratio.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->glycan_peptide_ratio = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.MatchedSpectrum.glycan_peptide_ratio.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":607
+ * 
+ * cdef class FragmentMatch(object):
+ *     def __init__(self, observed_mass, intensity, key, peak_id, ion_type=None, **kwargs):             # <<<<<<<<<<<<<<
+ *         if ion_type is None:
+ *             ion_type = interpolate_fragment_ion_type(key)
+ */
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_observed_mass = 0;
+  PyObject *__pyx_v_intensity = 0;
+  PyObject *__pyx_v_key = 0;
+  PyObject *__pyx_v_peak_id = 0;
+  PyObject *__pyx_v_ion_type = 0;
+  CYTHON_UNUSED PyObject *__pyx_v_kwargs = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__init__ (wrapper)", 0);
+  __pyx_v_kwargs = PyDict_New(); if (unlikely(!__pyx_v_kwargs)) return -1;
+  __Pyx_GOTREF(__pyx_v_kwargs);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_observed_mass,&__pyx_n_s_intensity,&__pyx_n_s_key,&__pyx_n_s_peak_id,&__pyx_n_s_ion_type,0};
+    PyObject* values[5] = {0,0,0,0,0};
+    values[4] = ((PyObject *)Py_None);
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_observed_mass)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        case  1:
+        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_intensity)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("__init__", 0, 4, 5, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 607; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        }
+        case  2:
+        if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_key)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("__init__", 0, 4, 5, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 607; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        }
+        case  3:
+        if (likely((values[3] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_peak_id)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("__init__", 0, 4, 5, 3); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 607; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        }
+        case  4:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_ion_type);
+          if (value) { values[4] = value; kw_args--; }
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "__init__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 607; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      }
+    } else {
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+    }
+    __pyx_v_observed_mass = values[0];
+    __pyx_v_intensity = values[1];
+    __pyx_v_key = values[2];
+    __pyx_v_peak_id = values[3];
+    __pyx_v_ion_type = values[4];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 4, 5, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 607; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __pyx_L3_error:;
+  __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return -1;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch___init__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self), __pyx_v_observed_mass, __pyx_v_intensity, __pyx_v_key, __pyx_v_peak_id, __pyx_v_ion_type, __pyx_v_kwargs);
+
+  /* function exit code */
+  __Pyx_XDECREF(__pyx_v_kwargs);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch___init__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_observed_mass, PyObject *__pyx_v_intensity, PyObject *__pyx_v_key, PyObject *__pyx_v_peak_id, PyObject *__pyx_v_ion_type, CYTHON_UNUSED PyObject *__pyx_v_kwargs) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  double __pyx_t_4;
+  long __pyx_t_5;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__init__", 0);
+  __Pyx_INCREF(__pyx_v_ion_type);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":608
+ * cdef class FragmentMatch(object):
+ *     def __init__(self, observed_mass, intensity, key, peak_id, ion_type=None, **kwargs):
+ *         if ion_type is None:             # <<<<<<<<<<<<<<
+ *             ion_type = interpolate_fragment_ion_type(key)
+ *         self.observed_mass = observed_mass
+ */
+  __pyx_t_1 = (__pyx_v_ion_type == Py_None);
+  __pyx_t_2 = (__pyx_t_1 != 0);
+  if (__pyx_t_2) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":609
+ *     def __init__(self, observed_mass, intensity, key, peak_id, ion_type=None, **kwargs):
+ *         if ion_type is None:
+ *             ion_type = interpolate_fragment_ion_type(key)             # <<<<<<<<<<<<<<
+ *         self.observed_mass = observed_mass
+ *         self.intensity = intensity
+ */
+    if (!(likely(PyString_CheckExact(__pyx_v_key))||((__pyx_v_key) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_key)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 609; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_interpolate_fragment_ion_type(((PyObject*)__pyx_v_key), 0); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 609; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF_SET(__pyx_v_ion_type, __pyx_t_3);
+    __pyx_t_3 = 0;
+    goto __pyx_L3;
+  }
+  __pyx_L3:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":610
+ *         if ion_type is None:
+ *             ion_type = interpolate_fragment_ion_type(key)
+ *         self.observed_mass = observed_mass             # <<<<<<<<<<<<<<
+ *         self.intensity = intensity
+ *         self.key = key
+ */
+  __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_observed_mass); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 610; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->observed_mass = __pyx_t_4;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":611
+ *             ion_type = interpolate_fragment_ion_type(key)
+ *         self.observed_mass = observed_mass
+ *         self.intensity = intensity             # <<<<<<<<<<<<<<
+ *         self.key = key
+ *         self.peak_id = peak_id
+ */
+  __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_intensity); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 611; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->intensity = __pyx_t_4;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":612
+ *         self.observed_mass = observed_mass
+ *         self.intensity = intensity
+ *         self.key = key             # <<<<<<<<<<<<<<
+ *         self.peak_id = peak_id
+ *         self.ion_type = ion_type
+ */
+  if (!(likely(PyString_CheckExact(__pyx_v_key))||((__pyx_v_key) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_key)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 612; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __pyx_v_key;
+  __Pyx_INCREF(__pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_3);
+  __Pyx_GOTREF(__pyx_v_self->key);
+  __Pyx_DECREF(__pyx_v_self->key);
+  __pyx_v_self->key = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":613
+ *         self.intensity = intensity
+ *         self.key = key
+ *         self.peak_id = peak_id             # <<<<<<<<<<<<<<
+ *         self.ion_type = ion_type
+ * 
+ */
+  __pyx_t_5 = __Pyx_PyInt_As_long(__pyx_v_peak_id); if (unlikely((__pyx_t_5 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 613; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->peak_id = __pyx_t_5;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":614
+ *         self.key = key
+ *         self.peak_id = peak_id
+ *         self.ion_type = ion_type             # <<<<<<<<<<<<<<
+ * 
+ *     def __repr__(self):
+ */
+  if (!(likely(PyString_CheckExact(__pyx_v_ion_type))||((__pyx_v_ion_type) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_ion_type)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 614; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __pyx_v_ion_type;
+  __Pyx_INCREF(__pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_3);
+  __Pyx_GOTREF(__pyx_v_self->ion_type);
+  __Pyx_DECREF(__pyx_v_self->ion_type);
+  __pyx_v_self->ion_type = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":607
+ * 
+ * cdef class FragmentMatch(object):
+ *     def __init__(self, observed_mass, intensity, key, peak_id, ion_type=None, **kwargs):             # <<<<<<<<<<<<<<
+ *         if ion_type is None:
+ *             ion_type = interpolate_fragment_ion_type(key)
+ */
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_ion_type);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":616
+ *         self.ion_type = ion_type
+ * 
+ *     def __repr__(self):             # <<<<<<<<<<<<<<
+ *         return "<FragmentMatch {} {} {}>".format(self.observed_mass, self.intensity, self.key)
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3__repr__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3__repr__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__repr__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_2__repr__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_2__repr__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  Py_ssize_t __pyx_t_6;
+  PyObject *__pyx_t_7 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__repr__", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":617
+ * 
+ *     def __repr__(self):
+ *         return "<FragmentMatch {} {} {}>".format(self.observed_mass, self.intensity, self.key)             # <<<<<<<<<<<<<<
+ * 
+ *     def __reduce__(self):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_kp_s_FragmentMatch, __pyx_n_s_format); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 617; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->observed_mass); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 617; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 617; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = NULL;
+  __pyx_t_6 = 0;
+  if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __pyx_t_6 = 1;
+    }
+  }
+  __pyx_t_7 = PyTuple_New(3+__pyx_t_6); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 617; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_7);
+  if (__pyx_t_5) {
+    PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_5); __Pyx_GIVEREF(__pyx_t_5); __pyx_t_5 = NULL;
+  }
+  PyTuple_SET_ITEM(__pyx_t_7, 0+__pyx_t_6, __pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_7, 1+__pyx_t_6, __pyx_t_4);
+  __Pyx_GIVEREF(__pyx_t_4);
+  __Pyx_INCREF(__pyx_v_self->key);
+  PyTuple_SET_ITEM(__pyx_t_7, 2+__pyx_t_6, __pyx_v_self->key);
+  __Pyx_GIVEREF(__pyx_v_self->key);
+  __pyx_t_3 = 0;
+  __pyx_t_4 = 0;
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_7, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 617; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":616
+ *         self.ion_type = ion_type
+ * 
+ *     def __repr__(self):             # <<<<<<<<<<<<<<
+ *         return "<FragmentMatch {} {} {}>".format(self.observed_mass, self.intensity, self.key)
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.__repr__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":619
+ *         return "<FragmentMatch {} {} {}>".format(self.observed_mass, self.intensity, self.key)
+ * 
+ *     def __reduce__(self):             # <<<<<<<<<<<<<<
+ *         return FragmentMatch, (self.observed_mass, self.intensity, self.key, self.peak_id, self.ion_type)
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_5__reduce__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_5__reduce__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__reduce__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_4__reduce__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_4__reduce__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__reduce__", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":620
+ * 
+ *     def __reduce__(self):
+ *         return FragmentMatch, (self.observed_mass, self.intensity, self.key, self.peak_id, self.ion_type)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->observed_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 620; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 620; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyInt_From_long(__pyx_v_self->peak_id); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 620; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = PyTuple_New(5); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 620; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_2);
+  __Pyx_INCREF(__pyx_v_self->key);
+  PyTuple_SET_ITEM(__pyx_t_4, 2, __pyx_v_self->key);
+  __Pyx_GIVEREF(__pyx_v_self->key);
+  PyTuple_SET_ITEM(__pyx_t_4, 3, __pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_3);
+  __Pyx_INCREF(__pyx_v_self->ion_type);
+  PyTuple_SET_ITEM(__pyx_t_4, 4, __pyx_v_self->ion_type);
+  __Pyx_GIVEREF(__pyx_v_self->ion_type);
+  __pyx_t_1 = 0;
+  __pyx_t_2 = 0;
+  __pyx_t_3 = 0;
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 620; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_INCREF(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch)));
+  PyTuple_SET_ITEM(__pyx_t_3, 0, ((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch)));
+  __Pyx_GIVEREF(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch)));
+  PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_4);
+  __Pyx_GIVEREF(__pyx_t_4);
+  __pyx_t_4 = 0;
+  __pyx_r = __pyx_t_3;
+  __pyx_t_3 = 0;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":619
+ *         return "<FragmentMatch {} {} {}>".format(self.observed_mass, self.intensity, self.key)
+ * 
+ *     def __reduce__(self):             # <<<<<<<<<<<<<<
+ *         return FragmentMatch, (self.observed_mass, self.intensity, self.key, self.peak_id, self.ion_type)
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.__reduce__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":81
+ * cdef class FragmentMatch(object):
+ *     cdef:
+ *         public double observed_mass             # <<<<<<<<<<<<<<
+ *         public double intensity
+ *         public str key
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->observed_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 81; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.observed_mass.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  double __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 81; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->observed_mass = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.observed_mass.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":82
+ *     cdef:
+ *         public double observed_mass
+ *         public double intensity             # <<<<<<<<<<<<<<
+ *         public str key
+ *         public str ion_type
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->intensity); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 82; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.intensity.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  double __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 82; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->intensity = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.intensity.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":83
+ *         public double observed_mass
+ *         public double intensity
+ *         public str key             # <<<<<<<<<<<<<<
+ *         public str ion_type
+ *         public long peak_id
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_self->key);
+  __pyx_r = __pyx_v_self->key;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_v_value;
+  __Pyx_INCREF(__pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_self->key);
+  __Pyx_DECREF(__pyx_v_self->key);
+  __pyx_v_self->key = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.key.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_5__del__(PyObject *__pyx_v_self) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_4__del__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_4__del__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__del__", 0);
+  __Pyx_INCREF(Py_None);
+  __Pyx_GIVEREF(Py_None);
+  __Pyx_GOTREF(__pyx_v_self->key);
+  __Pyx_DECREF(__pyx_v_self->key);
+  __pyx_v_self->key = ((PyObject*)Py_None);
+
+  /* function exit code */
+  __pyx_r = 0;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":84
+ *         public double intensity
+ *         public str key
+ *         public str ion_type             # <<<<<<<<<<<<<<
+ *         public long peak_id
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_self->ion_type);
+  __pyx_r = __pyx_v_self->ion_type;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 84; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_v_value;
+  __Pyx_INCREF(__pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_self->ion_type);
+  __Pyx_DECREF(__pyx_v_self->ion_type);
+  __pyx_v_self->ion_type = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.ion_type.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_5__del__(PyObject *__pyx_v_self) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_4__del__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_4__del__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__del__", 0);
+  __Pyx_INCREF(Py_None);
+  __Pyx_GIVEREF(Py_None);
+  __Pyx_GOTREF(__pyx_v_self->ion_type);
+  __Pyx_DECREF(__pyx_v_self->ion_type);
+  __pyx_v_self->ion_type = ((PyObject*)Py_None);
+
+  /* function exit code */
+  __pyx_r = 0;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":85
+ *         public str key
+ *         public str ion_type
+ *         public long peak_id             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id___get__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id___get__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_self->peak_id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 85; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.peak_id.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id_2__set__(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_self, PyObject *__pyx_v_value) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  long __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__set__", 0);
+  __pyx_t_1 = __Pyx_PyInt_As_long(__pyx_v_value); if (unlikely((__pyx_t_1 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 85; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->peak_id = __pyx_t_1;
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch.peak_id.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":623
  * 
  * 
  * cpdef DPeak DPeak_from_values(cls, float neutral_mass):             # <<<<<<<<<<<<<<
@@ -9881,7 +14022,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpect
  *     peak = DPeak()
  */
 
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9DPeak_from_values(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11DPeak_from_values(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak_from_values(CYTHON_UNUSED PyObject *__pyx_v_cls, float __pyx_v_neutral_mass, CYTHON_UNUSED int __pyx_skip_dispatch) {
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak = 0;
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_r = NULL;
@@ -9892,19 +14033,19 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("DPeak_from_values", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":473
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":625
  * cpdef DPeak DPeak_from_values(cls, float neutral_mass):
  *     cdef DPeak peak
  *     peak = DPeak()             # <<<<<<<<<<<<<<
  *     peak.neutral_mass = neutral_mass
  *     return peak
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 473; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 625; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_peak = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":474
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":626
  *     cdef DPeak peak
  *     peak = DPeak()
  *     peak.neutral_mass = neutral_mass             # <<<<<<<<<<<<<<
@@ -9913,7 +14054,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__p
  */
   __pyx_v_peak->neutral_mass = __pyx_v_neutral_mass;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":475
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":627
  *     peak = DPeak()
  *     peak.neutral_mass = neutral_mass
  *     return peak             # <<<<<<<<<<<<<<
@@ -9925,7 +14066,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__p
   __pyx_r = __pyx_v_peak;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":471
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":623
  * 
  * 
  * cpdef DPeak DPeak_from_values(cls, float neutral_mass):             # <<<<<<<<<<<<<<
@@ -9946,8 +14087,8 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__p
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9DPeak_from_values(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9DPeak_from_values(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11DPeak_from_values(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11DPeak_from_values(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_cls = 0;
   float __pyx_v_neutral_mass;
   int __pyx_lineno = 0;
@@ -9976,11 +14117,11 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9DPeak_f
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_neutral_mass)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("DPeak_from_values", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 471; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("DPeak_from_values", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 623; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "DPeak_from_values") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 471; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "DPeak_from_values") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 623; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -9989,24 +14130,24 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9DPeak_f
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
     __pyx_v_cls = values[0];
-    __pyx_v_neutral_mass = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_neutral_mass == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 471; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_neutral_mass = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_neutral_mass == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 623; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("DPeak_from_values", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 471; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("DPeak_from_values", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 623; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.DPeak_from_values", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_8DPeak_from_values(__pyx_self, __pyx_v_cls, __pyx_v_neutral_mass);
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_10DPeak_from_values(__pyx_self, __pyx_v_cls, __pyx_v_neutral_mass);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_8DPeak_from_values(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_cls, float __pyx_v_neutral_mass) {
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_10DPeak_from_values(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_cls, float __pyx_v_neutral_mass) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -10015,7 +14156,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_8DPeak_f
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("DPeak_from_values", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak_from_values(__pyx_v_cls, __pyx_v_neutral_mass, 0)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 471; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak_from_values(__pyx_v_cls, __pyx_v_neutral_mass, 0)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 623; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10032,8 +14173,8 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_8DPeak_f
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":480
- * # cdef class to Struct unwrapper
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":633
+ * 
  * 
  * cdef MSFeatureStructArray* unwrap_feature_functions(list features):             # <<<<<<<<<<<<<<
  *     cdef:
@@ -10060,7 +14201,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("unwrap_feature_functions", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":486
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":639
  *         MassOffsetFeature pfeature
  *         size_t i, j
  *     j = PyList_GET_SIZE(features)             # <<<<<<<<<<<<<<
@@ -10069,7 +14210,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
  */
   __pyx_v_j = PyList_GET_SIZE(__pyx_v_features);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":487
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":640
  *         size_t i, j
  *     j = PyList_GET_SIZE(features)
  *     ms_features = <MSFeatureStructArray*>malloc(sizeof(MSFeatureStructArray))             # <<<<<<<<<<<<<<
@@ -10078,7 +14219,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
  */
   __pyx_v_ms_features = ((struct MSFeatureStructArray *)malloc((sizeof(struct MSFeatureStructArray))));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":488
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":641
  *     j = PyList_GET_SIZE(features)
  *     ms_features = <MSFeatureStructArray*>malloc(sizeof(MSFeatureStructArray))
  *     ms_features.features = <MSFeatureStruct*>malloc(sizeof(MSFeatureStruct) * j)             # <<<<<<<<<<<<<<
@@ -10087,7 +14228,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
  */
   __pyx_v_ms_features->features = ((struct MSFeatureStruct *)malloc(((sizeof(struct MSFeatureStruct)) * __pyx_v_j)));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":489
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":642
  *     ms_features = <MSFeatureStructArray*>malloc(sizeof(MSFeatureStructArray))
  *     ms_features.features = <MSFeatureStruct*>malloc(sizeof(MSFeatureStruct) * j)
  *     ms_features.size = j             # <<<<<<<<<<<<<<
@@ -10096,7 +14237,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
  */
   __pyx_v_ms_features->size = __pyx_v_j;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":490
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":643
  *     ms_features.features = <MSFeatureStruct*>malloc(sizeof(MSFeatureStruct) * j)
  *     ms_features.size = j
  *     for i in range(j):             # <<<<<<<<<<<<<<
@@ -10107,7 +14248,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":491
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":644
  *     ms_features.size = j
  *     for i in range(j):
  *         pfeature = <MassOffsetFeature>PyList_GET_ITEM(features, i)             # <<<<<<<<<<<<<<
@@ -10120,7 +14261,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
     __Pyx_XDECREF_SET(__pyx_v_pfeature, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_t_4));
     __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":492
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":645
  *     for i in range(j):
  *         pfeature = <MassOffsetFeature>PyList_GET_ITEM(features, i)
  *         cfeature = ms_features.features[i]             # <<<<<<<<<<<<<<
@@ -10129,7 +14270,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
  */
     __pyx_v_cfeature = (__pyx_v_ms_features->features[__pyx_v_i]);
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":493
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":646
  *         pfeature = <MassOffsetFeature>PyList_GET_ITEM(features, i)
  *         cfeature = ms_features.features[i]
  *         cfeature.offset = pfeature.offset             # <<<<<<<<<<<<<<
@@ -10139,7 +14280,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
     __pyx_t_5 = __pyx_v_pfeature->offset;
     __pyx_v_cfeature.offset = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":494
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":647
  *         cfeature = ms_features.features[i]
  *         cfeature.offset = pfeature.offset
  *         cfeature.intensity_ratio = pfeature.intensity_ratio             # <<<<<<<<<<<<<<
@@ -10149,7 +14290,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
     __pyx_t_6 = __pyx_v_pfeature->intensity_ratio;
     __pyx_v_cfeature.intensity_ratio = __pyx_t_6;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":495
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":648
  *         cfeature.offset = pfeature.offset
  *         cfeature.intensity_ratio = pfeature.intensity_ratio
  *         cfeature.from_charge = pfeature.from_charge             # <<<<<<<<<<<<<<
@@ -10159,7 +14300,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
     __pyx_t_6 = __pyx_v_pfeature->from_charge;
     __pyx_v_cfeature.from_charge = __pyx_t_6;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":496
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":649
  *         cfeature.intensity_ratio = pfeature.intensity_ratio
  *         cfeature.from_charge = pfeature.from_charge
  *         cfeature.to_charge = pfeature.to_charge             # <<<<<<<<<<<<<<
@@ -10169,7 +14310,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
     __pyx_t_6 = __pyx_v_pfeature->to_charge;
     __pyx_v_cfeature.to_charge = __pyx_t_6;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":497
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":650
  *         cfeature.from_charge = pfeature.from_charge
  *         cfeature.to_charge = pfeature.to_charge
  *         cfeature.tolerance = pfeature.tolerance             # <<<<<<<<<<<<<<
@@ -10179,7 +14320,7 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
     __pyx_t_5 = __pyx_v_pfeature->tolerance;
     __pyx_v_cfeature.tolerance = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":498
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":651
  *         cfeature.to_charge = pfeature.to_charge
  *         cfeature.tolerance = pfeature.tolerance
  *         cfeature.name = PyString_AsString(pfeature.name)             # <<<<<<<<<<<<<<
@@ -10188,11 +14329,11 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
  */
     __pyx_t_4 = __pyx_v_pfeature->name;
     __Pyx_INCREF(__pyx_t_4);
-    __pyx_t_7 = PyString_AsString(__pyx_t_4); if (unlikely(__pyx_t_7 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 498; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_7 = PyString_AsString(__pyx_t_4); if (unlikely(__pyx_t_7 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 651; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_v_cfeature.name = __pyx_t_7;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":499
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":652
  *         cfeature.tolerance = pfeature.tolerance
  *         cfeature.name = PyString_AsString(pfeature.name)
  *         cfeature.feature_type = PyString_AsString(pfeature.feature_type)             # <<<<<<<<<<<<<<
@@ -10201,33 +14342,77 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
  */
     __pyx_t_4 = __pyx_v_pfeature->feature_type;
     __Pyx_INCREF(__pyx_t_4);
-    __pyx_t_7 = PyString_AsString(__pyx_t_4); if (unlikely(__pyx_t_7 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 499; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_7 = PyString_AsString(__pyx_t_4); if (unlikely(__pyx_t_7 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 652; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_v_cfeature.feature_type = __pyx_t_7;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":500
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":653
  *         cfeature.name = PyString_AsString(pfeature.name)
  *         cfeature.feature_type = PyString_AsString(pfeature.feature_type)
  *         cfeature.min_peak_rank = pfeature.min_peak_rank             # <<<<<<<<<<<<<<
  *         cfeature.max_peak_rank = pfeature.max_peak_rank
- *         ms_features.features[i] = cfeature
+ *         cfeature.ion_type_matches = new_ion_type_double_map_from_dict(pfeature.ion_type_matches)
  */
     __pyx_t_6 = __pyx_v_pfeature->min_peak_rank;
     __pyx_v_cfeature.min_peak_rank = __pyx_t_6;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":501
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":654
  *         cfeature.feature_type = PyString_AsString(pfeature.feature_type)
  *         cfeature.min_peak_rank = pfeature.min_peak_rank
  *         cfeature.max_peak_rank = pfeature.max_peak_rank             # <<<<<<<<<<<<<<
- *         ms_features.features[i] = cfeature
- *     return ms_features
+ *         cfeature.ion_type_matches = new_ion_type_double_map_from_dict(pfeature.ion_type_matches)
+ *         cfeature.ion_type_totals = new_ion_type_double_map_from_dict(pfeature.ion_type_totals)
  */
     __pyx_t_6 = __pyx_v_pfeature->max_peak_rank;
     __pyx_v_cfeature.max_peak_rank = __pyx_t_6;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":502
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":655
  *         cfeature.min_peak_rank = pfeature.min_peak_rank
  *         cfeature.max_peak_rank = pfeature.max_peak_rank
+ *         cfeature.ion_type_matches = new_ion_type_double_map_from_dict(pfeature.ion_type_matches)             # <<<<<<<<<<<<<<
+ *         cfeature.ion_type_totals = new_ion_type_double_map_from_dict(pfeature.ion_type_totals)
+ *         cfeature.glycan_peptide_ratio = pfeature.glycan_peptide_ratio
+ */
+    __pyx_t_4 = __pyx_v_pfeature->ion_type_matches;
+    __Pyx_INCREF(__pyx_t_4);
+    __pyx_v_cfeature.ion_type_matches = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map_from_dict(((PyObject*)__pyx_t_4));
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":656
+ *         cfeature.max_peak_rank = pfeature.max_peak_rank
+ *         cfeature.ion_type_matches = new_ion_type_double_map_from_dict(pfeature.ion_type_matches)
+ *         cfeature.ion_type_totals = new_ion_type_double_map_from_dict(pfeature.ion_type_totals)             # <<<<<<<<<<<<<<
+ *         cfeature.glycan_peptide_ratio = pfeature.glycan_peptide_ratio
+ *         cfeature.peptide_mass_rank = pfeature.peptide_mass_rank
+ */
+    __pyx_t_4 = __pyx_v_pfeature->ion_type_totals;
+    __Pyx_INCREF(__pyx_t_4);
+    __pyx_v_cfeature.ion_type_totals = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map_from_dict(((PyObject*)__pyx_t_4));
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":657
+ *         cfeature.ion_type_matches = new_ion_type_double_map_from_dict(pfeature.ion_type_matches)
+ *         cfeature.ion_type_totals = new_ion_type_double_map_from_dict(pfeature.ion_type_totals)
+ *         cfeature.glycan_peptide_ratio = pfeature.glycan_peptide_ratio             # <<<<<<<<<<<<<<
+ *         cfeature.peptide_mass_rank = pfeature.peptide_mass_rank
+ *         ms_features.features[i] = cfeature
+ */
+    __pyx_t_6 = __pyx_v_pfeature->glycan_peptide_ratio;
+    __pyx_v_cfeature.glycan_peptide_ratio = __pyx_t_6;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":658
+ *         cfeature.ion_type_totals = new_ion_type_double_map_from_dict(pfeature.ion_type_totals)
+ *         cfeature.glycan_peptide_ratio = pfeature.glycan_peptide_ratio
+ *         cfeature.peptide_mass_rank = pfeature.peptide_mass_rank             # <<<<<<<<<<<<<<
+ *         ms_features.features[i] = cfeature
+ *     return ms_features
+ */
+    __pyx_t_6 = __pyx_v_pfeature->peptide_mass_rank;
+    __pyx_v_cfeature.peptide_mass_rank = __pyx_t_6;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":659
+ *         cfeature.glycan_peptide_ratio = pfeature.glycan_peptide_ratio
+ *         cfeature.peptide_mass_rank = pfeature.peptide_mass_rank
  *         ms_features.features[i] = cfeature             # <<<<<<<<<<<<<<
  *     return ms_features
  * 
@@ -10235,18 +14420,18 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
     (__pyx_v_ms_features->features[__pyx_v_i]) = __pyx_v_cfeature;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":503
- *         cfeature.max_peak_rank = pfeature.max_peak_rank
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":660
+ *         cfeature.peptide_mass_rank = pfeature.peptide_mass_rank
  *         ms_features.features[i] = cfeature
  *     return ms_features             # <<<<<<<<<<<<<<
  * 
- * 
+ * cdef PeakStructArray* unwrap_peak_list(list py_peaks):
  */
   __pyx_r = __pyx_v_ms_features;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":480
- * # cdef class to Struct unwrapper
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":633
+ * 
  * 
  * cdef MSFeatureStructArray* unwrap_feature_functions(list features):             # <<<<<<<<<<<<<<
  *     cdef:
@@ -10264,8 +14449,8 @@ static struct MSFeatureStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12cco
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":506
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":662
+ *     return ms_features
  * 
  * cdef PeakStructArray* unwrap_peak_list(list py_peaks):             # <<<<<<<<<<<<<<
  *     cdef:
@@ -10292,7 +14477,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("unwrap_peak_list", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":513
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":669
  *         size_t i, j
  * 
  *     j = PyList_GET_SIZE(py_peaks)             # <<<<<<<<<<<<<<
@@ -10301,7 +14486,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_j = PyList_GET_SIZE(__pyx_v_py_peaks);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":514
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":670
  * 
  *     j = PyList_GET_SIZE(py_peaks)
  *     peaks = <PeakStructArray*>malloc(sizeof(PeakStructArray))             # <<<<<<<<<<<<<<
@@ -10310,7 +14495,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_peaks = ((struct PeakStructArray *)malloc((sizeof(struct PeakStructArray))));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":515
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":671
  *     j = PyList_GET_SIZE(py_peaks)
  *     peaks = <PeakStructArray*>malloc(sizeof(PeakStructArray))
  *     intensity_rank(py_peaks)             # <<<<<<<<<<<<<<
@@ -10319,7 +14504,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank(__pyx_v_py_peaks, NULL);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":516
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":672
  *     peaks = <PeakStructArray*>malloc(sizeof(PeakStructArray))
  *     intensity_rank(py_peaks)
  *     peaks.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * j)             # <<<<<<<<<<<<<<
@@ -10328,7 +14513,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_peaks->peaks = ((struct PeakStruct *)malloc(((sizeof(struct PeakStruct)) * __pyx_v_j)));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":517
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":673
  *     intensity_rank(py_peaks)
  *     peaks.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * j)
  *     peaks.size = j             # <<<<<<<<<<<<<<
@@ -10337,7 +14522,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
   __pyx_v_peaks->size = __pyx_v_j;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":518
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":674
  *     peaks.peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * j)
  *     peaks.size = j
  *     for i in range(j):             # <<<<<<<<<<<<<<
@@ -10348,7 +14533,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":519
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":675
  *     peaks.size = j
  *     for i in range(j):
  *         dpeak = <DPeak>py_peaks[i]             # <<<<<<<<<<<<<<
@@ -10357,9 +14542,9 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
  */
     if (unlikely(__pyx_v_py_peaks == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 519; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 675; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
-    __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_py_peaks, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 519; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_py_peaks, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 675; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_4 = __pyx_t_3;
     __Pyx_INCREF(__pyx_t_4);
@@ -10367,7 +14552,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __Pyx_XDECREF_SET(__pyx_v_dpeak, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_4));
     __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":520
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":676
  *     for i in range(j):
  *         dpeak = <DPeak>py_peaks[i]
  *         cpeak.neutral_mass = dpeak.neutral_mass             # <<<<<<<<<<<<<<
@@ -10377,7 +14562,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_t_5 = __pyx_v_dpeak->neutral_mass;
     __pyx_v_cpeak.neutral_mass = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":521
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":677
  *         dpeak = <DPeak>py_peaks[i]
  *         cpeak.neutral_mass = dpeak.neutral_mass
  *         cpeak.id = dpeak.id             # <<<<<<<<<<<<<<
@@ -10387,7 +14572,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_t_6 = __pyx_v_dpeak->id;
     __pyx_v_cpeak.id = __pyx_t_6;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":522
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":678
  *         cpeak.neutral_mass = dpeak.neutral_mass
  *         cpeak.id = dpeak.id
  *         cpeak.charge = dpeak.charge             # <<<<<<<<<<<<<<
@@ -10397,7 +14582,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_t_7 = __pyx_v_dpeak->charge;
     __pyx_v_cpeak.charge = __pyx_t_7;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":523
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":679
  *         cpeak.id = dpeak.id
  *         cpeak.charge = dpeak.charge
  *         cpeak.intensity = dpeak.intensity             # <<<<<<<<<<<<<<
@@ -10407,7 +14592,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_t_5 = __pyx_v_dpeak->intensity;
     __pyx_v_cpeak.intensity = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":524
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":680
  *         cpeak.charge = dpeak.charge
  *         cpeak.intensity = dpeak.intensity
  *         cpeak.rank = dpeak.rank             # <<<<<<<<<<<<<<
@@ -10417,7 +14602,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_t_7 = __pyx_v_dpeak->rank;
     __pyx_v_cpeak.rank = __pyx_t_7;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":525
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":681
  *         cpeak.intensity = dpeak.intensity
  *         cpeak.rank = dpeak.rank
  *         cpeak.mass_charge_ratio = dpeak.mass_charge_ratio             # <<<<<<<<<<<<<<
@@ -10427,7 +14612,7 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     __pyx_t_5 = __pyx_v_dpeak->mass_charge_ratio;
     __pyx_v_cpeak.mass_charge_ratio = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":526
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":682
  *         cpeak.rank = dpeak.rank
  *         cpeak.mass_charge_ratio = dpeak.mass_charge_ratio
  *         peaks.peaks[i] = cpeak             # <<<<<<<<<<<<<<
@@ -10437,18 +14622,18 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
     (__pyx_v_peaks->peaks[__pyx_v_i]) = __pyx_v_cpeak;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":527
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":683
  *         cpeak.mass_charge_ratio = dpeak.mass_charge_ratio
  *         peaks.peaks[i] = cpeak
  *     return peaks             # <<<<<<<<<<<<<<
  * 
- * 
+ * cdef MatchedSpectrumStruct* unwrap_matched_spectrum(MatchedSpectrum ms):
  */
   __pyx_r = __pyx_v_peaks;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":506
- * 
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":662
+ *     return ms_features
  * 
  * cdef PeakStructArray* unwrap_peak_list(list py_peaks):             # <<<<<<<<<<<<<<
  *     cdef:
@@ -10467,8 +14652,8 @@ static struct PeakStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":530
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":685
+ *     return peaks
  * 
  * cdef MatchedSpectrumStruct* unwrap_matched_spectrum(MatchedSpectrum ms):             # <<<<<<<<<<<<<<
  *     cdef:
@@ -10479,31 +14664,31 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
   struct FragmentMatchStructArray *__pyx_v_frag_matches;
   struct FragmentMatchStruct *__pyx_v_current_match;
   struct MatchedSpectrumStruct *__pyx_v_ms_struct;
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_fm = 0;
   size_t __pyx_v_i;
   size_t __pyx_v_j;
   size_t __pyx_v_total;
   PyObject *__pyx_v_matches_list = 0;
   PyObject *__pyx_v_peak_match_list = 0;
-  PyObject *__pyx_v_frag_dict = 0;
   struct MatchedSpectrumStruct *__pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
   char *__pyx_t_3;
-  PyObject *__pyx_t_4 = NULL;
-  Py_ssize_t __pyx_t_5;
-  size_t __pyx_t_6;
-  PyObject *__pyx_t_7;
-  Py_ssize_t __pyx_t_8;
-  size_t __pyx_t_9;
-  double __pyx_t_10;
+  double __pyx_t_4;
+  PyObject *__pyx_t_5 = NULL;
+  Py_ssize_t __pyx_t_6;
+  size_t __pyx_t_7;
+  PyObject *__pyx_t_8;
+  Py_ssize_t __pyx_t_9;
+  size_t __pyx_t_10;
   long __pyx_t_11;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("unwrap_matched_spectrum", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":539
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":695
  *         dict frag_dict
  * 
  *     ms_struct = <MatchedSpectrumStruct*>malloc(sizeof(MatchedSpectrumStruct))             # <<<<<<<<<<<<<<
@@ -10512,7 +14697,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
  */
   __pyx_v_ms_struct = ((struct MatchedSpectrumStruct *)malloc((sizeof(struct MatchedSpectrumStruct))));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":540
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":696
  * 
  *     ms_struct = <MatchedSpectrumStruct*>malloc(sizeof(MatchedSpectrumStruct))
  *     ms_struct.peak_list = unwrap_peak_list(ms.peak_list)             # <<<<<<<<<<<<<<
@@ -10524,7 +14709,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
   __pyx_v_ms_struct->peak_list = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_unwrap_peak_list(((PyObject*)__pyx_t_1));
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":541
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":697
  *     ms_struct = <MatchedSpectrumStruct*>malloc(sizeof(MatchedSpectrumStruct))
  *     ms_struct.peak_list = unwrap_peak_list(ms.peak_list)
  *     ms_struct.scan_time = ms.scan_time             # <<<<<<<<<<<<<<
@@ -10534,7 +14719,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
   __pyx_t_2 = __pyx_v_ms->scan_time;
   __pyx_v_ms_struct->scan_time = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":542
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":698
  *     ms_struct.peak_list = unwrap_peak_list(ms.peak_list)
  *     ms_struct.scan_time = ms.scan_time
  *     ms_struct.peaks_explained = ms.peaks_explained             # <<<<<<<<<<<<<<
@@ -10544,7 +14729,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
   __pyx_t_2 = __pyx_v_ms->peaks_explained;
   __pyx_v_ms_struct->peaks_explained = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":543
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":699
  *     ms_struct.scan_time = ms.scan_time
  *     ms_struct.peaks_explained = ms.peaks_explained
  *     ms_struct.peaks_unexplained = ms.peaks_unexplained             # <<<<<<<<<<<<<<
@@ -10554,7 +14739,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
   __pyx_t_2 = __pyx_v_ms->peaks_unexplained;
   __pyx_v_ms_struct->peaks_unexplained = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":544
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":700
  *     ms_struct.peaks_explained = ms.peaks_explained
  *     ms_struct.peaks_unexplained = ms.peaks_unexplained
  *     ms_struct.id = ms.id             # <<<<<<<<<<<<<<
@@ -10564,21 +14749,61 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
   __pyx_t_2 = __pyx_v_ms->id;
   __pyx_v_ms_struct->id = __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":545
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":701
  *     ms_struct.peaks_unexplained = ms.peaks_unexplained
  *     ms_struct.id = ms.id
  *     ms_struct.glycopeptide_sequence = PyString_AsString(ms.glycopeptide_sequence)             # <<<<<<<<<<<<<<
  * 
- *     total = 0
+ *     ms_struct.peptide_mass = ms.peptide_mass
  */
   __pyx_t_1 = __pyx_v_ms->glycopeptide_sequence;
   __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_3 = PyString_AsString(__pyx_t_1); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 545; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = PyString_AsString(__pyx_t_1); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 701; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_ms_struct->glycopeptide_sequence = __pyx_t_3;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":547
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":703
  *     ms_struct.glycopeptide_sequence = PyString_AsString(ms.glycopeptide_sequence)
+ * 
+ *     ms_struct.peptide_mass = ms.peptide_mass             # <<<<<<<<<<<<<<
+ *     ms_struct.glycan_mass = ms.glycan_mass
+ *     ms_struct.peptide_mass_rank = ms.peptide_mass_rank
+ */
+  __pyx_t_4 = __pyx_v_ms->peptide_mass;
+  __pyx_v_ms_struct->peptide_mass = __pyx_t_4;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":704
+ * 
+ *     ms_struct.peptide_mass = ms.peptide_mass
+ *     ms_struct.glycan_mass = ms.glycan_mass             # <<<<<<<<<<<<<<
+ *     ms_struct.peptide_mass_rank = ms.peptide_mass_rank
+ *     ms_struct.glycan_peptide_ratio = ms.glycan_peptide_ratio
+ */
+  __pyx_t_4 = __pyx_v_ms->glycan_mass;
+  __pyx_v_ms_struct->glycan_mass = __pyx_t_4;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":705
+ *     ms_struct.peptide_mass = ms.peptide_mass
+ *     ms_struct.glycan_mass = ms.glycan_mass
+ *     ms_struct.peptide_mass_rank = ms.peptide_mass_rank             # <<<<<<<<<<<<<<
+ *     ms_struct.glycan_peptide_ratio = ms.glycan_peptide_ratio
+ * 
+ */
+  __pyx_t_2 = __pyx_v_ms->peptide_mass_rank;
+  __pyx_v_ms_struct->peptide_mass_rank = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":706
+ *     ms_struct.glycan_mass = ms.glycan_mass
+ *     ms_struct.peptide_mass_rank = ms.peptide_mass_rank
+ *     ms_struct.glycan_peptide_ratio = ms.glycan_peptide_ratio             # <<<<<<<<<<<<<<
+ * 
+ *     total = 0
+ */
+  __pyx_t_2 = __pyx_v_ms->glycan_peptide_ratio;
+  __pyx_v_ms_struct->glycan_peptide_ratio = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":708
+ *     ms_struct.glycan_peptide_ratio = ms.glycan_peptide_ratio
  * 
  *     total = 0             # <<<<<<<<<<<<<<
  *     matches_list = PyDict_Values(ms.peak_match_map)
@@ -10586,7 +14811,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
  */
   __pyx_v_total = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":548
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":709
  * 
  *     total = 0
  *     matches_list = PyDict_Values(ms.peak_match_map)             # <<<<<<<<<<<<<<
@@ -10595,48 +14820,48 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
  */
   __pyx_t_1 = __pyx_v_ms->peak_match_map;
   __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_4 = PyDict_Values(__pyx_t_1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 548; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = PyDict_Values(__pyx_t_1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 709; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_matches_list = ((PyObject*)__pyx_t_4);
-  __pyx_t_4 = 0;
+  __pyx_v_matches_list = ((PyObject*)__pyx_t_5);
+  __pyx_t_5 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":549
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":710
  *     total = 0
  *     matches_list = PyDict_Values(ms.peak_match_map)
  *     for i in range(PyList_GET_SIZE(matches_list)):             # <<<<<<<<<<<<<<
  *         peak_match_list = <list>PyList_GET_ITEM(matches_list, i)
  *         for j in range(PyList_GET_SIZE(peak_match_list)):
  */
-  __pyx_t_5 = PyList_GET_SIZE(__pyx_v_matches_list);
-  for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
-    __pyx_v_i = __pyx_t_6;
+  __pyx_t_6 = PyList_GET_SIZE(__pyx_v_matches_list);
+  for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
+    __pyx_v_i = __pyx_t_7;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":550
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":711
  *     matches_list = PyDict_Values(ms.peak_match_map)
  *     for i in range(PyList_GET_SIZE(matches_list)):
  *         peak_match_list = <list>PyList_GET_ITEM(matches_list, i)             # <<<<<<<<<<<<<<
  *         for j in range(PyList_GET_SIZE(peak_match_list)):
  *             total += 1
  */
-    __pyx_t_7 = PyList_GET_ITEM(__pyx_v_matches_list, __pyx_v_i);
-    __pyx_t_4 = ((PyObject *)__pyx_t_7);
-    __Pyx_INCREF(__pyx_t_4);
-    __Pyx_XDECREF_SET(__pyx_v_peak_match_list, ((PyObject*)__pyx_t_4));
-    __pyx_t_4 = 0;
+    __pyx_t_8 = PyList_GET_ITEM(__pyx_v_matches_list, __pyx_v_i);
+    __pyx_t_5 = ((PyObject *)__pyx_t_8);
+    __Pyx_INCREF(__pyx_t_5);
+    __Pyx_XDECREF_SET(__pyx_v_peak_match_list, ((PyObject*)__pyx_t_5));
+    __pyx_t_5 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":551
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":712
  *     for i in range(PyList_GET_SIZE(matches_list)):
  *         peak_match_list = <list>PyList_GET_ITEM(matches_list, i)
  *         for j in range(PyList_GET_SIZE(peak_match_list)):             # <<<<<<<<<<<<<<
  *             total += 1
  * 
  */
-    __pyx_t_8 = PyList_GET_SIZE(__pyx_v_peak_match_list);
-    for (__pyx_t_9 = 0; __pyx_t_9 < __pyx_t_8; __pyx_t_9+=1) {
-      __pyx_v_j = __pyx_t_9;
+    __pyx_t_9 = PyList_GET_SIZE(__pyx_v_peak_match_list);
+    for (__pyx_t_10 = 0; __pyx_t_10 < __pyx_t_9; __pyx_t_10+=1) {
+      __pyx_v_j = __pyx_t_10;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":552
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":713
  *         peak_match_list = <list>PyList_GET_ITEM(matches_list, i)
  *         for j in range(PyList_GET_SIZE(peak_match_list)):
  *             total += 1             # <<<<<<<<<<<<<<
@@ -10647,7 +14872,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
     }
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":554
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":715
  *             total += 1
  * 
  *     frag_matches = <FragmentMatchStructArray*>malloc(sizeof(FragmentMatchStructArray))             # <<<<<<<<<<<<<<
@@ -10656,7 +14881,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
  */
   __pyx_v_frag_matches = ((struct FragmentMatchStructArray *)malloc((sizeof(struct FragmentMatchStructArray))));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":555
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":716
  * 
  *     frag_matches = <FragmentMatchStructArray*>malloc(sizeof(FragmentMatchStructArray))
  *     frag_matches.size = (total)             # <<<<<<<<<<<<<<
@@ -10665,7 +14890,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
  */
   __pyx_v_frag_matches->size = __pyx_v_total;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":556
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":717
  *     frag_matches = <FragmentMatchStructArray*>malloc(sizeof(FragmentMatchStructArray))
  *     frag_matches.size = (total)
  *     frag_matches.matches = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct) * total)             # <<<<<<<<<<<<<<
@@ -10674,7 +14899,7 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
  */
   __pyx_v_frag_matches->matches = ((struct FragmentMatchStruct *)malloc(((sizeof(struct FragmentMatchStruct)) * __pyx_v_total)));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":558
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":719
  *     frag_matches.matches = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct) * total)
  * 
  *     total = 0             # <<<<<<<<<<<<<<
@@ -10683,110 +14908,122 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
  */
   __pyx_v_total = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":559
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":720
  * 
  *     total = 0
  *     for i in range(PyList_GET_SIZE(matches_list)):             # <<<<<<<<<<<<<<
  *         peak_match_list = <list>PyList_GET_ITEM(matches_list, i)
  *         for j in range(PyList_GET_SIZE(peak_match_list)):
  */
-  __pyx_t_5 = PyList_GET_SIZE(__pyx_v_matches_list);
-  for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
-    __pyx_v_i = __pyx_t_6;
+  __pyx_t_6 = PyList_GET_SIZE(__pyx_v_matches_list);
+  for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
+    __pyx_v_i = __pyx_t_7;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":560
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":721
  *     total = 0
  *     for i in range(PyList_GET_SIZE(matches_list)):
  *         peak_match_list = <list>PyList_GET_ITEM(matches_list, i)             # <<<<<<<<<<<<<<
  *         for j in range(PyList_GET_SIZE(peak_match_list)):
  *             current_match = &frag_matches.matches[total]
  */
-    __pyx_t_7 = PyList_GET_ITEM(__pyx_v_matches_list, __pyx_v_i);
-    __pyx_t_4 = ((PyObject *)__pyx_t_7);
-    __Pyx_INCREF(__pyx_t_4);
-    __Pyx_XDECREF_SET(__pyx_v_peak_match_list, ((PyObject*)__pyx_t_4));
-    __pyx_t_4 = 0;
+    __pyx_t_8 = PyList_GET_ITEM(__pyx_v_matches_list, __pyx_v_i);
+    __pyx_t_5 = ((PyObject *)__pyx_t_8);
+    __Pyx_INCREF(__pyx_t_5);
+    __Pyx_XDECREF_SET(__pyx_v_peak_match_list, ((PyObject*)__pyx_t_5));
+    __pyx_t_5 = 0;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":561
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":722
  *     for i in range(PyList_GET_SIZE(matches_list)):
  *         peak_match_list = <list>PyList_GET_ITEM(matches_list, i)
  *         for j in range(PyList_GET_SIZE(peak_match_list)):             # <<<<<<<<<<<<<<
  *             current_match = &frag_matches.matches[total]
- *             frag_dict = <dict>PyList_GET_ITEM(peak_match_list, j)
+ *             fm = <FragmentMatch>PyList_GET_ITEM(peak_match_list, j)
  */
-    __pyx_t_8 = PyList_GET_SIZE(__pyx_v_peak_match_list);
-    for (__pyx_t_9 = 0; __pyx_t_9 < __pyx_t_8; __pyx_t_9+=1) {
-      __pyx_v_j = __pyx_t_9;
+    __pyx_t_9 = PyList_GET_SIZE(__pyx_v_peak_match_list);
+    for (__pyx_t_10 = 0; __pyx_t_10 < __pyx_t_9; __pyx_t_10+=1) {
+      __pyx_v_j = __pyx_t_10;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":562
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":723
  *         peak_match_list = <list>PyList_GET_ITEM(matches_list, i)
  *         for j in range(PyList_GET_SIZE(peak_match_list)):
  *             current_match = &frag_matches.matches[total]             # <<<<<<<<<<<<<<
- *             frag_dict = <dict>PyList_GET_ITEM(peak_match_list, j)
- *             current_match.observed_mass = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "observed_mass"))
+ *             fm = <FragmentMatch>PyList_GET_ITEM(peak_match_list, j)
+ *             current_match.observed_mass = fm.observed_mass
  */
       __pyx_v_current_match = (&(__pyx_v_frag_matches->matches[__pyx_v_total]));
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":563
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":724
  *         for j in range(PyList_GET_SIZE(peak_match_list)):
  *             current_match = &frag_matches.matches[total]
- *             frag_dict = <dict>PyList_GET_ITEM(peak_match_list, j)             # <<<<<<<<<<<<<<
- *             current_match.observed_mass = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "observed_mass"))
- *             current_match.intensity = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "intensity"))
+ *             fm = <FragmentMatch>PyList_GET_ITEM(peak_match_list, j)             # <<<<<<<<<<<<<<
+ *             current_match.observed_mass = fm.observed_mass
+ *             current_match.intensity = fm.intensity
  */
-      __pyx_t_7 = PyList_GET_ITEM(__pyx_v_peak_match_list, __pyx_v_j);
-      __pyx_t_4 = ((PyObject *)__pyx_t_7);
-      __Pyx_INCREF(__pyx_t_4);
-      __Pyx_XDECREF_SET(__pyx_v_frag_dict, ((PyObject*)__pyx_t_4));
-      __pyx_t_4 = 0;
+      __pyx_t_8 = PyList_GET_ITEM(__pyx_v_peak_match_list, __pyx_v_j);
+      __pyx_t_5 = ((PyObject *)__pyx_t_8);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_XDECREF_SET(__pyx_v_fm, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_t_5));
+      __pyx_t_5 = 0;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":564
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":725
  *             current_match = &frag_matches.matches[total]
- *             frag_dict = <dict>PyList_GET_ITEM(peak_match_list, j)
- *             current_match.observed_mass = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "observed_mass"))             # <<<<<<<<<<<<<<
- *             current_match.intensity = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "intensity"))
- *             current_match.key = PyString_AsString(<str>PyDict_GetItem(frag_dict, "key"))
+ *             fm = <FragmentMatch>PyList_GET_ITEM(peak_match_list, j)
+ *             current_match.observed_mass = fm.observed_mass             # <<<<<<<<<<<<<<
+ *             current_match.intensity = fm.intensity
+ *             current_match.key = PyString_AsString(fm.key)
  */
-      __pyx_t_7 = PyDict_GetItem(__pyx_v_frag_dict, __pyx_n_s_observed_mass);
-      __pyx_t_10 = PyFloat_AsDouble(((PyObject *)__pyx_t_7)); if (unlikely(__pyx_t_10 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 564; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-      __pyx_v_current_match->observed_mass = __pyx_t_10;
+      __pyx_t_4 = __pyx_v_fm->observed_mass;
+      __pyx_v_current_match->observed_mass = __pyx_t_4;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":565
- *             frag_dict = <dict>PyList_GET_ITEM(peak_match_list, j)
- *             current_match.observed_mass = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "observed_mass"))
- *             current_match.intensity = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "intensity"))             # <<<<<<<<<<<<<<
- *             current_match.key = PyString_AsString(<str>PyDict_GetItem(frag_dict, "key"))
- *             current_match.peak_id = PyInt_AsLong(<object>PyDict_GetItem(frag_dict, "peak_id"))
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":726
+ *             fm = <FragmentMatch>PyList_GET_ITEM(peak_match_list, j)
+ *             current_match.observed_mass = fm.observed_mass
+ *             current_match.intensity = fm.intensity             # <<<<<<<<<<<<<<
+ *             current_match.key = PyString_AsString(fm.key)
+ *             current_match.ion_type = PyString_AsString(fm.ion_type)
  */
-      __pyx_t_7 = PyDict_GetItem(__pyx_v_frag_dict, __pyx_n_s_intensity);
-      __pyx_t_10 = PyFloat_AsDouble(((PyObject *)__pyx_t_7)); if (unlikely(__pyx_t_10 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 565; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-      __pyx_v_current_match->intensity = __pyx_t_10;
+      __pyx_t_4 = __pyx_v_fm->intensity;
+      __pyx_v_current_match->intensity = __pyx_t_4;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":566
- *             current_match.observed_mass = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "observed_mass"))
- *             current_match.intensity = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "intensity"))
- *             current_match.key = PyString_AsString(<str>PyDict_GetItem(frag_dict, "key"))             # <<<<<<<<<<<<<<
- *             current_match.peak_id = PyInt_AsLong(<object>PyDict_GetItem(frag_dict, "peak_id"))
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":727
+ *             current_match.observed_mass = fm.observed_mass
+ *             current_match.intensity = fm.intensity
+ *             current_match.key = PyString_AsString(fm.key)             # <<<<<<<<<<<<<<
+ *             current_match.ion_type = PyString_AsString(fm.ion_type)
+ *             current_match.peak_id = fm.peak_id
+ */
+      __pyx_t_5 = __pyx_v_fm->key;
+      __Pyx_INCREF(__pyx_t_5);
+      __pyx_t_3 = PyString_AsString(__pyx_t_5); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 727; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_v_current_match->key = __pyx_t_3;
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":728
+ *             current_match.intensity = fm.intensity
+ *             current_match.key = PyString_AsString(fm.key)
+ *             current_match.ion_type = PyString_AsString(fm.ion_type)             # <<<<<<<<<<<<<<
+ *             current_match.peak_id = fm.peak_id
  *             total += 1
  */
-      __pyx_t_7 = PyDict_GetItem(__pyx_v_frag_dict, __pyx_n_s_key);
-      __pyx_t_3 = PyString_AsString(((PyObject *)__pyx_t_7)); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 566; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-      __pyx_v_current_match->key = __pyx_t_3;
+      __pyx_t_5 = __pyx_v_fm->ion_type;
+      __Pyx_INCREF(__pyx_t_5);
+      __pyx_t_3 = PyString_AsString(__pyx_t_5); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 728; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_v_current_match->ion_type = __pyx_t_3;
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":567
- *             current_match.intensity = PyFloat_AsDouble(<object>PyDict_GetItem(frag_dict, "intensity"))
- *             current_match.key = PyString_AsString(<str>PyDict_GetItem(frag_dict, "key"))
- *             current_match.peak_id = PyInt_AsLong(<object>PyDict_GetItem(frag_dict, "peak_id"))             # <<<<<<<<<<<<<<
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":729
+ *             current_match.key = PyString_AsString(fm.key)
+ *             current_match.ion_type = PyString_AsString(fm.ion_type)
+ *             current_match.peak_id = fm.peak_id             # <<<<<<<<<<<<<<
  *             total += 1
  *     ms_struct.peak_match_list = frag_matches
  */
-      __pyx_t_7 = PyDict_GetItem(__pyx_v_frag_dict, __pyx_n_s_peak_id);
-      __pyx_t_11 = PyInt_AsLong(((PyObject *)__pyx_t_7)); if (unlikely(__pyx_t_11 == -1 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 567; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_11 = __pyx_v_fm->peak_id;
       __pyx_v_current_match->peak_id = __pyx_t_11;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":568
- *             current_match.key = PyString_AsString(<str>PyDict_GetItem(frag_dict, "key"))
- *             current_match.peak_id = PyInt_AsLong(<object>PyDict_GetItem(frag_dict, "peak_id"))
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":730
+ *             current_match.ion_type = PyString_AsString(fm.ion_type)
+ *             current_match.peak_id = fm.peak_id
  *             total += 1             # <<<<<<<<<<<<<<
  *     ms_struct.peak_match_list = frag_matches
  *     return ms_struct
@@ -10795,8 +15032,8 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
     }
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":569
- *             current_match.peak_id = PyInt_AsLong(<object>PyDict_GetItem(frag_dict, "peak_id"))
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":731
+ *             current_match.peak_id = fm.peak_id
  *             total += 1
  *     ms_struct.peak_match_list = frag_matches             # <<<<<<<<<<<<<<
  *     return ms_struct
@@ -10804,18 +15041,18 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
  */
   __pyx_v_ms_struct->peak_match_list = __pyx_v_frag_matches;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":570
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":732
  *             total += 1
  *     ms_struct.peak_match_list = frag_matches
  *     return ms_struct             # <<<<<<<<<<<<<<
  * 
- * 
+ * cdef FragmentMatchStruct* unwrap_fragment_match(FragmentMatch fm):
  */
   __pyx_r = __pyx_v_ms_struct;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":530
- * 
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":685
+ *     return peaks
  * 
  * cdef MatchedSpectrumStruct* unwrap_matched_spectrum(MatchedSpectrum ms):             # <<<<<<<<<<<<<<
  *     cdef:
@@ -10825,18 +15062,879 @@ static struct MatchedSpectrumStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12cc
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
   __Pyx_WriteUnraisable("glycresoft_sqlalchemy.utils.ccommon_math.unwrap_matched_spectrum", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
   __pyx_r = 0;
   __pyx_L0:;
+  __Pyx_XDECREF((PyObject *)__pyx_v_fm);
   __Pyx_XDECREF(__pyx_v_matches_list);
   __Pyx_XDECREF(__pyx_v_peak_match_list);
-  __Pyx_XDECREF(__pyx_v_frag_dict);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":573
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":734
+ *     return ms_struct
+ * 
+ * cdef FragmentMatchStruct* unwrap_fragment_match(FragmentMatch fm):             # <<<<<<<<<<<<<<
+ *     cdef FragmentMatchStruct* result = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct))
+ *     result.observed_mass = fm.observed_mass
+ */
+
+static struct FragmentMatchStruct *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_unwrap_fragment_match(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_fm) {
+  struct FragmentMatchStruct *__pyx_v_result;
+  struct FragmentMatchStruct *__pyx_r;
+  __Pyx_RefNannyDeclarations
+  double __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  char *__pyx_t_3;
+  long __pyx_t_4;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("unwrap_fragment_match", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":735
+ * 
+ * cdef FragmentMatchStruct* unwrap_fragment_match(FragmentMatch fm):
+ *     cdef FragmentMatchStruct* result = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct))             # <<<<<<<<<<<<<<
+ *     result.observed_mass = fm.observed_mass
+ *     result.intensity = fm.intensity
+ */
+  __pyx_v_result = ((struct FragmentMatchStruct *)malloc((sizeof(struct FragmentMatchStruct))));
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":736
+ * cdef FragmentMatchStruct* unwrap_fragment_match(FragmentMatch fm):
+ *     cdef FragmentMatchStruct* result = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct))
+ *     result.observed_mass = fm.observed_mass             # <<<<<<<<<<<<<<
+ *     result.intensity = fm.intensity
+ *     result.key = PyString_AsString(fm.key)
+ */
+  __pyx_t_1 = __pyx_v_fm->observed_mass;
+  __pyx_v_result->observed_mass = __pyx_t_1;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":737
+ *     cdef FragmentMatchStruct* result = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct))
+ *     result.observed_mass = fm.observed_mass
+ *     result.intensity = fm.intensity             # <<<<<<<<<<<<<<
+ *     result.key = PyString_AsString(fm.key)
+ *     result.ion_type = PyString_AsString(fm.ion_type)
+ */
+  __pyx_t_1 = __pyx_v_fm->intensity;
+  __pyx_v_result->intensity = __pyx_t_1;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":738
+ *     result.observed_mass = fm.observed_mass
+ *     result.intensity = fm.intensity
+ *     result.key = PyString_AsString(fm.key)             # <<<<<<<<<<<<<<
+ *     result.ion_type = PyString_AsString(fm.ion_type)
+ *     result.peak_id = fm.peak_id
+ */
+  __pyx_t_2 = __pyx_v_fm->key;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 738; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_result->key = __pyx_t_3;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":739
+ *     result.intensity = fm.intensity
+ *     result.key = PyString_AsString(fm.key)
+ *     result.ion_type = PyString_AsString(fm.ion_type)             # <<<<<<<<<<<<<<
+ *     result.peak_id = fm.peak_id
+ *     return result
+ */
+  __pyx_t_2 = __pyx_v_fm->ion_type;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 739; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_result->ion_type = __pyx_t_3;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":740
+ *     result.key = PyString_AsString(fm.key)
+ *     result.ion_type = PyString_AsString(fm.ion_type)
+ *     result.peak_id = fm.peak_id             # <<<<<<<<<<<<<<
+ *     return result
+ * 
+ */
+  __pyx_t_4 = __pyx_v_fm->peak_id;
+  __pyx_v_result->peak_id = __pyx_t_4;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":741
+ *     result.ion_type = PyString_AsString(fm.ion_type)
+ *     result.peak_id = fm.peak_id
+ *     return result             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __pyx_v_result;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":734
+ *     return ms_struct
+ * 
+ * cdef FragmentMatchStruct* unwrap_fragment_match(FragmentMatch fm):             # <<<<<<<<<<<<<<
+ *     cdef FragmentMatchStruct* result = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct))
+ *     result.observed_mass = fm.observed_mass
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_WriteUnraisable("glycresoft_sqlalchemy.utils.ccommon_math.unwrap_fragment_match", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":745
+ * 
+ * # struct to cdef class wrapper
+ * cdef DPeak wrap_peak(PeakStruct* peak):             # <<<<<<<<<<<<<<
+ *     cdef DPeak dpeak = DPeak()
+ *     dpeak.neutral_mass = peak.neutral_mass
+ */
+
+static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_peak(struct PeakStruct *__pyx_v_peak) {
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_dpeak = 0;
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  float __pyx_t_2;
+  int __pyx_t_3;
+  long __pyx_t_4;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("wrap_peak", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":746
+ * # struct to cdef class wrapper
+ * cdef DPeak wrap_peak(PeakStruct* peak):
+ *     cdef DPeak dpeak = DPeak()             # <<<<<<<<<<<<<<
+ *     dpeak.neutral_mass = peak.neutral_mass
+ *     dpeak.charge = peak.charge
+ */
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 746; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_dpeak = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":747
+ * cdef DPeak wrap_peak(PeakStruct* peak):
+ *     cdef DPeak dpeak = DPeak()
+ *     dpeak.neutral_mass = peak.neutral_mass             # <<<<<<<<<<<<<<
+ *     dpeak.charge = peak.charge
+ *     dpeak.intensity = peak.intensity
+ */
+  __pyx_t_2 = __pyx_v_peak->neutral_mass;
+  __pyx_v_dpeak->neutral_mass = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":748
+ *     cdef DPeak dpeak = DPeak()
+ *     dpeak.neutral_mass = peak.neutral_mass
+ *     dpeak.charge = peak.charge             # <<<<<<<<<<<<<<
+ *     dpeak.intensity = peak.intensity
+ *     dpeak.rank = peak.rank
+ */
+  __pyx_t_3 = __pyx_v_peak->charge;
+  __pyx_v_dpeak->charge = __pyx_t_3;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":749
+ *     dpeak.neutral_mass = peak.neutral_mass
+ *     dpeak.charge = peak.charge
+ *     dpeak.intensity = peak.intensity             # <<<<<<<<<<<<<<
+ *     dpeak.rank = peak.rank
+ *     dpeak.id = peak.id
+ */
+  __pyx_t_2 = __pyx_v_peak->intensity;
+  __pyx_v_dpeak->intensity = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":750
+ *     dpeak.charge = peak.charge
+ *     dpeak.intensity = peak.intensity
+ *     dpeak.rank = peak.rank             # <<<<<<<<<<<<<<
+ *     dpeak.id = peak.id
+ *     return dpeak
+ */
+  __pyx_t_3 = __pyx_v_peak->rank;
+  __pyx_v_dpeak->rank = __pyx_t_3;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":751
+ *     dpeak.intensity = peak.intensity
+ *     dpeak.rank = peak.rank
+ *     dpeak.id = peak.id             # <<<<<<<<<<<<<<
+ *     return dpeak
+ * 
+ */
+  __pyx_t_4 = __pyx_v_peak->id;
+  __pyx_v_dpeak->id = __pyx_t_4;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":752
+ *     dpeak.rank = peak.rank
+ *     dpeak.id = peak.id
+ *     return dpeak             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(((PyObject *)__pyx_r));
+  __Pyx_INCREF(((PyObject *)__pyx_v_dpeak));
+  __pyx_r = __pyx_v_dpeak;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":745
+ * 
+ * # struct to cdef class wrapper
+ * cdef DPeak wrap_peak(PeakStruct* peak):             # <<<<<<<<<<<<<<
+ *     cdef DPeak dpeak = DPeak()
+ *     dpeak.neutral_mass = peak.neutral_mass
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.wrap_peak", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF((PyObject *)__pyx_v_dpeak);
+  __Pyx_XGIVEREF((PyObject *)__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":755
+ * 
+ * 
+ * cdef MassOffsetFeature wrap_feature(MSFeatureStruct* feature):             # <<<<<<<<<<<<<<
+ *     cdef MassOffsetFeature pfeature
+ *     pfeature = MassOffsetFeature(
+ */
+
+static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_feature(struct MSFeatureStruct *__pyx_v_feature) {
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_pfeature = 0;
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("wrap_feature", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":757
+ * cdef MassOffsetFeature wrap_feature(MSFeatureStruct* feature):
+ *     cdef MassOffsetFeature pfeature
+ *     pfeature = MassOffsetFeature(             # <<<<<<<<<<<<<<
+ *         offset=feature.offset,
+ *         tolerance=feature.tolerance,
+ */
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":758
+ *     cdef MassOffsetFeature pfeature
+ *     pfeature = MassOffsetFeature(
+ *         offset=feature.offset,             # <<<<<<<<<<<<<<
+ *         tolerance=feature.tolerance,
+ *         name=feature.name,
+ */
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_feature->offset); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 758; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_offset, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":759
+ *     pfeature = MassOffsetFeature(
+ *         offset=feature.offset,
+ *         tolerance=feature.tolerance,             # <<<<<<<<<<<<<<
+ *         name=feature.name,
+ *         intensity_ratio=feature.intensity_ratio,
+ */
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_feature->tolerance); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 759; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_tolerance, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":760
+ *         offset=feature.offset,
+ *         tolerance=feature.tolerance,
+ *         name=feature.name,             # <<<<<<<<<<<<<<
+ *         intensity_ratio=feature.intensity_ratio,
+ *         from_charge=feature.from_charge,
+ */
+  __pyx_t_2 = __Pyx_PyBytes_FromString(__pyx_v_feature->name); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 760; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_name, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":761
+ *         tolerance=feature.tolerance,
+ *         name=feature.name,
+ *         intensity_ratio=feature.intensity_ratio,             # <<<<<<<<<<<<<<
+ *         from_charge=feature.from_charge,
+ *         to_charge=feature.to_charge,
+ */
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_feature->intensity_ratio); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 761; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_intensity_ratio, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":762
+ *         name=feature.name,
+ *         intensity_ratio=feature.intensity_ratio,
+ *         from_charge=feature.from_charge,             # <<<<<<<<<<<<<<
+ *         to_charge=feature.to_charge,
+ *         feature_type=feature.feature_type,
+ */
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_feature->from_charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 762; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_from_charge, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":763
+ *         intensity_ratio=feature.intensity_ratio,
+ *         from_charge=feature.from_charge,
+ *         to_charge=feature.to_charge,             # <<<<<<<<<<<<<<
+ *         feature_type=feature.feature_type,
+ *         min_peak_rank=feature.min_peak_rank,
+ */
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_feature->to_charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 763; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_to_charge, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":764
+ *         from_charge=feature.from_charge,
+ *         to_charge=feature.to_charge,
+ *         feature_type=feature.feature_type,             # <<<<<<<<<<<<<<
+ *         min_peak_rank=feature.min_peak_rank,
+ *         max_peak_rank=feature.max_peak_rank,
+ */
+  __pyx_t_2 = __Pyx_PyBytes_FromString(__pyx_v_feature->feature_type); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 764; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_feature_type, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":765
+ *         to_charge=feature.to_charge,
+ *         feature_type=feature.feature_type,
+ *         min_peak_rank=feature.min_peak_rank,             # <<<<<<<<<<<<<<
+ *         max_peak_rank=feature.max_peak_rank,
+ *         glycan_peptide_ratio=feature.glycan_peptide_ratio,
+ */
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_feature->min_peak_rank); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 765; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_min_peak_rank, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":766
+ *         feature_type=feature.feature_type,
+ *         min_peak_rank=feature.min_peak_rank,
+ *         max_peak_rank=feature.max_peak_rank,             # <<<<<<<<<<<<<<
+ *         glycan_peptide_ratio=feature.glycan_peptide_ratio,
+ *         peptide_mass_rank=feature.peptide_mass_rank)
+ */
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_feature->max_peak_rank); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 766; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_peak_rank, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":767
+ *         min_peak_rank=feature.min_peak_rank,
+ *         max_peak_rank=feature.max_peak_rank,
+ *         glycan_peptide_ratio=feature.glycan_peptide_ratio,             # <<<<<<<<<<<<<<
+ *         peptide_mass_rank=feature.peptide_mass_rank)
+ *     pfeature.ion_type_matches = dict_from_ion_type_double_map(feature.ion_type_matches)
+ */
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_feature->glycan_peptide_ratio); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 767; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_glycan_peptide_ratio, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":768
+ *         max_peak_rank=feature.max_peak_rank,
+ *         glycan_peptide_ratio=feature.glycan_peptide_ratio,
+ *         peptide_mass_rank=feature.peptide_mass_rank)             # <<<<<<<<<<<<<<
+ *     pfeature.ion_type_matches = dict_from_ion_type_double_map(feature.ion_type_matches)
+ *     pfeature.ion_type_totals = dict_from_ion_type_double_map(feature.ion_type_totals)
+ */
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_feature->peptide_mass_rank); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 768; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_peptide_mass_rank, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":757
+ * cdef MassOffsetFeature wrap_feature(MSFeatureStruct* feature):
+ *     cdef MassOffsetFeature pfeature
+ *     pfeature = MassOffsetFeature(             # <<<<<<<<<<<<<<
+ *         offset=feature.offset,
+ *         tolerance=feature.tolerance,
+ */
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature)), __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 757; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_pfeature = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_t_2);
+  __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":769
+ *         glycan_peptide_ratio=feature.glycan_peptide_ratio,
+ *         peptide_mass_rank=feature.peptide_mass_rank)
+ *     pfeature.ion_type_matches = dict_from_ion_type_double_map(feature.ion_type_matches)             # <<<<<<<<<<<<<<
+ *     pfeature.ion_type_totals = dict_from_ion_type_double_map(feature.ion_type_totals)
+ *     return pfeature
+ */
+  __pyx_t_2 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_dict_from_ion_type_double_map(__pyx_v_feature->ion_type_matches); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 769; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_2);
+  __Pyx_GOTREF(__pyx_v_pfeature->ion_type_matches);
+  __Pyx_DECREF(__pyx_v_pfeature->ion_type_matches);
+  __pyx_v_pfeature->ion_type_matches = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":770
+ *         peptide_mass_rank=feature.peptide_mass_rank)
+ *     pfeature.ion_type_matches = dict_from_ion_type_double_map(feature.ion_type_matches)
+ *     pfeature.ion_type_totals = dict_from_ion_type_double_map(feature.ion_type_totals)             # <<<<<<<<<<<<<<
+ *     return pfeature
+ * 
+ */
+  __pyx_t_2 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_dict_from_ion_type_double_map(__pyx_v_feature->ion_type_totals); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 770; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_2);
+  __Pyx_GOTREF(__pyx_v_pfeature->ion_type_totals);
+  __Pyx_DECREF(__pyx_v_pfeature->ion_type_totals);
+  __pyx_v_pfeature->ion_type_totals = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":771
+ *     pfeature.ion_type_matches = dict_from_ion_type_double_map(feature.ion_type_matches)
+ *     pfeature.ion_type_totals = dict_from_ion_type_double_map(feature.ion_type_totals)
+ *     return pfeature             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(((PyObject *)__pyx_r));
+  __Pyx_INCREF(((PyObject *)__pyx_v_pfeature));
+  __pyx_r = __pyx_v_pfeature;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":755
+ * 
+ * 
+ * cdef MassOffsetFeature wrap_feature(MSFeatureStruct* feature):             # <<<<<<<<<<<<<<
+ *     cdef MassOffsetFeature pfeature
+ *     pfeature = MassOffsetFeature(
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.wrap_feature", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF((PyObject *)__pyx_v_pfeature);
+  __Pyx_XGIVEREF((PyObject *)__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":774
+ * 
+ * 
+ * cdef MatchedSpectrum wrap_matched_spectrum_struct(MatchedSpectrumStruct* ms):             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         MatchedSpectrum result
+ */
+
+static struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_matched_spectrum_struct(struct MatchedSpectrumStruct *__pyx_v_ms) {
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_result = 0;
+  struct PeakStruct __pyx_v_peak;
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_dpeak = 0;
+  struct FragmentMatchStruct __pyx_v_frag_match;
+  PyObject *__pyx_v_frag_matches = 0;
+  size_t __pyx_v_i;
+  PyObject *__pyx_v_matches_list = 0;
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *__pyx_v_frag_match_obj = 0;
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_2;
+  double __pyx_t_3;
+  Py_ssize_t __pyx_t_4;
+  size_t __pyx_t_5;
+  size_t __pyx_t_6;
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  PyObject *__pyx_t_10 = NULL;
+  PyObject *__pyx_t_11 = NULL;
+  int __pyx_t_12;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("wrap_matched_spectrum_struct", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":785
+ *         FragmentMatch frag_match_obj
+ * 
+ *     frag_matches = dict()             # <<<<<<<<<<<<<<
+ * 
+ *     result = MatchedSpectrum()
+ */
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 785; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_frag_matches = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":787
+ *     frag_matches = dict()
+ * 
+ *     result = MatchedSpectrum()             # <<<<<<<<<<<<<<
+ *     result.glycopeptide_sequence = PyString_FromString(ms.glycopeptide_sequence)
+ *     result.peak_list = [None] * ms.peak_list.size
+ */
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 787; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_result = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":788
+ * 
+ *     result = MatchedSpectrum()
+ *     result.glycopeptide_sequence = PyString_FromString(ms.glycopeptide_sequence)             # <<<<<<<<<<<<<<
+ *     result.peak_list = [None] * ms.peak_list.size
+ *     result.scan_time = ms.scan_time
+ */
+  __pyx_t_1 = PyString_FromString(__pyx_v_ms->glycopeptide_sequence); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 788; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (!(likely(PyString_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 788; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_result->glycopeptide_sequence);
+  __Pyx_DECREF(__pyx_v_result->glycopeptide_sequence);
+  __pyx_v_result->glycopeptide_sequence = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":789
+ *     result = MatchedSpectrum()
+ *     result.glycopeptide_sequence = PyString_FromString(ms.glycopeptide_sequence)
+ *     result.peak_list = [None] * ms.peak_list.size             # <<<<<<<<<<<<<<
+ *     result.scan_time = ms.scan_time
+ *     result.peaks_explained = ms.peaks_explained
+ */
+  __pyx_t_1 = PyList_New(1 * ((__pyx_v_ms->peak_list->size<0) ? 0:__pyx_v_ms->peak_list->size)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 789; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  { Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < __pyx_v_ms->peak_list->size; __pyx_temp++) {
+      __Pyx_INCREF(Py_None);
+      PyList_SET_ITEM(__pyx_t_1, __pyx_temp, Py_None);
+      __Pyx_GIVEREF(Py_None);
+    }
+  }
+  __Pyx_GIVEREF(__pyx_t_1);
+  __Pyx_GOTREF(__pyx_v_result->peak_list);
+  __Pyx_DECREF(__pyx_v_result->peak_list);
+  __pyx_v_result->peak_list = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":790
+ *     result.glycopeptide_sequence = PyString_FromString(ms.glycopeptide_sequence)
+ *     result.peak_list = [None] * ms.peak_list.size
+ *     result.scan_time = ms.scan_time             # <<<<<<<<<<<<<<
+ *     result.peaks_explained = ms.peaks_explained
+ *     result.peaks_unexplained = ms.peaks_unexplained
+ */
+  __pyx_t_2 = __pyx_v_ms->scan_time;
+  __pyx_v_result->scan_time = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":791
+ *     result.peak_list = [None] * ms.peak_list.size
+ *     result.scan_time = ms.scan_time
+ *     result.peaks_explained = ms.peaks_explained             # <<<<<<<<<<<<<<
+ *     result.peaks_unexplained = ms.peaks_unexplained
+ *     result.peptide_mass = ms.peptide_mass
+ */
+  __pyx_t_2 = __pyx_v_ms->peaks_explained;
+  __pyx_v_result->peaks_explained = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":792
+ *     result.scan_time = ms.scan_time
+ *     result.peaks_explained = ms.peaks_explained
+ *     result.peaks_unexplained = ms.peaks_unexplained             # <<<<<<<<<<<<<<
+ *     result.peptide_mass = ms.peptide_mass
+ *     result.glycan_mass = ms.glycan_mass
+ */
+  __pyx_t_2 = __pyx_v_ms->peaks_unexplained;
+  __pyx_v_result->peaks_unexplained = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":793
+ *     result.peaks_explained = ms.peaks_explained
+ *     result.peaks_unexplained = ms.peaks_unexplained
+ *     result.peptide_mass = ms.peptide_mass             # <<<<<<<<<<<<<<
+ *     result.glycan_mass = ms.glycan_mass
+ *     result.glycan_peptide_ratio = ms.glycan_peptide_ratio
+ */
+  __pyx_t_3 = __pyx_v_ms->peptide_mass;
+  __pyx_v_result->peptide_mass = __pyx_t_3;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":794
+ *     result.peaks_unexplained = ms.peaks_unexplained
+ *     result.peptide_mass = ms.peptide_mass
+ *     result.glycan_mass = ms.glycan_mass             # <<<<<<<<<<<<<<
+ *     result.glycan_peptide_ratio = ms.glycan_peptide_ratio
+ *     result.peptide_mass_rank = ms.peptide_mass_rank
+ */
+  __pyx_t_3 = __pyx_v_ms->glycan_mass;
+  __pyx_v_result->glycan_mass = __pyx_t_3;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":795
+ *     result.peptide_mass = ms.peptide_mass
+ *     result.glycan_mass = ms.glycan_mass
+ *     result.glycan_peptide_ratio = ms.glycan_peptide_ratio             # <<<<<<<<<<<<<<
+ *     result.peptide_mass_rank = ms.peptide_mass_rank
+ *     result.id = ms.id
+ */
+  __pyx_t_2 = __pyx_v_ms->glycan_peptide_ratio;
+  __pyx_v_result->glycan_peptide_ratio = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":796
+ *     result.glycan_mass = ms.glycan_mass
+ *     result.glycan_peptide_ratio = ms.glycan_peptide_ratio
+ *     result.peptide_mass_rank = ms.peptide_mass_rank             # <<<<<<<<<<<<<<
+ *     result.id = ms.id
+ * 
+ */
+  __pyx_t_2 = __pyx_v_ms->peptide_mass_rank;
+  __pyx_v_result->peptide_mass_rank = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":797
+ *     result.glycan_peptide_ratio = ms.glycan_peptide_ratio
+ *     result.peptide_mass_rank = ms.peptide_mass_rank
+ *     result.id = ms.id             # <<<<<<<<<<<<<<
+ * 
+ *     for i in range(ms.peak_list.size):
+ */
+  __pyx_t_2 = __pyx_v_ms->id;
+  __pyx_v_result->id = __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":799
+ *     result.id = ms.id
+ * 
+ *     for i in range(ms.peak_list.size):             # <<<<<<<<<<<<<<
+ *         peak = ms.peak_list.peaks[i]
+ *         dpeak = wrap_peak(&peak)
+ */
+  __pyx_t_4 = __pyx_v_ms->peak_list->size;
+  for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
+    __pyx_v_i = __pyx_t_5;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":800
+ * 
+ *     for i in range(ms.peak_list.size):
+ *         peak = ms.peak_list.peaks[i]             # <<<<<<<<<<<<<<
+ *         dpeak = wrap_peak(&peak)
+ *         result.peak_list[i] = dpeak
+ */
+    __pyx_v_peak = (__pyx_v_ms->peak_list->peaks[__pyx_v_i]);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":801
+ *     for i in range(ms.peak_list.size):
+ *         peak = ms.peak_list.peaks[i]
+ *         dpeak = wrap_peak(&peak)             # <<<<<<<<<<<<<<
+ *         result.peak_list[i] = dpeak
+ * 
+ */
+    __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_peak((&__pyx_v_peak))); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 801; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_XDECREF_SET(__pyx_v_dpeak, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_1));
+    __pyx_t_1 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":802
+ *         peak = ms.peak_list.peaks[i]
+ *         dpeak = wrap_peak(&peak)
+ *         result.peak_list[i] = dpeak             # <<<<<<<<<<<<<<
+ * 
+ *     for i in range(ms.peak_match_list.size):
+ */
+    if (unlikely(__pyx_v_result->peak_list == Py_None)) {
+      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 802; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
+    if (unlikely(__Pyx_SetItemInt(__pyx_v_result->peak_list, __pyx_v_i, ((PyObject *)__pyx_v_dpeak), size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 802; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":804
+ *         result.peak_list[i] = dpeak
+ * 
+ *     for i in range(ms.peak_match_list.size):             # <<<<<<<<<<<<<<
+ *         frag_match = ms.peak_match_list.matches[i]
+ *         frag_match_obj = FragmentMatch(
+ */
+  __pyx_t_5 = __pyx_v_ms->peak_match_list->size;
+  for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
+    __pyx_v_i = __pyx_t_6;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":805
+ * 
+ *     for i in range(ms.peak_match_list.size):
+ *         frag_match = ms.peak_match_list.matches[i]             # <<<<<<<<<<<<<<
+ *         frag_match_obj = FragmentMatch(
+ *             frag_match.observed_mass, frag_match.intensity,
+ */
+    __pyx_v_frag_match = (__pyx_v_ms->peak_match_list->matches[__pyx_v_i]);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":807
+ *         frag_match = ms.peak_match_list.matches[i]
+ *         frag_match_obj = FragmentMatch(
+ *             frag_match.observed_mass, frag_match.intensity,             # <<<<<<<<<<<<<<
+ *             PyString_FromString(frag_match.key), frag_match.peak_id,
+ *             PyString_FromString(frag_match.ion_type))
+ */
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_frag_match.observed_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 807; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_7 = PyFloat_FromDouble(__pyx_v_frag_match.intensity); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 807; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_7);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":808
+ *         frag_match_obj = FragmentMatch(
+ *             frag_match.observed_mass, frag_match.intensity,
+ *             PyString_FromString(frag_match.key), frag_match.peak_id,             # <<<<<<<<<<<<<<
+ *             PyString_FromString(frag_match.ion_type))
+ *         matches_list = frag_matches.setdefault(frag_match.peak_id, [])
+ */
+    __pyx_t_8 = PyString_FromString(__pyx_v_frag_match.key); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 808; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_9 = __Pyx_PyInt_From_long(__pyx_v_frag_match.peak_id); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 808; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_9);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":809
+ *             frag_match.observed_mass, frag_match.intensity,
+ *             PyString_FromString(frag_match.key), frag_match.peak_id,
+ *             PyString_FromString(frag_match.ion_type))             # <<<<<<<<<<<<<<
+ *         matches_list = frag_matches.setdefault(frag_match.peak_id, [])
+ *         matches_list.append(frag_match_obj)
+ */
+    __pyx_t_10 = PyString_FromString(__pyx_v_frag_match.ion_type); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 809; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_10);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":806
+ *     for i in range(ms.peak_match_list.size):
+ *         frag_match = ms.peak_match_list.matches[i]
+ *         frag_match_obj = FragmentMatch(             # <<<<<<<<<<<<<<
+ *             frag_match.observed_mass, frag_match.intensity,
+ *             PyString_FromString(frag_match.key), frag_match.peak_id,
+ */
+    __pyx_t_11 = PyTuple_New(5); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 806; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_11);
+    PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_1);
+    __Pyx_GIVEREF(__pyx_t_1);
+    PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_t_7);
+    __Pyx_GIVEREF(__pyx_t_7);
+    PyTuple_SET_ITEM(__pyx_t_11, 2, __pyx_t_8);
+    __Pyx_GIVEREF(__pyx_t_8);
+    PyTuple_SET_ITEM(__pyx_t_11, 3, __pyx_t_9);
+    __Pyx_GIVEREF(__pyx_t_9);
+    PyTuple_SET_ITEM(__pyx_t_11, 4, __pyx_t_10);
+    __Pyx_GIVEREF(__pyx_t_10);
+    __pyx_t_1 = 0;
+    __pyx_t_7 = 0;
+    __pyx_t_8 = 0;
+    __pyx_t_9 = 0;
+    __pyx_t_10 = 0;
+    __pyx_t_10 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch)), __pyx_t_11, NULL); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 806; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_10);
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+    __Pyx_XDECREF_SET(__pyx_v_frag_match_obj, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)__pyx_t_10));
+    __pyx_t_10 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":810
+ *             PyString_FromString(frag_match.key), frag_match.peak_id,
+ *             PyString_FromString(frag_match.ion_type))
+ *         matches_list = frag_matches.setdefault(frag_match.peak_id, [])             # <<<<<<<<<<<<<<
+ *         matches_list.append(frag_match_obj)
+ * 
+ */
+    __pyx_t_10 = __Pyx_PyInt_From_long(__pyx_v_frag_match.peak_id); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 810; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_10);
+    __pyx_t_11 = PyList_New(0); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 810; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_11);
+    __pyx_t_9 = __Pyx_PyDict_SetDefault(__pyx_v_frag_matches, __pyx_t_10, __pyx_t_11, -1); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 810; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_9);
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+    if (!(likely(PyList_CheckExact(__pyx_t_9))||((__pyx_t_9) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_9)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 810; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_XDECREF_SET(__pyx_v_matches_list, ((PyObject*)__pyx_t_9));
+    __pyx_t_9 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":811
+ *             PyString_FromString(frag_match.ion_type))
+ *         matches_list = frag_matches.setdefault(frag_match.peak_id, [])
+ *         matches_list.append(frag_match_obj)             # <<<<<<<<<<<<<<
+ * 
+ *     result.peak_match_map = frag_matches
+ */
+    if (unlikely(__pyx_v_matches_list == Py_None)) {
+      PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "append");
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 811; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
+    __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_matches_list, ((PyObject *)__pyx_v_frag_match_obj)); if (unlikely(__pyx_t_12 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 811; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":813
+ *         matches_list.append(frag_match_obj)
+ * 
+ *     result.peak_match_map = frag_matches             # <<<<<<<<<<<<<<
+ * 
+ *     return result
+ */
+  __Pyx_INCREF(__pyx_v_frag_matches);
+  __Pyx_GIVEREF(__pyx_v_frag_matches);
+  __Pyx_GOTREF(__pyx_v_result->peak_match_map);
+  __Pyx_DECREF(__pyx_v_result->peak_match_map);
+  __pyx_v_result->peak_match_map = __pyx_v_frag_matches;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":815
+ *     result.peak_match_map = frag_matches
+ * 
+ *     return result             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(((PyObject *)__pyx_r));
+  __Pyx_INCREF(((PyObject *)__pyx_v_result));
+  __pyx_r = __pyx_v_result;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":774
+ * 
+ * 
+ * cdef MatchedSpectrum wrap_matched_spectrum_struct(MatchedSpectrumStruct* ms):             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         MatchedSpectrum result
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_10);
+  __Pyx_XDECREF(__pyx_t_11);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.wrap_matched_spectrum_struct", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF((PyObject *)__pyx_v_result);
+  __Pyx_XDECREF((PyObject *)__pyx_v_dpeak);
+  __Pyx_XDECREF(__pyx_v_frag_matches);
+  __Pyx_XDECREF(__pyx_v_matches_list);
+  __Pyx_XDECREF((PyObject *)__pyx_v_frag_match_obj);
+  __Pyx_XGIVEREF((PyObject *)__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":821
  * 
  * 
  * cdef FragmentMatchStructArray* matched_spectrum_struct_peak_explained_by(MatchedSpectrumStruct* ms, long peak_id) nogil:             # <<<<<<<<<<<<<<
@@ -10854,7 +15952,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
   size_t __pyx_t_2;
   int __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":579
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":827
  *         FragmentMatchStructArray* results
  * 
  *     results = <FragmentMatchStructArray*>malloc(sizeof(FragmentMatchStructArray))             # <<<<<<<<<<<<<<
@@ -10863,7 +15961,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
  */
   __pyx_v_results = ((struct FragmentMatchStructArray *)malloc((sizeof(struct FragmentMatchStructArray))));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":580
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":828
  * 
  *     results = <FragmentMatchStructArray*>malloc(sizeof(FragmentMatchStructArray))
  *     results.size = 10             # <<<<<<<<<<<<<<
@@ -10872,7 +15970,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
  */
   __pyx_v_results->size = 10;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":581
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":829
  *     results = <FragmentMatchStructArray*>malloc(sizeof(FragmentMatchStructArray))
  *     results.size = 10
  *     results.matches = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct) * 10)             # <<<<<<<<<<<<<<
@@ -10881,7 +15979,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
  */
   __pyx_v_results->matches = ((struct FragmentMatchStruct *)malloc(((sizeof(struct FragmentMatchStruct)) * 10)));
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":582
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":830
  *     results.size = 10
  *     results.matches = <FragmentMatchStruct*>malloc(sizeof(FragmentMatchStruct) * 10)
  *     j = 0             # <<<<<<<<<<<<<<
@@ -10890,7 +15988,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
  */
   __pyx_v_j = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":584
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":832
  *     j = 0
  * 
  *     for i in range(ms.peak_match_list.size):             # <<<<<<<<<<<<<<
@@ -10901,7 +15999,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":585
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":833
  * 
  *     for i in range(ms.peak_match_list.size):
  *         current = ms.peak_match_list.matches[i]             # <<<<<<<<<<<<<<
@@ -10910,7 +16008,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
  */
     __pyx_v_current = (__pyx_v_ms->peak_match_list->matches[__pyx_v_i]);
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":586
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":834
  *     for i in range(ms.peak_match_list.size):
  *         current = ms.peak_match_list.matches[i]
  *         if current.peak_id == peak_id:             # <<<<<<<<<<<<<<
@@ -10920,7 +16018,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
     __pyx_t_3 = ((__pyx_v_current.peak_id == __pyx_v_peak_id) != 0);
     if (__pyx_t_3) {
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":587
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":835
  *         current = ms.peak_match_list.matches[i]
  *         if current.peak_id == peak_id:
  *             results.matches[j] = current             # <<<<<<<<<<<<<<
@@ -10929,7 +16027,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
  */
       (__pyx_v_results->matches[__pyx_v_j]) = __pyx_v_current;
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":588
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":836
  *         if current.peak_id == peak_id:
  *             results.matches[j] = current
  *             j += 1             # <<<<<<<<<<<<<<
@@ -10938,7 +16036,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
  */
       __pyx_v_j = (__pyx_v_j + 1);
 
-      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":589
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":837
  *             results.matches[j] = current
  *             j += 1
  *             if j == 10:             # <<<<<<<<<<<<<<
@@ -10948,7 +16046,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
       __pyx_t_3 = ((__pyx_v_j == 10) != 0);
       if (__pyx_t_3) {
 
-        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":590
+        /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":838
  *             j += 1
  *             if j == 10:
  *                 break             # <<<<<<<<<<<<<<
@@ -10963,7 +16061,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
   }
   __pyx_L4_break:;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":592
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":840
  *                 break
  * 
  *     results.size = j             # <<<<<<<<<<<<<<
@@ -10972,7 +16070,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
  */
   __pyx_v_results->size = __pyx_v_j;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":593
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":841
  * 
  *     results.size = j
  *     return results             # <<<<<<<<<<<<<<
@@ -10982,7 +16080,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
   __pyx_r = __pyx_v_results;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":573
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":821
  * 
  * 
  * cdef FragmentMatchStructArray* matched_spectrum_struct_peak_explained_by(MatchedSpectrumStruct* ms, long peak_id) nogil:             # <<<<<<<<<<<<<<
@@ -10995,7 +16093,7 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":599
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":847
  * 
  * 
  * cdef void sort_by_intensity(PeakStructArray* peak_list) nogil:             # <<<<<<<<<<<<<<
@@ -11005,16 +16103,16 @@ static struct FragmentMatchStructArray *__pyx_f_21glycresoft_sqlalchemy_5utils_1
 
 static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sort_by_intensity(struct PeakStructArray *__pyx_v_peak_list) {
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":600
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":848
  * 
  * cdef void sort_by_intensity(PeakStructArray* peak_list) nogil:
  *     qsort(peak_list.peaks, peak_list.size, sizeof(PeakStruct), compare_by_intensity)             # <<<<<<<<<<<<<<
  * 
- * 
+ * cdef void sort_by_neutral_mass(PeakStructArray* peak_list) nogil:
  */
   qsort(__pyx_v_peak_list->peaks, __pyx_v_peak_list->size, (sizeof(struct PeakStruct)), __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_intensity);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":599
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":847
  * 
  * 
  * cdef void sort_by_intensity(PeakStructArray* peak_list) nogil:             # <<<<<<<<<<<<<<
@@ -11025,8 +16123,8 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sort_by_intens
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":603
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":850
+ *     qsort(peak_list.peaks, peak_list.size, sizeof(PeakStruct), compare_by_intensity)
  * 
  * cdef void sort_by_neutral_mass(PeakStructArray* peak_list) nogil:             # <<<<<<<<<<<<<<
  *     qsort(peak_list, peak_list.size, sizeof(PeakStruct), compare_by_neutral_mass)
@@ -11035,17 +16133,17 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sort_by_intens
 
 static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sort_by_neutral_mass(struct PeakStructArray *__pyx_v_peak_list) {
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":604
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":851
  * 
  * cdef void sort_by_neutral_mass(PeakStructArray* peak_list) nogil:
  *     qsort(peak_list, peak_list.size, sizeof(PeakStruct), compare_by_neutral_mass)             # <<<<<<<<<<<<<<
  * 
- * 
+ * cdef int compare_by_neutral_mass(const void * a, const void * b) nogil:
  */
   qsort(__pyx_v_peak_list, __pyx_v_peak_list->size, (sizeof(struct PeakStruct)), __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_neutral_mass);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":603
- * 
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":850
+ *     qsort(peak_list.peaks, peak_list.size, sizeof(PeakStruct), compare_by_intensity)
  * 
  * cdef void sort_by_neutral_mass(PeakStructArray* peak_list) nogil:             # <<<<<<<<<<<<<<
  *     qsort(peak_list, peak_list.size, sizeof(PeakStruct), compare_by_neutral_mass)
@@ -11055,8 +16153,8 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sort_by_neutra
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":607
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":853
+ *     qsort(peak_list, peak_list.size, sizeof(PeakStruct), compare_by_neutral_mass)
  * 
  * cdef int compare_by_neutral_mass(const void * a, const void * b) nogil:             # <<<<<<<<<<<<<<
  *     if (<PeakStruct*>a).neutral_mass < (<PeakStruct*>b).neutral_mass:
@@ -11067,7 +16165,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_neut
   int __pyx_r;
   int __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":608
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":854
  * 
  * cdef int compare_by_neutral_mass(const void * a, const void * b) nogil:
  *     if (<PeakStruct*>a).neutral_mass < (<PeakStruct*>b).neutral_mass:             # <<<<<<<<<<<<<<
@@ -11077,7 +16175,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_neut
   __pyx_t_1 = ((((struct PeakStruct *)__pyx_v_a)->neutral_mass < ((struct PeakStruct *)__pyx_v_b)->neutral_mass) != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":609
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":855
  * cdef int compare_by_neutral_mass(const void * a, const void * b) nogil:
  *     if (<PeakStruct*>a).neutral_mass < (<PeakStruct*>b).neutral_mass:
  *         return -1             # <<<<<<<<<<<<<<
@@ -11088,7 +16186,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_neut
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":610
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":856
  *     if (<PeakStruct*>a).neutral_mass < (<PeakStruct*>b).neutral_mass:
  *         return -1
  *     elif (<PeakStruct*>a).neutral_mass == (<PeakStruct*>b).neutral_mass:             # <<<<<<<<<<<<<<
@@ -11098,7 +16196,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_neut
   __pyx_t_1 = ((((struct PeakStruct *)__pyx_v_a)->neutral_mass == ((struct PeakStruct *)__pyx_v_b)->neutral_mass) != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":611
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":857
  *         return -1
  *     elif (<PeakStruct*>a).neutral_mass == (<PeakStruct*>b).neutral_mass:
  *         return 0             # <<<<<<<<<<<<<<
@@ -11109,7 +16207,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_neut
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":612
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":858
  *     elif (<PeakStruct*>a).neutral_mass == (<PeakStruct*>b).neutral_mass:
  *         return 0
  *     elif (<PeakStruct*>a).neutral_mass > (<PeakStruct*>b).neutral_mass:             # <<<<<<<<<<<<<<
@@ -11119,19 +16217,19 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_neut
   __pyx_t_1 = ((((struct PeakStruct *)__pyx_v_a)->neutral_mass > ((struct PeakStruct *)__pyx_v_b)->neutral_mass) != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":613
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":859
  *         return 0
  *     elif (<PeakStruct*>a).neutral_mass > (<PeakStruct*>b).neutral_mass:
  *         return 1             # <<<<<<<<<<<<<<
  * 
- * 
+ * cdef int compare_by_intensity(const void * a, const void * b) nogil:
  */
     __pyx_r = 1;
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":607
- * 
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":853
+ *     qsort(peak_list, peak_list.size, sizeof(PeakStruct), compare_by_neutral_mass)
  * 
  * cdef int compare_by_neutral_mass(const void * a, const void * b) nogil:             # <<<<<<<<<<<<<<
  *     if (<PeakStruct*>a).neutral_mass < (<PeakStruct*>b).neutral_mass:
@@ -11144,8 +16242,8 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_neut
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":616
- * 
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":861
+ *         return 1
  * 
  * cdef int compare_by_intensity(const void * a, const void * b) nogil:             # <<<<<<<<<<<<<<
  *     if (<PeakStruct*>a).intensity < (<PeakStruct*>b).intensity:
@@ -11156,7 +16254,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_inte
   int __pyx_r;
   int __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":617
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":862
  * 
  * cdef int compare_by_intensity(const void * a, const void * b) nogil:
  *     if (<PeakStruct*>a).intensity < (<PeakStruct*>b).intensity:             # <<<<<<<<<<<<<<
@@ -11166,7 +16264,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_inte
   __pyx_t_1 = ((((struct PeakStruct *)__pyx_v_a)->intensity < ((struct PeakStruct *)__pyx_v_b)->intensity) != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":618
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":863
  * cdef int compare_by_intensity(const void * a, const void * b) nogil:
  *     if (<PeakStruct*>a).intensity < (<PeakStruct*>b).intensity:
  *         return -1             # <<<<<<<<<<<<<<
@@ -11177,7 +16275,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_inte
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":619
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":864
  *     if (<PeakStruct*>a).intensity < (<PeakStruct*>b).intensity:
  *         return -1
  *     elif (<PeakStruct*>a).intensity == (<PeakStruct*>b).intensity:             # <<<<<<<<<<<<<<
@@ -11187,7 +16285,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_inte
   __pyx_t_1 = ((((struct PeakStruct *)__pyx_v_a)->intensity == ((struct PeakStruct *)__pyx_v_b)->intensity) != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":620
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":865
  *         return -1
  *     elif (<PeakStruct*>a).intensity == (<PeakStruct*>b).intensity:
  *         return 0             # <<<<<<<<<<<<<<
@@ -11198,7 +16296,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_inte
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":621
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":866
  *     elif (<PeakStruct*>a).intensity == (<PeakStruct*>b).intensity:
  *         return 0
  *     elif (<PeakStruct*>a).intensity > (<PeakStruct*>b).intensity:             # <<<<<<<<<<<<<<
@@ -11208,7 +16306,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_inte
   __pyx_t_1 = ((((struct PeakStruct *)__pyx_v_a)->intensity > ((struct PeakStruct *)__pyx_v_b)->intensity) != 0);
   if (__pyx_t_1) {
 
-    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":622
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":867
  *         return 0
  *     elif (<PeakStruct*>a).intensity > (<PeakStruct*>b).intensity:
  *         return 1             # <<<<<<<<<<<<<<
@@ -11219,8 +16317,8 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_inte
     goto __pyx_L0;
   }
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":616
- * 
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":861
+ *         return 1
  * 
  * cdef int compare_by_intensity(const void * a, const void * b) nogil:             # <<<<<<<<<<<<<<
  *     if (<PeakStruct*>a).intensity < (<PeakStruct*>b).intensity:
@@ -11233,7 +16331,1121 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_inte
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":628
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":873
+ * 
+ * 
+ * cdef IonTypeIndex* new_ion_type_index(char** names, size_t size) nogil:             # <<<<<<<<<<<<<<
+ *     cdef IonTypeIndex* result = <IonTypeIndex*>malloc(sizeof(IonTypeIndex))
+ *     cdef size_t i
+ */
+
+static struct IonTypeIndex *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_index(char **__pyx_v_names, size_t __pyx_v_size) {
+  struct IonTypeIndex *__pyx_v_result;
+  size_t __pyx_v_i;
+  struct IonTypeIndex *__pyx_r;
+  size_t __pyx_t_1;
+  size_t __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":874
+ * 
+ * cdef IonTypeIndex* new_ion_type_index(char** names, size_t size) nogil:
+ *     cdef IonTypeIndex* result = <IonTypeIndex*>malloc(sizeof(IonTypeIndex))             # <<<<<<<<<<<<<<
+ *     cdef size_t i
+ * 
+ */
+  __pyx_v_result = ((struct IonTypeIndex *)malloc((sizeof(struct IonTypeIndex))));
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":877
+ *     cdef size_t i
+ * 
+ *     result.names = <char**>malloc(sizeof(char*) * 0)             # <<<<<<<<<<<<<<
+ *     result.indices = <size_t*>malloc(sizeof(size_t) * 0)
+ *     result.size = 0
+ */
+  __pyx_v_result->names = ((char **)malloc(((sizeof(char *)) * 0)));
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":878
+ * 
+ *     result.names = <char**>malloc(sizeof(char*) * 0)
+ *     result.indices = <size_t*>malloc(sizeof(size_t) * 0)             # <<<<<<<<<<<<<<
+ *     result.size = 0
+ * 
+ */
+  __pyx_v_result->indices = ((size_t *)malloc(((sizeof(size_t)) * 0)));
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":879
+ *     result.names = <char**>malloc(sizeof(char*) * 0)
+ *     result.indices = <size_t*>malloc(sizeof(size_t) * 0)
+ *     result.size = 0             # <<<<<<<<<<<<<<
+ * 
+ *     for i in range(size):
+ */
+  __pyx_v_result->size = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":881
+ *     result.size = 0
+ * 
+ *     for i in range(size):             # <<<<<<<<<<<<<<
+ *         ion_type_add(result, names[i])
+ * 
+ */
+  __pyx_t_1 = __pyx_v_size;
+  for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
+    __pyx_v_i = __pyx_t_2;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":882
+ * 
+ *     for i in range(size):
+ *         ion_type_add(result, names[i])             # <<<<<<<<<<<<<<
+ * 
+ *     return result
+ */
+    __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_add(__pyx_v_result, (__pyx_v_names[__pyx_v_i]));
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":884
+ *         ion_type_add(result, names[i])
+ * 
+ *     return result             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __pyx_v_result;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":873
+ * 
+ * 
+ * cdef IonTypeIndex* new_ion_type_index(char** names, size_t size) nogil:             # <<<<<<<<<<<<<<
+ *     cdef IonTypeIndex* result = <IonTypeIndex*>malloc(sizeof(IonTypeIndex))
+ *     cdef size_t i
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":887
+ * 
+ * 
+ * cdef IonTypeDoubleMap* _new_ion_type_double_map(IonTypeIndex* index) nogil:             # <<<<<<<<<<<<<<
+ *     cdef IonTypeDoubleMap* result
+ *     result = <IonTypeDoubleMap*>malloc(sizeof(IonTypeDoubleMap))
+ */
+
+static struct IonTypeDoubleMap *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__new_ion_type_double_map(struct IonTypeIndex *__pyx_v_index) {
+  struct IonTypeDoubleMap *__pyx_v_result;
+  struct IonTypeDoubleMap *__pyx_r;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":889
+ * cdef IonTypeDoubleMap* _new_ion_type_double_map(IonTypeIndex* index) nogil:
+ *     cdef IonTypeDoubleMap* result
+ *     result = <IonTypeDoubleMap*>malloc(sizeof(IonTypeDoubleMap))             # <<<<<<<<<<<<<<
+ *     result.index_ref = index
+ *     result.values = <double*>calloc(index.size, sizeof(double))
+ */
+  __pyx_v_result = ((struct IonTypeDoubleMap *)malloc((sizeof(struct IonTypeDoubleMap))));
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":890
+ *     cdef IonTypeDoubleMap* result
+ *     result = <IonTypeDoubleMap*>malloc(sizeof(IonTypeDoubleMap))
+ *     result.index_ref = index             # <<<<<<<<<<<<<<
+ *     result.values = <double*>calloc(index.size, sizeof(double))
+ *     return result
+ */
+  __pyx_v_result->index_ref = __pyx_v_index;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":891
+ *     result = <IonTypeDoubleMap*>malloc(sizeof(IonTypeDoubleMap))
+ *     result.index_ref = index
+ *     result.values = <double*>calloc(index.size, sizeof(double))             # <<<<<<<<<<<<<<
+ *     return result
+ * 
+ */
+  __pyx_v_result->values = ((double *)calloc(__pyx_v_index->size, (sizeof(double))));
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":892
+ *     result.index_ref = index
+ *     result.values = <double*>calloc(index.size, sizeof(double))
+ *     return result             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __pyx_v_result;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":887
+ * 
+ * 
+ * cdef IonTypeDoubleMap* _new_ion_type_double_map(IonTypeIndex* index) nogil:             # <<<<<<<<<<<<<<
+ *     cdef IonTypeDoubleMap* result
+ *     result = <IonTypeDoubleMap*>malloc(sizeof(IonTypeDoubleMap))
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":895
+ * 
+ * 
+ * cdef IonTypeDoubleMap* new_ion_type_double_map() nogil:             # <<<<<<<<<<<<<<
+ *     return _new_ion_type_double_map(ION_TYPE_INDEX)
+ * 
+ */
+
+static struct IonTypeDoubleMap *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map(void) {
+  struct IonTypeDoubleMap *__pyx_r;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":896
+ * 
+ * cdef IonTypeDoubleMap* new_ion_type_double_map() nogil:
+ *     return _new_ion_type_double_map(ION_TYPE_INDEX)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__new_ion_type_double_map(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX);
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":895
+ * 
+ * 
+ * cdef IonTypeDoubleMap* new_ion_type_double_map() nogil:             # <<<<<<<<<<<<<<
+ *     return _new_ion_type_double_map(ION_TYPE_INDEX)
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":899
+ * 
+ * 
+ * cdef IonTypeDoubleMap* new_ion_type_double_map_from_dict(dict mapper):             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i, j
+ */
+
+static struct IonTypeDoubleMap *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map_from_dict(PyObject *__pyx_v_mapper) {
+  size_t __pyx_v_i;
+  size_t __pyx_v_j;
+  char *__pyx_v_name;
+  struct IonTypeDoubleMap *__pyx_v_result;
+  PyObject *__pyx_v_pname = 0;
+  double __pyx_v_pvalue;
+  struct IonTypeDoubleMap *__pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  Py_ssize_t __pyx_t_3;
+  PyObject *(*__pyx_t_4)(PyObject *);
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *(*__pyx_t_8)(PyObject *);
+  double __pyx_t_9;
+  char *__pyx_t_10;
+  int __pyx_t_11;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("new_ion_type_double_map_from_dict", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":907
+ *         double pvalue
+ * 
+ *     result = new_ion_type_double_map()             # <<<<<<<<<<<<<<
+ *     j = 0
+ *     for  pname, pvalue in mapper.items():
+ */
+  __pyx_v_result = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map();
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":908
+ * 
+ *     result = new_ion_type_double_map()
+ *     j = 0             # <<<<<<<<<<<<<<
+ *     for  pname, pvalue in mapper.items():
+ *         name = PyString_AsString(pname)
+ */
+  __pyx_v_j = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":909
+ *     result = new_ion_type_double_map()
+ *     j = 0
+ *     for  pname, pvalue in mapper.items():             # <<<<<<<<<<<<<<
+ *         name = PyString_AsString(pname)
+ *         if not ion_type_exists(ION_TYPE_INDEX, name):
+ */
+  if (unlikely(__pyx_v_mapper == Py_None)) {
+    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "items");
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  }
+  __pyx_t_1 = __Pyx_PyDict_Items(__pyx_v_mapper); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
+    __pyx_t_2 = __pyx_t_1; __Pyx_INCREF(__pyx_t_2); __pyx_t_3 = 0;
+    __pyx_t_4 = NULL;
+  } else {
+    __pyx_t_3 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_4 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  for (;;) {
+    if (likely(!__pyx_t_4)) {
+      if (likely(PyList_CheckExact(__pyx_t_2))) {
+        if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_2)) break;
+        #if CYTHON_COMPILING_IN_CPYTHON
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_1); __pyx_t_3++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        #else
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        #endif
+      } else {
+        if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
+        #if CYTHON_COMPILING_IN_CPYTHON
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_1); __pyx_t_3++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        #else
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        #endif
+      }
+    } else {
+      __pyx_t_1 = __pyx_t_4(__pyx_t_2);
+      if (unlikely(!__pyx_t_1)) {
+        PyObject* exc_type = PyErr_Occurred();
+        if (exc_type) {
+          if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        }
+        break;
+      }
+      __Pyx_GOTREF(__pyx_t_1);
+    }
+    if ((likely(PyTuple_CheckExact(__pyx_t_1))) || (PyList_CheckExact(__pyx_t_1))) {
+      PyObject* sequence = __pyx_t_1;
+      #if CYTHON_COMPILING_IN_CPYTHON
+      Py_ssize_t size = Py_SIZE(sequence);
+      #else
+      Py_ssize_t size = PySequence_Size(sequence);
+      #endif
+      if (unlikely(size != 2)) {
+        if (size > 2) __Pyx_RaiseTooManyValuesError(2);
+        else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
+        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      }
+      #if CYTHON_COMPILING_IN_CPYTHON
+      if (likely(PyTuple_CheckExact(sequence))) {
+        __pyx_t_5 = PyTuple_GET_ITEM(sequence, 0); 
+        __pyx_t_6 = PyTuple_GET_ITEM(sequence, 1); 
+      } else {
+        __pyx_t_5 = PyList_GET_ITEM(sequence, 0); 
+        __pyx_t_6 = PyList_GET_ITEM(sequence, 1); 
+      }
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(__pyx_t_6);
+      #else
+      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_6);
+      #endif
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    } else {
+      Py_ssize_t index = -1;
+      __pyx_t_7 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_7);
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_8 = Py_TYPE(__pyx_t_7)->tp_iternext;
+      index = 0; __pyx_t_5 = __pyx_t_8(__pyx_t_7); if (unlikely(!__pyx_t_5)) goto __pyx_L5_unpacking_failed;
+      __Pyx_GOTREF(__pyx_t_5);
+      index = 1; __pyx_t_6 = __pyx_t_8(__pyx_t_7); if (unlikely(!__pyx_t_6)) goto __pyx_L5_unpacking_failed;
+      __Pyx_GOTREF(__pyx_t_6);
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_8 = NULL;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      goto __pyx_L6_unpacking_done;
+      __pyx_L5_unpacking_failed:;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      __pyx_t_8 = NULL;
+      if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_L6_unpacking_done:;
+    }
+    if (!(likely(PyString_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_5)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 909; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_XDECREF_SET(__pyx_v_pname, ((PyObject*)__pyx_t_5));
+    __pyx_t_5 = 0;
+    __pyx_v_pvalue = __pyx_t_9;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":910
+ *     j = 0
+ *     for  pname, pvalue in mapper.items():
+ *         name = PyString_AsString(pname)             # <<<<<<<<<<<<<<
+ *         if not ion_type_exists(ION_TYPE_INDEX, name):
+ *             ion_type_add(ION_TYPE_INDEX, name)
+ */
+    __pyx_t_10 = PyString_AsString(__pyx_v_pname); if (unlikely(__pyx_t_10 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 910; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_v_name = __pyx_t_10;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":911
+ *     for  pname, pvalue in mapper.items():
+ *         name = PyString_AsString(pname)
+ *         if not ion_type_exists(ION_TYPE_INDEX, name):             # <<<<<<<<<<<<<<
+ *             ion_type_add(ION_TYPE_INDEX, name)
+ *         i = ion_type_index(ION_TYPE_INDEX, name)
+ */
+    __pyx_t_11 = ((!(__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_exists(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX, __pyx_v_name) != 0)) != 0);
+    if (__pyx_t_11) {
+
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":912
+ *         name = PyString_AsString(pname)
+ *         if not ion_type_exists(ION_TYPE_INDEX, name):
+ *             ion_type_add(ION_TYPE_INDEX, name)             # <<<<<<<<<<<<<<
+ *         i = ion_type_index(ION_TYPE_INDEX, name)
+ *         ion_type_double_set(result, i, pvalue)
+ */
+      __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_add(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX, __pyx_v_name);
+      goto __pyx_L7;
+    }
+    __pyx_L7:;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":913
+ *         if not ion_type_exists(ION_TYPE_INDEX, name):
+ *             ion_type_add(ION_TYPE_INDEX, name)
+ *         i = ion_type_index(ION_TYPE_INDEX, name)             # <<<<<<<<<<<<<<
+ *         ion_type_double_set(result, i, pvalue)
+ *         j += 1
+ */
+    __pyx_v_i = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_index(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX, __pyx_v_name);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":914
+ *             ion_type_add(ION_TYPE_INDEX, name)
+ *         i = ion_type_index(ION_TYPE_INDEX, name)
+ *         ion_type_double_set(result, i, pvalue)             # <<<<<<<<<<<<<<
+ *         j += 1
+ * 
+ */
+    __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_set(__pyx_v_result, __pyx_v_i, __pyx_v_pvalue);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":915
+ *         i = ion_type_index(ION_TYPE_INDEX, name)
+ *         ion_type_double_set(result, i, pvalue)
+ *         j += 1             # <<<<<<<<<<<<<<
+ * 
+ *     return result
+ */
+    __pyx_v_j = (__pyx_v_j + 1);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":909
+ *     result = new_ion_type_double_map()
+ *     j = 0
+ *     for  pname, pvalue in mapper.items():             # <<<<<<<<<<<<<<
+ *         name = PyString_AsString(pname)
+ *         if not ion_type_exists(ION_TYPE_INDEX, name):
+ */
+  }
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":917
+ *         j += 1
+ * 
+ *     return result             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __pyx_v_result;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":899
+ * 
+ * 
+ * cdef IonTypeDoubleMap* new_ion_type_double_map_from_dict(dict mapper):             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i, j
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_WriteUnraisable("glycresoft_sqlalchemy.utils.ccommon_math.new_ion_type_double_map_from_dict", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_pname);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":920
+ * 
+ * 
+ * cdef dict dict_from_ion_type_double_map(IonTypeDoubleMap* mapper):             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i, j
+ */
+
+static PyObject *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_dict_from_ion_type_double_map(struct IonTypeDoubleMap *__pyx_v_mapper) {
+  size_t __pyx_v_i;
+  PyObject *__pyx_v_result = 0;
+  PyObject *__pyx_v_pname = 0;
+  double __pyx_v_pvalue;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  size_t __pyx_t_2;
+  size_t __pyx_t_3;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("dict_from_ion_type_double_map", 0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":928
+ *         double pvalue
+ * 
+ *     result = dict()             # <<<<<<<<<<<<<<
+ *     for i in range(mapper.index_ref.size):
+ *         pname = PyString_FromString(ion_type_name(mapper.index_ref, i))
+ */
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 928; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_result = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":929
+ * 
+ *     result = dict()
+ *     for i in range(mapper.index_ref.size):             # <<<<<<<<<<<<<<
+ *         pname = PyString_FromString(ion_type_name(mapper.index_ref, i))
+ *         pvalue = ion_type_double_get(mapper, i)
+ */
+  __pyx_t_2 = __pyx_v_mapper->index_ref->size;
+  for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
+    __pyx_v_i = __pyx_t_3;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":930
+ *     result = dict()
+ *     for i in range(mapper.index_ref.size):
+ *         pname = PyString_FromString(ion_type_name(mapper.index_ref, i))             # <<<<<<<<<<<<<<
+ *         pvalue = ion_type_double_get(mapper, i)
+ *         result[pname] = pvalue
+ */
+    __pyx_t_1 = PyString_FromString(__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_name(__pyx_v_mapper->index_ref, __pyx_v_i)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 930; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    if (!(likely(PyString_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 930; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_XDECREF_SET(__pyx_v_pname, ((PyObject*)__pyx_t_1));
+    __pyx_t_1 = 0;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":931
+ *     for i in range(mapper.index_ref.size):
+ *         pname = PyString_FromString(ion_type_name(mapper.index_ref, i))
+ *         pvalue = ion_type_double_get(mapper, i)             # <<<<<<<<<<<<<<
+ *         result[pname] = pvalue
+ * 
+ */
+    __pyx_v_pvalue = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_get(__pyx_v_mapper, __pyx_v_i);
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":932
+ *         pname = PyString_FromString(ion_type_name(mapper.index_ref, i))
+ *         pvalue = ion_type_double_get(mapper, i)
+ *         result[pname] = pvalue             # <<<<<<<<<<<<<<
+ * 
+ *     return result
+ */
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_pvalue); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 932; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    if (unlikely(PyDict_SetItem(__pyx_v_result, __pyx_v_pname, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 932; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":934
+ *         result[pname] = pvalue
+ * 
+ *     return result             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_result);
+  __pyx_r = __pyx_v_result;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":920
+ * 
+ * 
+ * cdef dict dict_from_ion_type_double_map(IonTypeDoubleMap* mapper):             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i, j
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.dict_from_ion_type_double_map", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_result);
+  __Pyx_XDECREF(__pyx_v_pname);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":937
+ * 
+ * 
+ * cdef size_t ion_type_index(IonTypeIndex* mapper, char* name) nogil:             # <<<<<<<<<<<<<<
+ *     cdef size_t ix
+ *     for ix in range(mapper.size):
+ */
+
+static size_t __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_index(struct IonTypeIndex *__pyx_v_mapper, char *__pyx_v_name) {
+  size_t __pyx_v_ix;
+  size_t __pyx_r;
+  size_t __pyx_t_1;
+  size_t __pyx_t_2;
+  int __pyx_t_3;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":939
+ * cdef size_t ion_type_index(IonTypeIndex* mapper, char* name) nogil:
+ *     cdef size_t ix
+ *     for ix in range(mapper.size):             # <<<<<<<<<<<<<<
+ *         if strcmp(mapper.names[ix], name) == 0:
+ *             return mapper.indices[ix]
+ */
+  __pyx_t_1 = __pyx_v_mapper->size;
+  for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
+    __pyx_v_ix = __pyx_t_2;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":940
+ *     cdef size_t ix
+ *     for ix in range(mapper.size):
+ *         if strcmp(mapper.names[ix], name) == 0:             # <<<<<<<<<<<<<<
+ *             return mapper.indices[ix]
+ *     return OUT_OF_RANGE_INT
+ */
+    __pyx_t_3 = ((strcmp((__pyx_v_mapper->names[__pyx_v_ix]), __pyx_v_name) == 0) != 0);
+    if (__pyx_t_3) {
+
+      /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":941
+ *     for ix in range(mapper.size):
+ *         if strcmp(mapper.names[ix], name) == 0:
+ *             return mapper.indices[ix]             # <<<<<<<<<<<<<<
+ *     return OUT_OF_RANGE_INT
+ * 
+ */
+      __pyx_r = (__pyx_v_mapper->indices[__pyx_v_ix]);
+      goto __pyx_L0;
+    }
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":942
+ *         if strcmp(mapper.names[ix], name) == 0:
+ *             return mapper.indices[ix]
+ *     return OUT_OF_RANGE_INT             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":937
+ * 
+ * 
+ * cdef size_t ion_type_index(IonTypeIndex* mapper, char* name) nogil:             # <<<<<<<<<<<<<<
+ *     cdef size_t ix
+ *     for ix in range(mapper.size):
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":945
+ * 
+ * 
+ * cdef char* ion_type_name(IonTypeIndex* mapper, size_t index) nogil:             # <<<<<<<<<<<<<<
+ *     if index == OUT_OF_RANGE_INT:
+ *         return OTHER
+ */
+
+static char *__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_name(struct IonTypeIndex *__pyx_v_mapper, size_t __pyx_v_index) {
+  char *__pyx_r;
+  int __pyx_t_1;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":946
+ * 
+ * cdef char* ion_type_name(IonTypeIndex* mapper, size_t index) nogil:
+ *     if index == OUT_OF_RANGE_INT:             # <<<<<<<<<<<<<<
+ *         return OTHER
+ *     return mapper.names[index]
+ */
+  __pyx_t_1 = ((__pyx_v_index == __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":947
+ * cdef char* ion_type_name(IonTypeIndex* mapper, size_t index) nogil:
+ *     if index == OUT_OF_RANGE_INT:
+ *         return OTHER             # <<<<<<<<<<<<<<
+ *     return mapper.names[index]
+ * 
+ */
+    __pyx_r = __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OTHER;
+    goto __pyx_L0;
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":948
+ *     if index == OUT_OF_RANGE_INT:
+ *         return OTHER
+ *     return mapper.names[index]             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = (__pyx_v_mapper->names[__pyx_v_index]);
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":945
+ * 
+ * 
+ * cdef char* ion_type_name(IonTypeIndex* mapper, size_t index) nogil:             # <<<<<<<<<<<<<<
+ *     if index == OUT_OF_RANGE_INT:
+ *         return OTHER
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":951
+ * 
+ * 
+ * cdef void ion_type_add(IonTypeIndex* mapper, char* name) nogil:             # <<<<<<<<<<<<<<
+ *     mapper.names = <char**>realloc(mapper.names, sizeof(char*) * (mapper.size + 1))
+ *     mapper.indices = <size_t*>realloc(mapper.indices, sizeof(size_t) * (mapper.size + 1))
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_add(struct IonTypeIndex *__pyx_v_mapper, char *__pyx_v_name) {
+  size_t __pyx_t_1;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":952
+ * 
+ * cdef void ion_type_add(IonTypeIndex* mapper, char* name) nogil:
+ *     mapper.names = <char**>realloc(mapper.names, sizeof(char*) * (mapper.size + 1))             # <<<<<<<<<<<<<<
+ *     mapper.indices = <size_t*>realloc(mapper.indices, sizeof(size_t) * (mapper.size + 1))
+ *     mapper.names[mapper.size] = name
+ */
+  __pyx_v_mapper->names = ((char **)realloc(__pyx_v_mapper->names, ((sizeof(char *)) * (__pyx_v_mapper->size + 1))));
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":953
+ * cdef void ion_type_add(IonTypeIndex* mapper, char* name) nogil:
+ *     mapper.names = <char**>realloc(mapper.names, sizeof(char*) * (mapper.size + 1))
+ *     mapper.indices = <size_t*>realloc(mapper.indices, sizeof(size_t) * (mapper.size + 1))             # <<<<<<<<<<<<<<
+ *     mapper.names[mapper.size] = name
+ *     mapper.indices[mapper.size] = mapper.size
+ */
+  __pyx_v_mapper->indices = ((size_t *)realloc(__pyx_v_mapper->indices, ((sizeof(size_t)) * (__pyx_v_mapper->size + 1))));
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":954
+ *     mapper.names = <char**>realloc(mapper.names, sizeof(char*) * (mapper.size + 1))
+ *     mapper.indices = <size_t*>realloc(mapper.indices, sizeof(size_t) * (mapper.size + 1))
+ *     mapper.names[mapper.size] = name             # <<<<<<<<<<<<<<
+ *     mapper.indices[mapper.size] = mapper.size
+ *     mapper.size += 1
+ */
+  (__pyx_v_mapper->names[__pyx_v_mapper->size]) = __pyx_v_name;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":955
+ *     mapper.indices = <size_t*>realloc(mapper.indices, sizeof(size_t) * (mapper.size + 1))
+ *     mapper.names[mapper.size] = name
+ *     mapper.indices[mapper.size] = mapper.size             # <<<<<<<<<<<<<<
+ *     mapper.size += 1
+ * 
+ */
+  __pyx_t_1 = __pyx_v_mapper->size;
+  (__pyx_v_mapper->indices[__pyx_v_mapper->size]) = __pyx_t_1;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":956
+ *     mapper.names[mapper.size] = name
+ *     mapper.indices[mapper.size] = mapper.size
+ *     mapper.size += 1             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_v_mapper->size = (__pyx_v_mapper->size + 1);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":951
+ * 
+ * 
+ * cdef void ion_type_add(IonTypeIndex* mapper, char* name) nogil:             # <<<<<<<<<<<<<<
+ *     mapper.names = <char**>realloc(mapper.names, sizeof(char*) * (mapper.size + 1))
+ *     mapper.indices = <size_t*>realloc(mapper.indices, sizeof(size_t) * (mapper.size + 1))
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":959
+ * 
+ * 
+ * cdef bint ion_type_exists(IonTypeIndex* mapper, char* name) nogil:             # <<<<<<<<<<<<<<
+ *     return OUT_OF_RANGE_INT == ion_type_index(mapper, name)
+ * 
+ */
+
+static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_exists(struct IonTypeIndex *__pyx_v_mapper, char *__pyx_v_name) {
+  int __pyx_r;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":960
+ * 
+ * cdef bint ion_type_exists(IonTypeIndex* mapper, char* name) nogil:
+ *     return OUT_OF_RANGE_INT == ion_type_index(mapper, name)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = (__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT == __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_index(__pyx_v_mapper, __pyx_v_name));
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":959
+ * 
+ * 
+ * cdef bint ion_type_exists(IonTypeIndex* mapper, char* name) nogil:             # <<<<<<<<<<<<<<
+ *     return OUT_OF_RANGE_INT == ion_type_index(mapper, name)
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":963
+ * 
+ * 
+ * cdef double ion_type_double_get(IonTypeDoubleMap* mapper, size_t index) nogil:             # <<<<<<<<<<<<<<
+ *     return mapper.values[index]
+ * 
+ */
+
+static double __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_get(struct IonTypeDoubleMap *__pyx_v_mapper, size_t __pyx_v_index) {
+  double __pyx_r;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":964
+ * 
+ * cdef double ion_type_double_get(IonTypeDoubleMap* mapper, size_t index) nogil:
+ *     return mapper.values[index]             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = (__pyx_v_mapper->values[__pyx_v_index]);
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":963
+ * 
+ * 
+ * cdef double ion_type_double_get(IonTypeDoubleMap* mapper, size_t index) nogil:             # <<<<<<<<<<<<<<
+ *     return mapper.values[index]
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":967
+ * 
+ * 
+ * cdef void ion_type_double_set(IonTypeDoubleMap* mapper, size_t index, double value) nogil:             # <<<<<<<<<<<<<<
+ *     mapper.values[index] = value
+ * 
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_set(struct IonTypeDoubleMap *__pyx_v_mapper, size_t __pyx_v_index, double __pyx_v_value) {
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":968
+ * 
+ * cdef void ion_type_double_set(IonTypeDoubleMap* mapper, size_t index, double value) nogil:
+ *     mapper.values[index] = value             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  (__pyx_v_mapper->values[__pyx_v_index]) = __pyx_v_value;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":967
+ * 
+ * 
+ * cdef void ion_type_double_set(IonTypeDoubleMap* mapper, size_t index, double value) nogil:             # <<<<<<<<<<<<<<
+ *     mapper.values[index] = value
+ * 
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":971
+ * 
+ * 
+ * cdef void ion_type_double_inc(IonTypeDoubleMap* mapper, size_t index) nogil:             # <<<<<<<<<<<<<<
+ *     mapper.values[index] += 1
+ * 
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_inc(struct IonTypeDoubleMap *__pyx_v_mapper, size_t __pyx_v_index) {
+  size_t __pyx_t_1;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":972
+ * 
+ * cdef void ion_type_double_inc(IonTypeDoubleMap* mapper, size_t index) nogil:
+ *     mapper.values[index] += 1             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_1 = __pyx_v_index;
+  (__pyx_v_mapper->values[__pyx_t_1]) = ((__pyx_v_mapper->values[__pyx_t_1]) + 1.0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":971
+ * 
+ * 
+ * cdef void ion_type_double_inc(IonTypeDoubleMap* mapper, size_t index) nogil:             # <<<<<<<<<<<<<<
+ *     mapper.values[index] += 1
+ * 
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":975
+ * 
+ * 
+ * cdef void ion_type_double_inc_name(IonTypeDoubleMap* mapper, char* name) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t ix
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_inc_name(struct IonTypeDoubleMap *__pyx_v_mapper, char *__pyx_v_name) {
+  size_t __pyx_v_ix;
+  int __pyx_t_1;
+  size_t __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":978
+ *     cdef:
+ *         size_t ix
+ *     ix = ion_type_index(mapper.index_ref, name)             # <<<<<<<<<<<<<<
+ *     if ix == OUT_OF_RANGE_INT:
+ *         ix = ion_type_index(mapper.index_ref, OTHER)
+ */
+  __pyx_v_ix = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_index(__pyx_v_mapper->index_ref, __pyx_v_name);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":979
+ *         size_t ix
+ *     ix = ion_type_index(mapper.index_ref, name)
+ *     if ix == OUT_OF_RANGE_INT:             # <<<<<<<<<<<<<<
+ *         ix = ion_type_index(mapper.index_ref, OTHER)
+ *     mapper.values[ix] += 1
+ */
+  __pyx_t_1 = ((__pyx_v_ix == __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT) != 0);
+  if (__pyx_t_1) {
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":980
+ *     ix = ion_type_index(mapper.index_ref, name)
+ *     if ix == OUT_OF_RANGE_INT:
+ *         ix = ion_type_index(mapper.index_ref, OTHER)             # <<<<<<<<<<<<<<
+ *     mapper.values[ix] += 1
+ * 
+ */
+    __pyx_v_ix = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_index(__pyx_v_mapper->index_ref, __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OTHER);
+    goto __pyx_L3;
+  }
+  __pyx_L3:;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":981
+ *     if ix == OUT_OF_RANGE_INT:
+ *         ix = ion_type_index(mapper.index_ref, OTHER)
+ *     mapper.values[ix] += 1             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_2 = __pyx_v_ix;
+  (__pyx_v_mapper->values[__pyx_t_2]) = ((__pyx_v_mapper->values[__pyx_t_2]) + 1.0);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":975
+ * 
+ * 
+ * cdef void ion_type_double_inc_name(IonTypeDoubleMap* mapper, char* name) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t ix
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":984
+ * 
+ * 
+ * cdef void print_ion_type_double(IonTypeDoubleMap* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_print_ion_type_double(struct IonTypeDoubleMap *__pyx_v_mapper) {
+  size_t __pyx_v_i;
+  size_t __pyx_t_1;
+  size_t __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":987
+ *     cdef:
+ *         size_t i
+ *     for i in range(mapper.index_ref.size):             # <<<<<<<<<<<<<<
+ *         printf("%s -> %f\n", ion_type_name(mapper.index_ref, i), ion_type_double_get(mapper, i))
+ * 
+ */
+  __pyx_t_1 = __pyx_v_mapper->index_ref->size;
+  for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
+    __pyx_v_i = __pyx_t_2;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":988
+ *         size_t i
+ *     for i in range(mapper.index_ref.size):
+ *         printf("%s -> %f\n", ion_type_name(mapper.index_ref, i), ion_type_double_get(mapper, i))             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+    printf(__pyx_k_s_f, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_name(__pyx_v_mapper->index_ref, __pyx_v_i), __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_get(__pyx_v_mapper, __pyx_v_i));
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":984
+ * 
+ * 
+ * cdef void print_ion_type_double(IonTypeDoubleMap* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":991
+ * 
+ * 
+ * cdef void print_ion_type_index(IonTypeIndex* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_print_ion_type_index(struct IonTypeIndex *__pyx_v_mapper) {
+  size_t __pyx_v_i;
+  size_t __pyx_t_1;
+  size_t __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":994
+ *     cdef:
+ *         size_t i
+ *     for i in range(mapper.size):             # <<<<<<<<<<<<<<
+ *         printf("%s -> %d\n", ion_type_name(mapper, i), i)
+ * 
+ */
+  __pyx_t_1 = __pyx_v_mapper->size;
+  for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
+    __pyx_v_i = __pyx_t_2;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":995
+ *         size_t i
+ *     for i in range(mapper.size):
+ *         printf("%s -> %d\n", ion_type_name(mapper, i), i)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+    printf(__pyx_k_s_d_2, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_name(__pyx_v_mapper, __pyx_v_i), __pyx_v_i);
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":991
+ * 
+ * 
+ * cdef void print_ion_type_index(IonTypeIndex* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1002
+ * 
+ * 
+ * cdef double sum_ion_double_map(IonTypeDoubleMap* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         double total
+ */
+
+static double __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sum_ion_double_map(struct IonTypeDoubleMap *__pyx_v_mapper) {
+  double __pyx_v_total;
+  size_t __pyx_v_i;
+  double __pyx_r;
+  size_t __pyx_t_1;
+  size_t __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1006
+ *         double total
+ *         size_t i
+ *     total = 0.             # <<<<<<<<<<<<<<
+ *     for i in range(mapper.index_ref.size):
+ *         total += ion_type_double_get(mapper, i)
+ */
+  __pyx_v_total = 0.;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1007
+ *         size_t i
+ *     total = 0.
+ *     for i in range(mapper.index_ref.size):             # <<<<<<<<<<<<<<
+ *         total += ion_type_double_get(mapper, i)
+ *     return total
+ */
+  __pyx_t_1 = __pyx_v_mapper->index_ref->size;
+  for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
+    __pyx_v_i = __pyx_t_2;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1008
+ *     total = 0.
+ *     for i in range(mapper.index_ref.size):
+ *         total += ion_type_double_get(mapper, i)             # <<<<<<<<<<<<<<
+ *     return total
+ * 
+ */
+    __pyx_v_total = (__pyx_v_total + __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_get(__pyx_v_mapper, __pyx_v_i));
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1009
+ *     for i in range(mapper.index_ref.size):
+ *         total += ion_type_double_get(mapper, i)
+ *     return total             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __pyx_v_total;
+  goto __pyx_L0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1002
+ * 
+ * 
+ * cdef double sum_ion_double_map(IonTypeDoubleMap* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         double total
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1015
  * 
  * 
  * cdef void free_fragment_match_struct_array(FragmentMatchStructArray* matches) nogil:             # <<<<<<<<<<<<<<
@@ -11243,7 +17455,7 @@ static int __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_compare_by_inte
 
 static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_match_struct_array(struct FragmentMatchStructArray *__pyx_v_matches) {
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":629
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1016
  * 
  * cdef void free_fragment_match_struct_array(FragmentMatchStructArray* matches) nogil:
  *     free(matches.matches)             # <<<<<<<<<<<<<<
@@ -11252,7 +17464,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_
  */
   free(__pyx_v_matches->matches);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":630
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1017
  * cdef void free_fragment_match_struct_array(FragmentMatchStructArray* matches) nogil:
  *     free(matches.matches)
  *     free(matches)             # <<<<<<<<<<<<<<
@@ -11261,7 +17473,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_
  */
   free(__pyx_v_matches);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":628
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1015
  * 
  * 
  * cdef void free_fragment_match_struct_array(FragmentMatchStructArray* matches) nogil:             # <<<<<<<<<<<<<<
@@ -11272,7 +17484,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":633
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1020
  * 
  * 
  * cdef void free_peak_struct_array(PeakStructArray* peaks) nogil:             # <<<<<<<<<<<<<<
@@ -11282,7 +17494,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_
 
 static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_peak_struct_array(struct PeakStructArray *__pyx_v_peaks) {
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":634
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1021
  * 
  * cdef void free_peak_struct_array(PeakStructArray* peaks) nogil:
  *     free(peaks.peaks)             # <<<<<<<<<<<<<<
@@ -11291,7 +17503,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_peak_stru
  */
   free(__pyx_v_peaks->peaks);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":635
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1022
  * cdef void free_peak_struct_array(PeakStructArray* peaks) nogil:
  *     free(peaks.peaks)
  *     free(peaks)             # <<<<<<<<<<<<<<
@@ -11300,7 +17512,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_peak_stru
  */
   free(__pyx_v_peaks);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":633
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1020
  * 
  * 
  * cdef void free_peak_struct_array(PeakStructArray* peaks) nogil:             # <<<<<<<<<<<<<<
@@ -11311,7 +17523,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_peak_stru
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":638
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1025
  * 
  * 
  * cdef void free_matched_spectrum_struct(MatchedSpectrumStruct* ms) nogil:             # <<<<<<<<<<<<<<
@@ -11321,7 +17533,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_peak_stru
 
 static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_matched_spectrum_struct(struct MatchedSpectrumStruct *__pyx_v_ms) {
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":639
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1026
  * 
  * cdef void free_matched_spectrum_struct(MatchedSpectrumStruct* ms) nogil:
  *     free_peak_struct_array(ms.peak_list)             # <<<<<<<<<<<<<<
@@ -11330,7 +17542,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_matched_s
  */
   __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_peak_struct_array(__pyx_v_ms->peak_list);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":640
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1027
  * cdef void free_matched_spectrum_struct(MatchedSpectrumStruct* ms) nogil:
  *     free_peak_struct_array(ms.peak_list)
  *     free_fragment_match_struct_array(ms.peak_match_list)             # <<<<<<<<<<<<<<
@@ -11339,7 +17551,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_matched_s
  */
   __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_match_struct_array(__pyx_v_ms->peak_match_list);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":638
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1025
  * 
  * 
  * cdef void free_matched_spectrum_struct(MatchedSpectrumStruct* ms) nogil:             # <<<<<<<<<<<<<<
@@ -11350,7 +17562,205 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_matched_s
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":646
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1030
+ * 
+ * 
+ * cdef void free_ion_type_index(IonTypeIndex* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     free(mapper.indices)
+ *     free(mapper.names)
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ion_type_index(struct IonTypeIndex *__pyx_v_mapper) {
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1031
+ * 
+ * cdef void free_ion_type_index(IonTypeIndex* mapper) nogil:
+ *     free(mapper.indices)             # <<<<<<<<<<<<<<
+ *     free(mapper.names)
+ *     free(mapper)
+ */
+  free(__pyx_v_mapper->indices);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1032
+ * cdef void free_ion_type_index(IonTypeIndex* mapper) nogil:
+ *     free(mapper.indices)
+ *     free(mapper.names)             # <<<<<<<<<<<<<<
+ *     free(mapper)
+ * 
+ */
+  free(__pyx_v_mapper->names);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1033
+ *     free(mapper.indices)
+ *     free(mapper.names)
+ *     free(mapper)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  free(__pyx_v_mapper);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1030
+ * 
+ * 
+ * cdef void free_ion_type_index(IonTypeIndex* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     free(mapper.indices)
+ *     free(mapper.names)
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1036
+ * 
+ * 
+ * cdef void free_ion_type_double_map(IonTypeDoubleMap* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     free(mapper.values)
+ *     free(mapper)
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ion_type_double_map(struct IonTypeDoubleMap *__pyx_v_mapper) {
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1037
+ * 
+ * cdef void free_ion_type_double_map(IonTypeDoubleMap* mapper) nogil:
+ *     free(mapper.values)             # <<<<<<<<<<<<<<
+ *     free(mapper)
+ * 
+ */
+  free(__pyx_v_mapper->values);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1038
+ * cdef void free_ion_type_double_map(IonTypeDoubleMap* mapper) nogil:
+ *     free(mapper.values)
+ *     free(mapper)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  free(__pyx_v_mapper);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1036
+ * 
+ * 
+ * cdef void free_ion_type_double_map(IonTypeDoubleMap* mapper) nogil:             # <<<<<<<<<<<<<<
+ *     free(mapper.values)
+ *     free(mapper)
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1041
+ * 
+ * 
+ * cdef void free_ms_feature_struct(MSFeatureStruct* feature) nogil:             # <<<<<<<<<<<<<<
+ *     free(feature.ion_type_matches)
+ *     free(feature.ion_type_totals)
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ms_feature_struct(struct MSFeatureStruct *__pyx_v_feature) {
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1042
+ * 
+ * cdef void free_ms_feature_struct(MSFeatureStruct* feature) nogil:
+ *     free(feature.ion_type_matches)             # <<<<<<<<<<<<<<
+ *     free(feature.ion_type_totals)
+ *     free(feature)
+ */
+  free(__pyx_v_feature->ion_type_matches);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1043
+ * cdef void free_ms_feature_struct(MSFeatureStruct* feature) nogil:
+ *     free(feature.ion_type_matches)
+ *     free(feature.ion_type_totals)             # <<<<<<<<<<<<<<
+ *     free(feature)
+ * 
+ */
+  free(__pyx_v_feature->ion_type_totals);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1044
+ *     free(feature.ion_type_matches)
+ *     free(feature.ion_type_totals)
+ *     free(feature)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  free(__pyx_v_feature);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1041
+ * 
+ * 
+ * cdef void free_ms_feature_struct(MSFeatureStruct* feature) nogil:             # <<<<<<<<<<<<<<
+ *     free(feature.ion_type_matches)
+ *     free(feature.ion_type_totals)
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1047
+ * 
+ * 
+ * cdef void free_ms_feature_struct_array(MSFeatureStructArray* features) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ms_feature_struct_array(struct MSFeatureStructArray *__pyx_v_features) {
+  size_t __pyx_v_i;
+  Py_ssize_t __pyx_t_1;
+  size_t __pyx_t_2;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1050
+ *     cdef:
+ *         size_t i
+ *     for i in range(features.size):             # <<<<<<<<<<<<<<
+ *         free_ms_feature_struct(&features.features[i])
+ *     free(features.features)
+ */
+  __pyx_t_1 = __pyx_v_features->size;
+  for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
+    __pyx_v_i = __pyx_t_2;
+
+    /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1051
+ *         size_t i
+ *     for i in range(features.size):
+ *         free_ms_feature_struct(&features.features[i])             # <<<<<<<<<<<<<<
+ *     free(features.features)
+ *     free(features)
+ */
+    __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ms_feature_struct((&(__pyx_v_features->features[__pyx_v_i])));
+  }
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1052
+ *     for i in range(features.size):
+ *         free_ms_feature_struct(&features.features[i])
+ *     free(features.features)             # <<<<<<<<<<<<<<
+ *     free(features)
+ * 
+ */
+  free(__pyx_v_features->features);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1053
+ *         free_ms_feature_struct(&features.features[i])
+ *     free(features.features)
+ *     free(features)             # <<<<<<<<<<<<<<
+ * 
+ * # Python Wrappers
+ */
+  free(__pyx_v_features);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1047
+ * 
+ * 
+ * cdef void free_ms_feature_struct_array(MSFeatureStructArray* features) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         size_t i
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1058
  * 
  * 
  * def pintensity_rank(list peak_list, float minimum_intensity=100.):             # <<<<<<<<<<<<<<
@@ -11359,10 +17769,10 @@ static void __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_matched_s
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11pintensity_rank(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_10pintensity_rank[] = "\n    Python-accessible wrapper for `intensity_rank`\n\n    See Also\n    --------\n    intensity_rank\n    ";
-static PyMethodDef __pyx_mdef_21glycresoft_sqlalchemy_5utils_12ccommon_math_11pintensity_rank = {"pintensity_rank", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11pintensity_rank, METH_VARARGS|METH_KEYWORDS, __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_10pintensity_rank};
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11pintensity_rank(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_rank(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_rank[] = "\n    Python-accessible wrapper for `intensity_rank`\n\n    See Also\n    --------\n    intensity_rank\n    ";
+static PyMethodDef __pyx_mdef_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_rank = {"pintensity_rank", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_rank, METH_VARARGS|METH_KEYWORDS, __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_rank};
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_rank(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_peak_list = 0;
   float __pyx_v_minimum_intensity;
   int __pyx_lineno = 0;
@@ -11395,7 +17805,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11pinten
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "pintensity_rank") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 646; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "pintensity_rank") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1058; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -11407,21 +17817,21 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11pinten
     }
     __pyx_v_peak_list = ((PyObject*)values[0]);
     if (values[1]) {
-      __pyx_v_minimum_intensity = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_minimum_intensity == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 646; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_minimum_intensity = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_minimum_intensity == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1058; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_minimum_intensity = ((float)100.);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("pintensity_rank", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 646; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("pintensity_rank", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1058; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.pintensity_rank", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_list), (&PyList_Type), 1, "peak_list", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 646; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_10pintensity_rank(__pyx_self, __pyx_v_peak_list, __pyx_v_minimum_intensity);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_list), (&PyList_Type), 1, "peak_list", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1058; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_rank(__pyx_self, __pyx_v_peak_list, __pyx_v_minimum_intensity);
 
   /* function exit code */
   goto __pyx_L0;
@@ -11432,13 +17842,13 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11pinten
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_10pintensity_rank(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_peak_list, float __pyx_v_minimum_intensity) {
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_rank(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_peak_list, float __pyx_v_minimum_intensity) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank __pyx_t_1;
   __Pyx_RefNannySetupContext("pintensity_rank", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":654
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1066
  *     intensity_rank
  *     '''
  *     intensity_rank(peak_list, minimum_intensity)             # <<<<<<<<<<<<<<
@@ -11449,7 +17859,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_10pinten
   __pyx_t_1.minimum_intensity = __pyx_v_minimum_intensity;
   __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank(__pyx_v_peak_list, &__pyx_t_1); 
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":646
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1058
  * 
  * 
  * def pintensity_rank(list peak_list, float minimum_intensity=100.):             # <<<<<<<<<<<<<<
@@ -11464,7 +17874,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_10pinten
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":657
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1069
  * 
  * 
  * def pintensity_ratio_function(DPeak peak1, DPeak peak2):             # <<<<<<<<<<<<<<
@@ -11473,10 +17883,10 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_10pinten
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_ratio_function(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_ratio_function[] = "\n    Python-accessible wrapper for `intensity_ratio_function`\n\n    See Also\n    --------\n    intensity_ratio_function\n    ";
-static PyMethodDef __pyx_mdef_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_ratio_function = {"pintensity_ratio_function", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_ratio_function, METH_VARARGS|METH_KEYWORDS, __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_ratio_function};
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_ratio_function(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15pintensity_ratio_function(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_14pintensity_ratio_function[] = "\n    Python-accessible wrapper for `intensity_ratio_function`\n\n    See Also\n    --------\n    intensity_ratio_function\n    ";
+static PyMethodDef __pyx_mdef_21glycresoft_sqlalchemy_5utils_12ccommon_math_15pintensity_ratio_function = {"pintensity_ratio_function", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15pintensity_ratio_function, METH_VARARGS|METH_KEYWORDS, __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_14pintensity_ratio_function};
+static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15pintensity_ratio_function(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak1 = 0;
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak2 = 0;
   int __pyx_lineno = 0;
@@ -11505,11 +17915,11 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pinten
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_peak2)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("pintensity_ratio_function", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 657; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("pintensity_ratio_function", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1069; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "pintensity_ratio_function") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 657; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "pintensity_ratio_function") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1069; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -11522,15 +17932,15 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pinten
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("pintensity_ratio_function", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 657; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("pintensity_ratio_function", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1069; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.utils.ccommon_math.pintensity_ratio_function", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak1), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak1", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 657; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak2), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak2", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 657; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_ratio_function(__pyx_self, __pyx_v_peak1, __pyx_v_peak2);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak1), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak1", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1069; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak2), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak2", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1069; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_14pintensity_ratio_function(__pyx_self, __pyx_v_peak1, __pyx_v_peak2);
 
   /* function exit code */
   goto __pyx_L0;
@@ -11541,7 +17951,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pinten
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pintensity_ratio_function(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak1, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak2) {
+static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_14pintensity_ratio_function(CYTHON_UNUSED PyObject *__pyx_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak1, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_peak2) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -11550,19 +17960,19 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_5utils_12ccommon_math_12pinten
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("pintensity_ratio_function", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":665
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1077
  *     intensity_ratio_function
  *     '''
  *     return intensity_ratio_function(peak1, peak2)             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio_function(__pyx_v_peak1, __pyx_v_peak2)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 665; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio_function(__pyx_v_peak1, __pyx_v_peak2)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1077; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":657
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1069
  * 
  * 
  * def pintensity_ratio_function(DPeak peak1, DPeak peak2):             # <<<<<<<<<<<<<<
@@ -11595,19 +18005,48 @@ static PyObject *__pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math_Mass
   p->__pyx_vtab = __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature;
   p->name = ((PyObject*)Py_None); Py_INCREF(Py_None);
   p->feature_type = ((PyObject*)Py_None); Py_INCREF(Py_None);
+  p->ion_type_matches = ((PyObject*)Py_None); Py_INCREF(Py_None);
+  p->ion_type_totals = ((PyObject*)Py_None); Py_INCREF(Py_None);
   return o;
 }
 
 static void __pyx_tp_dealloc_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature(PyObject *o) {
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *p = (struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)o;
   #if PY_VERSION_HEX >= 0x030400a1
-  if (unlikely(Py_TYPE(o)->tp_finalize) && (!PyType_IS_GC(Py_TYPE(o)) || !_PyGC_FINALIZED(o))) {
+  if (unlikely(Py_TYPE(o)->tp_finalize) && !_PyGC_FINALIZED(o)) {
     if (PyObject_CallFinalizerFromDealloc(o)) return;
   }
   #endif
+  PyObject_GC_UnTrack(o);
   Py_CLEAR(p->name);
   Py_CLEAR(p->feature_type);
+  Py_CLEAR(p->ion_type_matches);
+  Py_CLEAR(p->ion_type_totals);
   (*Py_TYPE(o)->tp_free)(o);
+}
+
+static int __pyx_tp_traverse_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature(PyObject *o, visitproc v, void *a) {
+  int e;
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *p = (struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)o;
+  if (p->ion_type_matches) {
+    e = (*v)(p->ion_type_matches, a); if (e) return e;
+  }
+  if (p->ion_type_totals) {
+    e = (*v)(p->ion_type_totals, a); if (e) return e;
+  }
+  return 0;
+}
+
+static int __pyx_tp_clear_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature(PyObject *o) {
+  PyObject* tmp;
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *p = (struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)o;
+  tmp = ((PyObject*)p->ion_type_matches);
+  p->ion_type_matches = ((PyObject*)Py_None); Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  tmp = ((PyObject*)p->ion_type_totals);
+  p->ion_type_totals = ((PyObject*)Py_None); Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  return 0;
 }
 
 static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_offset(PyObject *o, CYTHON_UNUSED void *x) {
@@ -11734,10 +18173,66 @@ static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOff
   }
 }
 
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_matches(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_matches(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_3__set__(o, v);
+  }
+  else {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_16ion_type_matches_5__del__(o);
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_totals(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_totals(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_3__set__(o, v);
+  }
+  else {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15ion_type_totals_5__del__(o);
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_glycan_peptide_ratio(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_glycan_peptide_ratio(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_20glycan_peptide_ratio_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_peptide_mass_rank(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_peptide_mass_rank(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17peptide_mass_rank_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
 static PyMethodDef __pyx_methods_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature[] = {
   {"__getstate__", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_3__getstate__, METH_NOARGS, 0},
   {"__setstate__", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_5__setstate__, METH_O, 0},
   {"__reduce__", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_7__reduce__, METH_NOARGS, 0},
+  {"precursor_context", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_11precursor_context, METH_O, 0},
+  {"ion_type_increment", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_17ion_type_increment, METH_VARARGS|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 
@@ -11751,6 +18246,10 @@ static struct PyGetSetDef __pyx_getsets_21glycresoft_sqlalchemy_5utils_12ccommon
   {(char *)"feature_type", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_feature_type, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_feature_type, 0, 0},
   {(char *)"min_peak_rank", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_min_peak_rank, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_min_peak_rank, 0, 0},
   {(char *)"max_peak_rank", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_max_peak_rank, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_max_peak_rank, 0, 0},
+  {(char *)"ion_type_matches", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_matches, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_matches, 0, 0},
+  {(char *)"ion_type_totals", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_totals, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_totals, 0, 0},
+  {(char *)"glycan_peptide_ratio", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_glycan_peptide_ratio, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_glycan_peptide_ratio, 0, 0},
+  {(char *)"peptide_mass_rank", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_peptide_mass_rank, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_peptide_mass_rank, 0, 0},
   {0, 0, 0, 0, 0}
 };
 
@@ -11768,20 +18267,20 @@ static PyTypeObject __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_Mas
   #else
   0, /*reserved*/
   #endif
-  __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_11__repr__, /*tp_repr*/
+  __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_13__repr__, /*tp_repr*/
   0, /*tp_as_number*/
   0, /*tp_as_sequence*/
   0, /*tp_as_mapping*/
-  __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_13__hash__, /*tp_hash*/
+  __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_15__hash__, /*tp_hash*/
   __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_9__call__, /*tp_call*/
   0, /*tp_str*/
   0, /*tp_getattro*/
   0, /*tp_setattro*/
   0, /*tp_as_buffer*/
-  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE, /*tp_flags*/
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
   0, /*tp_doc*/
-  0, /*tp_traverse*/
-  0, /*tp_clear*/
+  __pyx_tp_traverse_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature, /*tp_traverse*/
+  __pyx_tp_clear_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature, /*tp_clear*/
   0, /*tp_richcompare*/
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
@@ -12263,6 +18762,62 @@ static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15Matched
   }
 }
 
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peptide_mass(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peptide_mass(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_12peptide_mass_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_glycan_mass(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_glycan_mass(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_11glycan_mass_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peptide_mass_rank(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peptide_mass_rank(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_17peptide_mass_rank_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_glycan_peptide_ratio(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_glycan_peptide_ratio(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_20glycan_peptide_ratio_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
 static PyMethodDef __pyx_methods_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum[] = {
   {"reindex_peak_matches", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_3reindex_peak_matches, METH_NOARGS, 0},
   {"peak_explained_by", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_8peak_explained_by, METH_O, 0},
@@ -12280,6 +18835,10 @@ static struct PyGetSetDef __pyx_getsets_21glycresoft_sqlalchemy_5utils_12ccommon
   {(char *)"peaks_explained", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peaks_explained, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peaks_explained, 0, 0},
   {(char *)"peaks_unexplained", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peaks_unexplained, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peaks_unexplained, 0, 0},
   {(char *)"id", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_id, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_id, 0, 0},
+  {(char *)"peptide_mass", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peptide_mass, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peptide_mass, 0, 0},
+  {(char *)"glycan_mass", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_glycan_mass, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_glycan_mass, 0, 0},
+  {(char *)"peptide_mass_rank", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peptide_mass_rank, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peptide_mass_rank, 0, 0},
+  {(char *)"glycan_peptide_ratio", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_glycan_peptide_ratio, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_glycan_peptide_ratio, 0, 0},
   {0, 0, 0, 0, 0}
 };
 
@@ -12326,6 +18885,172 @@ static PyTypeObject __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_Mat
   __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_1__init__, /*tp_init*/
   0, /*tp_alloc*/
   __pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum, /*tp_new*/
+  0, /*tp_free*/
+  0, /*tp_is_gc*/
+  0, /*tp_bases*/
+  0, /*tp_mro*/
+  0, /*tp_cache*/
+  0, /*tp_subclasses*/
+  0, /*tp_weaklist*/
+  0, /*tp_del*/
+  0, /*tp_version_tag*/
+  #if PY_VERSION_HEX >= 0x030400a1
+  0, /*tp_finalize*/
+  #endif
+};
+
+static PyObject *__pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *p;
+  PyObject *o;
+  if (likely((t->tp_flags & Py_TPFLAGS_IS_ABSTRACT) == 0)) {
+    o = (*t->tp_alloc)(t, 0);
+  } else {
+    o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_empty_tuple, 0);
+  }
+  if (unlikely(!o)) return 0;
+  p = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)o);
+  p->key = ((PyObject*)Py_None); Py_INCREF(Py_None);
+  p->ion_type = ((PyObject*)Py_None); Py_INCREF(Py_None);
+  return o;
+}
+
+static void __pyx_tp_dealloc_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch(PyObject *o) {
+  struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *p = (struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch *)o;
+  #if PY_VERSION_HEX >= 0x030400a1
+  if (unlikely(Py_TYPE(o)->tp_finalize) && (!PyType_IS_GC(Py_TYPE(o)) || !_PyGC_FINALIZED(o))) {
+    if (PyObject_CallFinalizerFromDealloc(o)) return;
+  }
+  #endif
+  Py_CLEAR(p->key);
+  Py_CLEAR(p->ion_type);
+  (*Py_TYPE(o)->tp_free)(o);
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_observed_mass(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_observed_mass(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_13observed_mass_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_intensity(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_intensity(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_9intensity_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_key(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_key(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_3__set__(o, v);
+  }
+  else {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3key_5__del__(o);
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_ion_type(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_ion_type(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_3__set__(o, v);
+  }
+  else {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_8ion_type_5__del__(o);
+  }
+}
+
+static PyObject *__pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_peak_id(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id_1__get__(o);
+}
+
+static int __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_peak_id(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+  if (v) {
+    return __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_7peak_id_3__set__(o, v);
+  }
+  else {
+    PyErr_SetString(PyExc_NotImplementedError, "__del__");
+    return -1;
+  }
+}
+
+static PyMethodDef __pyx_methods_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch[] = {
+  {"__reduce__", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_5__reduce__, METH_NOARGS, 0},
+  {0, 0, 0, 0}
+};
+
+static struct PyGetSetDef __pyx_getsets_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch[] = {
+  {(char *)"observed_mass", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_observed_mass, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_observed_mass, 0, 0},
+  {(char *)"intensity", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_intensity, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_intensity, 0, 0},
+  {(char *)"key", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_key, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_key, 0, 0},
+  {(char *)"ion_type", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_ion_type, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_ion_type, 0, 0},
+  {(char *)"peak_id", __pyx_getprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_peak_id, __pyx_setprop_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_peak_id, 0, 0},
+  {0, 0, 0, 0, 0}
+};
+
+static PyTypeObject __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch = {
+  PyVarObject_HEAD_INIT(0, 0)
+  "glycresoft_sqlalchemy.utils.ccommon_math.FragmentMatch", /*tp_name*/
+  sizeof(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch), /*tp_basicsize*/
+  0, /*tp_itemsize*/
+  __pyx_tp_dealloc_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch, /*tp_dealloc*/
+  0, /*tp_print*/
+  0, /*tp_getattr*/
+  0, /*tp_setattr*/
+  #if PY_MAJOR_VERSION < 3
+  0, /*tp_compare*/
+  #else
+  0, /*reserved*/
+  #endif
+  __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_3__repr__, /*tp_repr*/
+  0, /*tp_as_number*/
+  0, /*tp_as_sequence*/
+  0, /*tp_as_mapping*/
+  0, /*tp_hash*/
+  0, /*tp_call*/
+  0, /*tp_str*/
+  0, /*tp_getattro*/
+  0, /*tp_setattro*/
+  0, /*tp_as_buffer*/
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE, /*tp_flags*/
+  0, /*tp_doc*/
+  0, /*tp_traverse*/
+  0, /*tp_clear*/
+  0, /*tp_richcompare*/
+  0, /*tp_weaklistoffset*/
+  0, /*tp_iter*/
+  0, /*tp_iternext*/
+  __pyx_methods_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch, /*tp_methods*/
+  0, /*tp_members*/
+  __pyx_getsets_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch, /*tp_getset*/
+  0, /*tp_base*/
+  0, /*tp_dict*/
+  0, /*tp_descr_get*/
+  0, /*tp_descr_set*/
+  0, /*tp_dictoffset*/
+  __pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_13FragmentMatch_1__init__, /*tp_init*/
+  0, /*tp_alloc*/
+  __pyx_tp_new_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -12453,9 +19178,10 @@ static PyTypeObject __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math___p
 static PyMethodDef __pyx_methods[] = {
   {"ppm_error", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_1ppm_error, METH_VARARGS|METH_KEYWORDS, 0},
   {"tol_ppm_error", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_3tol_ppm_error, METH_VARARGS|METH_KEYWORDS, 0},
-  {"search_spectrum", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5search_spectrum, METH_VARARGS|METH_KEYWORDS, __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_4search_spectrum},
-  {"search_spectrum_by_mass", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_spectrum_by_mass, METH_VARARGS|METH_KEYWORDS, __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum_by_mass},
-  {"DPeak_from_values", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9DPeak_from_values, METH_VARARGS|METH_KEYWORDS, 0},
+  {"interpolate_fragment_ion_type", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_5interpolate_fragment_ion_type, METH_O, 0},
+  {"search_spectrum", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_7search_spectrum, METH_VARARGS|METH_KEYWORDS, __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_6search_spectrum},
+  {"search_spectrum_by_mass", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_9search_spectrum_by_mass, METH_VARARGS|METH_KEYWORDS, __pyx_doc_21glycresoft_sqlalchemy_5utils_12ccommon_math_8search_spectrum_by_mass},
+  {"DPeak_from_values", (PyCFunction)__pyx_pw_21glycresoft_sqlalchemy_5utils_12ccommon_math_11DPeak_from_values, METH_VARARGS|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 
@@ -12479,37 +19205,64 @@ static struct PyModuleDef __pyx_moduledef = {
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_0_4f, __pyx_k_0_4f, sizeof(__pyx_k_0_4f), 0, 0, 1, 0},
+  {&__pyx_n_s_Composition, __pyx_k_Composition, sizeof(__pyx_k_Composition), 0, 0, 1, 1},
   {&__pyx_kp_s_DPeak, __pyx_k_DPeak, sizeof(__pyx_k_DPeak), 0, 0, 1, 0},
   {&__pyx_kp_s_D_Programming_exploration_glycre, __pyx_k_D_Programming_exploration_glycre, sizeof(__pyx_k_D_Programming_exploration_glycre), 0, 0, 1, 0},
   {&__pyx_kp_s_F, __pyx_k_F, sizeof(__pyx_k_F), 0, 0, 1, 0},
+  {&__pyx_kp_s_FragmentMatch, __pyx_k_FragmentMatch, sizeof(__pyx_k_FragmentMatch), 0, 0, 1, 0},
+  {&__pyx_n_s_GlycopeptideSequence, __pyx_k_GlycopeptideSequence, sizeof(__pyx_k_GlycopeptideSequence), 0, 0, 1, 1},
+  {&__pyx_n_s_H2O, __pyx_k_H2O, sizeof(__pyx_k_H2O), 0, 0, 1, 1},
+  {&__pyx_n_s_ION_TYPE_INDEX, __pyx_k_ION_TYPE_INDEX, sizeof(__pyx_k_ION_TYPE_INDEX), 0, 0, 1, 1},
   {&__pyx_n_s_MatchedSpectrum___iter, __pyx_k_MatchedSpectrum___iter, sizeof(__pyx_k_MatchedSpectrum___iter), 0, 0, 1, 1},
   {&__pyx_kp_s_MatchedSpectrum_s_d_d_d, __pyx_k_MatchedSpectrum_s_d_d_d, sizeof(__pyx_k_MatchedSpectrum_s_d_d_d), 0, 0, 1, 0},
+  {&__pyx_n_s_NOISE, __pyx_k_NOISE, sizeof(__pyx_k_NOISE), 0, 0, 1, 1},
+  {&__pyx_n_s_Sequence, __pyx_k_Sequence, sizeof(__pyx_k_Sequence), 0, 0, 1, 1},
+  {&__pyx_kp_s__10, __pyx_k__10, sizeof(__pyx_k__10), 0, 0, 1, 0},
+  {&__pyx_kp_s__11, __pyx_k__11, sizeof(__pyx_k__11), 0, 0, 1, 0},
   {&__pyx_kp_s__4, __pyx_k__4, sizeof(__pyx_k__4), 0, 0, 1, 0},
   {&__pyx_n_s_append, __pyx_k_append, sizeof(__pyx_k_append), 0, 0, 1, 1},
   {&__pyx_n_s_args, __pyx_k_args, sizeof(__pyx_k_args), 0, 0, 1, 1},
   {&__pyx_n_s_attrgetter, __pyx_k_attrgetter, sizeof(__pyx_k_attrgetter), 0, 0, 1, 1},
+  {&__pyx_n_s_b, __pyx_k_b, sizeof(__pyx_k_b), 0, 0, 1, 1},
+  {&__pyx_n_s_base_peak_intensity, __pyx_k_base_peak_intensity, sizeof(__pyx_k_base_peak_intensity), 0, 0, 1, 1},
+  {&__pyx_n_s_c, __pyx_k_c, sizeof(__pyx_k_c), 0, 0, 1, 1},
+  {&__pyx_n_s_calculated_mass, __pyx_k_calculated_mass, sizeof(__pyx_k_calculated_mass), 0, 0, 1, 1},
   {&__pyx_n_s_charge, __pyx_k_charge, sizeof(__pyx_k_charge), 0, 0, 1, 1},
   {&__pyx_n_s_close, __pyx_k_close, sizeof(__pyx_k_close), 0, 0, 1, 1},
   {&__pyx_n_s_cls, __pyx_k_cls, sizeof(__pyx_k_cls), 0, 0, 1, 1},
+  {&__pyx_n_s_collections, __pyx_k_collections, sizeof(__pyx_k_collections), 0, 0, 1, 1},
+  {&__pyx_n_s_count_glycosylation_sites, __pyx_k_count_glycosylation_sites, sizeof(__pyx_k_count_glycosylation_sites), 0, 0, 1, 1},
+  {&__pyx_n_s_defaultdict, __pyx_k_defaultdict, sizeof(__pyx_k_defaultdict), 0, 0, 1, 1},
   {&__pyx_n_s_feature, __pyx_k_feature, sizeof(__pyx_k_feature), 0, 0, 1, 1},
   {&__pyx_n_s_feature_type, __pyx_k_feature_type, sizeof(__pyx_k_feature_type), 0, 0, 1, 1},
   {&__pyx_n_s_format, __pyx_k_format, sizeof(__pyx_k_format), 0, 0, 1, 1},
   {&__pyx_n_s_from_charge, __pyx_k_from_charge, sizeof(__pyx_k_from_charge), 0, 0, 1, 1},
   {&__pyx_n_s_get, __pyx_k_get, sizeof(__pyx_k_get), 0, 0, 1, 1},
   {&__pyx_n_s_getstate, __pyx_k_getstate, sizeof(__pyx_k_getstate), 0, 0, 1, 1},
+  {&__pyx_n_s_glycan_composition, __pyx_k_glycan_composition, sizeof(__pyx_k_glycan_composition), 0, 0, 1, 1},
+  {&__pyx_n_s_glycan_mass, __pyx_k_glycan_mass, sizeof(__pyx_k_glycan_mass), 0, 0, 1, 1},
+  {&__pyx_n_s_glycan_peptide_ratio, __pyx_k_glycan_peptide_ratio, sizeof(__pyx_k_glycan_peptide_ratio), 0, 0, 1, 1},
+  {&__pyx_n_s_glycopeptide_match, __pyx_k_glycopeptide_match, sizeof(__pyx_k_glycopeptide_match), 0, 0, 1, 1},
   {&__pyx_n_s_glycopeptide_sequence, __pyx_k_glycopeptide_sequence, sizeof(__pyx_k_glycopeptide_sequence), 0, 0, 1, 1},
+  {&__pyx_n_s_glycresoft_sqlalchemy_structure, __pyx_k_glycresoft_sqlalchemy_structure, sizeof(__pyx_k_glycresoft_sqlalchemy_structure), 0, 0, 1, 1},
   {&__pyx_n_s_glycresoft_sqlalchemy_utils_ccom, __pyx_k_glycresoft_sqlalchemy_utils_ccom, sizeof(__pyx_k_glycresoft_sqlalchemy_utils_ccom), 0, 0, 1, 1},
   {&__pyx_n_s_gsm, __pyx_k_gsm, sizeof(__pyx_k_gsm), 0, 0, 1, 1},
   {&__pyx_n_s_id, __pyx_k_id, sizeof(__pyx_k_id), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_intensity, __pyx_k_intensity, sizeof(__pyx_k_intensity), 0, 0, 1, 1},
   {&__pyx_n_s_intensity_ratio, __pyx_k_intensity_ratio, sizeof(__pyx_k_intensity_ratio), 0, 0, 1, 1},
+  {&__pyx_n_s_ion_type, __pyx_k_ion_type, sizeof(__pyx_k_ion_type), 0, 0, 1, 1},
+  {&__pyx_n_s_ion_type_increment, __pyx_k_ion_type_increment, sizeof(__pyx_k_ion_type_increment), 0, 0, 1, 1},
+  {&__pyx_n_s_ion_type_matches, __pyx_k_ion_type_matches, sizeof(__pyx_k_ion_type_matches), 0, 0, 1, 1},
+  {&__pyx_n_s_ion_type_totals, __pyx_k_ion_type_totals, sizeof(__pyx_k_ion_type_totals), 0, 0, 1, 1},
   {&__pyx_n_s_items, __pyx_k_items, sizeof(__pyx_k_items), 0, 0, 1, 1},
   {&__pyx_n_s_iter, __pyx_k_iter, sizeof(__pyx_k_iter), 0, 0, 1, 1},
+  {&__pyx_n_s_join, __pyx_k_join, sizeof(__pyx_k_join), 0, 0, 1, 1},
   {&__pyx_n_s_key, __pyx_k_key, sizeof(__pyx_k_key), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_mass, __pyx_k_mass, sizeof(__pyx_k_mass), 0, 0, 1, 1},
   {&__pyx_n_s_mass_charge_ratio, __pyx_k_mass_charge_ratio, sizeof(__pyx_k_mass_charge_ratio), 0, 0, 1, 1},
+  {&__pyx_n_s_matches, __pyx_k_matches, sizeof(__pyx_k_matches), 0, 0, 1, 1},
   {&__pyx_n_s_max_peak_rank, __pyx_k_max_peak_rank, sizeof(__pyx_k_max_peak_rank), 0, 0, 1, 1},
   {&__pyx_n_s_min_peak_rank, __pyx_k_min_peak_rank, sizeof(__pyx_k_min_peak_rank), 0, 0, 1, 1},
   {&__pyx_n_s_minimum_intensity, __pyx_k_minimum_intensity, sizeof(__pyx_k_minimum_intensity), 0, 0, 1, 1},
@@ -12520,6 +19273,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_op, __pyx_k_op, sizeof(__pyx_k_op), 0, 0, 1, 1},
   {&__pyx_n_s_operator, __pyx_k_operator, sizeof(__pyx_k_operator), 0, 0, 1, 1},
   {&__pyx_n_s_other, __pyx_k_other, sizeof(__pyx_k_other), 0, 0, 1, 1},
+  {&__pyx_n_s_oxonium, __pyx_k_oxonium, sizeof(__pyx_k_oxonium), 0, 0, 1, 1},
   {&__pyx_n_s_peak, __pyx_k_peak, sizeof(__pyx_k_peak), 0, 0, 1, 1},
   {&__pyx_n_s_peak1, __pyx_k_peak1, sizeof(__pyx_k_peak1), 0, 0, 1, 1},
   {&__pyx_n_s_peak2, __pyx_k_peak2, sizeof(__pyx_k_peak2), 0, 0, 1, 1},
@@ -12530,28 +19284,40 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_peak_relations, __pyx_k_peak_relations, sizeof(__pyx_k_peak_relations), 0, 0, 1, 1},
   {&__pyx_n_s_peaks_explained, __pyx_k_peaks_explained, sizeof(__pyx_k_peaks_explained), 0, 0, 1, 1},
   {&__pyx_n_s_peaks_unexplained, __pyx_k_peaks_unexplained, sizeof(__pyx_k_peaks_unexplained), 0, 0, 1, 1},
+  {&__pyx_n_s_peptide, __pyx_k_peptide, sizeof(__pyx_k_peptide), 0, 0, 1, 1},
+  {&__pyx_n_s_peptide_mass, __pyx_k_peptide_mass, sizeof(__pyx_k_peptide_mass), 0, 0, 1, 1},
+  {&__pyx_n_s_peptide_mass_rank, __pyx_k_peptide_mass_rank, sizeof(__pyx_k_peptide_mass_rank), 0, 0, 1, 1},
   {&__pyx_n_s_pintensity_rank, __pyx_k_pintensity_rank, sizeof(__pyx_k_pintensity_rank), 0, 0, 1, 1},
   {&__pyx_n_s_pintensity_ratio_function, __pyx_k_pintensity_ratio_function, sizeof(__pyx_k_pintensity_ratio_function), 0, 0, 1, 1},
+  {&__pyx_n_s_pyx_capi, __pyx_k_pyx_capi, sizeof(__pyx_k_pyx_capi), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_vtable, __pyx_k_pyx_vtable, sizeof(__pyx_k_pyx_vtable), 0, 0, 1, 1},
   {&__pyx_n_s_query, __pyx_k_query, sizeof(__pyx_k_query), 0, 0, 1, 1},
   {&__pyx_kp_s_r, __pyx_k_r, sizeof(__pyx_k_r), 0, 0, 1, 0},
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
   {&__pyx_n_s_rank, __pyx_k_rank, sizeof(__pyx_k_rank), 0, 0, 1, 1},
   {&__pyx_n_s_reverse, __pyx_k_reverse, sizeof(__pyx_k_reverse), 0, 0, 1, 1},
+  {&__pyx_kp_s_s_0_4f, __pyx_k_s_0_4f, sizeof(__pyx_k_s_0_4f), 0, 0, 1, 0},
+  {&__pyx_kp_s_s_d, __pyx_k_s_d, sizeof(__pyx_k_s_d), 0, 0, 1, 0},
+  {&__pyx_kp_s_s_r, __pyx_k_s_r, sizeof(__pyx_k_s_r), 0, 0, 1, 0},
   {&__pyx_n_s_scan_time, __pyx_k_scan_time, sizeof(__pyx_k_scan_time), 0, 0, 1, 1},
   {&__pyx_n_s_send, __pyx_k_send, sizeof(__pyx_k_send), 0, 0, 1, 1},
+  {&__pyx_n_s_setdefault, __pyx_k_setdefault, sizeof(__pyx_k_setdefault), 0, 0, 1, 1},
+  {&__pyx_n_s_slot, __pyx_k_slot, sizeof(__pyx_k_slot), 0, 0, 1, 1},
   {&__pyx_n_s_sorted, __pyx_k_sorted, sizeof(__pyx_k_sorted), 0, 0, 1, 1},
+  {&__pyx_n_s_stub_ion, __pyx_k_stub_ion, sizeof(__pyx_k_stub_ion), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_throw, __pyx_k_throw, sizeof(__pyx_k_throw), 0, 0, 1, 1},
   {&__pyx_n_s_to_charge, __pyx_k_to_charge, sizeof(__pyx_k_to_charge), 0, 0, 1, 1},
   {&__pyx_n_s_tolerance, __pyx_k_tolerance, sizeof(__pyx_k_tolerance), 0, 0, 1, 1},
+  {&__pyx_n_s_totals, __pyx_k_totals, sizeof(__pyx_k_totals), 0, 0, 1, 1},
   {&__pyx_n_s_x, __pyx_k_x, sizeof(__pyx_k_x), 0, 0, 1, 1},
   {&__pyx_n_s_y, __pyx_k_y, sizeof(__pyx_k_y), 0, 0, 1, 1},
+  {&__pyx_n_s_z, __pyx_k_z, sizeof(__pyx_k_z), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 105; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_builtin_sorted = __Pyx_GetBuiltinName(__pyx_n_s_sorted); if (!__pyx_builtin_sorted) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 152; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_builtin_sorted = __Pyx_GetBuiltinName(__pyx_n_s_sorted); if (!__pyx_builtin_sorted) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -12561,73 +19327,84 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":300
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":364
  * 
  *     def __reduce__(self):
  *         return MassOffsetFeature, (0, 0), self.__getstate__()             # <<<<<<<<<<<<<<
  * 
  *     def __call__(self, DPeak query, DPeak peak):
  */
-  __pyx_tuple__7 = PyTuple_Pack(2, __pyx_int_0, __pyx_int_0); if (unlikely(!__pyx_tuple__7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 300; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
+  __pyx_tuple__9 = PyTuple_Pack(2, __pyx_int_0, __pyx_int_0); if (unlikely(!__pyx_tuple__9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 364; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__9);
+  __Pyx_GIVEREF(__pyx_tuple__9);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":375
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":489
  * 
  *     def __reduce__(self):
  *         return DPeak, (None,), self.__getstate__()             # <<<<<<<<<<<<<<
  * 
  *     def __hash__(self):
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_tuple__8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 375; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
+  __pyx_tuple__12 = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_tuple__12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 489; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__12);
+  __Pyx_GIVEREF(__pyx_tuple__12);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":462
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":597
  * 
  *     def __reduce__(self):
  *         return MatchedSpectrum, (None,), self.__getstate__()             # <<<<<<<<<<<<<<
  * 
  *     def __repr__(self):
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_tuple__9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 462; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
+  __pyx_tuple__13 = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_tuple__13)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 597; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__13);
+  __Pyx_GIVEREF(__pyx_tuple__13);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":22
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":25
  * 
  * cdef:
  *     object get_intensity = operator.attrgetter("intensity")             # <<<<<<<<<<<<<<
+ *     int OUT_OF_RANGE_INT = 999
+ *     char* OTHER = "other"
+ */
+  __pyx_tuple__14 = PyTuple_Pack(1, __pyx_n_s_intensity); if (unlikely(!__pyx_tuple__14)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__14);
+  __Pyx_GIVEREF(__pyx_tuple__14);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":29
+ *     char* OTHER = "other"
+ *     char* NOISE = "noise"
+ *     double WATER_MASS = Composition("H2O").mass             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_n_s_intensity); if (unlikely(!__pyx_tuple__10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
+  __pyx_tuple__15 = PyTuple_Pack(1, __pyx_n_s_H2O); if (unlikely(!__pyx_tuple__15)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__15);
+  __Pyx_GIVEREF(__pyx_tuple__15);
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":646
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1058
  * 
  * 
  * def pintensity_rank(list peak_list, float minimum_intensity=100.):             # <<<<<<<<<<<<<<
  *     '''
  *     Python-accessible wrapper for `intensity_rank`
  */
-  __pyx_tuple__11 = PyTuple_Pack(2, __pyx_n_s_peak_list, __pyx_n_s_minimum_intensity); if (unlikely(!__pyx_tuple__11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 646; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__11);
-  __Pyx_GIVEREF(__pyx_tuple__11);
-  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_pintensity_rank, 646, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 646; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__16 = PyTuple_Pack(2, __pyx_n_s_peak_list, __pyx_n_s_minimum_intensity); if (unlikely(!__pyx_tuple__16)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1058; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__16);
+  __Pyx_GIVEREF(__pyx_tuple__16);
+  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_pintensity_rank, 1058, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1058; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":657
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1069
  * 
  * 
  * def pintensity_ratio_function(DPeak peak1, DPeak peak2):             # <<<<<<<<<<<<<<
  *     '''
  *     Python-accessible wrapper for `intensity_ratio_function`
  */
-  __pyx_tuple__13 = PyTuple_Pack(2, __pyx_n_s_peak1, __pyx_n_s_peak2); if (unlikely(!__pyx_tuple__13)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 657; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__13);
-  __Pyx_GIVEREF(__pyx_tuple__13);
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_pintensity_ratio_function, 657, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 657; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__18 = PyTuple_Pack(2, __pyx_n_s_peak1, __pyx_n_s_peak2); if (unlikely(!__pyx_tuple__18)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1069; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__18);
+  __Pyx_GIVEREF(__pyx_tuple__18);
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_pintensity_ratio_function, 1069, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1069; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -12660,6 +19437,8 @@ PyMODINIT_FUNC PyInit_ccommon_math(void)
 {
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
+  double __pyx_t_3;
+  static char *__pyx_t_4[8];
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -12730,10 +19509,13 @@ PyMODINIT_FUNC PyInit_ccommon_math(void)
   /*--- Global init code ---*/
   __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_get_intensity = Py_None; Py_INCREF(Py_None);
   /*--- Variable export code ---*/
+  if (__Pyx_ExportVoidPtr(__pyx_n_s_NOISE, (void *)&__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_NOISE, "char *") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportVoidPtr(__pyx_n_s_ION_TYPE_INDEX, (void *)&__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX, "struct IonTypeIndex *") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   /*--- Function export code ---*/
   if (__Pyx_ExportFunction("ppm_error", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ppm_error, "float (float, float, int __pyx_skip_dispatch)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("tol_ppm_error", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_tol_ppm_error, "PyObject *(float, float, float, int __pyx_skip_dispatch)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("feature_match", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_feature_match, "int (struct MSFeatureStruct *, struct PeakStruct *, struct PeakStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("_precursor_context", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__precursor_context, "int (struct MSFeatureStruct *, struct MatchedSpectrumStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("intensity_ratio_function", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio_function, "int (struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("_intensity_ratio_function", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ratio_function, "int (struct PeakStruct *, struct PeakStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("intensity_rank", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank, "void (PyObject *, struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank *__pyx_optional_args)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -12741,42 +19523,68 @@ PyMODINIT_FUNC PyInit_ccommon_math(void)
   if (__Pyx_ExportFunction("unwrap_matched_spectrum", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_unwrap_matched_spectrum, "struct MatchedSpectrumStruct *(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("unwrap_feature_functions", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_unwrap_feature_functions, "struct MSFeatureStructArray *(PyObject *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("unwrap_peak_list", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_unwrap_peak_list, "struct PeakStructArray *(PyObject *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("wrap_peak", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_peak, "struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *(struct PeakStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("wrap_feature", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_feature, "struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *(struct MSFeatureStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("wrap_matched_spectrum_struct", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_matched_spectrum_struct, "struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *(struct MatchedSpectrumStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("matched_spectrum_struct_peak_explained_by", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_matched_spectrum_struct_peak_explained_by, "struct FragmentMatchStructArray *(struct MatchedSpectrumStruct *, long)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("sort_by_intensity", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sort_by_intensity, "void (struct PeakStructArray *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("sort_by_neutral_mass", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sort_by_neutral_mass, "void (struct PeakStructArray *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("search_spectrum", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum, "PyObject *(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, PyObject *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, int __pyx_skip_dispatch)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("_search_spectrum", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__search_spectrum, "struct PeakStructArray *(struct PeakStruct *, struct PeakStructArray *, struct MSFeatureStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("_openmp_search_spectrum", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__openmp_search_spectrum, "struct PeakStructArray *(struct PeakStruct *, struct PeakStructArray *, struct MSFeatureStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("new_ion_type_index", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_index, "struct IonTypeIndex *(char **, size_t)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("ion_type_index", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_index, "size_t (struct IonTypeIndex *, char *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("ion_type_name", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_name, "char *(struct IonTypeIndex *, size_t)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("ion_type_add", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_add, "void (struct IonTypeIndex *, char *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("print_ion_type_index", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_print_ion_type_index, "void (struct IonTypeIndex *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("new_ion_type_double_map", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map, "struct IonTypeDoubleMap *(void)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("new_ion_type_double_map_from_dict", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map_from_dict, "struct IonTypeDoubleMap *(PyObject *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("dict_from_ion_type_double_map", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_dict_from_ion_type_double_map, "PyObject *(struct IonTypeDoubleMap *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("ion_type_double_get", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_get, "double (struct IonTypeDoubleMap *, size_t)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("ion_type_double_set", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_set, "void (struct IonTypeDoubleMap *, size_t, double)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("ion_type_double_inc", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_inc, "void (struct IonTypeDoubleMap *, size_t)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("ion_type_double_inc_name", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_inc_name, "void (struct IonTypeDoubleMap *, char *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("sum_ion_double_map", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_sum_ion_double_map, "double (struct IonTypeDoubleMap *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("free_fragment_match_struct_array", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_match_struct_array, "void (struct FragmentMatchStructArray *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("free_peak_struct_array", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_peak_struct_array, "void (struct PeakStructArray *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("free_matched_spectrum_struct", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_matched_spectrum_struct, "void (struct MatchedSpectrumStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("free_ion_type_index", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ion_type_index, "void (struct IonTypeIndex *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("free_ion_type_double_map", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ion_type_double_map, "void (struct IonTypeDoubleMap *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("free_ms_feature_struct", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ms_feature_struct, "void (struct MSFeatureStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("free_ms_feature_struct_array", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_ms_feature_struct_array, "void (struct MSFeatureStructArray *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   /*--- Type init code ---*/
   __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature = &__pyx_vtable_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature;
   __pyx_vtable_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature.test = (int (*)(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_test;
-  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 257; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_vtable_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature.ion_type_increment = (PyObject *(*)(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, PyObject *, int __pyx_skip_dispatch, struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment *__pyx_optional_args))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature_ion_type_increment;
+  __pyx_vtable_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature._precursor_context = (int (*)(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffsetFeature__precursor_context;
+  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 306; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature.tp_print = 0;
-  if (__Pyx_SetVtable(__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature.tp_dict, __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 257; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyObject_SetAttrString(__pyx_m, "MassOffsetFeature", (PyObject *)&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 257; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_SetVtable(__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature.tp_dict, __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 306; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "MassOffsetFeature", (PyObject *)&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 306; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature = &__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature;
   __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak = &__pyx_vtable_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak;
   __pyx_vtable_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak.as_struct = (struct PeakStruct *(*)(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_5DPeak_as_struct;
-  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 323; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 437; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak.tp_print = 0;
-  if (__Pyx_SetVtable(__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak.tp_dict, __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 323; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyObject_SetAttrString(__pyx_m, "DPeak", (PyObject *)&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 323; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_SetVtable(__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak.tp_dict, __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 437; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "DPeak", (PyObject *)&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 437; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak = &__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak;
-  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment) < 0) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment) < 0) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment.tp_print = 0;
-  if (PyObject_SetAttrString(__pyx_m, "TheoreticalFragment", (PyObject *)&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment) < 0) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "TheoreticalFragment", (PyObject *)&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment) < 0) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment = &__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment;
   __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum = &__pyx_vtable_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum;
   __pyx_vtable_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum.peak_explained_by = (PyObject *(*)(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *, PyObject *, int __pyx_skip_dispatch))__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_15MatchedSpectrum_peak_explained_by;
-  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 391; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 505; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum.tp_print = 0;
-  if (__Pyx_SetVtable(__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum.tp_dict, __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 391; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyObject_SetAttrString(__pyx_m, "MatchedSpectrum", (PyObject *)&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 391; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_SetVtable(__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum.tp_dict, __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 505; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "MatchedSpectrum", (PyObject *)&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 505; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum = &__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum;
-  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struct____iter__) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 606; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch.tp_print = 0;
+  if (PyObject_SetAttrString(__pyx_m, "FragmentMatch", (PyObject *)&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 606; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch = &__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch;
+  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struct____iter__) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 541; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struct____iter__.tp_print = 0;
   __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struct____iter__ = &__pyx_type_21glycresoft_sqlalchemy_5utils_12ccommon_math___pyx_scope_struct____iter__;
   /*--- Type import code ---*/
@@ -12784,31 +19592,80 @@ PyMODINIT_FUNC PyInit_ccommon_math(void)
   /*--- Function import code ---*/
   /*--- Execution code ---*/
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":19
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":20
  * from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_Append
  * 
  * import operator             # <<<<<<<<<<<<<<
+ * from collections import defaultdict
+ * from glycresoft_sqlalchemy.structure.sequence import Sequence as GlycopeptideSequence, Composition
+ */
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_operator, 0, -1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 20; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_operator, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 20; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":21
+ * 
+ * import operator
+ * from collections import defaultdict             # <<<<<<<<<<<<<<
+ * from glycresoft_sqlalchemy.structure.sequence import Sequence as GlycopeptideSequence, Composition
+ * 
+ */
+  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(__pyx_n_s_defaultdict);
+  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_defaultdict);
+  __Pyx_GIVEREF(__pyx_n_s_defaultdict);
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_collections, __pyx_t_1, -1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_defaultdict); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_defaultdict, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":22
+ * import operator
+ * from collections import defaultdict
+ * from glycresoft_sqlalchemy.structure.sequence import Sequence as GlycopeptideSequence, Composition             # <<<<<<<<<<<<<<
  * 
  * cdef:
  */
-  __pyx_t_1 = __Pyx_Import(__pyx_n_s_operator, 0, -1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_INCREF(__pyx_n_s_Sequence);
+  PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_Sequence);
+  __Pyx_GIVEREF(__pyx_n_s_Sequence);
+  __Pyx_INCREF(__pyx_n_s_Composition);
+  PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_Composition);
+  __Pyx_GIVEREF(__pyx_n_s_Composition);
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_glycresoft_sqlalchemy_structure, __pyx_t_2, -1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_operator, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_Sequence); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_GlycopeptideSequence, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_Composition); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Composition, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":22
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":25
  * 
  * cdef:
  *     object get_intensity = operator.attrgetter("intensity")             # <<<<<<<<<<<<<<
- * 
- * 
+ *     int OUT_OF_RANGE_INT = 999
+ *     char* OTHER = "other"
  */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_operator); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_operator); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_attrgetter); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_attrgetter); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__14, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_XGOTREF(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_get_intensity);
@@ -12816,92 +19673,164 @@ PyMODINIT_FUNC PyInit_ccommon_math(void)
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":251
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":26
+ * cdef:
+ *     object get_intensity = operator.attrgetter("intensity")
+ *     int OUT_OF_RANGE_INT = 999             # <<<<<<<<<<<<<<
+ *     char* OTHER = "other"
+ *     char* NOISE = "noise"
+ */
+  __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT = 999;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":27
+ *     object get_intensity = operator.attrgetter("intensity")
+ *     int OUT_OF_RANGE_INT = 999
+ *     char* OTHER = "other"             # <<<<<<<<<<<<<<
+ *     char* NOISE = "noise"
+ *     double WATER_MASS = Composition("H2O").mass
+ */
+  __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OTHER = __pyx_k_other;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":28
+ *     int OUT_OF_RANGE_INT = 999
+ *     char* OTHER = "other"
+ *     char* NOISE = "noise"             # <<<<<<<<<<<<<<
+ *     double WATER_MASS = Composition("H2O").mass
  * 
- * 
- * cdef int OUT_OF_RANGE_INT = -999             # <<<<<<<<<<<<<<
+ */
+  __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_NOISE = __pyx_k_noise;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":29
+ *     char* OTHER = "other"
+ *     char* NOISE = "noise"
+ *     double WATER_MASS = Composition("H2O").mass             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT = -999;
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_Composition); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__15, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_WATER_MASS = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":259
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":308
  * cdef class MassOffsetFeature(object):
  * 
  *     def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT,             # <<<<<<<<<<<<<<
  *                  from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type="",
- *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT):
+ *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT,
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 259; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 308; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k_ = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":260
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":309
  * 
  *     def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT,
  *                  from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type="",             # <<<<<<<<<<<<<<
- *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT):
- *         if name is None:
+ *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT,
+ *                  glycan_peptide_ratio=OUT_OF_RANGE_INT, peptide_mass_rank=OUT_OF_RANGE_INT):
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 260; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 309; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__2 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 260; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 309; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__3 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":261
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":310
  *     def __init__(self, offset, tolerance, name=None, intensity_ratio=OUT_OF_RANGE_INT,
  *                  from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type="",
- *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT):             # <<<<<<<<<<<<<<
+ *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT,             # <<<<<<<<<<<<<<
+ *                  glycan_peptide_ratio=OUT_OF_RANGE_INT, peptide_mass_rank=OUT_OF_RANGE_INT):
  *         if name is None:
- *             name = "F:" + str(offset)
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 261; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 310; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__5 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 261; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 310; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__6 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":646
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":311
+ *                  from_charge=OUT_OF_RANGE_INT, to_charge=OUT_OF_RANGE_INT, feature_type="",
+ *                  min_peak_rank=OUT_OF_RANGE_INT, max_peak_rank=OUT_OF_RANGE_INT,
+ *                  glycan_peptide_ratio=OUT_OF_RANGE_INT, peptide_mass_rank=OUT_OF_RANGE_INT):             # <<<<<<<<<<<<<<
+ *         if name is None:
+ *             name = "F:" + str(offset)
+ */
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 311; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_k__7 = __pyx_t_1;
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_OUT_OF_RANGE_INT); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 311; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_k__8 = __pyx_t_1;
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":999
+ * 
+ * cdef IonTypeIndex* ION_TYPE_INDEX
+ * ION_TYPE_INDEX = new_ion_type_index(["b", "y", "stub_ion", "oxonium", "c", "z", "noise", "other"], 8)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_4[0] = __pyx_k_b;
+  __pyx_t_4[1] = __pyx_k_y;
+  __pyx_t_4[2] = __pyx_k_stub_ion;
+  __pyx_t_4[3] = __pyx_k_oxonium;
+  __pyx_t_4[4] = __pyx_k_c;
+  __pyx_t_4[5] = __pyx_k_z;
+  __pyx_t_4[6] = __pyx_k_noise;
+  __pyx_t_4[7] = __pyx_k_other;
+  __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_index(__pyx_t_4, 8);
+
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1058
  * 
  * 
  * def pintensity_rank(list peak_list, float minimum_intensity=100.):             # <<<<<<<<<<<<<<
  *     '''
  *     Python-accessible wrapper for `intensity_rank`
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_5utils_12ccommon_math_11pintensity_rank, NULL, __pyx_n_s_glycresoft_sqlalchemy_utils_ccom); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 646; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_rank, NULL, __pyx_n_s_glycresoft_sqlalchemy_utils_ccom); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1058; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pintensity_rank, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 646; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pintensity_rank, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1058; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":657
+  /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1069
  * 
  * 
  * def pintensity_ratio_function(DPeak peak1, DPeak peak2):             # <<<<<<<<<<<<<<
  *     '''
  *     Python-accessible wrapper for `intensity_ratio_function`
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_5utils_12ccommon_math_13pintensity_ratio_function, NULL, __pyx_n_s_glycresoft_sqlalchemy_utils_ccom); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 657; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_5utils_12ccommon_math_15pintensity_ratio_function, NULL, __pyx_n_s_glycresoft_sqlalchemy_utils_ccom); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1069; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pintensity_ratio_function, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 657; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pintensity_ratio_function, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1069; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "glycresoft_sqlalchemy\utils\ccommon_math.pyx":1
  * from cpython.ref cimport PyObject             # <<<<<<<<<<<<<<
- * from cpython.string cimport PyString_AsString
- * from libc.stdlib cimport abort, malloc, free, realloc
+ * from cpython.string cimport PyString_AsString, PyString_FromString
+ * from libc.stdlib cimport abort, malloc, free, realloc, calloc
  */
   __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
@@ -13158,51 +20087,6 @@ static void __Pyx_WriteUnraisable(const char *name, CYTHON_UNUSED int clineno,
     }
 }
 
-static void __Pyx_RaiseArgumentTypeInvalid(const char* name, PyObject *obj, PyTypeObject *type) {
-    PyErr_Format(PyExc_TypeError,
-        "Argument '%.200s' has incorrect type (expected %.200s, got %.200s)",
-        name, type->tp_name, Py_TYPE(obj)->tp_name);
-}
-static CYTHON_INLINE int __Pyx_ArgTypeTest(PyObject *obj, PyTypeObject *type, int none_allowed,
-    const char *name, int exact)
-{
-    if (unlikely(!type)) {
-        PyErr_SetString(PyExc_SystemError, "Missing type object");
-        return 0;
-    }
-    if (none_allowed && obj == Py_None) return 1;
-    else if (exact) {
-        if (likely(Py_TYPE(obj) == type)) return 1;
-        #if PY_MAJOR_VERSION == 2
-        else if ((type == &PyBaseString_Type) && likely(__Pyx_PyBaseString_CheckExact(obj))) return 1;
-        #endif
-    }
-    else {
-        if (likely(PyObject_TypeCheck(obj, type))) return 1;
-    }
-    __Pyx_RaiseArgumentTypeInvalid(name, obj, type);
-    return 0;
-}
-
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
-    PyObject *result;
-    ternaryfunc call = func->ob_type->tp_call;
-    if (unlikely(!call))
-        return PyObject_Call(func, arg, kw);
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    result = (*call)(func, arg, kw);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
-    return result;
-}
-#endif
-
 static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j) {
     PyObject *r;
     if (!j) return NULL;
@@ -13280,6 +20164,171 @@ static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i,
 #endif
     return __Pyx_GetItemInt_Generic(o, PyInt_FromSsize_t(i));
 }
+
+static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals) {
+#if CYTHON_COMPILING_IN_PYPY
+    return PyObject_RichCompareBool(s1, s2, equals);
+#else
+    if (s1 == s2) {
+        return (equals == Py_EQ);
+    } else if (PyBytes_CheckExact(s1) & PyBytes_CheckExact(s2)) {
+        const char *ps1, *ps2;
+        Py_ssize_t length = PyBytes_GET_SIZE(s1);
+        if (length != PyBytes_GET_SIZE(s2))
+            return (equals == Py_NE);
+        ps1 = PyBytes_AS_STRING(s1);
+        ps2 = PyBytes_AS_STRING(s2);
+        if (ps1[0] != ps2[0]) {
+            return (equals == Py_NE);
+        } else if (length == 1) {
+            return (equals == Py_EQ);
+        } else {
+            int result = memcmp(ps1, ps2, (size_t)length);
+            return (equals == Py_EQ) ? (result == 0) : (result != 0);
+        }
+    } else if ((s1 == Py_None) & PyBytes_CheckExact(s2)) {
+        return (equals == Py_NE);
+    } else if ((s2 == Py_None) & PyBytes_CheckExact(s1)) {
+        return (equals == Py_NE);
+    } else {
+        int result;
+        PyObject* py_result = PyObject_RichCompare(s1, s2, equals);
+        if (!py_result)
+            return -1;
+        result = __Pyx_PyObject_IsTrue(py_result);
+        Py_DECREF(py_result);
+        return result;
+    }
+#endif
+}
+
+static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals) {
+#if CYTHON_COMPILING_IN_PYPY
+    return PyObject_RichCompareBool(s1, s2, equals);
+#else
+#if PY_MAJOR_VERSION < 3
+    PyObject* owned_ref = NULL;
+#endif
+    int s1_is_unicode, s2_is_unicode;
+    if (s1 == s2) {
+        goto return_eq;
+    }
+    s1_is_unicode = PyUnicode_CheckExact(s1);
+    s2_is_unicode = PyUnicode_CheckExact(s2);
+#if PY_MAJOR_VERSION < 3
+    if ((s1_is_unicode & (!s2_is_unicode)) && PyString_CheckExact(s2)) {
+        owned_ref = PyUnicode_FromObject(s2);
+        if (unlikely(!owned_ref))
+            return -1;
+        s2 = owned_ref;
+        s2_is_unicode = 1;
+    } else if ((s2_is_unicode & (!s1_is_unicode)) && PyString_CheckExact(s1)) {
+        owned_ref = PyUnicode_FromObject(s1);
+        if (unlikely(!owned_ref))
+            return -1;
+        s1 = owned_ref;
+        s1_is_unicode = 1;
+    } else if (((!s2_is_unicode) & (!s1_is_unicode))) {
+        return __Pyx_PyBytes_Equals(s1, s2, equals);
+    }
+#endif
+    if (s1_is_unicode & s2_is_unicode) {
+        Py_ssize_t length;
+        int kind;
+        void *data1, *data2;
+        if (unlikely(__Pyx_PyUnicode_READY(s1) < 0) || unlikely(__Pyx_PyUnicode_READY(s2) < 0))
+            return -1;
+        length = __Pyx_PyUnicode_GET_LENGTH(s1);
+        if (length != __Pyx_PyUnicode_GET_LENGTH(s2)) {
+            goto return_ne;
+        }
+        kind = __Pyx_PyUnicode_KIND(s1);
+        if (kind != __Pyx_PyUnicode_KIND(s2)) {
+            goto return_ne;
+        }
+        data1 = __Pyx_PyUnicode_DATA(s1);
+        data2 = __Pyx_PyUnicode_DATA(s2);
+        if (__Pyx_PyUnicode_READ(kind, data1, 0) != __Pyx_PyUnicode_READ(kind, data2, 0)) {
+            goto return_ne;
+        } else if (length == 1) {
+            goto return_eq;
+        } else {
+            int result = memcmp(data1, data2, (size_t)(length * kind));
+            #if PY_MAJOR_VERSION < 3
+            Py_XDECREF(owned_ref);
+            #endif
+            return (equals == Py_EQ) ? (result == 0) : (result != 0);
+        }
+    } else if ((s1 == Py_None) & s2_is_unicode) {
+        goto return_ne;
+    } else if ((s2 == Py_None) & s1_is_unicode) {
+        goto return_ne;
+    } else {
+        int result;
+        PyObject* py_result = PyObject_RichCompare(s1, s2, equals);
+        if (!py_result)
+            return -1;
+        result = __Pyx_PyObject_IsTrue(py_result);
+        Py_DECREF(py_result);
+        return result;
+    }
+return_eq:
+    #if PY_MAJOR_VERSION < 3
+    Py_XDECREF(owned_ref);
+    #endif
+    return (equals == Py_EQ);
+return_ne:
+    #if PY_MAJOR_VERSION < 3
+    Py_XDECREF(owned_ref);
+    #endif
+    return (equals == Py_NE);
+#endif
+}
+
+static void __Pyx_RaiseArgumentTypeInvalid(const char* name, PyObject *obj, PyTypeObject *type) {
+    PyErr_Format(PyExc_TypeError,
+        "Argument '%.200s' has incorrect type (expected %.200s, got %.200s)",
+        name, type->tp_name, Py_TYPE(obj)->tp_name);
+}
+static CYTHON_INLINE int __Pyx_ArgTypeTest(PyObject *obj, PyTypeObject *type, int none_allowed,
+    const char *name, int exact)
+{
+    if (unlikely(!type)) {
+        PyErr_SetString(PyExc_SystemError, "Missing type object");
+        return 0;
+    }
+    if (none_allowed && obj == Py_None) return 1;
+    else if (exact) {
+        if (likely(Py_TYPE(obj) == type)) return 1;
+        #if PY_MAJOR_VERSION == 2
+        else if ((type == &PyBaseString_Type) && likely(__Pyx_PyBaseString_CheckExact(obj))) return 1;
+        #endif
+    }
+    else {
+        if (likely(PyObject_TypeCheck(obj, type))) return 1;
+    }
+    __Pyx_RaiseArgumentTypeInvalid(name, obj, type);
+    return 0;
+}
+
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
+    PyObject *result;
+    ternaryfunc call = func->ob_type->tp_call;
+    if (unlikely(!call))
+        return PyObject_Call(func, arg, kw);
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
+        return NULL;
+    result = (*call)(func, arg, kw);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
+    }
+    return result;
+}
+#endif
 
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg) {
@@ -13439,6 +20488,16 @@ static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected) {
     return 0;
 }
 
+#if !CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyBytes_Join(PyObject* sep, PyObject* values) {
+    return PyObject_CallMethodObjArgs(sep, __pyx_n_s_join, values, NULL);
+}
+#endif
+
+static CYTHON_INLINE void __Pyx_RaiseUnboundLocalError(const char *varname) {
+    PyErr_Format(PyExc_UnboundLocalError, "local variable '%s' referenced before assignment", varname);
+}
+
 static PyObject* __Pyx_PyDict_GetItemDefault(PyObject* d, PyObject* key, PyObject* default_value) {
     PyObject* value;
 #if PY_MAJOR_VERSION >= 3
@@ -13466,6 +20525,130 @@ static PyObject* __Pyx_PyDict_GetItemDefault(PyObject* d, PyObject* key, PyObjec
     return value;
 }
 
+static CYTHON_INLINE int __Pyx_SetItemInt_Generic(PyObject *o, PyObject *j, PyObject *v) {
+    int r;
+    if (!j) return -1;
+    r = PyObject_SetItem(o, j, v);
+    Py_DECREF(j);
+    return r;
+}
+static CYTHON_INLINE int __Pyx_SetItemInt_Fast(PyObject *o, Py_ssize_t i, PyObject *v,
+                                               int is_list, int wraparound, int boundscheck) {
+#if CYTHON_COMPILING_IN_CPYTHON
+    if (is_list || PyList_CheckExact(o)) {
+        Py_ssize_t n = (!wraparound) ? i : ((likely(i >= 0)) ? i : i + PyList_GET_SIZE(o));
+        if ((!boundscheck) || likely((n >= 0) & (n < PyList_GET_SIZE(o)))) {
+            PyObject* old = PyList_GET_ITEM(o, n);
+            Py_INCREF(v);
+            PyList_SET_ITEM(o, n, v);
+            Py_DECREF(old);
+            return 1;
+        }
+    } else {
+        PySequenceMethods *m = Py_TYPE(o)->tp_as_sequence;
+        if (likely(m && m->sq_ass_item)) {
+            if (wraparound && unlikely(i < 0) && likely(m->sq_length)) {
+                Py_ssize_t l = m->sq_length(o);
+                if (likely(l >= 0)) {
+                    i += l;
+                } else {
+                    if (PyErr_ExceptionMatches(PyExc_OverflowError))
+                        PyErr_Clear();
+                    else
+                        return -1;
+                }
+            }
+            return m->sq_ass_item(o, i, v);
+        }
+    }
+#else
+#if CYTHON_COMPILING_IN_PYPY
+    if (is_list || (PySequence_Check(o) && !PyDict_Check(o))) {
+#else
+    if (is_list || PySequence_Check(o)) {
+#endif
+        return PySequence_SetItem(o, i, v);
+    }
+#endif
+    return __Pyx_SetItemInt_Generic(o, PyInt_FromSsize_t(i), v);
+}
+
+static PyObject* __Pyx_PyObject_CallMethod2(PyObject* obj, PyObject* method_name, PyObject* arg1, PyObject* arg2) {
+    PyObject *args, *method, *result = NULL;
+    method = __Pyx_PyObject_GetAttrStr(obj, method_name);
+#if CYTHON_COMPILING_IN_CPYTHON
+    if (likely(PyMethod_Check(method)) && likely(PyMethod_GET_SELF(method))) {
+        PyObject *self, *function;
+        self = PyMethod_GET_SELF(method);
+        function = PyMethod_GET_FUNCTION(method);
+        args = PyTuple_New(3);
+        if (unlikely(!args)) goto bad;
+        Py_INCREF(self);
+        PyTuple_SET_ITEM(args, 0, self);
+        Py_INCREF(arg1);
+        PyTuple_SET_ITEM(args, 1, arg1);
+        Py_INCREF(arg2);
+        PyTuple_SET_ITEM(args, 2, arg2);
+        Py_INCREF(function);
+        Py_DECREF(method);
+        method = function;
+    } else
+#endif
+    {
+        args = PyTuple_New(2);
+        if (unlikely(!args)) goto bad;
+        Py_INCREF(arg1);
+        PyTuple_SET_ITEM(args, 0, arg1);
+        Py_INCREF(arg2);
+        PyTuple_SET_ITEM(args, 1, arg2);
+    }
+    result = __Pyx_PyObject_Call(method, args, NULL);
+    Py_DECREF(args);
+    Py_DECREF(method);
+    return result;
+bad:
+    Py_XDECREF(method);
+    return result;
+}
+
+static CYTHON_INLINE PyObject *__Pyx_PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *default_value,
+                                                       CYTHON_UNUSED int is_safe_type) {
+    PyObject* value;
+#if PY_VERSION_HEX >= 0x030400A0
+    if (1) {
+        value = PyDict_SetDefault(d, key, default_value);
+        if (unlikely(!value)) return NULL;
+        Py_INCREF(value);
+#else
+    if (is_safe_type == 1 || (is_safe_type == -1 &&
+#if PY_MAJOR_VERSION >= 3
+            (PyUnicode_CheckExact(key) || PyString_CheckExact(key) || PyLong_CheckExact(key)))) {
+        value = PyDict_GetItemWithError(d, key);
+        if (unlikely(!value)) {
+            if (unlikely(PyErr_Occurred()))
+                return NULL;
+            if (unlikely(PyDict_SetItem(d, key, default_value) == -1))
+                return NULL;
+            value = default_value;
+        }
+        Py_INCREF(value);
+#else
+            (PyString_CheckExact(key) || PyUnicode_CheckExact(key) || PyInt_CheckExact(key) || PyLong_CheckExact(key)))) {
+        value = PyDict_GetItem(d, key);
+        if (unlikely(!value)) {
+            if (unlikely(PyDict_SetItem(d, key, default_value) == -1))
+                return NULL;
+            value = default_value;
+        }
+        Py_INCREF(value);
+#endif
+#endif
+    } else {
+        value = __Pyx_PyObject_CallMethod2(d, __pyx_n_s_setdefault, key, default_value);
+    }
+    return value;
+}
+
 static int __Pyx_SetVtable(PyObject *dict, void *vtable) {
 #if PY_VERSION_HEX >= 0x02070000
     PyObject *ob = PyCapsule_New(vtable, 0, 0);
@@ -13481,6 +20664,19 @@ static int __Pyx_SetVtable(PyObject *dict, void *vtable) {
 bad:
     Py_XDECREF(ob);
     return -1;
+}
+
+static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
+    PyObject* value = __Pyx_PyObject_GetAttrStr(module, name);
+    if (unlikely(!value) && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Format(PyExc_ImportError,
+        #if PY_MAJOR_VERSION < 3
+            "cannot import name %.230s", PyString_AS_STRING(name));
+        #else
+            "cannot import name %S", name);
+        #endif
+    }
+    return value;
 }
 
 static CYTHON_INLINE PyObject *__Pyx_GetModuleGlobalName(PyObject *name) {
@@ -13874,6 +21070,32 @@ raise_neg_overflow:
     return (int) -1;
 }
 
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
+    const long neg_one = (long) -1, const_zero = 0;
+    const int is_unsigned = neg_one > const_zero;
+    if (is_unsigned) {
+        if (sizeof(long) < sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(long) <= sizeof(unsigned long)) {
+            return PyLong_FromUnsignedLong((unsigned long) value);
+        } else if (sizeof(long) <= sizeof(unsigned long long)) {
+            return PyLong_FromUnsignedLongLong((unsigned long long) value);
+        }
+    } else {
+        if (sizeof(long) <= sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(long) <= sizeof(long long)) {
+            return PyLong_FromLongLong((long long) value);
+        }
+    }
+    {
+        int one = 1; int little = (int)*(unsigned char *)&one;
+        unsigned char *bytes = (unsigned char *)&value;
+        return _PyLong_FromByteArray(bytes, sizeof(long),
+                                     little, !is_unsigned);
+    }
+}
+
 static CYTHON_INLINE size_t __Pyx_PyInt_As_size_t(PyObject *x) {
     const size_t neg_one = (size_t) -1, const_zero = 0;
     const int is_unsigned = neg_one > const_zero;
@@ -13967,32 +21189,6 @@ raise_neg_overflow:
     PyErr_SetString(PyExc_OverflowError,
         "can't convert negative value to size_t");
     return (size_t) -1;
-}
-
-static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
-    const long neg_one = (long) -1, const_zero = 0;
-    const int is_unsigned = neg_one > const_zero;
-    if (is_unsigned) {
-        if (sizeof(long) < sizeof(long)) {
-            return PyInt_FromLong((long) value);
-        } else if (sizeof(long) <= sizeof(unsigned long)) {
-            return PyLong_FromUnsignedLong((unsigned long) value);
-        } else if (sizeof(long) <= sizeof(unsigned long long)) {
-            return PyLong_FromUnsignedLongLong((unsigned long long) value);
-        }
-    } else {
-        if (sizeof(long) <= sizeof(long)) {
-            return PyInt_FromLong((long) value);
-        } else if (sizeof(long) <= sizeof(long long)) {
-            return PyLong_FromLongLong((long long) value);
-        }
-    }
-    {
-        int one = 1; int little = (int)*(unsigned char *)&one;
-        unsigned char *bytes = (unsigned char *)&value;
-        return _PyLong_FromByteArray(bytes, sizeof(long),
-                                     little, !is_unsigned);
-    }
 }
 
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *x) {
@@ -14862,6 +22058,36 @@ static int __Pyx_check_binary_version(void) {
         return PyErr_WarnEx(NULL, message, 1);
     }
     return 0;
+}
+
+static int __Pyx_ExportVoidPtr(PyObject *name, void *p, const char *sig) {
+    PyObject *d;
+    PyObject *cobj = 0;
+    d = PyDict_GetItem(__pyx_d, __pyx_n_s_pyx_capi);
+    Py_XINCREF(d);
+    if (!d) {
+        d = PyDict_New();
+        if (!d)
+            goto bad;
+        if (__Pyx_PyObject_SetAttrStr(__pyx_m, __pyx_n_s_pyx_capi, d) < 0)
+            goto bad;
+    }
+#if PY_VERSION_HEX >= 0x02070000
+    cobj = PyCapsule_New(p, sig, 0);
+#else
+    cobj = PyCObject_FromVoidPtrAndDesc(p, (void *)sig, 0);
+#endif
+    if (!cobj)
+        goto bad;
+    if (PyDict_SetItem(d, name, cobj) < 0)
+        goto bad;
+    Py_DECREF(cobj);
+    Py_DECREF(d);
+    return 0;
+bad:
+    Py_XDECREF(cobj);
+    Py_XDECREF(d);
+    return -1;
 }
 
 static int __Pyx_ExportFunction(const char *name, void (*f)(void), const char *sig) {

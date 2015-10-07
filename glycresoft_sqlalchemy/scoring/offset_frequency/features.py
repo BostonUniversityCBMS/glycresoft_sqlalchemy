@@ -6,6 +6,7 @@ from .peak_relations import (
     MassOffsetFeature, search_features_on_spectrum,
     feature_function_estimator, FittedFeature)
 from .utils import chain_iterable
+from collections import defaultdict
 from glypy import MonosaccharideResidue, monosaccharides
 from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2 import residue_counter
 
@@ -60,14 +61,6 @@ def specialize_features(fitted_features):
                 intensity_ratio=intensity_ratio)
             specialized.append(f)
     return specialized
-
-
-def peak_probability_distribution(peak_list, features):
-    for peak in peak_list:
-        satisfied_features = search_features_on_spectrum(peak, peak_list, features)
-        distribution = {}
-        
-
 
 
 shifts = [

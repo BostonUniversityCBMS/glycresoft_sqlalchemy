@@ -78,7 +78,7 @@ class SimpleSpectrumAssignment(PipelineModule):
                 GSM.peaks_explained == peaks_explained,
                 GSM.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
                 GSM.hypothesis_id == self.hypothesis_id).update({"best_match": True})
-            if i % 1000:
+            if i % 1000 == 0:
                 logger.info("%d scans updated", i)
         session.commit()
 

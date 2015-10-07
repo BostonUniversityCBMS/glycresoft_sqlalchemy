@@ -18,7 +18,7 @@ from glycresoft_sqlalchemy.structure.sequence import (
 
 # Lacking a reasonable definition of the "space between fragmentation sites"
 SMALLEST_UNIT = 1000 * 2e-5
-
+NOISE = "noise"
 
 def preprocess_glycopeptide_spectrum_match(gsms):
     return map(MatchedSpectrum, gsms)
@@ -234,7 +234,7 @@ class PeakRelation(object):
         self.same_terminal = None
         self.from_charge = from_peak.charge
         self.to_charge = to_peak.charge
-        self.kind = kind or "Noise"
+        self.kind = kind or NOISE
 
     def __repr__(self):
         template = "<PeakRelation {s.from_peak.neutral_mass}({s.from_charge}) ->" +\
@@ -341,7 +341,7 @@ class FittedFeature(object):
     def peak_relations(self, include_noise=True):
         for spectrum_match, peak_relations in self.relations:
             for pr in peak_relations:
-                if not include_noise and pr.kind == "Noise":
+                if not include_noise and pr.kind == NOISE:
                     continue
                 yield pr
 

@@ -8,7 +8,7 @@ from glypy import MonosaccharideResidue
 
 from collections import defaultdict
 from ..data_model import TheoreticalGlycopeptide
-from ..utils.common_math import ppm_error, tol_ppm_error, search_spectrum_by_mass
+from ..utils.common_math import ppm_error, tol_ppm_error
 
 
 from ..structure import sequence, residue, fragment
