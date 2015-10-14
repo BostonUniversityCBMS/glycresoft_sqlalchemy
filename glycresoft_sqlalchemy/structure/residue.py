@@ -115,3 +115,29 @@ class Residue(ResidueBase):
 
     def __setstate__(self, state):
         self.name, self.symbol, self.mass = state
+
+
+def get_all_residues():
+    symbols = [
+    'A',
+    'R',
+    'N',
+    'D',
+    'C',
+    'E',
+    'Q',
+    'G',
+    'H',
+    'I',
+    'L',
+    'K',
+    'M',
+    'F',
+    'P',
+    'S',
+    'T',
+    'W',
+    'Y',
+    'V',
+    ]
+    return map(Residue, symbols)

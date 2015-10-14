@@ -491,7 +491,7 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                 "last_scan_id": mass_match.last_scan_id,
                 "ppm_error": mass_error,
                 "scan_density": mass_match.scan_density,
-                "weighted_monoisotopic_mass": mass_match.weighted_monoisotopic_mass + mass_shift.mass * shift_count,
+                "weighted_monoisotopic_mass": mass_match.weighted_monoisotopic_mass,
                 "total_volume": mass_match.total_volume,
                 "average_a_to_a_plus_2_ratio": mass_match.average_a_to_a_plus_2_ratio,
                 "a_peak_intensity_error": mass_match.a_peak_intensity_error,
@@ -618,9 +618,19 @@ ClassifierType = LogisticRegression
 
 
 class PeakGroupClassification(PipelineModule):
+    features = [
+            T_TempPeakGroupMatch.c.charge_state_count,
+            T_TempPeakGroupMatch.c.scan_density,
+            T_TempPeakGroupMatch.c.scan_count,
+            T_TempPeakGroupMatch.c.total_volume,
+            T_TempPeakGroupMatch.c.a_peak_intensity_error,
+            T_TempPeakGroupMatch.c.centroid_scan_error,
+            T_TempPeakGroupMatch.c.average_signal_to_noise
+    ]
+
     def __init__(self, database_path, observed_ions_path, hypothesis_id,
                  sample_run_id=None, hypothesis_sample_match_id=None,
-                 model_parameters=None, minimum_mass=1500, maximum_mass=15000):
+                 model_parameters=None):
         self.database_manager = self.manager_type(database_path)
         self.lcms_database = PeakGroupDatabase(observed_ions_path)
         self.hypothesis_id = hypothesis_id
@@ -628,8 +638,7 @@ class PeakGroupClassification(PipelineModule):
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.model_parameters = model_parameters
         self.classifier = None
-        self.minimum_mass = minimum_mass
-        self.maximum_mass = maximum_mass
+
 
     def transfer_peak_groups(self):
         """Copy Decon2LSPeakGroup entries from :attr:`observed_ions_manager`
@@ -665,8 +674,7 @@ class PeakGroupClassification(PipelineModule):
         ]
         stmt = lcms_database_session.query(
                 Decon2LSPeakGroup).filter(
-                Decon2LSPeakGroup.sample_run_id == self.sample_run_id,
-                Decon2LSPeakGroup.weighted_monoisotopic_mass.between(self.minimum_mass, self.maximum_mass))
+                Decon2LSPeakGroup.sample_run_id == self.sample_run_id)
         batch = lcms_database_session.connection().execute(stmt.selectable)
 
         conn = data_model_session.connection()
@@ -740,39 +748,28 @@ class PeakGroupClassification(PipelineModule):
         -------
         sklearn.linear_model.LogisticRegression : The fitted model
         """
-        features = [
-            T_TempPeakGroupMatch.c.charge_state_count,
-            T_TempPeakGroupMatch.c.scan_density,
-            T_TempPeakGroupMatch.c.scan_count,
-            T_TempPeakGroupMatch.c.total_volume,
-            T_TempPeakGroupMatch.c.a_peak_intensity_error,
-            T_TempPeakGroupMatch.c.centroid_scan_error,
-            T_TempPeakGroupMatch.c.average_signal_to_noise
-        ]
+        features = self.features
         label = [T_TempPeakGroupMatch.c.matched]
         ids = [T_TempPeakGroupMatch.c.id]
 
         data_model_session = self.database_manager.session()
         conn = data_model_session.connection()
-        feature_matrix = np.array(conn.execute(select(features)).fetchall(), dtype=np.float64)
+        feature_matrix = np.array(conn.execute(select(ids + features)).fetchall(), dtype=np.float64)
         # Drop all rows containing nan
         mask = ~np.isnan(feature_matrix).any(axis=1)
         feature_matrix = feature_matrix[mask]
         label_vector = np.array(conn.execute(select(label)).fetchall())[mask]
         classifier = ClassifierType()
         if self.model_parameters is None:
-            classifier.fit(feature_matrix, label_vector.ravel())
+            classifier.fit(feature_matrix[:, 1:], label_vector.ravel())
         else:
             classifier.coef_ = np.asarray(self.model_parameters)
-        scores = classifier.predict_proba(feature_matrix)[:, 1]
-        i = 0
-        for row_index, group_id, in enumerate(conn.execute(select(ids))):
-            if mask[row_index]:
+        scores = classifier.predict_proba(feature_matrix[:, 1:])[:, 1]
+        for group_id, score in itertools.izip(feature_matrix[:, 0], scores):
                 conn.execute(
                     TPeakGroupMatch.update().where(
-                        TPeakGroupMatch.c.peak_group_id == group_id[0]).values(
-                        ms1_score=float(scores[i])))
-                i += 1
+                        TPeakGroupMatch.c.peak_group_id == group_id).values(
+                        ms1_score=float(score)))
         data_model_session.commit()
         return classifier
 
@@ -788,7 +785,7 @@ class PeakGroupClassification(PipelineModule):
         self.transfer_peak_groups()
         self.classifier = self.fit_regression()
         logger.info("Classes: %r", self.classifier.classes_)
-        logger.info("Coefficients: %r", self.classifier.coef_)
+        logger.info("Coefficients: %r", ([c.name for c in self.features], self.classifier.coef_))
         self.clear_peak_groups()
 
 

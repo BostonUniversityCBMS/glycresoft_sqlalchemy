@@ -49,7 +49,7 @@ cpdef object tol_ppm_error(float x, float y, float tolerance):
 cpdef str interpolate_fragment_ion_type(str ion_key):
     if ion_key[0] in ['b', 'c', 'y', 'z']:
         return ion_key[0]
-    elif "peptide" in ion_key:
+    elif "pep" in ion_key:
         return "stub_ion"
     else:
         return "oxonium"
@@ -550,7 +550,7 @@ cdef class MatchedSpectrum(object):
         cdef:
             set explained
             list matches
-            dict match
+            FragmentMatch match
             PyObject* temp
             Py_ssize_t i
 
@@ -560,8 +560,8 @@ cdef class MatchedSpectrum(object):
             return explained
         matches = <list>temp
         for i in range(PyList_GET_SIZE(matches)):
-            match = <dict>PyList_GET_ITEM(matches, i)
-            explained.add(<str>PyDict_GetItem(match, "key"))
+            match = <FragmentMatch>PyList_GET_ITEM(matches, i)
+            explained.add(match.ion_type)
 
         return explained
 

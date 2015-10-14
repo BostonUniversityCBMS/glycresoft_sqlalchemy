@@ -18,6 +18,7 @@ from ..data_model import (
     TheoreticalGlycanStructure, GlycanStructureMatch, GlycanSpectrumMatch
     )
 
+from ..utils.common_math import ppm_error
 
 neutral_mass_getter = operator.attrgetter("neutral_mass")
 key_getter = operator.itemgetter('key')
@@ -31,10 +32,6 @@ PROTON = 1.007276035
 
 ms1_tolerance_default = 1e-5
 ms2_tolerance_default = 2e-5
-
-
-def ppm_error(x, y):
-    return (x - y) / y
 
 
 def match_fragments(theoretical, msmsdb_path, ms1_tolerance, ms2_tolerance,

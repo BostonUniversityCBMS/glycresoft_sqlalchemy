@@ -11,22 +11,7 @@ from ..data_model import DatabaseManager, GlycopeptideMatch, Protein
 from ..data_model import PipelineModule
 
 
-Threshold = namedtuple("Threshold", ("score", "targets", "decoys", "fdr"))
-
 ms2_score = GlycopeptideMatch.ms2_score
-p_value = GlycopeptideMatch.p_value
-
-
-class RangeCounter(Counter):
-    def add_below(self, key, value):
-        for pkey in list(self.keys()):
-            if pkey <= key:
-                self[pkey] += value
-
-    def add_above(self, key, value):
-        for pkey in list(self.keys()):
-            if pkey > key:
-                self[pkey] += value
 
 
 class TargetDecoyAnalyzer(PipelineModule):
@@ -170,12 +155,9 @@ class TargetDecoyAnalyzer(PipelineModule):
         session.close()
 
     def estimate_percent_incorrect_targets(self, cutoff, score=ms2_score):
-        session = self.manager.session()
-
         target_cut = self.target_count - self.n_targets_above_threshold(cutoff)
         decoy_cut = self.decoy_count - self.n_decoys_above_threshold(cutoff)
         percent_incorrect_targets = target_cut / float(decoy_cut)
-        session.close()
         return percent_incorrect_targets
 
     def fdr_with_percent_incorrect_targets(self, cutoff):
@@ -224,3 +206,107 @@ class TargetDecoyAnalyzer(PipelineModule):
     def run(self):
         self.calculate_thresholds()
         self.q_values()
+
+
+class InMemoryTargetDecoyAnalyzer(object):
+    def __init__(self, target_series, decoy_series):
+        self.targets = target_series
+        self.decoys = decoy_series
+        self.target_count = len(target_series)
+        self.decoy_count = len(decoy_series)
+        self.calculate_thresholds()
+
+    def calculate_thresholds(self):
+        self.n_targets_at = {}
+        self.n_decoys_at = {}
+
+        target_series = self.targets
+        decoy_series = self.decoys
+        
+        thresholds = sorted({case.ms2_score for case in target_series} | {case.ms2_score for case in decoy_series})
+        g = iter(thresholds)
+
+        target_counts = defaultdict(int)
+        decoy_counts = defaultdict(int)
+
+        count = 0
+        current_threshold = g.next()
+        for series, counter in [(target_series, target_counts), (decoy_series, decoy_counts)]:
+            g = iter(thresholds)
+            count = 0
+            current_threshold = g.next()
+            for case in series:
+                if case.ms2_score <= current_threshold:
+                    count += 1
+                else:
+                    counter[current_threshold] = count
+                    current_threshold = g.next()
+                    while case.ms2_score > current_threshold:
+                        counter[current_threshold] = count
+                        current_threshold = g.next()
+                    count += 1
+            for t in g:
+                counter[current_threshold] = count
+                
+        self.n_targets_at = {}
+        for t, c in target_counts.items():
+            self.n_targets_at[t] = self.target_count - c
+        
+        self.n_decoys_at = {}
+        for t, c in decoy_counts.items():
+            self.n_decoys_at[t] = self.decoy_count - c
+
+        self.thresholds = thresholds
+
+    def n_decoys_above_threshold(self, threshold):
+        return self.n_decoys_at.get(threshold, 0.)
+
+    def n_targets_above_threshold(self, threshold):
+        return self.n_targets_at.get(threshold, 0.)
+
+    def target_decoy_ratio(self, cutoff):
+
+        decoys_at = self.n_decoys_above_threshold(cutoff)
+        targets_at = self.n_targets_above_threshold(cutoff)
+        try:
+            ratio = decoys_at / float(targets_at)
+        except ZeroDivisionError:
+            ratio = 1.
+        return ratio, targets_at, decoys_at
+
+    def estimate_percent_incorrect_targets(self, cutoff):
+        target_cut = self.target_count - self.n_targets_above_threshold(cutoff)
+        decoy_cut = self.decoy_count - self.n_decoys_above_threshold(cutoff)
+        percent_incorrect_targets = target_cut / float(decoy_cut)
+
+        return percent_incorrect_targets
+
+    def fdr_with_percent_incorrect_targets(self, cutoff):
+        percent_incorrect_targets = self.estimate_percent_incorrect_targets(cutoff)
+        return percent_incorrect_targets * self.target_decoy_ratio(cutoff)[0]
+    
+    def _calculate_q_values(self):
+        thresholds = self.thresholds
+        mapping = {}
+        last_score = 1
+        last_q_value = 0
+        for threshold in thresholds:
+            try:
+                q_value = self.fdr_with_percent_incorrect_targets(threshold)
+                # If a worse score has a higher q-value than a better score, use that q-value
+                # instead.
+                if last_q_value < q_value and last_score < threshold:
+                    q_value = last_q_value
+                last_q_value = q_value
+                last_score = threshold
+                mapping[threshold] = q_value
+            except ZeroDivisionError:
+                mapping[threshold] = 1.
+        return mapping
+
+    def q_values(self):
+        q_map = self._calculate_q_values()
+        for target in self.targets:
+            target.q_value2 = q_map[target.ms2_score]
+        for decoy in self.decoys:
+            decoy.q_value2 = q_map[decoy.ms2_score]

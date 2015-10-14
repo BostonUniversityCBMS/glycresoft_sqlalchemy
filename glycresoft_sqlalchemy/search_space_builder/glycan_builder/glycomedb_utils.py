@@ -21,6 +21,9 @@ from glycresoft_sqlalchemy.data_model import (
     TheoreticalGlycanStructure, MS1GlycanHypothesis, MS2GlycanHypothesis, func)
 
 from glycresoft_sqlalchemy.utils.database_utils import temp_table
+from glycresoft_sqlalchemy.utils import appdir
+
+from glycresoft_sqlalchemy.search_space_builder.glycan_builder import registry
 
 logger = logging.getLogger("glycomedb_utils")
 
@@ -34,6 +37,8 @@ motif_families = {
 def timestamp():
     return datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
 
+set_reducing_end = registry.set_reducing_end
+derivatize = registry.derivatize
 
 cache_name = "glycome-db-cache"
 reference_hypothesis_name_prefix = "GlycomeDB-Reference-"
@@ -149,11 +154,11 @@ class GlycomeDBDownloader(PipelineModule):
 class TaxonomyFilter(PipelineModule):
     def __init__(
             self, database_path, hypothesis_id, taxonomy_path=None,
-            taxa_ids=None, include_children=True, motif_family=None):
+            taxa_ids=None, include_descendent_taxa=True, motif_family=None):
         self.manager = self.manager_type(database_path)
         self.hypothesis_id = hypothesis_id
         self.taxa_ids = taxa_ids
-        self.include_children = include_children
+        self.include_descendent_taxa = include_descendent_taxa
         self.motif_family = motif_family
 
         self.taxonomy_path = taxonomy_path
@@ -163,7 +168,7 @@ class TaxonomyFilter(PipelineModule):
 
     def stream_chosen_glycans(self):
         taxonomy = None
-        if self.include_children:
+        if self.include_descendent_taxa:
             if self.taxonomy_path is None or not os.path.exists(self.taxonomy_path):
                 if self.taxonomy_path is None:
                     self.taxonomy_path = "taxonomy.db"
@@ -179,7 +184,7 @@ class TaxonomyFilter(PipelineModule):
         TempTaxonTable.create(conn)
 
         for taxon_id in self.taxa_ids:
-            if self.include_children:
+            if self.include_descendent_taxa:
                 all_ids = taxonomy.children(taxon_id, deep=True)
             else:
                 all_ids = [taxon_id]
@@ -215,28 +220,31 @@ class TaxonomyFilter(PipelineModule):
         session.commit()
 
 
+@registry.composition_source_type.register("glycome-db")
 class GlycomeDBHypothesis(PipelineModule):
     batch_size = 5000
 
     def __init__(
             self, database_path, hypothesis_id=None, glycomedb_path=None,
-            taxonomy_path=None, taxa_ids=None, include_children=False, include_tandem=True,
-            motif_family=None):
+            taxonomy_path=None, taxa_ids=None, include_descendent_taxa=False, include_structures=True,
+            motif_family=None, reduction=None, derivatization=None):
         self.manager = self.manager_type(database_path)
         self.glycomedb_path = glycomedb_path
         self.taxonomy_path = taxonomy_path
         self.taxa_ids = taxa_ids
-        self.include_children = include_children
+        self.include_descendent_taxa = include_descendent_taxa
         self.hypothesis_id = hypothesis_id
-        self.include_tandem = include_tandem
+        self.include_structures = include_structures
         self.motif_family = motif_family
+        self.reduction = reduction
+        self.derivatization = derivatization
 
     def run(self):
         self.manager.initialize()
         session = self.manager.session()
         hypothesis = None
         if self.hypothesis_id is None:
-            if self.include_tandem:
+            if self.include_structures:
                 hypothesis = MS2GlycanHypothesis()
             else:
                 hypothesis = MS1GlycanHypothesis()
@@ -248,8 +256,8 @@ class GlycomeDBHypothesis(PipelineModule):
 
         hypothesis.parameters = hypothesis.parameters or {}
         hypothesis.parameters['taxa_ids'] = self.taxa_ids
-        hypothesis.parameters['taxa_include_children'] = self.include_children
-        hypothesis.parameters['include_tandem'] = self.include_tandem
+        hypothesis.parameters['taxa_include_descendent_taxa'] = self.include_descendent_taxa
+        hypothesis.parameters['include_structures'] = self.include_structures
         hypothesis.parameters['motif_family'] = self.motif_family
 
         self.fetch_relevant_glycans()
@@ -259,29 +267,62 @@ class GlycomeDBHypothesis(PipelineModule):
         glycomedb_reference = self.resolve_glycomedb()
         taxonomy_filter = TaxonomyFilter(
             self.glycomedb_path, glycomedb_reference.id, self.taxonomy_path,
-            self.taxa_ids, self.include_children, self.motif_family)
+            self.taxa_ids, self.include_descendent_taxa, self.motif_family)
 
         i = 0
+
+        reduction = self.reduction
+        derivatization = self.derivatization
+
         last_composition_reference_id = None
         for record_type, record in taxonomy_filter.start():
             taxa = list(record.taxa)
             if record_type is TheoreticalGlycanComposition:
-                new_record = TheoreticalGlycanComposition(
-                    calculated_mass=record.calculated_mass,
-                    composition=record.composition,
-                    derivatization=record.derivatization,
-                    reduction=record.reduction,
-                    hypothesis_id=self.hypothesis_id)
+                if reduction is not None or derivatization is not None:
+                    composition = record.glycan_composition.copy()
+                    if reduction is not None:
+                        set_reducing_end(composition, reduction)
+                    if derivatization is not None:
+                        derivatize(composition, derivatization)
+                    new_record = TheoreticalGlycanComposition(
+                        calculated_mass=composition.mass(),
+                        composition=record.composition,
+                        derivatization=derivatization,
+                        reduction=reduction,
+                        hypothesis_id=self.hypothesis_id
+                        )
+                else:
+                    new_record = TheoreticalGlycanComposition(
+                        calculated_mass=record.calculated_mass,
+                        composition=record.composition,
+                        derivatization=record.derivatization,
+                        reduction=record.reduction,
+                        hypothesis_id=self.hypothesis_id)
             elif record_type is TheoreticalGlycanStructure:
-                if not self.include_tandem:
+                if not self.include_structures:
                     continue
-                new_record = TheoreticalGlycanStructure(
-                    calculated_mass=record.calculated_mass,
-                    composition=record.composition,
-                    derivatization=record.derivatization,
-                    reduction=record.reduction,
-                    glycoct=record.glycoct,
-                    hypothesis_id=self.hypothesis_id)
+                if reduction is not None or derivatization is not None:
+                    structure = record.structure().clone()
+                    if reduction is not None:
+                        set_reducing_end(structure, reduction)
+                    if derivatization is not None:
+                        derivatize(structure, derivatization)
+                    new_record = TheoreticalGlycanStructure(
+                        calculated_mass=structure.mass(),
+                        composition=record.composition,
+                        derivatization=derivatization,
+                        reduction=reduction,
+                        glycoct=str(structure),
+                        hypothesis_id=self.hypothesis_id
+                        )
+                else:
+                    new_record = TheoreticalGlycanStructure(
+                        calculated_mass=record.calculated_mass,
+                        composition=record.composition,
+                        derivatization=record.derivatization,
+                        reduction=record.reduction,
+                        glycoct=record.glycoct,
+                        hypothesis_id=self.hypothesis_id)
             else:
                 raise Exception("Unknown Record Type: %s" % record_type)
             session.add(new_record)
@@ -297,6 +338,10 @@ class GlycomeDBHypothesis(PipelineModule):
 
             session.execute(record_type.TaxonomyAssociationTable.insert(), [
                 {"taxon_id": t.id, "entity_id": new_record.id} for t in taxa])
+            if len(record.references) != 0:
+                session.execute(record_type.ReferenceAccessionAssocationTable.insert(), [
+                    {"entity_id": new_record.id, "accession_code": r.id, "database_id": r.database_id} for r in record.references
+                    ])
             i += 1
 
             if i % self.batch_size == 0:

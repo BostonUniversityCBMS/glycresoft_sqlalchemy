@@ -43,7 +43,7 @@ class StubGlycopeptide(object):
             no_stem_gc = self.glycan_composition.clone()
             no_stem_gc.drop_stems()
             no_stem_gc.drop_positions()
-            self.dHex = no_stem_gc["dHex"]
+            self.dHex = no_stem_gc["dHex"] or no_stem_gc["Fuc"]
             self.Hex = no_stem_gc["Hex"]
             self.HexNAc = no_stem_gc["HexNAc"]
             self.NeuAc = no_stem_gc["NeuNAc"]

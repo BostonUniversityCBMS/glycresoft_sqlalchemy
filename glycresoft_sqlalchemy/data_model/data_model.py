@@ -157,6 +157,17 @@ class PeptideBase(object):
             pass
         return list(sites)
 
+    def __hash__(self):
+        return hash((self.most_detailed_sequence, self.protein))
+
+    def __eq__(self, other):
+        result = self.protein is None or other.protein is None or self.protein == other.protein
+        result &= self.most_detailed_sequence == other.most_detailed_sequence
+        return result
+
+    def __ne__(self, other):
+        return not (self == other)
+
     def __repr__(self):
         return "<{} {} {}>".format(self.__class__.__name__, self.id, self.most_detailed_sequence)
 

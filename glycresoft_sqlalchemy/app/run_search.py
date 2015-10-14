@@ -6,7 +6,7 @@ except:
     pass
 from glycresoft_sqlalchemy.matching import matching, peak_grouping
 from glycresoft_sqlalchemy.scoring import target_decoy, score_spectrum_matches
-from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
+from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser, process_data_file
 from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2.search_space_builder import (
     TheoreticalSearchSpaceBuilder)
 from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2.pooling_make_decoys import (
@@ -17,7 +17,8 @@ from glycresoft_sqlalchemy.data_model import (
     MassShift, HypothesisSampleMatch)
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 
-import summarize
+from glycresoft_sqlalchemy.app import let
+
 
 ms1_tolerance_default = matching.ms1_tolerance_default
 ms2_tolerance_default = matching.ms2_tolerance_default
@@ -31,10 +32,30 @@ class ParseMassShiftAction(argparse.Action):
         super(ParseMassShiftAction, self).__init__(option_strings, dest, **kwargs)
 
     def parse(self, shift):
-        return shift[0].replace("\-", '-'), int(shift[1].replace("\-", '-')), int(shift[2])
+        print(repr(shift))
+        return shift[0].replace("\-", '-'), float(shift[1].replace("\-", '-')), int(shift[2])
 
     def __call__(self, parser, namespace, values, option_string=None):
         getattr(namespace, self.dest).append(self.parse(values))
+
+
+def index_isos(
+        file_path, database_path, grouping_tolerance=8e-5,
+        minimum_scan_count=1, max_charge_state=8,
+        minimum_abundance_ratio=0.01, minimum_mass=1200., maximum_mass=15000.,
+        n_processes=4):
+    parser = Decon2LSIsosParser(file_path, database_path)
+    database_path = parser.manager.path
+    sample_run_id = parser.sample_run.id
+    grouper = peak_grouping.Decon2LSPeakGrouper(
+        database_path, sample_run_id=sample_run_id, max_charge_state=max_charge_state,
+        minimum_abundance_ratio=minimum_abundance_ratio, grouping_error_tolerance=grouping_tolerance,
+        minimum_mass=minimum_mass, maximum_mass=maximum_mass, n_processes=n_processes)
+    grouper.start()
+
+
+def index_bupid(file_path, database_path=None):
+    process_data_file(file_path, database_path)
 
 
 def run_ms2_glycoproteomics_search(
@@ -92,6 +113,9 @@ def run_ms2_glycoproteomics_search(
     job.start()
 
     if decoy_hypothesis_id is None:
+        job = score_spectrum_matches.SimpleSpectrumAssignment(
+            database_path, target_hypothesis_id, hsm_id, n_processes=n_processes)
+        job.start()
         return
 
     job = matching.IonMatching(
@@ -135,6 +159,8 @@ def run_ms1_search(
         session.add(shift)
         mass_shift_map[shift] = shift_params[2]
 
+    session.commit()
+
     if observed_ions_type == 'isos':
         parser = Decon2LSIsosParser(observed_ions_path, manager.bridge_address())
         observed_ions_path = parser.manager.path
@@ -153,38 +179,67 @@ app = argparse.ArgumentParser('database-search')
 subparsers = app.add_subparsers()
 
 ms2_glycoproteomics_app = subparsers.add_parser("ms2-glycoproteomics")
+with let(ms2_glycoproteomics_app) as c:
+    c.add_argument("database_path")
+    c.add_argument("target_hypothesis_id")
 
-ms2_glycoproteomics_app.add_argument("database_path")
-ms2_glycoproteomics_app.add_argument("target_hypothesis_id")
+    target_group = c.add_mutually_exclusive_group()
+    target_group.add_argument("-a", "--target-hypothesis-id", help='The identity of the target hypothesis, if it already exists')
+    target_group.add_argument("-s", "--source-hypothesis-sample-match-id", help="The ")
 
-target_group = ms2_glycoproteomics_app.add_mutually_exclusive_group()
-target_group.add_argument("-a", "--target-hypothesis-id", help='The identity of the target hypothesis, if it already exists')
-target_group.add_argument("-s", "--source-hypothesis-sample-match-id", help="The ")
+    c.add_argument("-n", "--n-processes", default=4, required=False, type=int)
+    c.add_argument("-i", "--observed-ions-path")
+    c.add_argument("-p", "--observed-ions-type", default='bupid_yaml', choices=["bupid_yaml", "db"])
+    c.add_argument("-d", "--decoy-hypothesis-id", type=int, default=None, required=False)
+    c.add_argument(
+        "-t1", "--ms1-tolerance", default=ms1_tolerance_default, required=False, type=float)
+    c.add_argument(
+        "-t2", "--ms2-tolerance", default=ms2_tolerance_default, required=False, type=float)
+    c.set_defaults(task=run_ms2_glycoproteomics_search)
 
-ms2_glycoproteomics_app.add_argument("-n", "--n-processes", default=4, required=False, type=int)
-ms2_glycoproteomics_app.add_argument("-i", "--observed-ions-path")
-ms2_glycoproteomics_app.add_argument("-p", "--observed-ions-type", default='bupid_yaml', choices=["bupid_yaml", "db"])
-ms2_glycoproteomics_app.add_argument("-d", "--decoy-hypothesis-id", type=int, default=None, required=False)
-ms2_glycoproteomics_app.add_argument(
-    "-t1", "--ms1-tolerance", default=ms1_tolerance_default, required=False, type=float)
-ms2_glycoproteomics_app.add_argument(
-    "-t2", "--ms2-tolerance", default=ms2_tolerance_default, required=False, type=float)
-ms2_glycoproteomics_app.set_defaults(task=run_ms2_glycoproteomics_search)
 
 ms1_app = subparsers.add_parser("ms1")
-ms1_app.add_argument("database_path")
-ms1_app.add_argument("hypothesis_id")
-ms1_app.add_argument("-n", "--n-processes", default=4, required=False, type=int)
-ms1_app.add_argument("-i", "--observed-ions-path")
-ms1_app.add_argument("-p", "--observed-ions-type", default='isos', choices=["isos", "db"])
-ms1_app.add_argument("-t", "--match-tolerance", default=1e-5, required=False, type=float)
-ms1_app.add_argument("-g", "--grouping-tolerance", default=8e-5, required=False, type=float)
-ms1_app.add_argument("-s", "--search-type", default='glycopeptide', choices=['glycan', 'glycopeptide'])
-ms1_app.add_argument("-m", "--mass-shift", action=ParseMassShiftAction)
-ms1_app.add_argument('--skip-grouping', action='store_true', required=False)
-ms1_app.add_argument('--skip-matching', action='store_true', required=False)
-ms1_app.add_argument('--hypothesis-sample-match-id', action='store', default=None, required=False)
-ms1_app.set_defaults(task=run_ms1_search)
+with let(ms1_app) as c:
+    c.add_argument("database_path")
+    c.add_argument("hypothesis_id")
+    c.add_argument("-n", "--n-processes", default=4, required=False, type=int)
+    c.add_argument("-i", "--observed-ions-path")
+    c.add_argument("-p", "--observed-ions-type", default='isos', choices=["isos", "db"])
+    c.add_argument("-t", "--match-tolerance", default=1e-5, required=False, type=float)
+    c.add_argument("-g", "--grouping-tolerance", default=8e-5, required=False, type=float)
+    c.add_argument("-s", "--search-type", default='glycopeptide', choices=['glycan', 'glycopeptide'])
+    c.add_argument("-m", "--mass-shift", action=ParseMassShiftAction)
+    c.add_argument('--skip-grouping', action='store_true', required=False)
+    c.add_argument('--skip-matching', action='store_true', required=False)
+    c.add_argument('--hypothesis-sample-match-id', action='store', default=None, required=False)
+    c.set_defaults(task=run_ms1_search)
+
+
+index_isos_app = subparsers.add_parser("index-isos")
+with let(index_isos_app) as c:
+    c.add_argument("-n", "--n-processes", default=4, required=False, type=int)
+    c.add_argument("file_path", help='path to isos.csv file')
+    c.add_argument("-d", "--database-path", required=False, default=None, help='path to output database.'
+                   ' Defaults to the same directory as the isos file')
+    c.add_argument("-c", "--max-charge-state", type=int, required=False, default=8,
+                   help="Only consider peaks with a charge state <= this.")
+    c.add_argument("-l", "--minimum-mass", type=float, required=False, default=1200,
+                   help="Only consider peaks with a neutral mass > this. Default"
+                        " = 1200 Da, reasonable for glycopeptides. For glycans, 500 Da is more appropriate"
+                        " depending upon derivatization.")
+    c.add_argument("-u", "--maximum-mass", type=float, required=False, default=15000,
+                   help="Only consider peaks with a neutral mass < this. Default"
+                        " = 15000 Da, reasonable for glycopeptides and glycans.")
+    c.add_argument("-g", "--grouping-tolerance", default=8e-5, required=False, type=float)
+    c.set_defaults(task=index_isos)
+
+
+index_bupid_app = subparsers.add_parser("index-bupid")
+with let(index_bupid_app) as c:
+    c.add_argument("file_path", help="path to yaml file")
+    c.add_argument("-d", "--database-path", required=False, default=None, help="path to output database."
+                   " Defaults to the same directory as the yaml file.")
+    c.set_defaults(task=index_bupid)
 
 
 def main():

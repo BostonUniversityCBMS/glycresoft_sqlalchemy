@@ -1,5 +1,8 @@
+import re
+
 from glypy import MonosaccharideResidue
-from .residue import Residue as AminoAcidResidue
+
+from .residue import Residue as AminoAcidResidue, memoize
 from .composition import Composition
 from .modification import Modification
 from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet
@@ -33,6 +36,17 @@ class AminoAcidSequenceBuildingBlock(object):
         return "{}{}".format(
             self.residue.symbol,
             "({.name})".format(self.modifications[0]) if len(self.modifications) > 0 else "")
+
+    @classmethod
+    @memoize()
+    def from_str(cls, string):
+        parts = string.split("(")
+        aa = AminoAcidResidue(parts[0])
+        mod = tuple()
+        if len(parts) > 1:
+            mod = (Modification(parts[1][:-1]),)
+        return cls(aa, mod)
+
 
 
 class SequenceSegmentBlock(object):
@@ -189,6 +203,15 @@ class SequenceComposition(dict):
 
     def __hash__(self):
         return hash(str(self))
+
+    @classmethod
+    def parse(cls, string):
+        inst = cls()
+        tokens = string[1:-1].split('; ')
+        for token in tokens:
+            residue, count = token.split(":")
+            inst[AminoAcidSequenceBuildingBlock.from_str(residue)] = int(count)
+        return inst
 
 
 def all_compositions(blocks, count=20):

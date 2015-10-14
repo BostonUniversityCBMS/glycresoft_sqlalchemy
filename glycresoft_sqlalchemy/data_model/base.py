@@ -20,3 +20,4 @@ class Hierarchy(dict):
             self[referent] = cls
             return cls
         return wrapper
+    register = references

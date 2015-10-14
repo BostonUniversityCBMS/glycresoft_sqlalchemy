@@ -171,7 +171,11 @@ class StreamingYAMLPusher(object):
                 #     has_more_peaks = False
                 #     logger.info("No more peaks")
             elif isinstance(next_event, ScalarEvent):
+                if self.state is PEAKS:
+                    has_more_peaks = False
+                    continue
                 yield self.clean(next_event)
+
             elif isinstance(next_event, AliasEvent):
                 yield self.clean(next_event)
             else:
@@ -205,7 +209,7 @@ class StreamingYAMLRenderer(object):
     def run(self):
         source = self.source
         state = BEGIN
-
+        counter = 0
         scan_time = None
         scans = []
         tandem_peaks = []
@@ -263,7 +267,6 @@ class StreamingYAMLRenderer(object):
                     scan_time = scans[0]['id']
                     precursor_charge_state = scans[0]['z']
                     precursor_neutral_mass = neutral_mass(scans[0]['mz'], precursor_charge_state)
-                    logger.info("Scan Time %d", scan_time)
                     scan = TandemScan(
                         time=scan_time, precursor_charge_state=precursor_charge_state,
                         precursor_neutral_mass=precursor_neutral_mass, sample_run_id=self.sample_run_id)
@@ -282,6 +285,9 @@ class StreamingYAMLRenderer(object):
                     charge = []
                     intensity = []
                     scans = []
+                    counter += 1
+                    if counter % 1000 == 0:
+                        logger.info("%d scans done.", counter)
                     state = PEAKS
                 elif isinstance(event, ScalarEvent):
                     if event.implicit[1]:

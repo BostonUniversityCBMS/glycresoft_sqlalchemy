@@ -172,7 +172,7 @@ class Decon2LSPeak(Base):
     most_abundant_mass = Column(Numeric(12, 6, asdecimal=False))
     full_width_half_max = Column(Numeric(12, 6, asdecimal=False))
     signal_to_noise = Column(Numeric(12, 6, asdecimal=False))
-
+    isotopic_fit = Column(Numeric(7, 6, asdecimal=False))
     scan_id = Column(Integer, ForeignKey(ScanBase.id), index=True)
 
     @classmethod

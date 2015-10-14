@@ -1,7 +1,4 @@
 from itertools import cycle
-from matplotlib import pyplot as plt
-from matplotlib import patches as mpatches
-from matplotlib.path import Path
 from matplotlib.colors import cnames, hex2color
 
 
@@ -17,30 +14,55 @@ def darken(rgb, factor=0.25):
     return [(c * factor) for c in rgb]
 
 
-colors = cycle([hex2color(cnames[name]) for name in ("red", "blue", "yellow", "purple", "navy", "grey")])
+colors = cycle([hex2color(cnames[name]) for name in (
+    "red", "blue", "yellow", "purple", "navy", "grey", "coral", "forestgreen", "limegreen", "maroon", "aqua",
+    "lavender", "lightcoral", "mediumorchid")])
 
 
-color_name_map = {
-    "HexNAc": hex2color(cnames["steelblue"])
-}
+class ColorMapper(object):
+    colors = [hex2color(cnames[name]) for name in (
+              "red", "blue", "yellow", "purple", "navy", "grey", "coral", "forestgreen", "limegreen", "maroon", "aqua",
+              "lavender", "lightcoral", "mediumorchid")]
+
+    def __init__(self):
+        self.color_name_map = {
+            "HexNAc": hex2color(cnames["steelblue"]),
+        }
+        self.color_generator = cycle(self.colors)
+
+    def get_color(self, name):
+        """Given a name, find the color mapped to that name, or
+        select the next color from the `colors` generator and assign
+        it to the name and return the new color.
+
+        Parameters
+        ----------
+        name : object
+            Any hashable object, usually a string
+
+        Returns
+        -------
+        tuple: RGB triplet
+        """
+        try:
+            return self.color_name_map[name]
+        except KeyError:
+            o = self.color_name_map[name] = self.color_generator.next()
+            return o
+
+    __getitem__ = get_color
+
+    def __setitem__(self, name, color):
+        self.color_name_map[name] = color
+
+    def __repr__(self):
+        return repr(self.color_name_map)
+
+    darken = staticmethod(darken)
+    lighten = staticmethod(lighten)
 
 
-def get_color(name):
-    """Given a name, find the color mapped to that name, or
-    select the next color from the `colors` generator and assign
-    it to the name and return the new color.
+_color_mapper = ColorMapper()
 
-    Parameters
-    ----------
-    name : object
-        Any hashable object, usually a string
-
-    Returns
-    -------
-    tuple: RGB triplet
-    """
-    try:
-        return color_name_map[name]
-    except KeyError:
-        color_name_map[name] = colors.next()
-        return color_name_map[name]
+color_name_map = _color_mapper.color_name_map
+get_color = _color_mapper.get_color

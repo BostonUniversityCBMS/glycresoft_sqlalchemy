@@ -1,5 +1,5 @@
 cdef char* NOISE
-
+cdef int OUT_OF_RANGE_INT = 999
 
 cpdef float ppm_error(float x, float y)
 

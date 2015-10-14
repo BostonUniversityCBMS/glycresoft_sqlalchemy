@@ -70,6 +70,12 @@ class AssociationComposition(_AssociationDict):
     def clone(self):
         return glycan_composition.GlycanComposition(**self)
 
+    def __getitem__(self, key):
+        try:
+            return super(AssociationComposition, self).__getitem__(key)
+        except KeyError:
+            return 0
+
     def __iadd__(self, other):
         for elem, cnt in (other.items()):
             self[elem] += cnt
@@ -103,11 +109,14 @@ class AssociationComposition(_AssociationDict):
             raise TypeError(
                 'Cannot multiply Composition by non-integer',
                 other)
-        prod = {}
+        prod = glycan_composition.GlycanComposition()
         for k, v in self.items():
             prod[k] = v * other
 
         return (prod)
+
+    def copy(self):
+        return glycan_composition.GlycanComposition(**self)
 
 
 def association_composition_creator(k, v, reference_table):
@@ -319,8 +328,15 @@ class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionN
     __tablename__ = "TheoreticalGlycanStructure"
 
     composition_reference_id = Column(Integer, ForeignKey(TheoreticalGlycanComposition.id), index=True)
+
     glycoct = Column(Unicode(256), index=True)
     _fragments = Column(MutableDict.as_mutable(PickleType))
+
+    ms1_score = Column(Numeric(7, 6, asdecimal=False), index=True)
+    volume = Column(Numeric(12, 6, asdecimal=False))
+
+    peak_group_matches = relationship("PeakGroupMatch", secondary=lambda: TheoreticalGlycanStructureToPeakGroupMatch, lazy="dynamic")
+
 
     def fragments(self, kind='BY'):
         if self._fragments is None:
@@ -347,11 +363,16 @@ class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionN
     def __repr__(self):
         rep = "<{self.__class__.__name__}\n{self.glycoct}>".format(self=self)
         return rep
-# has_glycan_composition(TheoreticalGlycanStructure, "composition")
 
+
+TheoreticalGlycanStructureToPeakGroupMatch = Table(
+    "TheoreticalGlycanStructureToPeakGroupMatch", Base.metadata,
+    Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanStructure.id"), index=True),
+    Column("peak_group_match_id", Integer, ForeignKey("PeakGroupMatch.id"), index=True)
+    )
 
 TheoreticalGlycanStructureToMotifTable = Table(
     "TheoreticalGlycanStructureToMotifTable", Base.metadata,
     Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanStructure.id"), index=True),
-    Column("motif_id", Integer, ForeignKey("StructureMotif.id"))
+    Column("motif_id", Integer, ForeignKey("StructureMotif.id"), index=True)
     )

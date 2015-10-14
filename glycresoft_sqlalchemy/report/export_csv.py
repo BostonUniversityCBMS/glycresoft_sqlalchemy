@@ -48,7 +48,7 @@ def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_id
             "Score", "MassSpec MW", "Compound Key", "PeptideSequence", "PPM Error",
             "#ofAdduct", "#ofCharges", "#ofScans", "ScanDensity", "Avg A:A+2 Error",
             "A:A+2 Ratio", "Total Volume", "Signal to Noise Ratio", "Centroid Scan Error",
-            "Centroid Scan", "MaxScanNumber", "MinScanNumber", "Hypothesis MW",
+            "Centroid Scan", "MinScanNumber", "MaxScanNumber", "Hypothesis MW",
         ] + monosaccharide_identities + [
             "Adduct/Replacement", "PeptideModification", "PeptideMissedCleavage#", "#ofGlycanAttachmentToPeptide",
             "StartAA", "EndAA", "ProteinID"
@@ -78,6 +78,38 @@ def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_id
                 theoretical_match.end_position if pgm.matched else "",
                 theoretical_match.protein.name if pgm.matched else "",
             ]
+            writer.writerow(row)
+        return output_path
+
+
+def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identities, output_path):
+    with open(output_path, 'wb') as fh:
+        writer = csv.writer(fh)
+        headers = [
+            "Score", "MassSpec MW", "Compound Key", "PPM Error",
+            "#ofAdduct", "#ofCharges", "#ofScans", "ScanDensity", "Avg A:A+2 Error",
+            "A:A+2 Ratio", "Total Volume", "Signal to Noise Ratio", "Centroid Scan Error",
+            "Centroid Scan", "MinScanNumber", "MaxScanNumber", "Hypothesis MW"
+        ] + monosaccharide_identities + ["Adduct/Replacement", "ID"]
+
+        writer.writerow(headers)
+
+        for pgm in peak_group_matches.yield_per(1000):
+            theoretical_match = pgm.theoretical_match
+            if theoretical_match is not None:
+                glycan_composition = [theoretical_match.glycan_composition[g] for g in monosaccharide_identities]
+            else:
+                glycan_composition = ['' for g in monosaccharide_identities]
+            row = [
+                pgm.ms1_score, pgm.weighted_monoisotopic_mass,
+                theoretical_match.composition if pgm.matched else "",
+                pgm.ppm_error if pgm.matched else "",
+                pgm.mass_shift_count if (pgm.mass_shift is not None and pgm.mass_shift.mass != 0) else 0, pgm.charge_state_count, pgm.scan_count, pgm.scan_density,
+                pgm.a_peak_intensity_error, pgm.average_a_to_a_plus_2_ratio,
+                pgm.total_volume, pgm.average_signal_to_noise, pgm.centroid_scan_error,
+                pgm.centroid_scan_error, pgm.first_scan_id, pgm.last_scan_id,
+                theoretical_match.calculated_mass if pgm.matched else ""
+            ] + glycan_composition + ['/' if pgm.mass_shift_type == None else "%s/%s" % (pgm.mass_shift.name, pgm.mass_shift.mass), pgm.id]
             writer.writerow(row)
         return output_path
 
@@ -115,20 +147,33 @@ class CSVExportDriver(PipelineModule):
             except:
                 return str(hsm.target_hypothesis.name) + "_on_" + str(hsm.sample_run_name)
         for res_type, query in hsm.results():
+            print res_type
             if res_type == GlycopeptideMatch:
                 output_path = self.output_path + '.{}.glycopeptide_matches.csv'.format(getname(hsm))
                 # Only export target hypothesis
                 export_glycopeptide_ms2_matches(filterfunc(query.filter(
                     GlycopeptideMatch.protein_id == Protein.id,
                     Protein.hypothesis_id == hsm.target_hypothesis_id)), output_path)
-            elif res_type == TheoreticalGlycopeptideComposition:
+            elif (res_type == TheoreticalGlycopeptideComposition):
                 output_path = self.output_path + '.{}.glycopeptide_compositions.csv'.format(getname(hsm))
                 export_glycopeptide_ms1_matches_legacy(
                     filterfunc(query),
                     hsm.target_hypothesis.parameters['monosaccharide_identities'],
                     output_path)
+            elif (res_type == TheoreticalGlycanComposition):
+                output_path = self.output_path + ".{}.glycan_compositions.csv".format(getname(hsm))
+                base_types = session.query(TheoreticalGlycanComposition.GlycanCompositionAssociation.base_type.distinct()).join(TheoreticalGlycanComposition).filter(
+                    TheoreticalGlycanComposition.hypothesis_id == hsm.target_hypothesis.id)
+                monosaccharide_identities = [b for q in base_types for b in q]
+                export_glycan_ms1_matches_legacy(
+                    filterfunc(query),
+                    monosaccharide_identities,
+                    output_path
+                    )
+
+
             else:
-                raise NotImplementedError(res_type)
+                pass
 
     def run(self):
         return map(self.dispatch_export, self.hypothesis_sample_match_ids)

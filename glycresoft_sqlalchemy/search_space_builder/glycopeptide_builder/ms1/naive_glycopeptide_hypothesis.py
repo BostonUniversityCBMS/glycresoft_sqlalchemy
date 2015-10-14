@@ -68,7 +68,7 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
 
             i += 1
             if i % 5000 == 0:
-                logger.info("Flushing %d", i)
+                logger.info("Flushing %d for %r-%r", i, peptide, peptide.protein)
                 session.add_all(glycopeptide_acc)
                 session.flush()
                 session.execute(
@@ -106,12 +106,14 @@ def digest_protein(protein, manager, constant_modifications, variable_modificati
             peptidoforms.append(peptidoform)
             i += 1
             if len(peptidoforms) > 10000:
-                logger.info("Flushing %d peptidoforms", i)
-                map(session.merge, peptidoforms)
+                logger.info("Flushing %d peptidoforms for %r", i, protein)
+                # map(session.merge, peptidoforms)
+                session.bulk_save_objects(peptidoforms)
                 session.commit()
                 session.expire_all()
                 peptidoforms = []
-        map(session.merge, peptidoforms)
+        # map(session.merge, peptidoforms)
+        session.bulk_save_objects(peptidoforms)
         session.commit()
         logger.info("Digested %d peptidoforms for %s", i, protein)
 

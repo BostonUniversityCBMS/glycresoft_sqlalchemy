@@ -161,6 +161,10 @@ class MS2GlycanHypothesisSampleMatch(HypothesisSampleMatch):
     id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
 
     def results(self):
+        if self.peak_group_matches.first() is not None:
+            yield TheoreticalGlycanComposition, self.peak_group_matches.filter(
+                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition") |
+                (PeakGroupMatch.theoretical_match_type == None))
         yield TheoreticalGlycanStructure, ()
 
     __mapper_args__ = {

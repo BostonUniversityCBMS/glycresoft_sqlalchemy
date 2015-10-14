@@ -47,10 +47,9 @@ cdef public struct RelationSpectrumPairArray:
     RelationSpectrumPair* pairs
     size_t size
 
+
 cdef public struct FittedFeatureStruct:
     RelationSpectrumPairArray* relation_pairs
-    double on_kind
-    double off_kind
     MSFeatureStruct* feature
     char* kind
 

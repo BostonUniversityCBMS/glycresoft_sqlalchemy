@@ -8,7 +8,12 @@ from itertools import product
 logger = logging.getLogger("glycan_composition_constrained_combinatorics")
 
 
+from glycresoft_sqlalchemy.search_space_builder.glycan_builder import registry
+
+
+@registry.composition_source_type.register("constrained_combinatorics")
 class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
+    HypothesisType = MS1GlycanHypothesis
 
     def __init__(self, database_path, rules_table, constraints_list, hypothesis_id=None):
         self.manager = self.manager_type(database_path)
@@ -19,7 +24,7 @@ class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
     def run(self):
         session = self.manager.session()
 
-        hypothesis, _ = get_or_create(session, MS1GlycanHypothesis, id=self.hypothesis_id)
+        hypothesis, _ = get_or_create(session, self.HypothesisType, id=self.hypothesis_id)
         session.add(hypothesis)
         session.commit()
 

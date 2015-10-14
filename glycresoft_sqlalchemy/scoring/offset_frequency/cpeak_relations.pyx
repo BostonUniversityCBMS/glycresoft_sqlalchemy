@@ -243,12 +243,6 @@ cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feat
     cdef:
         DPeak peak
         DPeak match
-        double total_on_kind_satisfied
-        double total_off_kind_satisfied
-        double total_on_kind_satisfied_normalized
-        double total_off_kind_satisfied_normalized
-        long total_on_kind
-        long total_off_kind
         int rank
         list peak_relations
         list related
@@ -256,17 +250,12 @@ cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feat
         list matches
         Py_ssize_t i, j, k
         PeakRelation pr
-        bint is_on_kind
         set peak_explained_by
         list peak_explained_by_list
         dict db_search_match
         str match_kind
         MatchedSpectrum gsm
 
-    total_on_kind_satisfied = 0
-    total_off_kind_satisfied = 0
-    total_on_kind = 0
-    total_off_kind = 0
     peak_relations = []
     for i in range(PyList_GET_SIZE(gsms)):
         gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)
@@ -287,71 +276,31 @@ cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feat
             peak = <DPeak>PyList_GET_ITEM(peaks, j)
             peak_explained_by = gsm.peak_explained_by(peak.id)
             peak_explained_by_list = list(peak_explained_by)
-            is_on_kind = False
-            # is_on_kind = any([pg[0] == kind for pg in gsm.peak_explained_by(peak.id)])
-            for k in range(PyList_GET_SIZE(peak_explained_by_list)):
-                match_kind = <str>PyList_GET_ITEM(peak_explained_by_list, k)
-                match_kind = <str>PySequence_ITEM(match_kind, 0)
-                if match_kind == kind:
-                    is_on_kind = True
-                    break
 
             matches = search_spectrum(peak, peaks, feature_function)
             for k in range(PyList_GET_SIZE(matches)):
                 match = <DPeak>PyList_GET_ITEM(matches, k)
                 pr = make_peak_relation(peak, match, feature_function, intensity_ratio_function(peak, match))
                 related.append(pr)
-                if is_on_kind:
-                    total_on_kind_satisfied += 1
-                    pr.kind = kind
-                else:
-                    total_off_kind_satisfied += 1
-                    pr.kind = PNOISE
                 
                 if PyList_GET_SIZE(peak_explained_by_list) == 0:
                     feature_function.ion_type_increment(PNOISE)
                 for k in range(PyList_GET_SIZE(peak_explained_by_list)):
                     match_kind = <str>PyList_GET_ITEM(peak_explained_by_list, k)
-                    match_kind = <str>PySequence_ITEM(match_kind, 0)
                     feature_function.ion_type_increment(match_kind)
-            if is_on_kind:
-                total_on_kind += 1
-            else:
-                total_off_kind += 1
+
             if PyList_GET_SIZE(peak_explained_by_list) == 0:
                 feature_function.ion_type_increment(PNOISE, "totals")
             for k in range(PyList_GET_SIZE(peak_explained_by_list)):
                 match_kind = <str>PyList_GET_ITEM(peak_explained_by_list, k)
-                match_kind = <str>PySequence_ITEM(match_kind, 0)
                 feature_function.ion_type_increment(match_kind, "totals")
                  
 
         if PyList_GET_SIZE(related) > 0:
             peak_relations.append((gsm, related))
 
-    total_on_kind_satisfied_normalized = total_on_kind_satisfied / <float>(max(total_on_kind, 1))
-    total_off_kind_satisfied_normalized = total_off_kind_satisfied / <float>(max(total_off_kind, 1))
 
     return FittedFeature(feature_function, peak_relations)
-
-
-cdef void free_peak_relations_array(PeakRelationStructArray* relations) nogil:
-    free(relations.relations)
-    free(relations)
-
-
-cdef void free_relation_spectrum_pair(RelationSpectrumPair* pair) nogil:
-    free_peak_relations_array(pair.relations)
-
-
-cdef void free_relation_spectrum_pairs_array(RelationSpectrumPairArray* pairs_array) nogil:
-    cdef size_t i
-    for i in range(pairs_array.size):
-        free_relation_spectrum_pair(&pairs_array.pairs[i])
-
-
-cdef void free_fitted_feature(FittedFeatureStruct* fitted_feature) nogil:
-    free_relation_spectrum_pairs_array(fitted_feature.relation_pairs)
 
 
 cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray* gsms, MSFeatureStruct* feature, char* kind, bint filter_peak_ranks) nogil:
@@ -359,7 +308,7 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
         long relation_count, peak_count
         char* ion_type
         bint is_on_kind
-        size_t i, j, k, relations_counter, features_found_counter, base_relations_size
+        size_t i, j, k, m, relations_counter, features_found_counter, base_relations_size
         PeakStruct peak
         PeakStruct match
         PeakRelationStructArray* related
@@ -385,28 +334,28 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
             continue
         peaks = gsm.peak_list
 
+        # Pre-allocate space for a handful of relations assuming that there won't
+        # be many per spectrum
+        base_relations_size = 3
+        related = <PeakRelationStructArray*>malloc(sizeof(PeakRelationStructArray))
+        related.relations = <PeakRelationStruct*>malloc(sizeof(PeakRelationStruct) * base_relations_size)
+        related.size = base_relations_size
+        relations_counter = 0
+
         # Search all peaks against all other peaks using the given feature
         for j in range(peaks.size):
             peak = peaks.peaks[j]
-
-            # Pre-allocate space for a handful of relations assuming that there won't
-            # be many per spectrum
-            base_relations_size = 3
-            related = <PeakRelationStructArray*>malloc(sizeof(PeakRelationStructArray))
-            related.relations = <PeakRelationStruct*>malloc(sizeof(PeakRelationStruct) * base_relations_size)
-            related.size = base_relations_size
 
             # Determine if peak has been identified as on-kind or off-kind
             peak_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, peak.id)
             
             # Perform search
             matches = _openmp_search_spectrum(&peak, peaks, feature)
-            relations_counter = 0
+
             # For each match, construct a PeakRelationStruct and save it to `related`
             for k in range(matches.size):
                 match = matches.peaks[k]
                 # Make sure not to overflow `related.relations`. Should be rare because of pre-allocation
-
                 if peak_explained_by_list.size == 0:
                     if relations_counter == related.size:
                         resize_peak_relation_array(related)
@@ -416,11 +365,11 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
                                                 _intensity_ratio_function(&peak, &match), NOISE, gsm)
                     relations_counter += 1
                 else:
-                    for k in range(peak_explained_by_list.size):
+                    for m in range(peak_explained_by_list.size):
                         if relations_counter == related.size:
                             resize_peak_relation_array(related)
 
-                        fragment_match = peak_explained_by_list.matches[k]
+                        fragment_match = peak_explained_by_list.matches[m]
                         ion_type = fragment_match.ion_type
                         # This value will be passed through to the PeakRelation, where its life time should
                         # be independent, so it is translated through the ION_TYPE_INDEX global variable which
@@ -448,19 +397,19 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
             free_fragment_match_struct_array(peak_explained_by_list)
             free(matches.peaks)
             free(matches)
-            related.relations = <PeakRelationStruct*>realloc(related.relations, sizeof(PeakRelationStruct) * relations_counter)
-            related.size = relations_counter
+        related.relations = <PeakRelationStruct*>realloc(related.relations, sizeof(PeakRelationStruct) * relations_counter)
+        related.size = relations_counter
 
             # Save results or free un-needed memory
-            if relations_counter > 0:
-                if features_found_counter == peak_relations.size:
-                    peak_relations.pairs = <RelationSpectrumPair*>realloc(peak_relations.pairs, sizeof(RelationSpectrumPair) * peak_relations.size * 2)
-                    peak_relations.size = peak_relations.size * 2
-                peak_relations.pairs[features_found_counter].matched_spectrum = gsm
-                peak_relations.pairs[features_found_counter].relations = related
-                features_found_counter += 1
-            else:
-                free_peak_relations_array(related)
+        if relations_counter > 0:
+            if features_found_counter == peak_relations.size:
+                peak_relations.pairs = <RelationSpectrumPair*>realloc(peak_relations.pairs, sizeof(RelationSpectrumPair) * peak_relations.size * 2)
+                peak_relations.size = peak_relations.size * 2
+            peak_relations.pairs[features_found_counter].matched_spectrum = gsm
+            peak_relations.pairs[features_found_counter].relations = related
+            features_found_counter += 1
+        else:
+            free_peak_relations_array(related)
 
     peak_relations.pairs = <RelationSpectrumPair*>realloc(peak_relations.pairs, sizeof(RelationSpectrumPair) * features_found_counter)
     peak_relations.size = features_found_counter
@@ -469,6 +418,29 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
     result.feature = feature
     result.relation_pairs = peak_relations
     return result
+
+
+
+cdef void preprocess_peak_lists(list gsms):
+    cdef:
+        DPeak peak
+        DPeak match
+        int rank
+        list peaks, _peaks
+        Py_ssize_t i, j, k
+        MatchedSpectrum gsm
+
+    for i in range(PyList_GET_SIZE(gsms)):
+        gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)
+        peaks = gsm.peak_list
+        intensity_rank(peaks)
+        _peaks = []
+        for j in range(PyList_GET_SIZE(peaks)):
+            peak = <DPeak>PyList_GET_ITEM(peaks, j)
+            rank = peak.rank
+            if rank > 0:
+                PyList_Append(_peaks, peak)
+        gsm.peaks = _peaks
 
 
 cdef void _preprocess_peak_lists(MatchedSpectrumStructArray* gsms) nogil:
@@ -584,6 +556,7 @@ cdef void resize_peak_relation_array(PeakRelationStructArray* related) nogil:
     related.relations = <PeakRelationStruct*>realloc(related.relations, sizeof(PeakRelationStruct) * related.size * 2)
     related.size = related.size * 2
 
+
 cdef inline void insert_peak_relation_struct(PeakRelationStructArray* related, size_t index, PeakStruct peak, PeakStruct match,
                                              MSFeatureStruct* feature, double intensity_ratio, char* kind,
                                              MatchedSpectrumStruct* annotation) nogil:
@@ -593,3 +566,24 @@ cdef inline void insert_peak_relation_struct(PeakRelationStructArray* related, s
     related.relations[index].intensity_ratio = _intensity_ratio_function(&peak, &match)
     related.relations[index].kind = kind
     related.relations[index].annotation = annotation
+
+
+cdef void free_peak_relations_array(PeakRelationStructArray* relations) nogil:
+    free(relations.relations)
+    free(relations)
+
+
+cdef void free_relation_spectrum_pair(RelationSpectrumPair* pair) nogil:
+    free_peak_relations_array(pair.relations)
+
+
+cdef void free_relation_spectrum_pairs_array(RelationSpectrumPairArray* pairs_array) nogil:
+    cdef size_t i
+    for i in range(pairs_array.size):
+        free_peak_relations_array(pairs_array.pairs[i].relations)
+    free(pairs_array.pairs)
+    free(pairs_array)
+
+cdef void free_fitted_feature(FittedFeatureStruct* fitted_feature) nogil:
+    free_relation_spectrum_pairs_array(fitted_feature.relation_pairs)
+

@@ -1,64 +1,22 @@
 import argparse
 import os
-from contextlib import contextmanager
+from os import path
+
+from glycresoft_sqlalchemy.proteomics import mzid_sa
 from glycresoft_sqlalchemy.search_space_builder import (
     pooling_search_space_builder,
     pooling_make_decoys,
     exact_search_space_builder,
     naive_glycopeptide_hypothesis,
     integrated_omics)
-import summarize
-from . import let
+
+from glycresoft_sqlalchemy.search_space_builder.glycan_builder import (
+    composition_source, constrained_combinatorics, glycomedb_utils
+    )
+
+from glycresoft_sqlalchemy.app import let
 
 commit_checkpoint = os.environ.get("GLYCRESOFT_COMMIT_INTERVAL", 1000)
-
-
-def build_naive_search_space_simple(glycopeptide_csv, site_list_file, digest_file, db_file_name=None, **kwargs):
-    digest = pooling_search_space_builder.parse_digest(digest_file)
-    kwargs.update(digest.__dict__)
-    kwargs.setdefault("n_processes", 4)
-    target_job = pooling_search_space_builder.PoolingTheoreticalSearchSpaceBuilder(
-        glycopeptide_csv,
-        db_file_name=db_file_name,
-        site_list=site_list_file,
-        commit_checkpoint=commit_checkpoint,
-        **kwargs)
-    target = target_job.start()
-    print target_job.db_file_name
-    print target
-    decoy_job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(
-        target_job.db_file_name,
-        hypothesis_ids=[target],
-        prefix_len=kwargs.get("prefix_len", 0),
-        suffix_len=kwargs.get("suffix_len", 1),
-        decoy_type=kwargs.get("decoy_type", 0),
-        n_processes=kwargs.get('n_processes', 4),
-        commit_checkpoint=commit_checkpoint)
-    decoy, = decoy_job.start()
-    print target_job.db_file_name
-    summarize.main(target_job.db_file_name)
-    return target, decoy
-
-
-def build_informed_search_space_existing(glycopeptide_csv, hypothesis_id, db_file_name, **kwargs):
-    target_job = exact_search_space_builder.ExactSearchSpaceBuilder(
-        glycopeptide_csv,
-        db_file_name=db_file_name,
-        hypothesis_id=hypothesis_id,
-        n_processes=kwargs.get('n_processes', 4),
-        commit_checkpoint=commit_checkpoint)
-    target = target_job.start()
-    print target
-    decoy_job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(
-        db_file_name,
-        hypothesis_ids=[hypothesis_id],
-        prefix_len=kwargs.get("prefix_len", 0),
-        suffix_len=kwargs.get("suffix_len", 1),
-        decoy_type=kwargs.get("decoy_type", 0),
-        n_processes=kwargs.get('n_processes', 4),
-        commit_checkpoint=commit_checkpoint)
-    decoy = decoy_job.start()
-    return target, decoy
 
 
 def build_naive_ms1_glycopeptide(database_path, protein_file, site_list_file, glycan_file,
@@ -75,6 +33,25 @@ def build_naive_ms1_glycopeptide(database_path, protein_file, site_list_file, gl
                  glycan_file, glycan_file_type, constant_modifications,
                  variable_modifications, enzyme, max_missed_cleavages, **kwargs)
     job.start()
+
+
+def build_informed_ms1_glycopeptide(mzid_path, database_path, site_list_file, glycan_file,
+                                    glycan_file_type="txt", protein_name_pattern='.*', hypothesis_id=None,
+                                    protein_selection_type='regex', n_processes=4):
+    if database_path is None:
+        database_path = path.splitext(mzid_path)[0] + '.db'
+
+    if protein_selection_type == "regex":
+        protein_ids = list(mzid_sa.protein_names(mzid_path, protein_name_pattern))
+    else:
+        protein_ids = map(int, protein_name_pattern.split(","))
+
+    job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
+        database_path, mzid_path=mzid_path, protein_ids=protein_ids,
+        glycomics_path=glycan_file, glycomics_format=glycan_file_type,
+        n_processes=n_processes)
+    job.start()
+
 
 
 def build_naive_ms2_glycopeptide(database_path, hypothesis_sample_match_id, **kwargs):
@@ -111,25 +88,21 @@ def build_informed_ms2_glycopeptide(database_path, hypothesis_sample_match_id, *
     print target_hypothesis_id, decoy_hypothesis_id
 
 
+def build_glycan_glycome_db(
+        database_path, glycomedb_path=None,
+        taxonomy_path=None, taxon_id=None, include_descendent_taxa=False, include_structures=True,
+        motif_family=None, reduction=None, derivatization=None*args, **kwargs):
+    print args, kwargs
+    job = glycomedb_utils.GlycomeDBHypothesis(database_path, hypothesis_id=None, glycomedb_path=glycomedb_path,
+            taxonomy_path=taxonomy_path, taxa_ids=taxon_id, include_descendent_taxa=include_descendent_taxa,
+            include_structures=include_structures,
+            motif_family=motif_family, reduction=reduction, derivatization=derivatization)
+    job.start()
+
+
 app = argparse.ArgumentParser("build-database")
 app.add_argument("-n", "--n-processes", default=4, type=int, help='Number of processes to run on')
 subparsers = app.add_subparsers()
-
-build_naive_simple = subparsers.add_parser("build-naive-simple")
-
-build_naive_simple.add_argument("glycopeptide_csv")
-build_naive_simple.add_argument(
-    "-g", "--digest-file",
-    help="The path to an msdigest XML file for \
-    one protein with all the modification and enzyme information")
-build_naive_simple.add_argument(
-    "-s", "--site-list-file",
-    help="The path to a file in FASTA format where the sequence body \
-    is a space-separated list of positions that start at 1")
-build_naive_simple.add_argument(
-    "-d", "--database-path", dest="db_file_name", default=None, required=False,
-    help="Path to project database. If omitted, it will be constructed from <glycopeptide_csv>")
-build_naive_simple.set_defaults(task=build_naive_search_space_simple)
 
 
 build_naive_ms1_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms1")
@@ -183,6 +156,36 @@ with let(build_informed_ms2_glycopeptide_app) as c:
         help="Path to project database.")
     c.add_argument("-i", "--hypothesis-sample-match-id", help="The id number of the hypothesis sample match to build from")
     c.set_defaults(task=build_informed_ms2_glycopeptide)
+
+with let(subparsers.add_parser("glycomics")) as c:
+    c.add_argument(
+        "-d", "--database-path", default=None, required=True,
+        help="Path to project database.")
+    c.add_argument(
+        "-g", "--glycan-file",
+        help="Path to file of glycans to use. May be either a text file containing glycan compositions "
+             "(In trivial IUPAC) or glycan structures (in condensed GlycoCT). Alternatively, it may be a "
+             "list of constraint rules with which to generate compositions."
+        )
+    c.add_argument("-f", "--glycan-file-type", choices=('text', 'glycoct', 'rules'), help="The format of --glycan-file")
+    c.add_argument("-e", "--derivatization")
+    c.add_argument("-r", "--reduction")
+
+with let(subparsers.add_parser("glycomics-glycomedb")) as c:
+    c.add_argument(
+        "-d", "--database-path", default=None, required=True,
+        help="Path to project database.")
+    c.add_argument(
+        "-g", "--glycomedb-path", default=None, required=False)
+    c.add_argument("-t", "--taxon-id", default=[], action='append')
+    c.add_argument("-s", "--include-structures", required=False, action="store_true")
+    c.add_argument("-m", "--motif-family", choices=("N-glycan", "O-glycan"), required=True)
+    c.add_argument("-x", "--taxonomy-path")
+    c.add_argument("-i", "--include-descendent-taxa", action="store_true")
+    c.add_argument("-e", "--derivatization")
+    c.add_argument("-r", "--reduction")
+
+    c.set_defaults(task=build_glycan_glycome_db)
 
 
 def main():
