@@ -1,6 +1,6 @@
 recursive-include glycresoft_sqlalchemy/structure/data *.csv
 recursive-include glycresoft_sqlalchemy/structure/data *.json
-recursive-include glycresoft_sqlalchemy/web_app *.js *.css *.templ *.html
+recursive-include glycresoft_sqlalchemy/web_app *.js *.css *.templ *.html *.woff *.woff2 *.eot *.ttf *.svg
 recursive-exclude glycresoft_sqlalchemy/web_app/node_modules *
 recursive-exclude glycresoft_sqlalchemy/web_app/bower_components *
 recursive-exclude glycresoft_sqlalchemy/web_app/static/js/build *.js

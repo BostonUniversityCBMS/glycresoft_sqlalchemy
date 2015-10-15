@@ -61,8 +61,22 @@ residue_table = {
 residue_table["Xle"] = residue_table["Leu"]
 
 
+class MemoizedResidueMetaclass(type):
+    def __call__(self, symbol=None, *args, **kwargs):
+        if not hasattr(self, "_cache"):
+            self._cache = dict()
+        try:
+            return self._cache[symbol]
+        except:
+            inst = type.__call__(self, symbol=symbol, *args, **kwargs)
+            self._cache[inst.symbol] = inst
+            return inst
+
+
 class Residue(ResidueBase):
-    __slots__ = ["name", "symbol", "mass"]
+    __slots__ = ["name", "symbol", "mass", "composition"]
+
+    __metaclass__ = MemoizedResidueMetaclass
 
     @staticmethod
     @memoize()
@@ -82,9 +96,9 @@ class Residue(ResidueBase):
             self.by_name(name)
 
     def by_name(self, name):
-        self.compo = residue_table[name]
+        self.composition = Composition(residue_table[name])
         self.name = name
-        self.mass = composition_to_mass(self.compo)
+        self.mass = self.composition.mass
         self.symbol = residue_to_symbol[name]
 
     def by_symbol(self, symbol):

@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections import Sequence as Iterable
 
 from .residue import residue_to_symbol, Residue
-from .composition import composition_to_mass
+from .composition import composition_to_mass, Composition
 from .parser import prefix_to_postfix_modifications
 from . import PeptideSequenceBase
 from . import ModificationBase
@@ -184,7 +184,9 @@ class ModificationRule(object):
         full_name = unimod_entry["full_name"]
         title = unimod_entry["title"]
         specificity = (map(ModificationTarget.from_unimod_specificity, specificity))
-        return ModificationRule(specificity, full_name, title, monoisotopic_mass)
+        return ModificationRule(
+                specificity, full_name, title, monoisotopic_mass,
+                composition=Composition({str(k): int(v) for k, v in unimod_entry['composition'].items()}))
 
     def __init__(self, amino_acid_specificity, modification_name,
                  title=None, monoisotopic_mass=None, **kwargs):
@@ -198,6 +200,7 @@ class ModificationRule(object):
         self.unimod_name = modification_name
         self.mass = float(monoisotopic_mass)
         self.title = title if title is not None else modification_name
+        self.composition = kwargs.get("composition")
 
         # The type of the parameter passed for amino_acid_specificity is variable
         # so select the method correct for the passed type
@@ -283,6 +286,7 @@ class ModificationRule(object):
                 return self
             dup = deepcopy(self)
             dup.targets = (set(self.targets) | set(other.targets))
+            dup.composition = self.composition or other.composition
             return dup
         else:
             raise TypeError(
@@ -448,12 +452,9 @@ class ModificationTable(dict):
 
     use_unimod = True
 
-    # Other objects that are described as Modifications that don't appear in
-    # Protein Prospector output
     other_modifications = {
         "HexNAc": NGlycanCoreGlycosylation(),
         "O-GlcNAc": OGlcNAcylation(),
-        #"pyroGlu": ModificationRule("Q", "pyroGlu", "pyroGlu", -17.02655),
         "H": ModificationRule("N-term", "H", "H", composition_to_mass("H")),
         "OH": ModificationRule("C-term", "OH", "OH", composition_to_mass("OH")),
     }
@@ -523,6 +524,11 @@ class ModificationTable(dict):
                 self[key.name] += key
             else:
                 self[key.name] = key
+            if key.title is not None:
+                if key.title in self:
+                    self[key.title] += key
+                else:
+                    self[key.title] = key
         elif value is not None:
             if key in self:
                 self[key] += value
@@ -535,6 +541,11 @@ class ModificationTable(dict):
                     self[mod.name] += mod
                 else:
                     self[mod.name] = mod
+                if mod.title is not None:
+                    if mod.title in self:
+                        self[mod.title] += mod
+                    else:
+                        self[mod.title] = mod
             except KeyError:
                 try:
                     matches = [
@@ -688,6 +699,8 @@ class Modification(ModificationBase):
     position attributes are unused."""
 
     _table = ModificationTable.bootstrap(False)
+
+    __slots__ = ["name", "mass", "position", "number", "rule", "composition"]
 
     @classmethod
     def mass_by_name(cls, name, mod_num=1):

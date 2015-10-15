@@ -91,7 +91,7 @@ def build_informed_ms2_glycopeptide(database_path, hypothesis_sample_match_id, *
 def build_glycan_glycome_db(
         database_path, glycomedb_path=None,
         taxonomy_path=None, taxon_id=None, include_descendent_taxa=False, include_structures=True,
-        motif_family=None, reduction=None, derivatization=None*args, **kwargs):
+        motif_family=None, reduction=None, derivatization=None, *args, **kwargs):
     print args, kwargs
     job = glycomedb_utils.GlycomeDBHypothesis(database_path, hypothesis_id=None, glycomedb_path=glycomedb_path,
             taxonomy_path=taxonomy_path, taxa_ids=taxon_id, include_descendent_taxa=include_descendent_taxa,
