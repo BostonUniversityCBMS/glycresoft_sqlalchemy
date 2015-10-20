@@ -1,0 +1,23 @@
+
+<div class='monosaccharide-composition-builder-container'>
+    <h4>Monosaccharides</h4>
+    <div class='monosaccharide-composition-range-grid'>
+        
+    </div>
+    <br>
+    <h4>Constraints</h4>
+    <div class='monosaccharide-composition-constraints'>
+
+    </div>
+</div>
+<script>
+    monosaccharideInputWidgetGrid = new MonosaccharideInputWidgetGrid(".monosaccharide-composition-range-grid")
+    monosaccharideInputWidgetGrid.addRow("Hex", 0, 9, "C6O6H12", true)
+    monosaccharideInputWidgetGrid.addRow("HexNAc", 0, 6, "C8O6H15N", false)
+    monosaccharideInputWidgetGrid.addRow("dHex", 0, 4, "C6O5H12", false)
+
+    monosaccharideInputWidgetGrid.addEmptyRowOnEdit(false)
+
+    constraintInputGrid = new ConstraintInputGrid(".monosaccharide-composition-constraints", monosaccharideInputWidgetGrid)
+    constraintInputGrid.addEmptyRowOnEdit(true)
+</script>

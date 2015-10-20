@@ -19,6 +19,7 @@ logger = logging.getLogger("project_manager")
 class ProjectManager(DatabaseManager, TaskManager):
     def __init__(self, database_path, sample_dir=None, results_dir=None, temp_dir=None, task_dir=None):
         DatabaseManager.__init__(self, database_path)
+        self.initialize()
         if sample_dir is None:
             sample_dir = path.join(path.dirname(database_path), 'sample_dir')
         if results_dir is None:
