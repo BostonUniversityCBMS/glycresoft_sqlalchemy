@@ -335,8 +335,8 @@ class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionN
     ms1_score = Column(Numeric(7, 6, asdecimal=False), index=True)
     volume = Column(Numeric(12, 6, asdecimal=False))
 
-    peak_group_matches = relationship("PeakGroupMatch", secondary=lambda: TheoreticalGlycanStructureToPeakGroupMatch, lazy="dynamic")
-
+    peak_group_matches = relationship(
+        "PeakGroupMatch", secondary=lambda: TheoreticalGlycanStructureToPeakGroupMatch, lazy="dynamic")
 
     def fragments(self, kind='BY'):
         if self._fragments is None:

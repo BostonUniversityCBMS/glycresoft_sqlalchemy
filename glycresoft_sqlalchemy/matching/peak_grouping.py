@@ -20,11 +20,10 @@ from sklearn.linear_model import LogisticRegression
 from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
                           SampleRun, Hypothesis, MS1GlycanHypothesisSampleMatch, hypothesis_sample_match_type,
                           TheoreticalCompositionMap, MassShift, HypothesisSampleMatch,
-                          PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch)
+                          PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch, JointPeakGroupMatch)
 
 from ..utils.database_utils import get_or_create
 from ..utils import pickle
-from ..report import chromatogram
 
 TDecon2LSPeakGroup = Decon2LSPeakGroup.__table__
 T_TempPeakGroupMatch = TempPeakGroupMatch.__table__
@@ -377,6 +376,7 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1,
             "last_scan_id": max_scan,
             "charge_state_count": len(charge_states),
             "peak_data": {
+                "charge_states": charge_states,
                 "scan_times": [p.scan_time for p in peaks],
                 "intensities": [p.scan_id for p in peaks],
                 "peak_ids": [p.id for p in peaks],
@@ -617,6 +617,94 @@ class PeakGroupMatching(PipelineModule):
 ClassifierType = LogisticRegression
 
 
+def merge_matched_groups_by_matched_composition(composition_ids, database_manager, hypothesis_sample_match_id):
+    session = database_manager.session()
+    joint_clusters = []
+    joint_clusters_to_groups = []
+    for composition_id in composition_ids:
+        group_matches = session.query(PeakGroupMatch).filter(
+            PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
+            PeakGroupMatch.theoretical_match_id == composition_id).all()
+        scan_count_total = 0
+        min_scan = float("inf")
+        max_scan = 0
+        charge_states = set()
+        scan_times = set()
+        average_a_to_a_plus_2_ratio = 0
+        centroid_scan_error = 0
+        a_peak_intensity_error = 0
+        total_volume = 0
+        average_signal_to_noise = 0
+        for peak_group in group_matches:
+            scan_count_total += peak_group.scan_count
+            total_volume += peak_group.total_volume
+
+            a_peak_intensity_error += peak_group.a_peak_intensity_error
+            centroid_scan_error += peak_group.centroid_scan_error
+            average_a_to_a_plus_2_ratio += peak_group.average_a_to_a_plus_2_ratio
+            average_signal_to_noise += peak_group.average_signal_to_noise
+
+            min_scan = min(min_scan, peak_group.first_scan_id)
+            max_scan = max(max_scan, peak_group.last_scan_id)
+
+            scan_times.update(peak_group.peak_data['scan_times'])
+            charge_states.update(peak_group.peak_data.get("charge_states", ()))
+
+        n = float(len(group_matches))
+        a_peak_intensity_error /= n
+        centroid_scan_error /= n
+        average_signal_to_noise /= n
+        average_a_to_a_plus_2_ratio /= n
+        if len(charge_states) != 0:
+            charge_state_count = len(charge_states)
+        else:
+            charge_state_count = max(g.charge_state_count for g in group_matches)
+
+        windows = expanding_window(scan_times)
+        window_densities = []
+        for window in windows:
+            window_max_scan = window[-1]
+            window_min_scan = window[0]
+            window_scan_count = len(window)
+            window_scan_density = window_scan_count / (
+                float(window_max_scan - window_min_scan) + 15.) if window_scan_count > 1 else 0
+            if window_scan_density != 0:
+                window_densities.append(window_scan_density)
+        if len(window_densities) != 0:
+            scan_density = sum(window_densities) / float(len(window_densities))
+        else:
+            scan_density = 0.
+        instance_dict = {
+            "first_scan_id": min_scan,
+            "last_scan_id": max_scan,
+            "scan_density": scan_density,
+            "a_peak_intensity_error": a_peak_intensity_error,
+            "centroid_scan_error": centroid_scan_error,
+            "average_a_to_a_plus_2_ratio": average_a_to_a_plus_2_ratio,
+            "average_signal_to_noise": average_signal_to_noise,
+            "charge_state_count": charge_state_count,
+            "total_volume": total_volume,
+            "scan_count": scan_count_total,
+            "theoretical_match_id": composition_id,
+            "hypothesis_sample_match_id": hypothesis_sample_match_id,
+        }
+        peak_match_ids = [p.id for p in group_matches]
+
+
+class PeakGroupMassShiftJoining(PipelineModule):
+    def __init__(
+            self, database_path, observed_ions_path, hypothesis_id,
+            sample_run_id=None, hypothesis_sample_match_id=None,
+            search_type="TheoreticalGlycanComposition",
+            match_tolerance=2e-5,
+            n_processes=4):
+        self.manager = self.manager_type(database_path)
+        session = self.manager.session()
+        self.hypothesis_sample_match_id = hypothesis_sample_match_id
+        hypothesis_sample_match = session.query(HypothesisSampleMatch).get(self.hypothesis_sample_match_id)
+        self.mass_shift_map = hypothesis_sample_match.parameters['mass_shift_map']
+
+
 class PeakGroupClassification(PipelineModule):
     features = [
             T_TempPeakGroupMatch.c.charge_state_count,
@@ -638,7 +726,6 @@ class PeakGroupClassification(PipelineModule):
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.model_parameters = model_parameters
         self.classifier = None
-
 
     def transfer_peak_groups(self):
         """Copy Decon2LSPeakGroup entries from :attr:`observed_ions_manager`
@@ -667,13 +754,26 @@ class PeakGroupClassification(PipelineModule):
             'centroid_scan_estimate',
             'centroid_scan_error',
             'average_signal_to_noise',
-            'peak_ids',
-            'peak_data',
             'ms1_score',
             'matched'
         ]
+
+        peak_group_labels = [
+            "id",
+            "sample_run_id",
+            "charge_state_count",
+            "scan_count",
+            "scan_density",
+            "weighted_monoisotopic_mass",
+            "total_volume",
+            "average_a_to_a_plus_2_ratio",
+            "a_peak_intensity_error",
+            "centroid_scan_estimate",
+            "centroid_scan_error",
+            "average_signal_to_noise"]
+
         stmt = lcms_database_session.query(
-                Decon2LSPeakGroup).filter(
+                *[getattr(Decon2LSPeakGroup, label) for label in peak_group_labels]).filter(
                 Decon2LSPeakGroup.sample_run_id == self.sample_run_id)
         batch = lcms_database_session.connection().execute(stmt.selectable)
 
@@ -686,7 +786,7 @@ class PeakGroupClassification(PipelineModule):
             if len(items) == 0:
                 break
             self.buffer = items[0]
-            conn.execute(T_TempPeakGroupMatch.insert(), [dict(zip(labels, row)) for row in items])
+            conn.execute(T_TempPeakGroupMatch.insert(), [dict(zip(peak_group_labels, row)) for row in items])
             data_model_session.commit()
             conn = data_model_session.connection()
 
@@ -718,7 +818,7 @@ class PeakGroupClassification(PipelineModule):
             ~TempPeakGroupMatch.matched).selectable
 
         def transform(row):
-            out = dict(zip(labels, row))
+            out = dict(zip(peak_group_labels, row))
             peak_group_match_id = out.pop('id')
             out["theoretical_match_type"] = None
             out['matched'] = False

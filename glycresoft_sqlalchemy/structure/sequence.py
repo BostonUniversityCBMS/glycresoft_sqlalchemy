@@ -181,8 +181,7 @@ class Sequence(PeptideSequenceBase):
         self.modification_index = defaultdict(int)
         for item in seq_list:
             try:
-                res = Residue()
-                res.by_symbol(item[0])
+                res = Residue(item[0])
                 self.mass += res.mass
                 mods = []
                 for mod in item[1]:

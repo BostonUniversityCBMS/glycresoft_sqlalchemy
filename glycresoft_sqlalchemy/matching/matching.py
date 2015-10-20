@@ -262,7 +262,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                     spectrum_match_inst.glycopeptide_match_id = g.id
                 session.add_all(spectrum_match_list)
             session.commit()
-        return len(glycopeptide_matches_spectrum_matches)
+        return len(theoretical_ids)
     except Exception, e:
         logger.exception("An error occurred, %r", locals(), exc_info=e)
         raise e

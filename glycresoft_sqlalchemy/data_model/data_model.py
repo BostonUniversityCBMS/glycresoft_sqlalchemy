@@ -8,7 +8,7 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy import (PickleType, Numeric, Unicode, Table,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
-
+from sqlalchemy.orm.exc import DetachedInstanceError
 from .generic import MutableDict, MutableList
 from .base import Base
 from .glycomics import TheoreticalGlycanComposition as Glycan, has_glycan_composition
@@ -158,10 +158,13 @@ class PeptideBase(object):
         return list(sites)
 
     def __hash__(self):
-        return hash((self.most_detailed_sequence, self.protein))
+        return hash((self.most_detailed_sequence, self.protein_id))
 
     def __eq__(self, other):
-        result = self.protein is None or other.protein is None or self.protein == other.protein
+        try:
+            result = self.protein is None or other.protein is None or self.protein == other.protein
+        except DetachedInstanceError:
+            result = True
         result &= self.most_detailed_sequence == other.most_detailed_sequence
         return result
 

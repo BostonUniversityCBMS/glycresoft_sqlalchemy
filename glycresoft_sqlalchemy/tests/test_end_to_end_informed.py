@@ -36,7 +36,7 @@ def test_main():
     job.start()
 
     ec = os.system(
-        "glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db -p db -g 2e-5 --skip-grouping {db_file_name} 1".format(
+        "glycresoft-database-search ms1 -n 5 -i datafiles/20140918_01_isos.db -p db -g 2e-5 --skip-grouping {db_file_name} 1".format(
             db_file_name=db_file_name))
     assert ec == 0
     job = exact_search_space_builder.ExactSearchSpaceBuilder.from_hypothesis_sample_match(
@@ -62,20 +62,20 @@ def test_main():
     matcher = matching.IonMatching(
         db_file_name, hypothesis_id, r"datafiles\20140918_01.db",
         "db", ms1_tolerance=1e-5, ms2_tolerance=2e-5,
-        hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=8)
+        hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=6)
     matcher.start()
 
     matcher = matching.IonMatching(
         db_file_name, decoy_hypothesis_id, r"datafiles\20140918_01.db",
         "db", ms1_tolerance=1e-5, ms2_tolerance=2e-5,
-        hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=8)
+        hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=6)
 
     matcher.start()
 
-    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, hypothesis_id, hsm_id)
+    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, hypothesis_id, hsm_id, n_processes=8)
     job.start()
 
-    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, decoy_hypothesis_id, hsm_id)
+    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, decoy_hypothesis_id, hsm_id, n_processes=8)
     job.start()
 
     tda = target_decoy.TargetDecoyAnalyzer(db_file_name, hypothesis_id, decoy_hypothesis_id)

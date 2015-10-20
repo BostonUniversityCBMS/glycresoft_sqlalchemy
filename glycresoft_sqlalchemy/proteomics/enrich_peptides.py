@@ -90,10 +90,11 @@ class EnrichDistinctPeptides(PipelineModule):
                     start, end, distance = match
                     make_transient(peptide)
                     peptide.id = None
+                    peptide.protein = None
                     peptide.protein_id = target_protein.id
                     peptide.start_position = start
                     peptide.end_position = end
-                    session.add(peptide)
+                    session.merge(peptide)
                 i += 1
                 if i % 1000 == 0:
                     logger.info("%d peptides handled for %r", i, target_protein)

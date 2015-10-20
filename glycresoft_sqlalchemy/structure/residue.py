@@ -69,7 +69,8 @@ class MemoizedResidueMetaclass(type):
             return self._cache[symbol]
         except:
             inst = type.__call__(self, symbol=symbol, *args, **kwargs)
-            self._cache[inst.symbol] = inst
+            if symbol is not None:
+                self._cache[inst.symbol] = inst
             return inst
 
 

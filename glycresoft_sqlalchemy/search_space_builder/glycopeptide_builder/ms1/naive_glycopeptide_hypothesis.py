@@ -26,6 +26,12 @@ format_mapping = {
 }
 
 logger = logging.getLogger("naive_glycopeptide_hypothesis")
+if len(logger.handlers) == 0:
+    fmt = logging.Formatter(
+        "%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s", "%H:%M:%S")
+    handler = logging.StreamHandler()
+    handler.setFormatter(fmt)
+    logger.addHandler(handler)
 
 water = Composition("H2O").mass
 
@@ -38,7 +44,7 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
 
         glycopeptide_acc = []
         glycan_assoc_acc = []
-
+        print(peptide)
         for glycan_set in get_glycan_combinations(
                 database_manager.session(), min(peptide.count_glycosylation_sites, max_sites), hypothesis_id):
             glycan_set = list(glycan_set)

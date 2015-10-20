@@ -143,6 +143,10 @@ cdef public struct IonTypeDoubleMap:
     IonTypeIndex* index_ref
     double* values
 
+cdef public struct ElementStruct:
+    char* symbol
+    double mass
+    double abundance
 
 # Array Structs
 

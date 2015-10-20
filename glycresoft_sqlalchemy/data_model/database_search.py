@@ -15,7 +15,8 @@ from .data_model import (
     ExactMS1GlycopeptideHypothesis, ExactMS2GlycopeptideHypothesis)
 
 from .naive_proteomics import TheoreticalGlycopeptideComposition
-from .glycomics import TheoreticalGlycanComposition, MassShift, has_glycan_composition, TheoreticalGlycanStructure
+from .glycomics import TheoreticalGlycanComposition, MassShift, with_glycan_composition, TheoreticalGlycanStructure
+
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
 from .json_type import tryjson, clean_dict
 from .observed_ions import SampleRun, Peak, ScanBase, TandemScan
@@ -313,6 +314,7 @@ GlycopeptideMatchGlycanAssociation = Table(
     Column("glycan_id", Integer, ForeignKey(Glycan.id, ondelete="CASCADE")))
 
 
+@with_glycan_composition("glycan_composition_str")
 class GlycopeptideMatch(PeptideBase, Base):
     __tablename__ = "GlycopeptideMatch"
 
@@ -365,7 +367,6 @@ class GlycopeptideMatch(PeptideBase, Base):
     def __repr__(self):
         rep = "<GlycopeptideMatch {} {} {}>".format(self.glycopeptide_sequence, self.ms2_score, self.observed_mass)
         return rep
-has_glycan_composition(GlycopeptideMatch, "glycan_composition_str")
 
 
 class GlycopeptideSpectrumMatch(Base):
@@ -616,6 +617,41 @@ class TempPeakGroupMatch(Base):
 
     ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
     matched = Column(Boolean, index=True)
+
+
+class JointPeakGroupMatch(Base):
+    __tablename__ = "JointPeakGroupMatch"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    sample_run_id = Column(Integer, index=True)
+
+    charge_state_count = Column(Integer)
+    scan_count = Column(Integer)
+    first_scan_id = Column(Integer)
+    last_scan_id = Column(Integer)
+
+    scan_density = Column(Numeric(10, 6, asdecimal=False))
+    weighted_monoisotopic_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+
+    total_volume = Column(Numeric(12, 4, asdecimal=False))
+    average_a_to_a_plus_2_ratio = Column(Numeric(12, 4, asdecimal=False))
+    a_peak_intensity_error = Column(Numeric(10, 6, asdecimal=False))
+    centroid_scan_estimate = Column(Numeric(12, 4, asdecimal=False))
+    centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
+    average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
+
+    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    matched = Column(Boolean, index=True)
+
+    subgroups = relationship(PeakGroupMatch, secondary=lambda: PeakGroupMatchToJointPeakGroupMatch, lazy='dynamic')
+
+
+PeakGroupMatchToJointPeakGroupMatch = Table(
+    "PeakGroupMatchToJointPeakGroupMatch", Base.metadata,
+    Column("peak_group_id", Integer, ForeignKey("PeakGroupMatch.id"), index=True),
+    Column("joint_group_id", Integer, ForeignKey("JointPeakGroupMatch.id"), index=True)
+)
+
 
 '''
 Citations

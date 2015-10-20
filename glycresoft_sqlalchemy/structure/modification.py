@@ -92,8 +92,8 @@ class ModificationTarget(object):
             valid = (self.amino_acid_targets is None) or (
                 amino_acid in self.amino_acid_targets)
             valid = valid and ((self.position_modifiers is None) or
-                               (position_modifiers is None) or
-                               (position_modifiers in self.position_modifiers))
+                               ((position_modifiers is not None) and
+                                (position_modifiers in self.position_modifiers)))
 
             return valid
         except:
@@ -103,7 +103,10 @@ class ModificationTarget(object):
 
     def valid_site_seq(self, sequence, position, position_modifiers=None):
         if(isinstance(sequence, PeptideSequenceBase)):
-            amino_acid = sequence[position][0]
+            aa_mod_pair = sequence[position]
+            if len(aa_mod_pair[1]) > 0:
+                return False
+            amino_acid = aa_mod_pair[0].name
         else:
             amino_acid = sequence[position]
         return self.valid_site(amino_acid, position_modifiers)
@@ -121,9 +124,12 @@ class ModificationTarget(object):
 
     def __len__(self):
         position_modifiers_count = 0
+        amino_acid_targets_count = 0
         if self.position_modifiers is not None:
             position_modifiers_count = len(self.position_modifiers)
-        return len(self.amino_acid_targets) + position_modifiers_count
+        if self.amino_acid_targets is not None:
+            amino_acid_targets_count = len(self.amino_acid_targets)
+        return amino_acid_targets_count + position_modifiers_count
 
 
 class ModificationTargetPattern(ModificationTarget):
@@ -201,6 +207,7 @@ class ModificationRule(object):
         self.mass = float(monoisotopic_mass)
         self.title = title if title is not None else modification_name
         self.composition = kwargs.get("composition")
+        self.preferred_name = min(self.unimod_name, self.title, self.name, key=len)
 
         # The type of the parameter passed for amino_acid_specificity is variable
         # so select the method correct for the passed type
@@ -237,13 +244,9 @@ class ModificationRule(object):
             raise Exception("No valid targets. %s for %s" %
                             (str(amino_acid) + str(position_modifiers), self))
         minimized_target = min(possible_targets, key=len)
-        rule = deepcopy(self)
-        rule.targets = minimized_target
-        return rule
+        return minimized_target
 
-    def valid_site_seq(self, sequence, position):
-        position_modifier_rules = get_position_modifier_rules_dict(sequence)
-        position_modifiers = position_modifier_rules[position]
+    def valid_site_seq(self, sequence, position, position_modifiers):
         return any([target.valid_site_seq(sequence, position, position_modifiers) for
                     target in self.targets])
 
@@ -254,7 +257,10 @@ class ModificationRule(object):
             (len(sequence) - 1): "C-term"
         }
         for index in range(len(sequence)):
-            amino_acid = sequence.at(index)[0].name
+            position = sequence[index]
+            if len(position[1]) > 0:
+                continue
+            amino_acid = position[0].name
             position_modifiers = position_modifier_rules.get(index)
             if(self.valid_site(amino_acid, position_modifiers)):
                 valid_indices.append(index)
@@ -273,10 +279,10 @@ class ModificationRule(object):
 
     def serialize(self):
         '''A string representation for inclusion in sequences'''
-        return self.name
+        return self.preferred_name
 
     def __repr__(self):
-        rep = "{name}:{mass}".format(
+        rep = "{preferred_name}:{mass}".format(
             **self.__dict__)
         return rep
 
@@ -294,6 +300,15 @@ class ModificationRule(object):
 
 
 class AnonymousModificationRule(ModificationRule):
+    '''
+    Construct a modification rule from a string that can be placed
+    in a peptide sequence and be reconstructed without being stored
+    in a :class:`ModificationTable` instance and backed by a modification
+    database.
+
+    "...(@{name}-{mass})..."
+
+    '''
     parser = re.compile(r"@(?P<name>.+?)-(?P<mass>[0-9\.]+)")
 
     @classmethod
@@ -381,6 +396,8 @@ class Glycosylation(ModificationRule):
     def __init__(self, glycan_composition):
         self.name = "@" + glycan_composition.serialize()
         self.mass = glycan_composition.mass()
+        self.title = self.name
+        self.preferred_name = self.name
 
     def losses(self):
         for i in []:
@@ -402,6 +419,9 @@ class NGlycanCoreGlycosylation(Glycosylation):
         self.title = "NGlycanCoreGlycosylation"
         self.unimod_name = "HexNAc"
         self.targets = ModificationTarget("N")
+        self.composition = None
+        self.title = self.name
+        self.preferred_name = self.name
 
     def losses(self):
         for label_loss in self.mass_ladder.items():
@@ -419,6 +439,9 @@ class OGlcNAcylation(Glycosylation):
         self.title = "O-GlcNAc"
         self.unimod_name = "O-GlcNAc"
         self.targets = [ModificationTarget("S"), ModificationTarget("T")]
+        self.composition = None
+        self.title = self.name
+        self.preferred_name = self.name
 
     def losses(self):
         for label_loss in self.mass_ladder.items():
@@ -450,7 +473,7 @@ class ModificationTable(dict):
                                           "data/ProteinProspectorModifications-for_gly2.csv"))
     _unimod_definitions = staticmethod(lambda: resource_stream(__name__, "data/unimod.json"))
 
-    use_unimod = True
+    use_protein_prospector = True
 
     other_modifications = {
         "HexNAc": NGlycanCoreGlycosylation(),
@@ -474,9 +497,10 @@ class ModificationTable(dict):
     @classmethod
     def load_from_file_default(cls):
         '''Load the rules definitions from the default package files'''
-        defs = load_from_csv(cls._table_definition_file())
-        if cls.use_unimod:
-            defs += load_from_json(cls._unimod_definitions())
+        defs = []
+        if cls.use_protein_prospector:
+            defs += load_from_csv(cls._table_definition_file())
+        defs += load_from_json(cls._unimod_definitions())
         return ModificationTable(defs)
 
     bootstrapped = None
@@ -728,7 +752,7 @@ class Modification(ModificationBase):
                 else:
                     rule = anon
 
-        self.name = rule.name
+        self.name = rule.preferred_name
         self.mass = rule.mass
         self.position = mod_pos
         self.number = mod_num
