@@ -19,7 +19,7 @@ def test_main():
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
         "./datafiles/naive_glycopeptide.db", "test", "./datafiles/proteins_agp_only.fasta",
         None, "./datafiles/human_n_glycans.txt", 'txt', constant_mods,
-        variable_mods, enzyme, n_processes=5)
+        variable_mods, enzyme, max_missed_cleavages=1, n_processes=5)
     job.start()
 
 

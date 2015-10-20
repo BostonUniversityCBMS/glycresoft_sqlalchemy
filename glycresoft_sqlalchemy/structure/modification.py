@@ -418,7 +418,7 @@ class NGlycanCoreGlycosylation(Glycosylation):
         self.mass = base_mass
         self.title = "NGlycanCoreGlycosylation"
         self.unimod_name = "HexNAc"
-        self.targets = ModificationTarget("N")
+        self.targets = [(ModificationTarget("N"))]
         self.composition = None
         self.title = self.name
         self.preferred_name = self.name
@@ -540,7 +540,7 @@ class ModificationTable(dict):
         for name, mod in ModificationTable.other_modifications.items():
             self.add_modification(name, mod)
         for mod in self.modification_rules:
-            self.add_modification(mod.name, mod)
+            self.add_modification(mod)
 
     def add_modification(self, key, value=None):
         if isinstance(key, ModificationRule):
@@ -553,6 +553,11 @@ class ModificationTable(dict):
                     self[key.title] += key
                 else:
                     self[key.title] = key
+            if key.preferred_name is not None:
+                if key.preferred_name in self:
+                    self[key.preferred_name] += key
+                else:
+                    self[key.preferred_name] = key
         elif value is not None:
             if key in self:
                 self[key] += value
@@ -570,6 +575,11 @@ class ModificationTable(dict):
                         self[mod.title] += mod
                     else:
                         self[mod.title] = mod
+                if mod.preferred_name is not None:
+                    if mod.preferred_name in self:
+                        self[mod.preferred_name] += mod
+                    else:
+                        self[mod.preferred_name] = mod
             except KeyError:
                 try:
                     matches = [
