@@ -26,12 +26,12 @@ format_mapping = {
 }
 
 logger = logging.getLogger("naive_glycopeptide_hypothesis")
-if len(logger.handlers) == 0:
-    fmt = logging.Formatter(
-        "%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s", "%H:%M:%S")
-    handler = logging.StreamHandler()
-    handler.setFormatter(fmt)
-    logger.addHandler(handler)
+# if len(logger.handlers) == 0:
+#     fmt = logging.Formatter(
+#         "%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s", "%H:%M:%S")
+#     handler = logging.StreamHandler()
+#     handler.setFormatter(fmt)
+#     logger.addHandler(handler)
 
 water = Composition("H2O").mass
 

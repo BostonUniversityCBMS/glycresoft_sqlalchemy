@@ -75,11 +75,19 @@ class Application extends ActionLayerManager
                 delete self.tasks[id]
                 handle.fadeOut()
                 handle.remove()
+            else
+                handle.triggerHandler("contextmenu")
             return
+        self = @
+        doubleClickTask = (event) ->
+            handle = $(this)
+            id = handle.attr('data-id')
+            $.get "/internal/log/" + id, (message) => self.displayMessageModal(message)
 
         taskListContainer.html _.map(@tasks, renderTask).join('')
         self = this
         taskListContainer.find('li').click clickTask
+        taskListContainer.find("li").dblclick doubleClickTask
 
     handleMessage: (messageType, handler) ->
         @eventStream.addEventListener messageType, (event) ->
@@ -107,6 +115,10 @@ class Application extends ActionLayerManager
                     self.setShowingLayer self.lastAdded
         ->
             @loadData()
+        ->
+            @handleMessage "files-to-download", (data) =>
+                for file in data.files
+                    @downloadFile(file)
     ]
 
     loadData: ->
@@ -119,6 +131,15 @@ class Application extends ActionLayerManager
         DataSource.hypothesisSampleMatches (d) =>
             @hypothesisSampleMatches = d
             @emit "render-hypothesis-sample-matches"
+
+    downloadFile: (filePath) ->
+        window.location = "/internal/file_download/" + btoa(filePath)
+
+    displayMessageModal: (message) ->
+        container = $("#message-modal")
+        container.find('.modal-content').html message
+        container.openModal()
+
 
 renderTask = (task) ->
     '<li data-id=\'{id}\' data-status=\'{status}\'><b>{name}</b> ({status})</li>'.format task

@@ -132,6 +132,8 @@ class SiteCombinator(object):
 
 def all_combinations(site_assignments):
     all_positions = reduce(set().union, site_assignments.values(), set())
+    if len(all_positions) > 10:
+        logger.info('Begin Position Assignment Combinations (%d)\n%r', len(all_positions), all_positions)
     intersects = {}
     for i in all_positions:
         intersects[i] = []
@@ -152,11 +154,15 @@ def all_combinations(site_assignments):
                     new_c[opt] += 1
                     new_combinations.append(new_c)
             combinations = new_combinations
+    if len(all_positions) > 10:
+        logger.info("%d combinations computed. Extrapolating", len(combinations))
     unique_combinations = set()
     for combn in combinations:
         for combo in descending_combination_counter(combn):
             unique_combinations.add(frozenset((k, v) for k, v in combo.items() if v != 0))
     combinations = map(dict, unique_combinations)
+    if len(all_positions) > 10:
+        logger.info("%d combinations extrapolated. Uniquifying", len(combinations))
     unique_combinations = set()
     for combn in combinations:
         for i in range(1, len(combn) + 1):
@@ -167,7 +173,7 @@ def all_combinations(site_assignments):
 
 
 def unpositioned_isoforms(
-        theoretical_peptide, constant_modifications, variable_modifications, modification_table):
+        theoretical_peptide, constant_modifications, variable_modifications, modification_table, max_modifications=4):
     if variable_modifications is None:
         variable_modifications = []
     if constant_modifications is None:
@@ -189,6 +195,8 @@ def unpositioned_isoforms(
     variable_sites = {
         mod.name: set(
             mod.find_valid_sites(sequence)) for mod in variable_modifications}
+    counter = 0
+    kept = 0
     strseq = str(sequence)
     for i in range(len(sequons)):
         for sequons_occupied in (combinations(sequons, i + 1)):
@@ -196,14 +204,18 @@ def unpositioned_isoforms(
             sequons_occupied = set(sequons_occupied)
             _sequons_occupied = list(sequons_occupied)
             yield strseq, {}, sequence.mass, _sequons_occupied
-
+            counter += 1
+            kept += 1
             avail_sites = {
                 mod: sites -
                 sequons_occupied for mod,
                 sites in variable_sites.items()}
             for modifications in all_combinations(avail_sites):
+                if counter % 1000 == 0:
+                    logger.info("%d modification configurations computed, %d unique (%s)", counter, kept, strseq)
+                counter += 1
                 hashable = frozenset(modifications.items())
-                if hashable in solutions:
+                if hashable in solutions or sum(modifications.values()) > max_modifications:
                     continue
                 else:
                     solutions.add(hashable)
@@ -212,6 +224,7 @@ def unpositioned_isoforms(
                     mass += modification_table[name].mass * count
                 if len(modifications) > 0:
                     yield strseq, dict(modifications), mass, _sequons_occupied
+                    kept += 1
 
 
 def generate_peptidoforms(reference_protein, constant_modifications,

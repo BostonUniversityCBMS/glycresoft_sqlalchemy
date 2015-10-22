@@ -140,6 +140,7 @@ class CSVExportDriver(PipelineModule):
         hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
 
         filterfunc = self.filterfunc
+        outputs = []
 
         def getname(hsm):
             try:
@@ -150,19 +151,24 @@ class CSVExportDriver(PipelineModule):
             print res_type
             if res_type == GlycopeptideMatch:
                 output_path = self.output_path + '.{}.glycopeptide_matches.csv'.format(getname(hsm))
+                outputs.append(output_path)
                 # Only export target hypothesis
                 export_glycopeptide_ms2_matches(filterfunc(query.filter(
                     GlycopeptideMatch.protein_id == Protein.id,
                     Protein.hypothesis_id == hsm.target_hypothesis_id)), output_path)
             elif (res_type == TheoreticalGlycopeptideComposition):
                 output_path = self.output_path + '.{}.glycopeptide_compositions.csv'.format(getname(hsm))
+                outputs.append(output_path)
                 export_glycopeptide_ms1_matches_legacy(
                     filterfunc(query),
                     hsm.target_hypothesis.parameters['monosaccharide_identities'],
                     output_path)
             elif (res_type == TheoreticalGlycanComposition):
                 output_path = self.output_path + ".{}.glycan_compositions.csv".format(getname(hsm))
-                base_types = session.query(TheoreticalGlycanComposition.GlycanCompositionAssociation.base_type.distinct()).join(TheoreticalGlycanComposition).filter(
+                outputs.append(output_path)
+                base_types = session.query(
+                    TheoreticalGlycanComposition.GlycanCompositionAssociation.base_type.distinct()).join(
+                    TheoreticalGlycanComposition).filter(
                     TheoreticalGlycanComposition.hypothesis_id == hsm.target_hypothesis.id)
                 monosaccharide_identities = [b for q in base_types for b in q]
                 export_glycan_ms1_matches_legacy(
@@ -170,10 +176,9 @@ class CSVExportDriver(PipelineModule):
                     monosaccharide_identities,
                     output_path
                     )
-
-
             else:
                 pass
+        return outputs
 
     def run(self):
         return map(self.dispatch_export, self.hypothesis_sample_match_ids)

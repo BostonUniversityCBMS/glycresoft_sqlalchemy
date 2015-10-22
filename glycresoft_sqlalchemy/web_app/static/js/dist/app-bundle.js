@@ -158,7 +158,7 @@ Application = (function(superClass) {
   };
 
   Application.prototype.updateTaskList = function() {
-    var clickTask, self, taskListContainer;
+    var clickTask, doubleClickTask, self, taskListContainer;
     taskListContainer = this.sideNav.find('.task-list-container ul');
     clickTask = function(event) {
       var handle, id, state;
@@ -170,11 +170,25 @@ Application = (function(superClass) {
         delete self.tasks[id];
         handle.fadeOut();
         handle.remove();
+      } else {
+        handle.triggerHandler("contextmenu");
       }
+    };
+    self = this;
+    doubleClickTask = function(event) {
+      var handle, id;
+      handle = $(this);
+      id = handle.attr('data-id');
+      return $.get("/internal/log/" + id, (function(_this) {
+        return function(message) {
+          return self.displayMessageModal(message);
+        };
+      })(this));
     };
     taskListContainer.html(_.map(this.tasks, renderTask).join(''));
     self = this;
-    return taskListContainer.find('li').click(clickTask);
+    taskListContainer.find('li').click(clickTask);
+    return taskListContainer.find("li").dblclick(doubleClickTask);
   };
 
   Application.prototype.handleMessage = function(messageType, handler) {
@@ -209,6 +223,19 @@ Application = (function(superClass) {
       });
     }, function() {
       return this.loadData();
+    }, function() {
+      return this.handleMessage("files-to-download", (function(_this) {
+        return function(data) {
+          var file, i, len, ref, results;
+          ref = data.files;
+          results = [];
+          for (i = 0, len = ref.length; i < len; i++) {
+            file = ref[i];
+            results.push(_this.downloadFile(file));
+          }
+          return results;
+        };
+      })(this));
     }
   ];
 
@@ -231,6 +258,17 @@ Application = (function(superClass) {
         return _this.emit("render-hypothesis-sample-matches");
       };
     })(this));
+  };
+
+  Application.prototype.downloadFile = function(filePath) {
+    return window.location = "/internal/file_download/" + btoa(filePath);
+  };
+
+  Application.prototype.displayMessageModal = function(message) {
+    var container;
+    container = $("#message-modal");
+    container.find('.modal-content').html(message);
+    return container.openModal();
   };
 
   return Application;
@@ -654,11 +692,13 @@ doZoom = function() {
 };
 
 viewTandemGlycopeptideDatabaseSearchResults = function() {
-  var getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
+  var downloadCSV, getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
   peptideDetailsModal = void 0;
   setup = function() {
     $('.protein-match-table tbody tr').click(updateProteinChoice);
-    return updateProteinChoice.apply($('.protein-match-table tbody tr'));
+    updateProteinChoice.apply($('.protein-match-table tbody tr'));
+    $(".tooltipped").tooltip();
+    return $("#save-csv-file").click(downloadCSV);
   };
   initGlycopeptideOverviewPlot = function() {
     $('svg .glycopeptide').customTooltip(glycopeptideTooltipCallback, 'protein-view-tooltip');
@@ -733,6 +773,19 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
       peptideDetailsModal.find('.modal-content').html(doc);
       $(".lean-overlay").remove();
       return peptideDetailsModal.openModal();
+    });
+  };
+  downloadCSV = function() {
+    var handle, id;
+    handle = $(this);
+    id = handle.attr('data-target');
+    return $.ajax("/view_database_search_results/export_csv/" + id, {
+      data: JSON.stringify({
+        "context": GlycReSoft.context,
+        "settings": GlycReSoft.settings
+      }),
+      contentType: "application/json",
+      type: 'POST'
     });
   };
   unload = function() {

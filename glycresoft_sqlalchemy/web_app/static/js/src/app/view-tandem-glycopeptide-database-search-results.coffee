@@ -11,6 +11,8 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
     setup = ->
         $('.protein-match-table tbody tr').click updateProteinChoice
         updateProteinChoice.apply $('.protein-match-table tbody tr')
+        $(".tooltipped").tooltip()
+        $("#save-csv-file").click downloadCSV
 
     initGlycopeptideOverviewPlot = ->
         $('svg .glycopeptide').customTooltip glycopeptideTooltipCallback, 'protein-view-tooltip'
@@ -77,6 +79,14 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
             # Remove any straggler overlays from rapid re-opening of modal
             $(".lean-overlay").remove()
             peptideDetailsModal.openModal()
+
+    downloadCSV = ->
+        handle = $(this)
+        id = handle.attr('data-target')
+        $.ajax "/view_database_search_results/export_csv/" + id,
+                data: JSON.stringify({"context": GlycReSoft.context, "settings": GlycReSoft.settings}),
+                contentType: "application/json"
+                type: 'POST'
 
     unload = ->
         GlycReSoft.removeCurrentLayer()

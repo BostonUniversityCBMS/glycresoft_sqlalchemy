@@ -1,5 +1,6 @@
 import logging
 import os
+import base64
 import json
 import functools
 from flask import Flask, request, session, g, redirect, url_for, \
@@ -15,7 +16,8 @@ from glycresoft_sqlalchemy.web_app import report
 
 from glycresoft_sqlalchemy.data_model import (
     Hypothesis, Protein, TheoreticalGlycopeptide, PeakGroupMatch, TheoreticalGlycopeptideComposition,
-    GlycopeptideMatch, HypothesisSampleMatch, MassShift, json_type, make_transient)
+    GlycopeptideMatch, HypothesisSampleMatch, MassShift, json_type, make_transient, MS1GlycanHypothesisSampleMatch,
+    MS2GlycanHypothesisSampleMatch, MS1GlycopeptideHypothesisSampleMatch, MS2GlycopeptideHypothesisSampleMatch)
 
 from glycresoft_sqlalchemy.report import microheterogeneity
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
@@ -24,6 +26,7 @@ from glycresoft_sqlalchemy.web_app.task.do_decon2ls_parse import Decon2LSIsosPar
 from glycresoft_sqlalchemy.web_app.task.do_ms2_search import TandemMSGlycoproteomicsSearchTask
 from glycresoft_sqlalchemy.web_app.task.do_ms1_peak_group_matching import LCMSSearchTask
 from glycresoft_sqlalchemy.web_app.task.do_naive_glycopeptide_hypothesis import NaiveGlycopeptideHypothesisBuilderTask
+from glycresoft_sqlalchemy.web_app.task.do_export_csv import ExportCSVTask
 from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
 from glycresoft_sqlalchemy.web_app.task.dummy import DummyTask
 
@@ -131,6 +134,28 @@ def update_settings():
 @app.route("/test/task-test")
 def test_page():
     return render_template("test.templ")
+
+
+@app.route("/internal/log/<task_id>")
+def send_log(task_id):
+    return Response("<pre>%s</pre>" % open(manager.get_task_path(task_id + '.log'), 'r').read(), mimetype='application/text')
+
+
+# ---------------------------------------
+#        File Download Operations
+# ---------------------------------------
+
+
+@app.route("/internal/file_download/<b64path>")
+def download_file(b64path):
+    path = base64.b64decode(b64path)
+    name = os.path.basename(path)
+    if manager.temp_dir in path:
+        def yielder():
+            for line in open(path):
+                yield line
+        return Response(yielder(), mimetype="application/octet-stream",
+                        headers={"Content-Disposition": "attachment; filename=%s;" % name})
 
 
 @app.route("/view_database_search_results/<int:id>", methods=["POST"])
@@ -256,11 +281,27 @@ def view_peak_grouping_glycopeptide_composition_details(id):
 # ----------------------------------------
 
 
-@app.route("/view_database_search_results/export_csv/<int:id>")
+def filterfunc_template(q, model, attr, value, code=1):
+    return q.filter(getattr(model, attr) >= value)
+
+
+@app.route("/view_database_search_results/export_csv/<int:id>", methods=["POST"])
 def export_csv_task(id):
     hypothesis_sample_match = g.db.query(HypothesisSampleMatch).get(id)
+    tempdir = manager.get_temp_path("glycresoft_export")
 
-    task = DummyTask()
+    state = request.get_json()
+    settings = state["settings"]
+    context = state['context']
+    minimum_score = settings.get("minimum-score", 0.2)
+
+    if isinstance(hypothesis_sample_match, (MS1GlycopeptideHypothesisSampleMatch,
+                                            MS1GlycanHypothesisSampleMatch)):
+        filterfunc = functools.partial(filterfunc_template, model=PeakGroupMatch, attr="ms1_score", value=minimum_score)
+    elif isinstance(hypothesis_sample_match, MS2GlycopeptideHypothesisSampleMatch):
+        filterfunc = functools.partial(filterfunc_template, model=GlycopeptideMatch, attr="ms2_score", value=minimum_score)
+
+    task = ExportCSVTask(manager.path, id, filterfunc, tempdir)
 
     manager.add_task(task)
     return jsonify(target=hypothesis_sample_match.to_json())
@@ -310,7 +351,7 @@ def api_samples():
 
 @app.route("/ms1_or_ms2_choice")
 def branch_ms1_ms2():
-    # This would be better done completely client-side, but 
+    # This would be better done completely client-side, but
     # requires some templating engine/cache on the client
     ms1_choice = request.values.get("ms1_choice")
     ms2_choice = request.values.get("ms2_choice")

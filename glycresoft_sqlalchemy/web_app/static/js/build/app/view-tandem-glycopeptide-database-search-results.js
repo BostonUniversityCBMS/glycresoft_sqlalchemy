@@ -10,11 +10,13 @@ doZoom = function() {
 };
 
 viewTandemGlycopeptideDatabaseSearchResults = function() {
-  var getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
+  var downloadCSV, getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
   peptideDetailsModal = void 0;
   setup = function() {
     $('.protein-match-table tbody tr').click(updateProteinChoice);
-    return updateProteinChoice.apply($('.protein-match-table tbody tr'));
+    updateProteinChoice.apply($('.protein-match-table tbody tr'));
+    $(".tooltipped").tooltip();
+    return $("#save-csv-file").click(downloadCSV);
   };
   initGlycopeptideOverviewPlot = function() {
     $('svg .glycopeptide').customTooltip(glycopeptideTooltipCallback, 'protein-view-tooltip');
@@ -89,6 +91,19 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
       peptideDetailsModal.find('.modal-content').html(doc);
       $(".lean-overlay").remove();
       return peptideDetailsModal.openModal();
+    });
+  };
+  downloadCSV = function() {
+    var handle, id;
+    handle = $(this);
+    id = handle.attr('data-target');
+    return $.ajax("/view_database_search_results/export_csv/" + id, {
+      data: JSON.stringify({
+        "context": GlycReSoft.context,
+        "settings": GlycReSoft.settings
+      }),
+      contentType: "application/json",
+      type: 'POST'
     });
   };
   unload = function() {
