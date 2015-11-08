@@ -22,28 +22,19 @@
             .
         </div>
         <div class='col s3'>
-            {#<h5>Glycosylation Sites Occupied</h5>
-                        <table class='centered bordered'>
-                            <thead>
-                                <tr>
-                                    <th>Glycosylation Site</th>
-                                    <th>Microheterogeneity</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for site, composition_volumes in site_summary | sort%}
-                                <tr>
-                                    <td>{{site}}</td>
-                                    <td>{{composition_volumes|length}}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>#}
+            
         </div>
     </div>
     <div id='glycopeptide-table'>
-        {% with glycopeptides=filter_context(protein.peak_group_matches).order_by(PeakGroupMatch.ms1_score.desc()) %}
+        {% with paginator=paginate(filter_context(protein.peak_group_matches).order_by(PeakGroupMatch.ms1_score.desc()), 1, 50) %}
             {% include "peak_group_search/components/glycopeptide_match_table.templ" %}
         {% endwith %}
+    </div>
+</div>
+<div id="peptide-detail-modal" class="modal modal-fixed-footer wide">
+    <div class="modal-content">
+    </div>
+    <div class="modal-footer">
+        <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat">Dismiss</a>
     </div>
 </div>

@@ -26,10 +26,11 @@ def taskmain(
     if target_hypothesis_id is None:
         if source_hypothesis_sample_match_id is None:
             raise Exception("No target hypotesis or hypotesis sample match given")
+
         session = manager.session()
         source_hsm = session.query(HypothesisSampleMatch).get(source_hypothesis_sample_match_id)
-        search_space_builder = pooling_search_space_builder.constructs[source_hsm.target_hypothesis.__class__]
-        builder = search_space_builder.from_hypothesis(
+        search_space_builder = pooling_search_space_builder.constructs[source_hsm.__class__]
+        builder = search_space_builder.from_hypothesis_sample_match(
             database_path, source_hsm.id, n_processes=kwargs.get("n_processes", 4))
         target_hypothesis_id = builder.start()
         builder = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(

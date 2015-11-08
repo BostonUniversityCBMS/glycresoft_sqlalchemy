@@ -91,10 +91,18 @@ Application = (function(superClass) {
   };
 
   Application.prototype.updateSettings = function() {
-    return $.post('/internal/update_settings', this.settings).success(function(data) {
-      console.log(data, "Update Settings");
-      return this.settings = data;
-    }).error(function(err) {
+    return $.post('/internal/update_settings', this.settings).success((function(_this) {
+      return function(data) {
+        var k, v;
+        console.log(data, "Update Settings");
+        for (k in data) {
+          v = data[k];
+          _this.settings[k] = v;
+          console.log(k, v);
+        }
+        return _this.emit("update_settings");
+      };
+    })(this)).error(function(err) {
       return console.log(err);
     });
   };
@@ -112,8 +120,6 @@ Application = (function(superClass) {
         delete self.tasks[id];
         handle.fadeOut();
         handle.remove();
-      } else {
-        handle.triggerHandler("contextmenu");
       }
     };
     self = this;
@@ -128,7 +134,9 @@ Application = (function(superClass) {
       })(this));
     };
     taskListContainer.html(_.map(this.tasks, renderTask).join(''));
-    self = this;
+    contextMenu(taskListContainer.find('li'), {
+      "View Log": doubleClickTask
+    });
     taskListContainer.find('li').click(clickTask);
     return taskListContainer.find("li").dblclick(doubleClickTask);
   };
@@ -178,6 +186,16 @@ Application = (function(superClass) {
           return results;
         };
       })(this));
+    }, function() {
+      return this.on("update_settings", (function(_this) {
+        return function() {
+          var layer;
+          layer = _this.getShowingLayer();
+          if (layer.name !== "home-layer") {
+            return layer.setup();
+          }
+        };
+      })(this));
     }
   ];
 
@@ -211,6 +229,22 @@ Application = (function(superClass) {
     container = $("#message-modal");
     container.find('.modal-content').html(message);
     return container.openModal();
+  };
+
+  Application.prototype.ajaxWithContext = function(url, options) {
+    var data;
+    if (options == null) {
+      options = {
+        data: {}
+      };
+    }
+    data = options.data;
+    data['settings'] = this.settings;
+    data['context'] = this.context;
+    options.method = "POST";
+    options.data = JSON.stringify(data);
+    options.contentType = "application/json";
+    return $.ajax(url, options);
   };
 
   return Application;

@@ -251,6 +251,51 @@ class TheoreticalGlycopeptide(PeptideBase, Base):
 has_glycan_composition(TheoreticalGlycopeptide, "glycan_composition_str")
 
 
+class TheoreticalPeptideProductIon(Base):
+    __tablename__ = "TheoreticalPeptideProductIon"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode(64), index=True)
+    calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+
+    n_term = Column(Unicode(10))
+    c_term = Column(Unicode(10))
+    glycosylated = Column(Boolean)
+    sequence_index = Column(Integer, index=True)
+    ion_ladder = Column(Unicode(10), index=True)
+
+    @classmethod
+    def from_fragment(cls, frag):
+        inst = cls(
+            name=frag.name,
+            calculated_mass=frag.mass,
+            n_term=frag.flanking_amino_acids[0].name,
+            c_term=frag.flanking_amino_acids[1].name,
+            glycosylated=('HexNAc' in frag.mod_dict),
+            sequence_index=frag.pos,
+            ion_ladder=frag.name[0]
+            )
+        return inst
+
+    def __repr__(self):
+        return "<TheoreticalPeptideProductIon %s %s-%s %0.3f>" % (
+            self.name, self.n_term, self.c_term, self.calculated_mass)
+
+
+class TheoreticalGlycopeptideStubIon(Base):
+    __tablename__ = "TheoreticalGlycopeptideStubIon"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode(64), index=True)
+    calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+    ion_ladder = Column(Unicode(10), index=True)
+    peptide_backbone = Column(Boolean)
+
+    def __repr__(self):
+        return "<TheoreticalGlycopeptideStubIon %s %s %0.3f>" % (
+            self.name, self.ion_ladder, self.calculated_mass)
+
+
 class MS1GlycanHypothesis(Hypothesis):
     __tablename__ = "MS1GlycanHypothesis"
 
@@ -277,7 +322,7 @@ class MS2GlycanHypothesis(Hypothesis):
 
 
 class MS1GlycopeptideHypothesis(Hypothesis):
-    from . import naive_proteomics
+    from . import proteomics
 
     __tablename__ = "MS1GlycopeptideHypothesis"
 
@@ -287,7 +332,7 @@ class MS1GlycopeptideHypothesis(Hypothesis):
         'polymorphic_identity': u'MS1GlycopeptideHypothesis',
     }
 
-    theoretical_structure_type = naive_proteomics.TheoreticalGlycopeptideComposition
+    theoretical_structure_type = proteomics.TheoreticalGlycopeptideComposition
 
 
 class ExactMS1GlycopeptideHypothesis(MS1GlycopeptideHypothesis):

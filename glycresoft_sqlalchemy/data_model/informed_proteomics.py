@@ -3,7 +3,7 @@ from sqlalchemy import PickleType, Numeric, Unicode, Column, Integer, ForeignKey
 from sqlalchemy import event
 
 from .data_model import Base, PeptideBase, Protein
-from .naive_proteomics import TheoreticalGlycopeptideComposition
+from .proteomics import TheoreticalGlycopeptideComposition
 from .glycomics import has_glycan_composition_listener
 
 

@@ -61,7 +61,8 @@ class SimpleSpectrumAssignment(PipelineModule):
         logger.info("Marking all GlycopeptideSpectrumMatches")
         session.query(GSM).filter(
             GSM.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-            GSM.hypothesis_id == self.hypothesis_id).update({"best_match": False}, synchronize_session=False)
+            GSM.hypothesis_id == self.hypothesis_id).update(
+            {"best_match": False}, synchronize_session=False)
         session.commit()
         logger.info("Calculating best matches.")
         accepted_peaks_map = session.query(
@@ -77,7 +78,8 @@ class SimpleSpectrumAssignment(PipelineModule):
                 GSM.scan_time == scan_time,
                 GSM.peaks_explained == peaks_explained,
                 GSM.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-                GSM.hypothesis_id == self.hypothesis_id).update({"best_match": True})
+                GSM.hypothesis_id == self.hypothesis_id).update(
+                {"best_match": True}, synchronize_session=False)
             if i % 1000 == 0:
                 logger.info("%d scans updated", i)
         session.commit()

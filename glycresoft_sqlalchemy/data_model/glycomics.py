@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy import alias, event, func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table, PickleType, Boolean
-from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
+from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.associationproxy import association_proxy, _AssociationDict
 from sqlalchemy.orm.collections import attribute_mapped_collection
 
@@ -208,6 +208,24 @@ def has_glycan_composition(model, composition_attr):
 
         model.glycan_composition_extents = classmethod(glycan_composition_extents)
 
+        def glycan_composition_filters(cls, query, constraints):
+            q = query
+            for monosaccharide_name, rules in constraints.items():
+                minimum, maximum, include = rules["minimum"], rules["maximum"], rules["include"]
+                symbol = cls.qmonosaccharide(monosaccharide_name)
+                if include:
+                    if minimum == 0:
+                        q = q.outerjoin(symbol).filter(
+                            symbol.c.count.between(minimum, maximum) |
+                            symbol.c.base_type.is_(None))
+                    else:
+                        q = q.join(symbol).filter(symbol.c.count.between(minimum, maximum))
+                else:
+                    q = q.filter(~cls.with_monosaccharide(monosaccharide_name))
+            return q
+
+        model.glycan_composition_filters = classmethod(glycan_composition_filters)
+
         # This hack is necessary to make inner class locatable to the pickle
         # machinery. A possible alternative solution is to define a single class
         # once and use multiple tables that are mapped to it.
@@ -233,7 +251,7 @@ def has_glycan_composition_listener(attr):
         if value == "{}" or value is None:
             return
         for k, v in glycan_composition.parse(value).items():
-            target.glycan_composition[k.name()] = v
+            target.glycan_composition[str(k)] = v
 
     @event.listens_for(attr.class_, "load")
     def convert_composition_load(target, context):
@@ -241,7 +259,7 @@ def has_glycan_composition_listener(attr):
         if value == "{}" or value is None:
             return
         for k, v in glycan_composition.parse(value).items():
-            target.glycan_composition[k.name()] = v
+            target.glycan_composition[str(k)] = v
 
 
 class GlycanBase(object):

@@ -30,6 +30,9 @@ from glycresoft_sqlalchemy.web_app.task.do_export_csv import ExportCSVTask
 from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
 from glycresoft_sqlalchemy.web_app.task.dummy import DummyTask
 
+from glycresoft_sqlalchemy.web_app.utils.pagination import paginate
+
+
 app = Flask(__name__)
 report.prepare_environment(app.jinja_env)
 
@@ -264,6 +267,25 @@ def view_composition_glycopeptide_protein_results(id):
         "peak_group_search/components/protein_view.templ",
         protein=protein,
         filter_context=filter_context)
+
+
+@app.route("/view_database_search_results/glycopeptide_matches_composition_table"
+           "/<int:protein_id>/<int:page>", methods=["POST"])
+def view_composition_glycopeptide_table_partial(protein_id, page):
+    print request.values
+    hypothesis_sample_match_id = request.get_json()["context"]["hypothesis_sample_match_id"]
+    protein = g.db.query(Protein).get(protein_id)
+
+    def filter_context(q):
+        return q.filter(
+            PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
+            PeakGroupMatch.ms1_score > 0.2)
+
+    paginator = paginate(filter_context(protein.peak_group_matches).order_by(PeakGroupMatch.ms1_score.desc()), page, 50)
+
+    return render_template(
+        "peak_group_search/components/glycopeptide_match_table.templ",
+        paginator=paginator)
 
 
 @app.route("/view_database_search_results/view_glycopeptide_composition_details/<int:id>")
@@ -657,7 +679,10 @@ def inject_model():
 def inject_functions():
     def query(args):
         return g.db.query(args)
-    return locals()
+    return {
+        "query": query,
+        "paginate": paginate
+    }
 
 parser = argparse.ArgumentParser('view-results')
 parser.add_argument("results_database")

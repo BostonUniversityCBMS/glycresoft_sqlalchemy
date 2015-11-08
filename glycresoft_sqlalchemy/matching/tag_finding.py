@@ -301,3 +301,57 @@ def resolve_sequence_segment(total_mass, blocks, shift=0, tolerance=default_matc
             next_round = set()
 
     return solutions
+
+
+class SpectrumGraph(object):
+    def __init__(self, peaks):
+        self.peaks = sorted(peaks, key=neutral_mass_getter)
+
+
+class SpectrumNode(object):
+    def __init__(self, peak):
+        self.in_edges = []
+        self.out_edges = []
+        self.peak = peak
+
+        self.neutral_mass = peak.neutral_mass
+
+    def __repr__(self):
+        return "SpectrumNode({} {})".format(self.peak.id, self.peak.neutral_mass)
+
+    def __eq__(self, other):
+        try:
+            return self.peak == other.peak
+        except AttributeError:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(self.neutral_mass)
+
+
+class SpectrumEdge(object):
+    def __init__(self, parent, child, mass_shift, annotation):
+        self.parent = parent
+        self.child = child
+        self.mass_shift = mass_shift
+        self.annotation = annotation
+
+    def __repr__(self):
+        return "SpectrumEdge({}, {}, {}, {})".format(
+            self.parent, self.child, self.mass_shift, self.annotation)
+
+    def __eq__(self, other):
+        try:
+            return (self.parent == other.parent and self.child == other.child and
+                    self.mass_shift == other.mass_shift and self.annotation == other.annotation)
+        except AttributeError:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash((self.parent, self.child, self.annotation))

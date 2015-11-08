@@ -6,12 +6,12 @@ from ..utils.common_math import DPeak, ppm_error
 PROTON = Composition("H+").mass
 
 
-def neutral_mass(mz, z):
-    return (mz * z) - (z * PROTON)
+def neutral_mass(mz, z, charge_carrier=PROTON):
+    return (mz * abs(z)) - (z * charge_carrier)
 
 
-def mass_charge_ratio(neutral_mass, z):
-    return (neutral_mass + (z * PROTON)) / z
+def mass_charge_ratio(neutral_mass, z, charge_carrier=PROTON):
+    return (neutral_mass + (z * charge_carrier)) / abs(z)
 
 
 def aggregate_spectra(spectra_collection, match_tolerance=2e-5):

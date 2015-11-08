@@ -55,6 +55,11 @@ expasy_rules = {'arg-c': 'R',
                 'trypsin': '([KR](?=[^P]))|((?<=W)K(?=P))|((?<=M)R(?=P))'}
 
 
+def merge_enzyme_rules(enzyme_names):
+    rules = ["(" + expasy_rules[name] + ")" for name in enzyme_names]
+    return "|".join(rules)
+
+
 def n_glycan_sequon_sites(peptide):
     sites = set(sequence.find_n_glycosylation_sequons(peptide.base_peptide_sequence))
     try:
@@ -228,14 +233,20 @@ def unpositioned_isoforms(
 
 
 def generate_peptidoforms(reference_protein, constant_modifications,
-                          variable_modifications, enzyme, missed_cleavages=1):
+                          variable_modifications, enzyme, missed_cleavages=1,
+                          max_modifications=4):
     modtable = modification.RestrictedModificationTable.bootstrap(
         constant_modifications,
-        variable_modifications)
+        variable_modifications, reuse=False)
+    enzyme = expasy_rules.get(enzyme, enzyme)
     for peptide, start, end in sequence.cleave(
-            reference_protein.protein_sequence, expasy_rules[enzyme], missed_cleavages=missed_cleavages):
+            reference_protein.protein_sequence, enzyme, missed_cleavages=missed_cleavages):
         if len(peptide) < 5:
             continue
+        missed = len(re.findall(enzyme, peptide))
+        if missed > missed_cleavages:
+            continue
+
         ref_peptide = NaivePeptide(
             base_peptide_sequence=peptide,
             protein=reference_protein,
@@ -243,7 +254,6 @@ def generate_peptidoforms(reference_protein, constant_modifications,
             start_position=start,
             end_position=end)
         ref_peptide.protein = reference_protein
-        missed = len(re.findall(expasy_rules[enzyme], peptide))
         for modseq, modifications, mass, sequons_occupied in unpositioned_isoforms(ref_peptide, constant_modifications,
                                                                                    variable_modifications,
                                                                                    modtable):

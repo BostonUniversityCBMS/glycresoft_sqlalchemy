@@ -1,9 +1,9 @@
 cdef char* NOISE
 cdef int OUT_OF_RANGE_INT = 999
 
-cpdef float ppm_error(float x, float y)
+cpdef double ppm_error(double x, double y)
 
-cpdef object tol_ppm_error(float x, float y, float tolerance)
+cpdef object tol_ppm_error(double x, double y, double tolerance)
 
 
 cdef inline bint feature_match(MSFeatureStruct* feature, PeakStruct* peak1, PeakStruct* peak2) nogil
@@ -13,15 +13,16 @@ cdef int intensity_ratio_function(DPeak peak1, DPeak peak2)
 cdef int _intensity_ratio_function(PeakStruct* peak1, PeakStruct* peak2) nogil
 
 
-cdef void intensity_rank(list peak_list, float minimum_intensity=*)
-cdef void _intensity_rank(PeakStructArray* peak_list, float minimum_intensity=*) nogil
+cdef void intensity_rank(list peak_list, double minimum_intensity=*)
+cdef void _intensity_rank(PeakStructArray* peak_list, double minimum_intensity=*) nogil
 
 
 cdef class MassOffsetFeature(object):
     cdef:
-        public float offset
-        public float tolerance
+        public double offset
+        public double tolerance
         public str name
+        public bint fixed
         public int intensity_ratio
         public int from_charge
         public int to_charge
@@ -44,19 +45,19 @@ cdef class DPeak(object):
     updated data.
     '''
     cdef:
-        public float neutral_mass
+        public double neutral_mass
         public long id
         public int charge
-        public float intensity
+        public double intensity
         public int rank
-        public float mass_charge_ratio
+        public double mass_charge_ratio
         public list peak_relations
 
         cdef PeakStruct* as_struct(self)
 
 cdef class TheoreticalFragment(object):
     cdef:
-        public float neutral_mass
+        public double neutral_mass
         public str key
 
 cdef class MatchedSpectrum(object):
@@ -75,6 +76,7 @@ cdef class MatchedSpectrum(object):
         public int glycan_peptide_ratio
 
     cpdef set peak_explained_by(self, object peak_id)
+    cpdef DPeak get_peak(self, long id)
 
 cdef class FragmentMatch(object):
     cdef:
@@ -87,18 +89,19 @@ cdef class FragmentMatch(object):
 
 # Scalar Structs
 
-cdef public struct PeakStruct:
-    float neutral_mass
+cdef struct PeakStruct:
+    double neutral_mass
     long id
     int charge
-    float intensity
+    double intensity
     int rank
-    float mass_charge_ratio
+    double mass_charge_ratio
 
-cdef public struct MSFeatureStruct:
-    float offset
-    float tolerance
+cdef struct MSFeatureStruct:
+    double offset
+    double tolerance
     char* name
+    bint fixed
     int intensity_ratio
     int from_charge
     int to_charge
@@ -110,18 +113,14 @@ cdef public struct MSFeatureStruct:
     int glycan_peptide_ratio
     int peptide_mass_rank
 
-cdef public struct TheoreticalFragmentStruct:
-    float neutral_mass
-    char* key
-
-cdef public struct FragmentMatchStruct:
+cdef struct FragmentMatchStruct:
     double observed_mass
     double intensity
     char* key
     char* ion_type
     long peak_id
 
-cdef public struct MatchedSpectrumStruct:
+cdef struct MatchedSpectrumStruct:
     FragmentMatchStructArray* peak_match_list
     PeakStructArray* peak_list
     char* glycopeptide_sequence
@@ -134,50 +133,39 @@ cdef public struct MatchedSpectrumStruct:
     int peptide_mass_rank
     int glycan_peptide_ratio
 
-cdef public struct IonTypeIndex:
+cdef struct IonTypeIndex:
     char** names
     size_t* indices
     size_t size
 
-cdef public struct IonTypeDoubleMap:
+cdef struct IonTypeDoubleMap:
     IonTypeIndex* index_ref
     double* values
 
-cdef public struct ElementStruct:
+cdef struct ElementStruct:
     char* symbol
     double mass
     double abundance
 
 # Array Structs
 
-cdef public struct PeakStructArray:
+cdef struct PeakStructArray:
     PeakStruct* peaks
     Py_ssize_t size
 
-cdef public struct MSFeatureStructArray:
+cdef struct MSFeatureStructArray:
     MSFeatureStruct* features
     Py_ssize_t size
 
-cdef public struct FragmentMatchStructArray:
+cdef struct FragmentMatchStructArray:
     FragmentMatchStruct* matches
     size_t size
 
-cdef public struct TheoreticalFragmentStructArray:
-    TheoreticalFragmentStruct* fragments
-    size_t size
-    char* ion_series
-
-cdef public struct IonSeriesSuite:
-    char** ion_series_names
-    TheoreticalFragmentStructArray** theoretical_series
-    FragmentMatchStructArray** matched_series
-    size_t size
-
-cdef public struct MatchedSpectrumStructArray:
+cdef struct MatchedSpectrumStructArray:
     MatchedSpectrumStruct* matches
     size_t size
 
-cdef public struct PeakToPeakShiftMatches:
+cdef struct PeakToPeakShiftMatches:
     PeakStruct* peaks
     size_t size
     double mass_shift

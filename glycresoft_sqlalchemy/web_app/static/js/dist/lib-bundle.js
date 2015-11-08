@@ -245,8 +245,11 @@ setupAjaxForm = function(sourceUrl, container) {
 //# sourceMappingURL=ajax-form.js.map
 ;var contextMenu;
 
-contextMenu = function(target, options) {
+contextMenu = function(target, options, callback) {
   var action, item;
+  if (callback == null) {
+    callback = null;
+  }
   for (item in options) {
     action = options[item];
     console.log(item, action);
@@ -258,6 +261,9 @@ contextMenu = function(target, options) {
     event.preventDefault();
     handle = $(".context-menu");
     handle.empty();
+    if (callback != null) {
+      callback(handle);
+    }
     for (item in options) {
       action = options[item];
       handle.append($("<li></li>").text(item).attr("data-action", item));
@@ -276,7 +282,6 @@ contextMenu = function(target, options) {
 };
 
 $(document).on("mousedown", function(e) {
-  console.log("Off!");
   if (!$(e.target).parents(".context-menu").length > 0) {
     return $(".context-menu").hide(100);
   }

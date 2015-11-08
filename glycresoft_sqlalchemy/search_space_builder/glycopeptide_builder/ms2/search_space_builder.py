@@ -13,17 +13,16 @@ from glycresoft_sqlalchemy.structure.stub_glycopeptides import StubGlycopeptide
 from glycresoft_sqlalchemy.structure import constants
 from glycresoft_sqlalchemy.proteomics import get_enzyme, msdigest_xml_parser
 
-from glycresoft_sqlalchemy import data_model as model
 from ..peptide_utilities import SiteListFastaFileParser
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
     HypothesisSampleMatch, PeakGroupMatch, Protein,
     TheoreticalGlycopeptideGlycanAssociation,
-    MS1GlycopeptideHypothesis,
+    MS1GlycopeptideHypothesis, Protein,
     TheoreticalGlycopeptide, Hierarchy)
 
 logger = logging.getLogger("search_space_builder")
-mod_pattern = re.compile(r'(\d+)(\w+)')
+mod_pattern = re.compile(r'(\d+)([^\|]+)')
 g_colon_prefix = "G:"
 
 
@@ -208,6 +207,8 @@ def get_peptide_modifications(peptide_mod_str, modification_table):
     -------
     :class:`list` of :class:`.modifications.Modification` objects
     """
+    if peptide_mod_str is None:
+        return []
     items = mod_pattern.findall(peptide_mod_str)
     mod_list = []
     for i in items:
@@ -271,7 +272,7 @@ def generate_fragments(seq, ms1_result):
         for fm in b:
             key = fm.get_fragment_name()
             if key == ("b1" or re.search(r'b1\+', key)) and constants.EXCLUDE_B1:
-                # B1 Ions aren't actually seen in reality, but are an artefact of the generation process
+                # b1 Ions aren't actually seen in reality, but are an artefact of the generation process
                 # so do not include them in the output
                 continue
             mass = fm.get_mass()
@@ -281,7 +282,7 @@ def generate_fragments(seq, ms1_result):
             else:
                 b_ions.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
 
-    y_type = fragments[1]  # seq.get_fragments('Y')
+    y_type = fragments[1]  # seq.get_fragments('y')
     y_ions = []
     y_ions_hexnac = []
     for y in y_type:
@@ -303,7 +304,7 @@ def generate_fragments(seq, ms1_result):
     stub_ions = pep_stubs.get_stubs()
     oxonium_ions = pep_stubs.get_oxonium_ions()
 
-    theoretical_glycopeptide = model.TheoreticalGlycopeptide(
+    theoretical_glycopeptide = TheoreticalGlycopeptide(
         ms1_score=ms1_result.ms1_score,
         observed_mass=ms1_result.observed_mass,
         calculated_mass=ms1_result.calculated_mass,
@@ -501,8 +502,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
 
     def load_protein_from_sitelist(self, glycosylation_site_map):
         for name, sites in self.glycosylation_site_map.items():
-            self.session.add(model.Protein(name=name, glycosylation_sites=sites, hypothesis_id=self.hypothesis.id))
-
+            self.session.add(Protein(name=name, glycosylation_sites=sites, hypothesis_id=self.hypothesis.id))
         self.session.commit()
 
     def load_protein_from_hypothesis(self, hypothesis_id):
@@ -510,7 +510,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         site_list_map = {}
         hid = self.hypothesis.id
         for protein in session.query(Protein).filter(Protein.hypothesis_id == hypothesis_id):
-            self.session.add(model.Protein(
+            self.session.add(Protein(
                 name=protein.name,
                 protein_sequence=protein.protein_sequence,
                 glycosylation_sites=protein.glycosylation_sites,

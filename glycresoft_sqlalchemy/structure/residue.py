@@ -60,18 +60,55 @@ residue_table = {
 
 residue_table["Xle"] = residue_table["Leu"]
 
+residue_chemical_property_group = {
+    'Ala': 'hydrophobic',
+    'Arg': 'charged_side_chain',
+    'Asn': 'hydrophobic',
+    'Asp': 'charged_side_chain',
+    'Cys': 'special_case',
+    'Glu': 'charged_side_chain',
+    'Gln': 'polar_uncharged',
+    'Gly': 'special_case',
+    'His': 'charged_side_chain',
+    'Ile': 'hydrophobic',
+    'Leu': 'hydrophobic',
+    'Lys': 'charged_side_chain',
+    'Met': 'hydrophobic',
+    'Phe': 'hydrophobic',
+    'Pro': 'special_case',
+    'Ser': 'polar_uncharged',
+    'Thr': 'polar_uncharged',
+    'Trp': 'hydrophobic',
+    'Tyr': 'hydrophobic',
+    'Val': 'hydrophobic',
+}
+
 
 class MemoizedResidueMetaclass(type):
-    def __call__(self, symbol=None, *args, **kwargs):
+    def __call__(self, symbol=None, name=None, *args, **kwargs):
         if not hasattr(self, "_cache"):
             self._cache = dict()
         try:
-            return self._cache[symbol]
-        except:
-            inst = type.__call__(self, symbol=symbol, *args, **kwargs)
             if symbol is not None:
+                return self._cache[symbol]
+            elif name is not None:
+                return self._cache[name]
+            else:
+                raise Exception("Must provide a symbol or name parameter")
+        except KeyError:
+            if symbol is not None:
+                inst = type.__call__(self, symbol=symbol, *args, **kwargs)
                 self._cache[inst.symbol] = inst
-            return inst
+                self._cache[inst.name] = inst
+                return inst
+
+            elif name is not None:
+                inst = type.__call__(self, name=name, *args, **kwargs)
+                self._cache[inst.symbol] = inst
+                self._cache[inst.name] = inst
+                return inst
+            else:
+                raise KeyError("Cannot find a Residue for %r" % ((symbol, name),))
 
 
 class Residue(ResidueBase):
@@ -130,6 +167,10 @@ class Residue(ResidueBase):
 
     def __setstate__(self, state):
         self.name, self.symbol, self.mass = state
+
+    @property
+    def chemical_class(self):
+        return residue_chemical_property_group[self.name]
 
 
 def get_all_residues():

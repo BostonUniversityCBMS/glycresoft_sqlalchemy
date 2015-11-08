@@ -17,15 +17,15 @@ struct FittedFeatureStruct;
  *     PeakStruct to_peak
  */
 struct PeakRelationStruct {
-  struct PeakStruct from_peak;
-  struct PeakStruct to_peak;
+  struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct from_peak;
+  struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct to_peak;
   int from_charge;
   int to_charge;
   float intensity_ratio;
   char *kind;
-  struct MSFeatureStruct *feature;
+  struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *feature;
   int same_terminal;
-  struct MatchedSpectrumStruct *annotation;
+  struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStruct *annotation;
 };
 
 /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":36
@@ -49,7 +49,7 @@ struct PeakRelationStructArray {
  */
 struct RelationSpectrumPair {
   struct PeakRelationStructArray *relations;
-  struct MatchedSpectrumStruct *matched_spectrum;
+  struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStruct *matched_spectrum;
 };
 
 /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":46
@@ -73,7 +73,7 @@ struct RelationSpectrumPairArray {
  */
 struct FittedFeatureStruct {
   struct RelationSpectrumPairArray *relation_pairs;
-  struct MSFeatureStruct *feature;
+  struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *feature;
   char *kind;
 };
 

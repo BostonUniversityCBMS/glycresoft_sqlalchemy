@@ -17,7 +17,9 @@ materialRefresh()
 ajaxForm("#preferences-form", function(data){
     console.log(data, "preferences")
     data["minimum-score"] = parseFloat(data["minimum-score"])
-    GlycReSoft.settings = data;
+    _.merge(GlycReSoft.settings, data);
+    GlycReSoft.updateSettings()
+    GlycReSoft.getShowingLayer().setup()
 })
     </script>
 </div>

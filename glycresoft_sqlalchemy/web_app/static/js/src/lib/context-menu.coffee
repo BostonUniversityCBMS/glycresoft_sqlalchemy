@@ -1,5 +1,5 @@
 
-contextMenu = (target, options) ->
+contextMenu = (target, options, callback=null) ->
     for item, action of options
         console.log(item, action)
     $(target).off "contextmenu", false
@@ -8,6 +8,8 @@ contextMenu = (target, options) ->
         event.preventDefault()
         handle = $(".context-menu")
         handle.empty()
+        if callback?
+            callback(handle)
         for item, action of options
             handle.append($("<li></li>").text(item).attr("data-action", item))
 
@@ -21,7 +23,6 @@ contextMenu = (target, options) ->
             {top: event.pageY + 'px', left: event.pageX + 'px'})
 
 $(document).on "mousedown", (e) ->
-    console.log("Off!")
     if !$(e.target).parents(".context-menu").length > 0
         $(".context-menu").hide(100)
 

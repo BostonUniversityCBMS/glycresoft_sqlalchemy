@@ -149,10 +149,18 @@ Application = (function(superClass) {
   };
 
   Application.prototype.updateSettings = function() {
-    return $.post('/internal/update_settings', this.settings).success(function(data) {
-      console.log(data, "Update Settings");
-      return this.settings = data;
-    }).error(function(err) {
+    return $.post('/internal/update_settings', this.settings).success((function(_this) {
+      return function(data) {
+        var k, v;
+        console.log(data, "Update Settings");
+        for (k in data) {
+          v = data[k];
+          _this.settings[k] = v;
+          console.log(k, v);
+        }
+        return _this.emit("update_settings");
+      };
+    })(this)).error(function(err) {
       return console.log(err);
     });
   };
@@ -170,8 +178,6 @@ Application = (function(superClass) {
         delete self.tasks[id];
         handle.fadeOut();
         handle.remove();
-      } else {
-        handle.triggerHandler("contextmenu");
       }
     };
     self = this;
@@ -186,7 +192,9 @@ Application = (function(superClass) {
       })(this));
     };
     taskListContainer.html(_.map(this.tasks, renderTask).join(''));
-    self = this;
+    contextMenu(taskListContainer.find('li'), {
+      "View Log": doubleClickTask
+    });
     taskListContainer.find('li').click(clickTask);
     return taskListContainer.find("li").dblclick(doubleClickTask);
   };
@@ -236,6 +244,16 @@ Application = (function(superClass) {
           return results;
         };
       })(this));
+    }, function() {
+      return this.on("update_settings", (function(_this) {
+        return function() {
+          var layer;
+          layer = _this.getShowingLayer();
+          if (layer.name !== "home-layer") {
+            return layer.setup();
+          }
+        };
+      })(this));
     }
   ];
 
@@ -269,6 +287,22 @@ Application = (function(superClass) {
     container = $("#message-modal");
     container.find('.modal-content').html(message);
     return container.openModal();
+  };
+
+  Application.prototype.ajaxWithContext = function(url, options) {
+    var data;
+    if (options == null) {
+      options = {
+        data: {}
+      };
+    }
+    data = options.data;
+    data['settings'] = this.settings;
+    data['context'] = this.context;
+    options.method = "POST";
+    options.data = JSON.stringify(data);
+    options.contentType = "application/json";
+    return $.ajax(url, options);
   };
 
   return Application;
@@ -591,6 +625,74 @@ MassShiftInputWidget = (function() {
 })();
 
 //# sourceMappingURL=mass-shift-ui.js.map
+;var MonosaccharideFilter;
+
+MonosaccharideFilter = (function() {
+  function MonosaccharideFilter(parent, residueNames, rules) {
+    if (rules == null) {
+      if (GlycReSoft.settings.monosaccharide_filters == null) {
+        GlycReSoft.settings.monosaccharide_filters = {};
+      }
+      rules = GlycReSoft.settings.monosaccharide_filters;
+    }
+    this.container = $("<div></div>").addClass("row");
+    $(parent).append(this.container);
+    this.residueNames = residueNames;
+    this.rules = rules;
+  }
+
+  MonosaccharideFilter.prototype.makeFilterWidget = function(residue) {
+    var rendered, rule, sanitizeName, self, template;
+    rule = this.rules[residue];
+    if (rule == null) {
+      rule = {
+        minimum: 0,
+        maximum: 10,
+        include: true
+      };
+      this.rules[residue] = rule;
+    }
+    residue.name = residue;
+    residue.sanitizeName = sanitizeName = residue.replace(/[\(\),]/g, "_");
+    template = "<span class=\"col s2\" style='display: inline-block; width: 130px;' data-name='" + residue + "'>\n    <p style='margin: 0px; margin-bottom: -10px;'>\n        <input type=\"checkbox\" id=\"" + sanitizeName + "_include\" name=\"" + sanitizeName + "_include\"/>\n        <label for=\"" + sanitizeName + "_include\"><b>" + residue + "</b></label>\n    </p>\n    <p>\n        <input id=\"" + sanitizeName + "_min\" type=\"number\" placeholder=\"Minimum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.minimum + "\" max=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_min\"/> : \n        <input id=\"" + sanitizeName + "_max\" type=\"number\" placeholder=\"Maximum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.maximum + "\" max=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_max\"/>\n    </p>\n</span>";
+    self = this;
+    rendered = $(template);
+    rendered.find("#" + sanitizeName + "_min").change(function() {
+      rule.minimum = parseInt($(this).val());
+      return self.changed();
+    });
+    rendered.find("#" + sanitizeName + "_max").change(function() {
+      rule.maximum = parseInt($(this).val());
+      return self.changed();
+    });
+    rendered.find("#" + sanitizeName + "_include").prop("checked", rule.include).change(function() {
+      rule.include = $(this).prop("checked");
+      return self.changed();
+    });
+    return rendered;
+  };
+
+  MonosaccharideFilter.prototype.render = function() {
+    var i, len, ref, residue, results, widget;
+    ref = this.residueNames;
+    results = [];
+    for (i = 0, len = ref.length; i < len; i++) {
+      residue = ref[i];
+      widget = this.makeFilterWidget(residue);
+      results.push(this.container.append(widget));
+    }
+    return results;
+  };
+
+  MonosaccharideFilter.prototype.changed = _.debounce((function() {
+    return GlycReSoft.emit("update_settings");
+  }), 1000);
+
+  return MonosaccharideFilter;
+
+})();
+
+//# sourceMappingURL=monosaccharide-composition-filter.js.map
 ;Application.prototype.renderSampleListAt = function(container) {
   var chunks, row, sample, template;
   chunks = [];
@@ -627,16 +729,54 @@ Application.initializers.push(function() {
 ;var viewPeakGroupingDatabaseSearchResults;
 
 viewPeakGroupingDatabaseSearchResults = function() {
-  var peptideDetailsModal, setup, showGlycopeptideCompositionDetailsModal, unload, updateProteinChoice;
-  peptideDetailsModal = void 0;
+  var currentPage, currentProtein, glycopeptideDetailsModal, glycopeptideTable, setup, setupGlycopeptideCompositionTablePageHandlers, showGlycopeptideCompositionDetailsModal, unload, updateGlycopeptideCompositionTablePage, updateProteinChoice;
+  glycopeptideDetailsModal = void 0;
+  glycopeptideTable = void 0;
+  currentPage = 1;
+  currentProtein = void 0;
   setup = function() {
     $('.protein-match-table tbody tr').click(updateProteinChoice);
-    return updateProteinChoice.apply($('.protein-match-table tbody tr'));
+    updateProteinChoice.apply($('.protein-match-table tbody tr'));
+    return console.log("glycopeptideTable", glycopeptideTable);
+  };
+  setupGlycopeptideCompositionTablePageHandlers = function(page) {
+    if (page == null) {
+      page = 1;
+    }
+    $('.glycopeptide-match-row').click(showGlycopeptideCompositionDetailsModal);
+    $(':not(.disabled) .next-page').click(function() {
+      return updateGlycopeptideCompositionTablePage(page + 1);
+    });
+    $(':not(.disabled) .previous-page').click(function() {
+      return updateGlycopeptideCompositionTablePage(page - 1);
+    });
+    return $('.pagination li :not(.active)').click(function() {
+      var nextPage;
+      nextPage = $(this).attr("data-index");
+      if (nextPage != null) {
+        nextPage = parseInt(nextPage);
+        return updateGlycopeptideCompositionTablePage(nextPage);
+      }
+    });
+  };
+  updateGlycopeptideCompositionTablePage = function(page) {
+    var url;
+    if (page == null) {
+      page = 1;
+    }
+    url = "/view_database_search_results/glycopeptide_matches_composition_table/" + currentProtein + "/" + page;
+    console.log(url);
+    return GlycReSoft.ajaxWithContext(url).success(function(doc) {
+      currentPage = page;
+      glycopeptideTable.html(doc);
+      return setupGlycopeptideCompositionTablePageHandlers(page);
+    });
   };
   updateProteinChoice = function() {
     var handle, id;
     handle = $(this);
-    id = handle.attr('data-target');
+    currentProtein = id = handle.attr('data-target');
+    console.log(glycopeptideDetailsModal);
     $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
     return $.post('/view_database_search_results/protein_composition_view/' + id, GlycReSoft.context).success(function(doc) {
       var tabs;
@@ -644,6 +784,7 @@ viewPeakGroupingDatabaseSearchResults = function() {
       $('#chosen-protein-container').html(doc).fadeIn();
       tabs = $('ul.tabs');
       tabs.tabs();
+      GlycReSoft.context["current_protein"] = id;
       if (GlycReSoft.context['protein-view-active-tab'] !== void 0) {
         console.log(GlycReSoft.context['protein-view-active-tab']);
         $('ul.tabs').tabs('select_tab', GlycReSoft.context['protein-view-active-tab']);
@@ -654,8 +795,9 @@ viewPeakGroupingDatabaseSearchResults = function() {
       $('ul.tabs .tab a').click(function() {
         return GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1);
       });
-      peptideDetailsModal = $('#peptide-detail-modal');
-      return $('.glycopeptide-match-row').click(showGlycopeptideCompositionDetailsModal);
+      glycopeptideDetailsModal = $('#peptide-detail-modal');
+      glycopeptideTable = $("#glycopeptide-table");
+      return setupGlycopeptideCompositionTablePageHandlers(1);
     }).error(function(error) {
       return console.log(arguments);
     });
@@ -664,13 +806,14 @@ viewPeakGroupingDatabaseSearchResults = function() {
     var handle, id;
     handle = $(this);
     id = handle.attr('data-target');
+    console.log(glycopeptideDetailsModal);
     console.log(id);
     return PartialSource.glycopeptideCompositionDetailsModal({
       "id": id
     }, function(doc) {
-      peptideDetailsModal.find('.modal-content').html(doc);
+      glycopeptideDetailsModal.find('.modal-content').html(doc);
       $(".lean-overlay").remove();
-      return peptideDetailsModal.openModal();
+      return glycopeptideDetailsModal.openModal();
     });
   };
   unload = function() {

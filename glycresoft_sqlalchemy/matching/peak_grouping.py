@@ -20,7 +20,8 @@ from sklearn.linear_model import LogisticRegression
 from ..data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
                           SampleRun, Hypothesis, MS1GlycanHypothesisSampleMatch, hypothesis_sample_match_type,
                           TheoreticalCompositionMap, MassShift, HypothesisSampleMatch,
-                          PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch, JointPeakGroupMatch)
+                          PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch, JointPeakGroupMatch,
+                          PeakGroupMatchToJointPeakGroupMatch)
 
 from ..utils.database_utils import get_or_create
 from ..utils import pickle
@@ -28,6 +29,7 @@ from ..utils import pickle
 TDecon2LSPeakGroup = Decon2LSPeakGroup.__table__
 T_TempPeakGroupMatch = TempPeakGroupMatch.__table__
 TPeakGroupMatch = PeakGroupMatch.__table__
+T_JointPeakGroupMatch = JointPeakGroupMatch.__table__
 
 
 query_oven = bakery()
@@ -230,7 +232,8 @@ class Decon2LSPeakGrouper(PipelineModule):
         self.estimate_trends()
 
 
-def update_fit(group_id, database_manager, cen_alpha, cen_beta, expected_a_alpha, expected_a_beta):
+def update_fit(group_id, database_manager, cen_alpha, cen_beta, expected_a_alpha, expected_a_beta,
+               source_model=Decon2LSPeakGroup):
     '''
     Given linear predicters, compute fitted values for centroid scan and
     expected monoisotopic intensity, and report the magnitude of the difference
@@ -239,7 +242,7 @@ def update_fit(group_id, database_manager, cen_alpha, cen_beta, expected_a_alpha
     Parameters
     ----------
     group_id: int
-        The primary key of a :class:`Decon2LSPeakGroup` record to predict on
+        The primary key of a :class:`source_model` record to predict on
     database_manager: DatabaseManager
         Provide connection to the database
     cen_alpha, cen_beta: float
@@ -250,15 +253,15 @@ def update_fit(group_id, database_manager, cen_alpha, cen_beta, expected_a_alpha
 
     Returns
     -------
-    dict: Update parameters for the :class:`Decon2LSPeakGroup`.
+    dict: Update parameters for the :class:`source_model`.
     '''
     session = database_manager.session()
     try:
         group = session.query(
-            Decon2LSPeakGroup.id, Decon2LSPeakGroup.centroid_scan_estimate,
-            Decon2LSPeakGroup.average_a_to_a_plus_2_ratio,
-            Decon2LSPeakGroup.weighted_monoisotopic_mass).filter(
-            Decon2LSPeakGroup.id == group_id).first()
+            source_model.id, source_model.centroid_scan_estimate,
+            source_model.average_a_to_a_plus_2_ratio,
+            source_model.weighted_monoisotopic_mass).filter(
+            source_model.id == group_id).first()
         update = dict(
             centroid_scan_error=abs(group[1] - (cen_alpha + cen_beta * group[3])),
             a_peak_intensity_error=abs(group[2] - (expected_a_alpha + expected_a_beta * group[3])),
@@ -405,48 +408,49 @@ def expanding_window(series, threshold_gap_size=100):
     return windows
 
 
-def centroid_scan_error_regression(session, minimum_abundance=250):
+def centroid_scan_error_regression(session, minimum_abundance=250, hypothesis_sample_match_id=None,
+                                   source_model=Decon2LSPeakGroup, filter_fn=lambda x: x):
     '''
     alpha, beta = centroid_scan_error_regression(session)
     r = session.execute(select([func.abs(
-            Decon2LSPeakGroup.centroid_scan_estimate - (
-                alpha + Decon2LSPeakGroup.weighted_monoisotopic_mass * beta))]))
+            source_model.centroid_scan_estimate - (
+                alpha + source_model.weighted_monoisotopic_mass * beta))]))
     r.fetchmany(200)
     '''
-    mean_centroid_scan_estimate = session.query(func.avg(Decon2LSPeakGroup.centroid_scan_estimate)).filter(
-            Decon2LSPeakGroup.total_volume > minimum_abundance).first()[0]
-    mean_weighted_mass = session.query(func.avg(Decon2LSPeakGroup.weighted_monoisotopic_mass)).filter(
-            Decon2LSPeakGroup.total_volume > minimum_abundance).first()[0]
+    mean_centroid_scan_estimate = filter_fn(session.query(func.avg(source_model.centroid_scan_estimate)).filter(
+            source_model.total_volume > minimum_abundance)).first()[0]
+    mean_weighted_mass = filter_fn(session.query(func.avg(source_model.weighted_monoisotopic_mass)).filter(
+            source_model.total_volume > minimum_abundance)).first()[0]
     beta = float(
-        session.query((func.sum(
-                Decon2LSPeakGroup.weighted_monoisotopic_mass - mean_weighted_mass) *
-                      Decon2LSPeakGroup.centroid_scan_estimate)
+        filter_fn(session.query((func.sum(
+                source_model.weighted_monoisotopic_mass - mean_weighted_mass) *
+                      source_model.centroid_scan_estimate)
                   / func.sum(
-                ((Decon2LSPeakGroup.weighted_monoisotopic_mass - mean_weighted_mass) *
-                 (Decon2LSPeakGroup.weighted_monoisotopic_mass - mean_weighted_mass))
-            )).filter(Decon2LSPeakGroup.total_volume > minimum_abundance).first()[0])
+                ((source_model.weighted_monoisotopic_mass - mean_weighted_mass) *
+                 (source_model.weighted_monoisotopic_mass - mean_weighted_mass))
+            )).filter(source_model.total_volume > minimum_abundance)).first()[0])
     alpha = mean_centroid_scan_estimate - beta * mean_weighted_mass
     return alpha, beta
 
 
-def expected_a_peak_regression(session):
+def expected_a_peak_regression(session, source_model=Decon2LSPeakGroup, filter_fn=lambda x: x):
     '''
     alpha, beta = expected_a_peak_regression(session)
     r = session.execute(select([func.abs(
-            Decon2LSPeakGroup.average_a_to_a_plus_2_ratio - (
-                alpha + Decon2LSPeakGroup.weighted_monoisotopic_mass * beta))]))
+            source_model.average_a_to_a_plus_2_ratio - (
+                alpha + source_model.weighted_monoisotopic_mass * beta))]))
     r.fetchmany(200)
     '''
-    mean_weighted_mass = session.query(func.avg(Decon2LSPeakGroup.weighted_monoisotopic_mass)).first()[0]
-    mean_a_to_a_plus_2_ratio = session.query(func.avg(Decon2LSPeakGroup.average_a_to_a_plus_2_ratio)).first()[0]
+    mean_weighted_mass = filter_fn(session.query(func.avg(source_model.weighted_monoisotopic_mass))).first()[0]
+    mean_a_to_a_plus_2_ratio = filter_fn(session.query(func.avg(source_model.average_a_to_a_plus_2_ratio))).first()[0]
     beta = float(
-        session.query((func.sum(
-                    (Decon2LSPeakGroup.weighted_monoisotopic_mass - mean_weighted_mass) *
-                    Decon2LSPeakGroup.average_a_to_a_plus_2_ratio)
+        filter_fn(session.query((func.sum(
+                    (source_model.weighted_monoisotopic_mass - mean_weighted_mass) *
+                    source_model.average_a_to_a_plus_2_ratio)
                 ) / func.sum(
-                (Decon2LSPeakGroup.weighted_monoisotopic_mass - mean_weighted_mass) *
-                (Decon2LSPeakGroup.weighted_monoisotopic_mass - mean_weighted_mass)
-        )).first()[0]
+                (source_model.weighted_monoisotopic_mass - mean_weighted_mass) *
+                (source_model.weighted_monoisotopic_mass - mean_weighted_mass)
+        ))).first()[0]
     )
     alpha = mean_a_to_a_plus_2_ratio - beta * mean_weighted_mass
     return alpha, beta
@@ -503,7 +507,6 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                 "mass_shift_type": mass_shift.id,
                 "mass_shift_count": shift_count,
                 "peak_group_id": mass_match.id,
-                "peak_ids": mass_match.peak_ids
             }
             params.append(case)
         # session.bulk_insert_mappings(PeakGroupMatch, params)
@@ -617,78 +620,223 @@ class PeakGroupMatching(PipelineModule):
 ClassifierType = LogisticRegression
 
 
-def merge_matched_groups_by_matched_composition(composition_ids, database_manager, hypothesis_sample_match_id):
-    session = database_manager.session()
-    joint_clusters = []
-    joint_clusters_to_groups = []
-    for composition_id in composition_ids:
-        group_matches = session.query(PeakGroupMatch).filter(
-            PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
-            PeakGroupMatch.theoretical_match_id == composition_id).all()
-        scan_count_total = 0
-        min_scan = float("inf")
-        max_scan = 0
-        charge_states = set()
-        scan_times = set()
-        average_a_to_a_plus_2_ratio = 0
-        centroid_scan_error = 0
-        a_peak_intensity_error = 0
-        total_volume = 0
-        average_signal_to_noise = 0
-        for peak_group in group_matches:
-            scan_count_total += peak_group.scan_count
-            total_volume += peak_group.total_volume
+def _group_unmatched_peak_groups_by_shifts(groups, mass_shift_map, grouping_error_tolerance=2e-5):
 
-            a_peak_intensity_error += peak_group.a_peak_intensity_error
-            centroid_scan_error += peak_group.centroid_scan_error
-            average_a_to_a_plus_2_ratio += peak_group.average_a_to_a_plus_2_ratio
-            average_signal_to_noise += peak_group.average_signal_to_noise
+    mass_shift_range = []
+    for mass_shift, count_range in mass_shift_map.items():
+        shift = mass_shift.mass
+        for shift_count in range(1, count_range + 1):
+            mass_shift_range.append((shift * shift_count))
 
-            min_scan = min(min_scan, peak_group.first_scan_id)
-            max_scan = max(max_scan, peak_group.last_scan_id)
+    lower_edge = min(mass_shift_range)
+    upper_edge = max(mass_shift_range)
 
-            scan_times.update(peak_group.peak_data['scan_times'])
-            charge_states.update(peak_group.peak_data.get("charge_states", ()))
+    while(len(groups) > 0):
+        current_group = groups.pop(0)
+        max_mass = (current_group.weighted_monoisotopic_mass + upper_edge) * (1 + grouping_error_tolerance)
+        min_mass = (current_group.weighted_monoisotopic_mass + lower_edge) * (1 - grouping_error_tolerance)
+        current_group_accumulator = []
+        remaining_accumulator = []
 
-        n = float(len(group_matches))
-        a_peak_intensity_error /= n
-        centroid_scan_error /= n
-        average_signal_to_noise /= n
-        average_a_to_a_plus_2_ratio /= n
-        if len(charge_states) != 0:
-            charge_state_count = len(charge_states)
-        else:
-            charge_state_count = max(g.charge_state_count for g in group_matches)
+        while(len(groups) > 0):
+            group = groups.pop(0)
+            if group.weighted_monoisotopic_mass > max_mass:
+                remaining_accumulator.append(group)
+                continue
+            elif min_mass <= group.weighted_monoisotopic_mass <= max_mass:
+                matched = False
+                for mass_shift, count_range in mass_shift_map.items():
+                    shift = mass_shift.mass
+                    for shift_count in range(1, count_range + 1):
+                        current_shift = (shift * shift_count)
+                        error = ppm_error(
+                            current_group.weighted_monoisotopic_mass + current_shift,
+                            group.weighted_monoisotopic_mass)
+                        if abs(error) <= grouping_error_tolerance:
+                            matched = True
+                            group.mass_shift = mass_shift
+                            group.mass_shift_count = shift_count
+                            current_group_accumulator.append(group)
+                            break
+                if not matched:
+                    remaining_accumulator.append(group)
+            elif group.weighted_monoisotopic_mass < min_mass:
+                remaining_accumulator.append(group)
+                break
 
-        windows = expanding_window(scan_times)
-        window_densities = []
-        for window in windows:
-            window_max_scan = window[-1]
-            window_min_scan = window[0]
-            window_scan_count = len(window)
-            window_scan_density = window_scan_count / (
-                float(window_max_scan - window_min_scan) + 15.) if window_scan_count > 1 else 0
-            if window_scan_density != 0:
-                window_densities.append(window_scan_density)
-        if len(window_densities) != 0:
-            scan_density = sum(window_densities) / float(len(window_densities))
-        else:
-            scan_density = 0.
-        instance_dict = {
-            "first_scan_id": min_scan,
-            "last_scan_id": max_scan,
-            "scan_density": scan_density,
-            "a_peak_intensity_error": a_peak_intensity_error,
-            "centroid_scan_error": centroid_scan_error,
-            "average_a_to_a_plus_2_ratio": average_a_to_a_plus_2_ratio,
-            "average_signal_to_noise": average_signal_to_noise,
-            "charge_state_count": charge_state_count,
-            "total_volume": total_volume,
-            "scan_count": scan_count_total,
-            "theoretical_match_id": composition_id,
-            "hypothesis_sample_match_id": hypothesis_sample_match_id,
-        }
-        peak_match_ids = [p.id for p in group_matches]
+        current_group_accumulator.append(current_group)
+        yield (current_group_accumulator)
+        remaining_accumulator.extend(groups)
+        groups = remaining_accumulator
+
+
+def _get_groups_by_composition_ids(session, hypothesis_sample_match_id):
+    composition_id_q = session.query(PeakGroupMatch.theoretical_match_id).filter(
+        PeakGroupMatch.hypothesis_sample_match_id).group_by(
+        PeakGroupMatch.theoretical_match_id).order_by(
+        PeakGroupMatch.weighted_monoisotopic_mass.desc())
+    for _composition_id in composition_id_q:
+        yield session.query(PeakGroupMatch).filter(
+            PeakGroupMatch.theoretical_match_id == _composition_id[0],
+            PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id).all()
+
+
+def _merge_groups(group_matches, minimum_abundance_ratio=0.01):
+    scan_count_total = 0
+    min_scan = float("inf")
+    max_scan = 0
+    charge_states = set()
+    scan_times = set()
+    average_a_to_a_plus_2_ratio = 0
+    total_volume = 0
+    average_signal_to_noise = 0
+    n = 0.
+    n_modification_states = 0
+    merged_peak_data = {
+        "peak_ids": [],
+        "intensities": [],
+        "scan_times": []
+    }
+    maximum_volume = max(g.total_volume for g in group_matches)
+    minimum_abundance = minimum_abundance_ratio * maximum_volume
+    for peak_group in group_matches:
+        if peak_group.total_volume < minimum_abundance:
+            continue
+        peak_data = peak_group.peak_data
+        merged_peak_data['peak_ids'].extend(peak_data['peak_ids'])
+        merged_peak_data['intensities'].extend(peak_data['intensities'])
+        merged_peak_data['scan_times'].extend(peak_data['scan_times'])
+
+        n_peaks = len(peak_data['peak_ids'])
+        n += n_peaks
+        scan_count_total += peak_group.scan_count
+        total_volume += peak_group.total_volume
+        n_modification_states += 1
+
+        average_a_to_a_plus_2_ratio += peak_group.average_a_to_a_plus_2_ratio * n_peaks
+        average_signal_to_noise += peak_group.average_signal_to_noise * n_peaks
+
+        min_scan = min(min_scan, peak_group.first_scan_id)
+        max_scan = max(max_scan, peak_group.last_scan_id)
+
+        scan_times.update(peak_data['scan_times'])
+        charge_states.update(peak_data.get("charge_states", ()))
+
+    average_signal_to_noise /= n
+    average_a_to_a_plus_2_ratio /= n
+    if len(charge_states) != 0:
+        charge_state_count = len(charge_states)
+    else:
+        charge_state_count = max(g.charge_state_count for g in group_matches)
+
+    scan_times = sorted(scan_times)
+    windows = expanding_window(scan_times)
+    window_densities = []
+    for window in windows:
+        window_max_scan = window[-1]
+        window_min_scan = window[0]
+        window_scan_count = len(window)
+        window_scan_density = window_scan_count / (
+            float(window_max_scan - window_min_scan) + 15.) if window_scan_count > 1 else 0
+        if window_scan_density != 0:
+            window_densities.append(window_scan_density)
+    if len(window_densities) != 0:
+        scan_density = max(window_densities)  # sum(window_densities) / float(len(window_densities))
+    else:
+        scan_density = 0.
+
+    instance_dict = {
+        "first_scan_id": min_scan,
+        "last_scan_id": max_scan,
+        "scan_density": scan_density,
+        "centroid_scan_estimate": sum(scan_times) / n,
+        "average_a_to_a_plus_2_ratio": average_a_to_a_plus_2_ratio,
+        "average_signal_to_noise": average_signal_to_noise,
+        "charge_state_count": charge_state_count,
+        "total_volume": total_volume,
+        "scan_count": scan_count_total,
+        "peak_data": merged_peak_data
+    }
+    return instance_dict, [p.id for p in group_matches]
+
+
+def join_unmatched(session, hypothesis_sample_match_id, grouping_error_tolerance=2e-5, minimum_abundance_ratio=0.01):
+    unmatched = session.query(PeakGroupMatch).filter(
+        PeakGroupMatch.theoretical_match_id == None,
+        PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id).order_by(
+        PeakGroupMatch.weighted_monoisotopic_mass.desc()).all()
+    if len(unmatched) == 0:
+        return
+
+    mass_shift_map = unmatched[0].hypothesis_sample_match.parameters['mass_shift_map']
+    conn = session.connection()
+    for bunch in _group_unmatched_peak_groups_by_shifts(unmatched, mass_shift_map):
+        group, member_ids = _merge_groups(bunch, minimum_abundance_ratio)
+        group['matched'] = False
+        group['theoretical_match_id'] = None
+        joint_id = conn.execute(T_JointPeakGroupMatch.insert(), group).lastrowid
+        conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(),
+                     [{"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids])
+
+
+def join_matched(session, hypothesis_sample_match_id, minimum_abundance_ratio=0.01):
+    conn = session.connection()
+    for bunch in _get_groups_by_composition_ids(session, hypothesis_sample_match_id):
+        group, member_ids = _merge_groups(bunch, minimum_abundance_ratio)
+        group['matched'] = True
+        group['theoretical_match_id'] = bunch[0].theoretical_match_id
+        group['theoretical_match_type'] = bunch[0].theoretical_match_type
+        joint_id = conn.execute(T_JointPeakGroupMatch.insert(), group).lastrowid
+        conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(),
+                     [{"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids])
+
+
+def estimate_trends(session, hypothesis_sample_match_id):
+    '''
+    After assigning peak group features, impute the global
+    trend for peak and scan shapes
+    '''
+    logger.info("Estimating peak trends")
+
+    conn = session.connect()
+
+    cen_alpha, cen_beta = centroid_scan_error_regression(
+        session, source_model=JointPeakGroupMatch, filter_fn=lambda q: q.filter(
+            JointPeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id))
+
+    expected_a_alpha, expected_a_beta = expected_a_peak_regression(
+        session, source_model=JointPeakGroupMatch, filter_fn=lambda q: q.filter(
+            JointPeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id))
+
+    update_expr = T_JointPeakGroupMatch.update().values(
+        centroid_scan_error=func.abs(
+            T_JointPeakGroupMatch.c.centroid_scan_estimate - (
+                cen_alpha + cen_beta * T_JointPeakGroupMatch.c.weighted_monoisotopic_mass)),
+        a_peak_intensity_error=func.abs(
+            T_JointPeakGroupMatch.c.average_a_to_a_plus_2_ratio - (
+                expected_a_alpha + expected_a_beta * T_JointPeakGroupMatch.c.weighted_monoisotopic_mass))
+            ).where(
+        T_JointPeakGroupMatch.c.hypothesis_sample_match_id == hypothesis_sample_match_id)
+
+    max_weight = conn.execute(select([func.max(T_JointPeakGroupMatch.c.weighted_monoisotopic_mass)])).scalar()
+    slices = [0] + [max_weight * float(i)/10. for i in range(1, 11)]
+    for i in range(1, len(slices)):
+        lower = slices[i - 1]
+        upper = slices[i]
+        logger.info("Updating slice %f-%f", lower, upper)
+        step = update_expr.where(
+            T_JointPeakGroupMatch.c.weighted_monoisotopic_mass.between(
+                lower, upper))
+        conn.execute(step)
+        session.commit()
+        conn = session.connection()
+
+    conn = session.connection()
+    lower = slices[len(slices) - 1]
+    step = update_expr.where(
+        T_JointPeakGroupMatch.c.weighted_monoisotopic_mass >= lower)
+    conn.execute(step)
+    session.commit()
 
 
 class PeakGroupMassShiftJoining(PipelineModule):
@@ -696,13 +844,22 @@ class PeakGroupMassShiftJoining(PipelineModule):
             self, database_path, observed_ions_path, hypothesis_id,
             sample_run_id=None, hypothesis_sample_match_id=None,
             search_type="TheoreticalGlycanComposition",
-            match_tolerance=2e-5,
+            match_tolerance=2e-5, minimum_abundance_ratio=0.01,
             n_processes=4):
         self.manager = self.manager_type(database_path)
         session = self.manager.session()
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         hypothesis_sample_match = session.query(HypothesisSampleMatch).get(self.hypothesis_sample_match_id)
         self.mass_shift_map = hypothesis_sample_match.parameters['mass_shift_map']
+        self.match_tolerance = match_tolerance
+        self.minimum_abundance_ratio = minimum_abundance_ratio
+        self.n_processes = n_processes
+
+    def create_joins(self):
+        session = self.manager.session()
+        join_unmatched(session, self.hypothesis_sample_match_id,
+                       self.match_tolerance, self.minimum_abundance_ratio)
+        join_matched(session, self.hypothesis_sample_match_id, self.minimum_abundance_ratio)
 
 
 class PeakGroupClassification(PipelineModule):

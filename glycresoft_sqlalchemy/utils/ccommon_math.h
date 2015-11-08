@@ -5,7 +5,6 @@
 
 struct PeakStruct;
 struct MSFeatureStruct;
-struct TheoreticalFragmentStruct;
 struct FragmentMatchStruct;
 struct MatchedSpectrumStruct;
 struct IonTypeIndex;
@@ -14,37 +13,35 @@ struct ElementStruct;
 struct PeakStructArray;
 struct MSFeatureStructArray;
 struct FragmentMatchStructArray;
-struct TheoreticalFragmentStructArray;
-struct IonSeriesSuite;
 struct MatchedSpectrumStructArray;
 struct PeakToPeakShiftMatches;
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":90
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":91
  * # Scalar Structs
  * 
  * cdef public struct PeakStruct:             # <<<<<<<<<<<<<<
- *     float neutral_mass
+ *     double neutral_mass
  *     long id
  */
 struct PeakStruct {
-  float neutral_mass;
+  double neutral_mass;
   long id;
   int charge;
-  float intensity;
+  double intensity;
   int rank;
-  float mass_charge_ratio;
+  double mass_charge_ratio;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":98
- *     float mass_charge_ratio
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":99
+ *     double mass_charge_ratio
  * 
  * cdef public struct MSFeatureStruct:             # <<<<<<<<<<<<<<
- *     float offset
- *     float tolerance
+ *     double offset
+ *     double tolerance
  */
 struct MSFeatureStruct {
-  float offset;
-  float tolerance;
+  double offset;
+  double tolerance;
   char *name;
   int intensity_ratio;
   int from_charge;
@@ -58,20 +55,8 @@ struct MSFeatureStruct {
   int peptide_mass_rank;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":113
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":114
  *     int peptide_mass_rank
- * 
- * cdef public struct TheoreticalFragmentStruct:             # <<<<<<<<<<<<<<
- *     float neutral_mass
- *     char* key
- */
-struct TheoreticalFragmentStruct {
-  float neutral_mass;
-  char *key;
-};
-
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":117
- *     char* key
  * 
  * cdef public struct FragmentMatchStruct:             # <<<<<<<<<<<<<<
  *     double observed_mass
@@ -85,7 +70,7 @@ struct FragmentMatchStruct {
   long peak_id;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":124
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":121
  *     long peak_id
  * 
  * cdef public struct MatchedSpectrumStruct:             # <<<<<<<<<<<<<<
@@ -106,7 +91,7 @@ struct MatchedSpectrumStruct {
   int glycan_peptide_ratio;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":137
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":134
  *     int glycan_peptide_ratio
  * 
  * cdef public struct IonTypeIndex:             # <<<<<<<<<<<<<<
@@ -119,7 +104,7 @@ struct IonTypeIndex {
   size_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":142
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":139
  *     size_t size
  * 
  * cdef public struct IonTypeDoubleMap:             # <<<<<<<<<<<<<<
@@ -131,7 +116,7 @@ struct IonTypeDoubleMap {
   double *values;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":146
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":143
  *     double* values
  * 
  * cdef public struct ElementStruct:             # <<<<<<<<<<<<<<
@@ -144,7 +129,7 @@ struct ElementStruct {
   double abundance;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":153
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":150
  * # Array Structs
  * 
  * cdef public struct PeakStructArray:             # <<<<<<<<<<<<<<
@@ -156,7 +141,7 @@ struct PeakStructArray {
   Py_ssize_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":157
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":154
  *     Py_ssize_t size
  * 
  * cdef public struct MSFeatureStructArray:             # <<<<<<<<<<<<<<
@@ -168,7 +153,7 @@ struct MSFeatureStructArray {
   Py_ssize_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":161
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":158
  *     Py_ssize_t size
  * 
  * cdef public struct FragmentMatchStructArray:             # <<<<<<<<<<<<<<
@@ -180,34 +165,7 @@ struct FragmentMatchStructArray {
   size_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":165
- *     size_t size
- * 
- * cdef public struct TheoreticalFragmentStructArray:             # <<<<<<<<<<<<<<
- *     TheoreticalFragmentStruct* fragments
- *     size_t size
- */
-struct TheoreticalFragmentStructArray {
-  struct TheoreticalFragmentStruct *fragments;
-  size_t size;
-  char *ion_series;
-};
-
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":170
- *     char* ion_series
- * 
- * cdef public struct IonSeriesSuite:             # <<<<<<<<<<<<<<
- *     char** ion_series_names
- *     TheoreticalFragmentStructArray** theoretical_series
- */
-struct IonSeriesSuite {
-  char **ion_series_names;
-  struct TheoreticalFragmentStructArray **theoretical_series;
-  struct FragmentMatchStructArray **matched_series;
-  size_t size;
-};
-
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":176
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":162
  *     size_t size
  * 
  * cdef public struct MatchedSpectrumStructArray:             # <<<<<<<<<<<<<<
@@ -219,7 +177,7 @@ struct MatchedSpectrumStructArray {
   size_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":180
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":166
  *     size_t size
  * 
  * cdef public struct PeakToPeakShiftMatches:             # <<<<<<<<<<<<<<

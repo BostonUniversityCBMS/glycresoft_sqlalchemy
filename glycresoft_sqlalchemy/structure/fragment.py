@@ -31,7 +31,7 @@ fragment_direction = {
 class Fragment(object):
     """Glycopeptide Fragment"""
 
-    parser = re.compile("(?P<kind>[abcxyz])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
+    parser = re.compile(r"(?P<kind>[abcxyz])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
     concerned_mods = ['HexNAc']
 
     @classmethod
@@ -52,7 +52,7 @@ class Fragment(object):
 
         return "".join(name_block)
 
-    def __init__(self, frag_type, pos, mod_dict, mass, golden_pairs=None):
+    def __init__(self, frag_type, pos, mod_dict, mass, golden_pairs=None, flanking_amino_acids=None):
         if golden_pairs is None:
             golden_pairs = []
         self.type = frag_type[0].lower() + frag_type[1:]
@@ -60,6 +60,8 @@ class Fragment(object):
         self.bare_mass = mass
 
         self.mass = mass
+
+        self.flanking_amino_acids = flanking_amino_acids
 
         self.pos = pos
         self.mod_dict = mod_dict
@@ -116,7 +118,8 @@ class Fragment(object):
         other_mods = {k: v for k, v in mods.items() if k not in modifications}
         for mod in descending_combination_counter(mods_of_interest):
             other_mods.update({k: v for k, v in mod.items() if v != 0})
-            yield Fragment(self.type, self.pos, dict(other_mods), self.bare_mass, golden_pairs=self.golden_pairs)
+            yield Fragment(self.type, self.pos, dict(other_mods), self.bare_mass,
+                           golden_pairs=self.golden_pairs, flanking_amino_acids=self.flanking_amino_acids)
 
     def to_json(self):
         d = dict(self.__dict__)

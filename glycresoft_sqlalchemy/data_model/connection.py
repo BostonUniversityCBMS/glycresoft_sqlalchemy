@@ -54,7 +54,11 @@ class ConnectionManager(object):
         logger.info("Checking %s for database", url)
         if not database_utils.database_exists(url):
             logger.info("No database exists at %s", url)
-            database_utils.create_database(url)
+            engine = database_utils.create_database(url)
+            self._configure_creation(engine)
+
+    def _configure_creation(self, connection):
+        pass
 
     def __repr__(self):
         return '<{} {}{}>'.format(
@@ -86,9 +90,11 @@ class SQLiteConnectionManager(ConnectionManager):
 
     def connect(self):
         engine = super(SQLiteConnectionManager, self).connect()
-        engine.execute("PRAGMA page_size = 5120")
-        engine.execute("PRAGMA cache_size = 4000")
         return engine
+
+    def _configure_creation(self, connection):
+        connection.execute("PRAGMA page_size = 5120")
+        connection.execute("PRAGMA cache_size = 4000")
 
 
 class LocalPostgresConnectionManager(ConnectionManager):

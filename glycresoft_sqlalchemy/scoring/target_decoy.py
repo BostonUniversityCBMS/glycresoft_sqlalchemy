@@ -4,7 +4,7 @@ try:
 except:
     pass
 from itertools import chain
-from collections import namedtuple, Counter, OrderedDict
+from collections import namedtuple, Counter, OrderedDict, defaultdict
 
 from sqlalchemy import func, distinct
 from ..data_model import DatabaseManager, GlycopeptideMatch, Protein
@@ -17,15 +17,16 @@ ms2_score = GlycopeptideMatch.ms2_score
 class TargetDecoyAnalyzer(PipelineModule):
 
     @classmethod
-    def from_hypothesis_sample_match(cls, database_path, hsm):
-        return cls(database_path, hsm.target_hypothesis_id, hsm.decoy_hypothesis_id, hsm.id)
+    def from_hypothesis_sample_match(cls, database_path, hsm, **kwargs):
+        return cls(database_path, hsm.target_hypothesis_id, hsm.decoy_hypothesis_id, hsm.id, **kwargs)
 
     def __init__(self, database_path, target_hypothesis_id=None, decoy_hypothesis_id=None,
-                 hypothesis_sample_match_id=None):
+                 hypothesis_sample_match_id=None, with_pit=True, **kwargs):
         self.manager = self.manager_type(database_path)
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.target_id = target_hypothesis_id
         self.decoy_id = decoy_hypothesis_id
+        self.with_pit = with_pit
 
         session = self.manager.session()
 
@@ -161,7 +162,10 @@ class TargetDecoyAnalyzer(PipelineModule):
         return percent_incorrect_targets
 
     def fdr_with_percent_incorrect_targets(self, cutoff):
-        percent_incorrect_targets = self.estimate_percent_incorrect_targets(cutoff)
+        if self.with_pit:
+            percent_incorrect_targets = self.estimate_percent_incorrect_targets(cutoff)
+        else:
+            percent_incorrect_targets = 1.0
         return percent_incorrect_targets * self.target_decoy_ratio(cutoff)[0]
 
     def _calculate_q_values(self):
@@ -209,11 +213,12 @@ class TargetDecoyAnalyzer(PipelineModule):
 
 
 class InMemoryTargetDecoyAnalyzer(object):
-    def __init__(self, target_series, decoy_series):
+    def __init__(self, target_series, decoy_series, with_pit=True):
         self.targets = target_series
         self.decoys = decoy_series
         self.target_count = len(target_series)
         self.decoy_count = len(decoy_series)
+        self.with_pit = with_pit
         self.calculate_thresholds()
 
     def calculate_thresholds(self):
@@ -222,7 +227,7 @@ class InMemoryTargetDecoyAnalyzer(object):
 
         target_series = self.targets
         decoy_series = self.decoys
-        
+
         thresholds = sorted({case.ms2_score for case in target_series} | {case.ms2_score for case in decoy_series})
         g = iter(thresholds)
 
@@ -247,11 +252,11 @@ class InMemoryTargetDecoyAnalyzer(object):
                     count += 1
             for t in g:
                 counter[current_threshold] = count
-                
+
         self.n_targets_at = {}
         for t, c in target_counts.items():
             self.n_targets_at[t] = self.target_count - c
-        
+
         self.n_decoys_at = {}
         for t, c in decoy_counts.items():
             self.n_decoys_at[t] = self.decoy_count - c
@@ -282,9 +287,12 @@ class InMemoryTargetDecoyAnalyzer(object):
         return percent_incorrect_targets
 
     def fdr_with_percent_incorrect_targets(self, cutoff):
-        percent_incorrect_targets = self.estimate_percent_incorrect_targets(cutoff)
+        if self.with_pit:
+            percent_incorrect_targets = self.estimate_percent_incorrect_targets(cutoff)
+        else:
+            percent_incorrect_targets = 1.0
         return percent_incorrect_targets * self.target_decoy_ratio(cutoff)[0]
-    
+
     def _calculate_q_values(self):
         thresholds = self.thresholds
         mapping = {}

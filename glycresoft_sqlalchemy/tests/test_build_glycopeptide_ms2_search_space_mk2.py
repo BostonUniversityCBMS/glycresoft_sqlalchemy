@@ -6,7 +6,7 @@ from glycresoft_sqlalchemy.search_space_builder import pooling_search_space_buil
 
 
 def test_main():
-    s = pooling_search_space_builder.PoolingTheoreticalSearchSpaceBuilder.from_hypothesis(
+    s = pooling_search_space_builder.PoolingTheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
         "datafiles/naive_glycopeptide.db", 1, 4)
     s.manager.connection_manager.connect_args['timeout'] = 10
     s.start()

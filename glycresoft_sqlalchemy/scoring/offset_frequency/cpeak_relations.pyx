@@ -248,13 +248,15 @@ cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feat
         list related
         list peaks, _peaks
         list matches
-        Py_ssize_t i, j, k
+        Py_ssize_t i, j, k, m, n
         PeakRelation pr
         set peak_explained_by
-        list peak_explained_by_list
+        list peak_explained_by_list, match_explained_by_list
         dict db_search_match
-        str match_kind
+        str ion_type, match_ion_type
         MatchedSpectrum gsm
+        # Used for fixed feature types
+        bint on_type_match
 
     peak_relations = []
     for i in range(PyList_GET_SIZE(gsms)):
@@ -282,18 +284,33 @@ cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feat
                 match = <DPeak>PyList_GET_ITEM(matches, k)
                 pr = make_peak_relation(peak, match, feature_function, intensity_ratio_function(peak, match))
                 related.append(pr)
-                
+                # Add check for fixed features and agreement between annotations between peak and match
+
                 if PyList_GET_SIZE(peak_explained_by_list) == 0:
                     feature_function.ion_type_increment(PNOISE)
-                for k in range(PyList_GET_SIZE(peak_explained_by_list)):
-                    match_kind = <str>PyList_GET_ITEM(peak_explained_by_list, k)
-                    feature_function.ion_type_increment(match_kind)
+                else:
+                    match_explained_by_list = list(gsm.peak_explained_by(match.id))
 
+                    for m in range(PyList_GET_SIZE(peak_explained_by_list)):
+                        ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, m)
+                        if feature_function.fixed:
+                            on_type_match = False
+                            for n in range(PyList_GET_SIZE(match_explained_by_list)):
+                                match_ion_type = <str>PyList_GET_ITEM(match_explained_by_list, n)
+                                if ion_type == match_ion_type:
+                                    on_type_match = True
+                                    break
+                            if not on_type_match:
+                                ion_type = PNOISE
+
+                        feature_function.ion_type_increment(ion_type)
+
+            # Add check for fixed features and agreement between annotations between peak and match
             if PyList_GET_SIZE(peak_explained_by_list) == 0:
                 feature_function.ion_type_increment(PNOISE, "totals")
             for k in range(PyList_GET_SIZE(peak_explained_by_list)):
-                match_kind = <str>PyList_GET_ITEM(peak_explained_by_list, k)
-                feature_function.ion_type_increment(match_kind, "totals")
+                ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, k)
+                feature_function.ion_type_increment(ion_type, "totals")
                  
 
         if PyList_GET_SIZE(related) > 0:
@@ -306,9 +323,10 @@ cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feat
 cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray* gsms, MSFeatureStruct* feature, char* kind, bint filter_peak_ranks) nogil:
     cdef:
         long relation_count, peak_count
-        char* ion_type
+        char* ion_type,
+        char* matched_ion_type
         bint is_on_kind
-        size_t i, j, k, m, relations_counter, features_found_counter, base_relations_size
+        size_t i, j, k, m, relations_counter, features_found_counter, base_relations_size, n
         PeakStruct peak
         PeakStruct match
         PeakRelationStructArray* related
@@ -317,6 +335,8 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
         PeakStructArray* matches
         MatchedSpectrumStruct* gsm
         FragmentMatchStructArray* peak_explained_by_list
+        FragmentMatchStructArray* match_explained_by_list
+
         FragmentMatchStruct fragment_match
         FittedFeatureStruct* result
 
@@ -356,6 +376,11 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
             for k in range(matches.size):
                 match = matches.peaks[k]
                 # Make sure not to overflow `related.relations`. Should be rare because of pre-allocation
+                # Add check for fixed features and agreement between annotations between peak and match
+
+                if feature.fixed:
+                    match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.id)
+
                 if peak_explained_by_list.size == 0:
                     if relations_counter == related.size:
                         resize_peak_relation_array(related)
@@ -371,10 +396,24 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
 
                         fragment_match = peak_explained_by_list.matches[m]
                         ion_type = fragment_match.ion_type
+
                         # This value will be passed through to the PeakRelation, where its life time should
                         # be independent, so it is translated through the ION_TYPE_INDEX global variable which
                         # lives for the duration of the program
                         ion_type = ion_type_name(ION_TYPE_INDEX, ion_type_index(ION_TYPE_INDEX, ion_type))
+
+                        if feature.fixed:
+                            is_on_kind = False
+                            for n in range(match_explained_by_list.size):
+                                matched_ion_type = match_explained_by_list.matches[n].ion_type
+                                matched_ion_type = ion_type_name(ION_TYPE_INDEX, ion_type_index(ION_TYPE_INDEX, matched_ion_type))
+                                if strcmp(matched_ion_type, ion_type) == 0:
+                                    is_on_kind = True
+                                    break
+                            if not is_on_kind:
+                                ion_type = NOISE
+
+
 
                         ion_type_double_inc_name(
                             feature.ion_type_matches,
@@ -384,6 +423,10 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
                                                     _intensity_ratio_function(&peak, &match),
                                                     ion_type, gsm)
                         relations_counter += 1
+
+                if feature.fixed:
+                    free_fragment_match_struct_array(match_explained_by_list)
+
 
             if peak_explained_by_list.size == 0:
                 ion_type_double_inc_name(feature.ion_type_totals, NOISE)

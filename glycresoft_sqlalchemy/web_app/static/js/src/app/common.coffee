@@ -57,9 +57,12 @@ class Application extends ActionLayerManager
             initializer.apply this, null 
 
     updateSettings: ->
-        $.post('/internal/update_settings', @settings).success((data) ->
+        $.post('/internal/update_settings', @settings).success((data) =>
             console.log data, "Update Settings"
-            @settings = data
+            for k, v of data
+                @settings[k] = v
+                console.log k, v
+            @emit("update_settings")
         ).error (err) ->
             console.log err
 
@@ -75,8 +78,6 @@ class Application extends ActionLayerManager
                 delete self.tasks[id]
                 handle.fadeOut()
                 handle.remove()
-            else
-                handle.triggerHandler("contextmenu")
             return
         self = @
         doubleClickTask = (event) ->
@@ -85,9 +86,10 @@ class Application extends ActionLayerManager
             $.get "/internal/log/" + id, (message) => self.displayMessageModal(message)
 
         taskListContainer.html _.map(@tasks, renderTask).join('')
-        self = this
+        contextMenu(taskListContainer.find('li'), {"View Log": doubleClickTask})
         taskListContainer.find('li').click clickTask
         taskListContainer.find("li").dblclick doubleClickTask
+
 
     handleMessage: (messageType, handler) ->
         @eventStream.addEventListener messageType, (event) ->
@@ -119,6 +121,10 @@ class Application extends ActionLayerManager
             @handleMessage "files-to-download", (data) =>
                 for file in data.files
                     @downloadFile(file)
+        ->
+            @on "update_settings", =>
+                layer = @getShowingLayer()
+                layer.reload()
     ]
 
     loadData: ->
@@ -139,6 +145,17 @@ class Application extends ActionLayerManager
         container = $("#message-modal")
         container.find('.modal-content').html message
         container.openModal()
+
+    ajaxWithContext: (url, options) ->
+        if !options?
+            options = {data:{}}
+        data = options.data
+        data['settings'] = @settings
+        data['context'] = @context
+        options.method = "POST"
+        options.data = JSON.stringify(data)
+        options.contentType = "application/json"
+        return $.ajax(url, options)
 
 
 renderTask = (task) ->

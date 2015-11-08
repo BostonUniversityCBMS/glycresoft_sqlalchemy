@@ -26,12 +26,7 @@ format_mapping = {
 }
 
 logger = logging.getLogger("naive_glycopeptide_hypothesis")
-# if len(logger.handlers) == 0:
-#     fmt = logging.Formatter(
-#         "%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s", "%H:%M:%S")
-#     handler = logging.StreamHandler()
-#     handler.setFormatter(fmt)
-#     logger.addHandler(handler)
+
 
 water = Composition("H2O").mass
 
@@ -113,12 +108,10 @@ def digest_protein(protein, manager, constant_modifications, variable_modificati
             i += 1
             if len(peptidoforms) > 10000:
                 logger.info("Flushing %d peptidoforms for %r", i, protein)
-                # map(session.merge, peptidoforms)
                 session.bulk_save_objects(peptidoforms)
                 session.commit()
                 session.expire_all()
                 peptidoforms = []
-        # map(session.merge, peptidoforms)
         session.bulk_save_objects(peptidoforms)
         session.commit()
         logger.info("Digested %d peptidoforms for %s", i, protein)
@@ -258,7 +251,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
         return self.hypothesis.id
 
 
-class NaiveGlycopeptideHypothesiMS1LegacyCSV(PipelineModule):
+class NaiveGlycopeptideHypothesisMS1LegacyCSV(PipelineModule):
     HypothesisType = MS1GlycopeptideHypothesis
 
     def __init__(self, database_path, hypothesis_id, protein_ids=None, output_path=None):
@@ -276,7 +269,7 @@ class NaiveGlycopeptideHypothesiMS1LegacyCSV(PipelineModule):
         if output_path is None:
             output_path = os.path.splitext(database_path)[0] + '.glycopeptides_compositions.csv'
         self.output_path = output_path
-        hypothesis = session.query(self.Hypothesis).filter(self.Hypothesis.id == self.hypothesis_id).first()
+        hypothesis = session.query(self.HypothesisType).filter(self.HypothesisType.id == self.hypothesis_id).first()
         self.monosaccharide_identities = hypothesis.parameters['monosaccharide_identities']
 
         session.close()
@@ -288,7 +281,7 @@ class NaiveGlycopeptideHypothesiMS1LegacyCSV(PipelineModule):
             for protein_id in protein_ids:
                 logger.info("Streaming Protein ID %d", protein_id)
                 for glycopeptide_composition in session.query(TheoreticalGlycopeptideComposition).filter(
-                        TheoreticalGlycopeptideComposition.protein_id == protein_id):
+                        TheoreticalGlycopeptideComposition.protein_id == protein_id).yield_per(1000):
                     session.expunge(glycopeptide_composition)
                     yield glycopeptide_composition
         finally:
@@ -300,7 +293,9 @@ class NaiveGlycopeptideHypothesiMS1LegacyCSV(PipelineModule):
         with open(self.output_path, 'wb') as handle:
             writer = csv.writer(handle)
             writer.writerow(column_headers)
-            g = itertools.imap(glycopeptide_to_columns, self.stream_glycopeptides())
+            task_fn = functools.partial(glycopeptide_to_columns,
+                                        monosaccharide_identities=self.monosaccharide_identities)
+            g = itertools.imap(task_fn, self.stream_glycopeptides())
             writer.writerows(g)
 
     def compute_column_headers(self):
@@ -311,10 +306,12 @@ class NaiveGlycopeptideHypothesiMS1LegacyCSV(PipelineModule):
         return columns
 
 
-def glycopeptide_to_columns(glycopeptide):
+def glycopeptide_to_columns(glycopeptide, monosaccharide_identities):
     r = [glycopeptide.calculated_mass, 0, glycopeptide.glycan_composition_str] +\
-         glycopeptide.glycan_composition_str[1:-1].split(";") +\
+        [glycopeptide.glycan_composition[m] for m in monosaccharide_identities] +\
         ["/0", 0,
-         glycopeptide.modified_peptide_sequence, "", 0, glycopeptide.count_glycosylation_sitesnt,
+         glycopeptide.modified_peptide_sequence, glycopeptide.peptide_modifications,
+         glycopeptide.count_missed_cleavages,
+         glycopeptide.count_glycosylation_sites,
          glycopeptide.start_position, glycopeptide.end_position, glycopeptide.protein_id]
     return r

@@ -1,14 +1,12 @@
 from glycresoft_sqlalchemy.data_model import MS1GlycanHypothesis, TheoreticalGlycanComposition, PipelineModule
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 from glypy import GlycanComposition, MonosaccharideResidue, monosaccharides
+from glycresoft_sqlalchemy.search_space_builder.glycan_builder import registry
 
 import logging
 from itertools import product
 
 logger = logging.getLogger("glycan_composition_constrained_combinatorics")
-
-
-from glycresoft_sqlalchemy.search_space_builder.glycan_builder import registry
 
 
 @registry.composition_source_type.register("constrained_combinatorics")

@@ -161,6 +161,7 @@ def create_database(url, encoding='utf8', template=None):
     else:
         text = 'CREATE DATABASE {0}'.format(quote(engine, database))
         engine.execute(text)
+    return engine
 
 
 def drop_database(url):

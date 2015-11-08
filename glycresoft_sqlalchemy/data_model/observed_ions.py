@@ -6,7 +6,7 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
 
 from .data_model import Base
 from .connection import DatabaseManager
-from .generic import MutableDict, MutableList
+from .generic import MutableDict
 
 from ..structure.composition import Composition
 from ..utils.common_math import DPeak
@@ -204,7 +204,7 @@ class Decon2LSPeakGroup(Base):
     centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
     average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
 
-    peak_ids = Column(MutableList.as_mutable(PickleType))
+    # peak_ids = Column(MutableList.as_mutable(PickleType))
     peak_data = Column(MutableDict.as_mutable(PickleType))
 
     matched = Column(Boolean, index=True)

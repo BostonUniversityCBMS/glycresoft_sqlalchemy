@@ -95,6 +95,7 @@ class ActionLayer
         callback = (doc) =>
             if not @showing
                 @container.hide()
+            @options.document = doc
             @container.html doc
             @container.find('script').each (i, tag) ->
                 tag = $(tag)
@@ -116,7 +117,20 @@ class ActionLayer
                 success: callback
                 type: "POST"
                 )
-        
+    
+    reload: ->
+        @container.html @options.document
+        @container.find('script').each (i, tag) ->
+            tag = $(tag)
+            srcURL = tag.attr('src')
+            console.log("Setting up script", tag)
+            if srcURL != undefined
+                $.getScript srcURL
+        materialRefresh()
+        @container.prepend("""
+    <div>
+    <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>
+    </div>""")
 
     show: ->
         @container.fadeIn 100

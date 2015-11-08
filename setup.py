@@ -40,7 +40,7 @@ no_openmp = has_option('no-openmp')
 
 with_openmp = not no_openmp
 
-print with_openmp
+print "Building with OpenMP?", with_openmp
 
 
 def configure_openmp(ext):
@@ -62,6 +62,8 @@ def OpenMPExtension(*args, **kwargs):
 extensions = [
     Extension("glycresoft_sqlalchemy.structure.composition.ccomposition",
               ["glycresoft_sqlalchemy/structure/composition/ccomposition." + c_ext]),
+    Extension("glycresoft_sqlalchemy.structure.ext.structure",
+              ["glycresoft_sqlalchemy/structure/ext/structure." + c_ext]),
     OpenMPExtension("glycresoft_sqlalchemy.utils.ccommon_math",
                     ["glycresoft_sqlalchemy/utils/ccommon_math." + c_ext]),
     OpenMPExtension("glycresoft_sqlalchemy.scoring.offset_frequency.cpeak_relations",

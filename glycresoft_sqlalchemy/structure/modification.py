@@ -484,6 +484,22 @@ class ModificationTable(dict):
 
     # Class Methods
     @classmethod
+    def _definitions_from_stream(cls, stream, format="csv"):
+        if format == "csv":
+            definitions = load_from_csv(stream)
+        elif format == "json":
+            definitions = load_from_json(stream)
+        return definitions
+
+    @classmethod
+    def _definitions_from_stream_default(cls):
+        defs = []
+        if cls.use_protein_prospector:
+            defs += load_from_csv(cls._table_definition_file())
+        defs += load_from_json(cls._unimod_definitions())
+        return defs
+
+    @classmethod
     def load_from_file(cls, stream=None, format="csv"):
         '''Load the rules definitions from a CSV or JSON file and instantiate a ModificationTable from it'''
         if stream is None:
@@ -524,6 +540,10 @@ class ModificationTable(dict):
         '''
         super(ModificationTable, self).__init__()
         self.modification_rules = []
+
+        if modification_definitions is None:
+            modification_definitions = self._definitions_from_stream_default()
+
         for definition in modification_definitions:
             if not isinstance(definition, ModificationRule):
                 definition = ModificationRule(**definition)
@@ -688,7 +708,7 @@ class RestrictedModificationTable(ModificationTable):
         instance = cls.load_from_file(None, constant_modifications, variable_modifications)
         return instance
 
-    def __init__(self, modification_rules, constant_modifications=None, variable_modifications=None):
+    def __init__(self, modification_rules=None, constant_modifications=None, variable_modifications=None):
         super(RestrictedModificationTable, self).__init__(modification_rules)
         if constant_modifications is None:
             constant_modifications = []
@@ -799,3 +819,9 @@ class Modification(ModificationBase):
         if isinstance(other, Modification):
             other = other.serialize()
         return self.serialize() != other
+
+    def __getstate__(self):
+        return [self.name, self.mass, self.position, self.number, self.rule]
+
+    def __setstate__(self, state):
+        self.name, self.mass, self.position, self.number, self.rule = state

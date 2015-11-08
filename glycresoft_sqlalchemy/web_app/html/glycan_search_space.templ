@@ -9,13 +9,26 @@
                 <br>
                 <input id='hypothesis_name' name="hypothesis_name" type="text" class="validate">
             </div>
-            <div class="input-field col s6">
-                <label for="database_type">Database Type</label>
+            <div class="input-field col s3">
+                <label for="reduction_type">Reduction Type</label>
                 <br>
-                <select id='database_type' class='browser-default' name="database_type">
-                    <option value='permethylated_reduced_glycan' selected>Permethylated Reduced Glycan</option>
-                    <option value='native_reduced_glycan'>Native Reduced Glycan</option>
+                <select id='reduction_type' class='browser-default' name="reduction_type">
+                    <option value='native' selected>Native</option>
+                    <option value='reduced'>Reduced</option>
+                    <option value='deuteroreduced'>Deuteroreduced</option>
                 </select>
+                <input type='text' id='custom_reduction_type' name='custom_reduction_type'
+                 placeholder="Custom Reduction (Formula)" />
+            </div>
+            <div class="input-field col s3">
+                <label for="derivatization_type">Derivatization Type</label>
+                <br>
+                <select id='derivatization_type' class='browser-default' name="derivatization_type">
+                    <option value='native' selected>Native</option>
+                    <option value='permethylated'>Permethylated</option>
+                </select>
+                <input type='text' id='custom_derivatization_type' name='custom_derivatization_type'
+                 placeholder="Custom Substituent (Name or Formula)" />
             </div>
         </div>
         <div class='row'>

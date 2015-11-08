@@ -9,12 +9,13 @@ from sqlalchemy.orm.session import object_session
 from .base import Hierarchy
 from .generic import MutableDict, MutableList
 from .data_model import (
-    Base, Hypothesis, TheoreticalGlycopeptide, PeptideBase, Glycan, Protein,
+    Base, Hypothesis, TheoreticalGlycopeptide, TheoreticalPeptideProductIon,
+    PeptideBase, Glycan, Protein,
     MS1GlycopeptideHypothesis, MS1GlycanHypothesis,
     MS2GlycopeptideHypothesis, MS2GlycanHypothesis,
     ExactMS1GlycopeptideHypothesis, ExactMS2GlycopeptideHypothesis)
 
-from .naive_proteomics import TheoreticalGlycopeptideComposition
+from .proteomics import TheoreticalGlycopeptideComposition
 from .glycomics import TheoreticalGlycanComposition, MassShift, with_glycan_composition, TheoreticalGlycanStructure
 
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
@@ -399,9 +400,10 @@ class GlycopeptideSpectrumMatch(Base):
         session = object_session(self)
         s = session.query(TandemScan).join(
             HypothesisSampleMatchToSample,
-            TandemScan.sample_run_id == HypothesisSampleMatchToSample.sample_run_id).filter(
+            (TandemScan.sample_run_id == HypothesisSampleMatchToSample.sample_run_id)).filter(
             HypothesisSampleMatch.id == self.hypothesis_sample_match_id).filter(
             TandemScan.sample_run_id == SampleRun.id,
+            SampleRun.name == HypothesisSampleMatch.sample_run_name,
             TandemScan.time == self.scan_time)
         return s.first()
 
@@ -426,6 +428,12 @@ class GlycopeptideSpectrumMatch(Base):
             ion = v[0]
             total += ion['intensity']
         return total
+
+    def matches_for(self, key):
+        for peak_index, matches in self.peak_match_map.items():
+            for match in matches:
+                if match['key'] == key:
+                    yield match
 
 
 class GlycanStructureMatch(Base):
@@ -567,7 +575,6 @@ class PeakGroupMatch(Base):
     centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
     average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
 
-    peak_ids = Column(MutableList.as_mutable(PickleType))
     peak_data = Column(MutableDict.as_mutable(PickleType))
 
     ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
@@ -578,8 +585,9 @@ class PeakGroupMatch(Base):
     mass_shift_count = Column(Integer)
 
     def __repr__(self):
-        rep = "<PeakGroupMatch {id} {ms1_score} {weighted_monoisotopic_mass} {theoretical_match_type}>"
-        return rep.format(**self.__dict__)
+        rep = "<PeakGroupMatch {id} {ms1_score:0.4f} {weighted_monoisotopic_mass:0.4f}" +\
+              " {mass_shift_name} {theoretical_match_type}>"
+        return rep.format(mass_shift_name=self.mass_shift.name if self.mass_shift is not None else "", **self.__dict__)
 
 
 def protein_peak_group_matches(protein):
@@ -639,11 +647,17 @@ class JointPeakGroupMatch(Base):
     centroid_scan_estimate = Column(Numeric(12, 4, asdecimal=False))
     centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
     average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
+    modification_state_count = Column(Integer)
 
     ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
     matched = Column(Boolean, index=True)
-
+    peak_data = Column(MutableDict.as_mutable(PickleType))
     subgroups = relationship(PeakGroupMatch, secondary=lambda: PeakGroupMatchToJointPeakGroupMatch, lazy='dynamic')
+
+    def __repr__(self):
+        rep = "<JointPeakGroupMatch {id} {ms1_score:0.4f} {weighted_monoisotopic_mass:0.4f}" +\
+              " {modification_state_count} {theoretical_match_type}>"
+        return rep.format(**self.__dict__)
 
 
 PeakGroupMatchToJointPeakGroupMatch = Table(
