@@ -4,6 +4,13 @@ package:
 
 source:
     git_url: "https://github.com/mobiusklein/glycresoft_sqlalchemy.git"
+    git_rev: 0.5
+
+build:
+    entry_points:
+        - "glycresoft-build-database = glycresoft_sqlalchemy.app.build_database:main"
+        - "glycresoft-database-search = glycresoft_sqlalchemy.app.run_search:main",
+        - "glycresoft-report = glycresoft_sqlalchemy.app.reporting:taskmain"
 
 requirements:
     build:
