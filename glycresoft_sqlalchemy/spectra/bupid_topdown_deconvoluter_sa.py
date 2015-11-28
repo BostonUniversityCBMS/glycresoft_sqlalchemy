@@ -3,6 +3,7 @@ import yaml
 import itertools
 import re
 import logging
+import uuid
 
 from ..data_model import DatabaseManager, PipelineModule
 from ..data_model.observed_ions import BUPIDDeconvolutedLCMSMSSampleRun, TandemScan, Peak
@@ -279,7 +280,8 @@ class StreamingYAMLRenderer(object):
                             continue
                         tandem_peaks.append(dict(
                             neutral_mass=mass[i], charge=charge[i],
-                            intensity=intensity[i], scan_id=scan_id))
+                            intensity=intensity[i], scan_id=scan_id,
+                            scan_peak_index=i))
                     session.bulk_insert_mappings(Peak, tandem_peaks)
                     mass = []
                     charge = []
@@ -336,7 +338,7 @@ class BUPIDMSMSYamlParser(PipelineModule):
         self.sample_run = BUPIDDeconvolutedLCMSMSSampleRun(name=os.path.basename(file_path), parameters={
             "file_path": file_path,
             "deconvoluted_with": "BUPID Top Down Deconvoluter"
-            })
+            }, uuid=uuid.uuid4().hex)
         self.sample_run_name = self.sample_run.name
         session.add(self.sample_run)
         session.commit()

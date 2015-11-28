@@ -2,6 +2,7 @@ ActionBook =
     home:
         container: '#home-layer'
         name: 'home-layer'
+        closeable: false
     addSample:
         contentURL: '/add_sample'
         name: 'add-sample'
@@ -20,6 +21,9 @@ ActionBook =
     viewDatabaseSearchResults:
         contentURLTemplate: "/view_database_search_results/{hypothesis_sample_match_id}"
         name: "view-database-search-results"
+        method: "post"
+    viewHypothesis:
+        contentURLTemplate: "/view_hypothesis/{hypothesis_id}"
         method: "post"
 
 makeAPIGet = (url) -> (callback) -> $.get(url).success(callback)

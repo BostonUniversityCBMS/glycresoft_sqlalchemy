@@ -20,13 +20,12 @@ def test_main():
     db_file_name = "./datafiles/integrated_omics_simple.db"
     try:
         os.remove(db_file_name)
+        pass
     except:
         pass
 
     # db_file_name = "postgresql:///db"
 
-    # i = integrated_omics.load_proteomics(db_file_name, "datafiles/AGP_Proteomics2.mzid")
-    # integrated_omics.load_glycomics_naive(db_file_name, "datafiles/human_n_glycans.txt", i)
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         db_file_name,
         protein_ids=["P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"],  # "P19652|A1AG2_HUMAN",
@@ -42,10 +41,10 @@ def test_main():
     job = exact_search_space_builder.ExactSearchSpaceBuilder.from_hypothesis_sample_match(
         db_file_name, 1, 4)
     hypothesis_id = job.start()
+    # hypothesis_id = 2
 
     job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id])
     decoy_hypothesis_id = job.start()[0]
-    # hypothesis_id = 2
     # decoy_hypothesis_id = 3
     manager = data_model.DatabaseManager(db_file_name)
     session = manager.session()
@@ -72,10 +71,10 @@ def test_main():
 
     matcher.start()
 
-    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, hypothesis_id, hsm_id, n_processes=8)
+    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, hypothesis_id, hsm_id, n_processes=6)
     job.start()
 
-    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, decoy_hypothesis_id, hsm_id, n_processes=8)
+    job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, decoy_hypothesis_id, hsm_id, n_processes=6)
     job.start()
 
     tda = target_decoy.TargetDecoyAnalyzer(db_file_name, hypothesis_id, decoy_hypothesis_id)

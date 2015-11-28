@@ -39,7 +39,7 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
 
         glycopeptide_acc = []
         glycan_assoc_acc = []
-        print(peptide)
+
         for glycan_set in get_glycan_combinations(
                 database_manager.session(), min(peptide.count_glycosylation_sites, max_sites), hypothesis_id):
             glycan_set = list(glycan_set)

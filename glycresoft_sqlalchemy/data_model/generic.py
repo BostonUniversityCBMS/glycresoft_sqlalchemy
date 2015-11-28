@@ -1,5 +1,8 @@
+import uuid
+
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy import Table, Column, Integer, ForeignKey, Unicode, ForeignKeyConstraint
+
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
 
@@ -123,6 +126,7 @@ class ReferenceAccessionNumber(Base):
 
     def __repr__(self):
         return "<ReferenceAccessionNumber {} {}>".format(self.id, self.database.name)
+
 
 class HasReferenceAccessionNumber(object):
     @declared_attr

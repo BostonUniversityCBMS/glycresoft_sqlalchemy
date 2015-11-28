@@ -1,6 +1,7 @@
 Application::renderHypothesisListAt = (container)->
     chunks = []
-    template = 
+    template = ''
+    self = @
     for hypothesis in _.sortBy(_.values(@hypotheses), (o) -> o.name)
         row = $("
     <div data-id=#{hypothesis.id} class=''>
@@ -8,6 +9,13 @@ Application::renderHypothesisListAt = (container)->
             <a class='remove-hypothesis mdi-content-clear'></a></small></div>
     ")
         chunks.push row
+
+        row.click (event) ->
+            handle = $ @
+            hypothesisId = handle.attr("data-id")
+            self.addLayer ActionBook.viewHypothesis, {"hypothesis_id": hypothesisId}
+            layer = self.lastAdded
+            self.setShowingLayer layer
         row.find(".remove-hypothesis").click (event) -> 
             handle = $ @
 

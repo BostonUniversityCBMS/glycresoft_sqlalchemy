@@ -56,15 +56,15 @@ class Application extends ActionLayerManager
         for initializer in Application.initializers
             initializer.apply this, null 
 
-    updateSettings: ->
-        $.post('/internal/update_settings', @settings).success((data) =>
+    updateSettings: (payload={}) ->
+        $.post('/preferences', payload).success((data) =>
             console.log data, "Update Settings"
             for k, v of data
                 @settings[k] = v
                 console.log k, v
             @emit("update_settings")
         ).error (err) ->
-            console.log err
+            console.log "error in updateSettings", arguments
 
     updateTaskList: ->
         taskListContainer = @sideNav.find('.task-list-container ul')
@@ -81,7 +81,7 @@ class Application extends ActionLayerManager
             return
         self = @
         doubleClickTask = (event) ->
-            handle = $(this)
+            handle = $(this)    
             id = handle.attr('data-id')
             $.get "/internal/log/" + id, (message) => self.displayMessageModal(message)
 
@@ -98,9 +98,9 @@ class Application extends ActionLayerManager
 
     @initializers = [
         ->
-            console.log this
+            @updateSettings()
         ->
-            self = this
+            self = @
             $ ->
                 self.container = $(self.options.actionContainer)
                 self.sideNav = $('.side-nav')
@@ -124,7 +124,9 @@ class Application extends ActionLayerManager
         ->
             @on "update_settings", =>
                 layer = @getShowingLayer()
-                layer.reload()
+                if layer.name != ActionBook.home.name
+                    console.log("Updated Settings, Current Layer:", layer.name)
+                    layer.setup()
     ]
 
     loadData: ->

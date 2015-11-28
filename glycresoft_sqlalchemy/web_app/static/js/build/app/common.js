@@ -90,8 +90,11 @@ Application = (function(superClass) {
     return results;
   };
 
-  Application.prototype.updateSettings = function() {
-    return $.post('/internal/update_settings', this.settings).success((function(_this) {
+  Application.prototype.updateSettings = function(payload) {
+    if (payload == null) {
+      payload = {};
+    }
+    return $.post('/preferences', payload).success((function(_this) {
       return function(data) {
         var k, v;
         console.log(data, "Update Settings");
@@ -103,7 +106,7 @@ Application = (function(superClass) {
         return _this.emit("update_settings");
       };
     })(this)).error(function(err) {
-      return console.log(err);
+      return console.log("error in updateSettings", arguments);
     });
   };
 
@@ -151,7 +154,7 @@ Application = (function(superClass) {
 
   Application.initializers = [
     function() {
-      return console.log(this);
+      return this.updateSettings();
     }, function() {
       var self;
       self = this;
@@ -191,7 +194,8 @@ Application = (function(superClass) {
         return function() {
           var layer;
           layer = _this.getShowingLayer();
-          if (layer.name !== "home-layer") {
+          if (layer.name !== ActionBook.home.name) {
+            console.log("Updated Settings, Current Layer:", layer.name);
             return layer.setup();
           }
         };

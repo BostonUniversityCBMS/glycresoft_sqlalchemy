@@ -1,0 +1,33 @@
+package:
+    name: glycresoft
+    version: 0.5.0
+
+source:
+    git_url: https://github.com/mobiusklein/glycresoft_sqlalchemy.git
+
+requirements:
+    build:
+        - python 2.7.*
+        - setuptools
+        - cython
+        - matplotlib
+        - numpy
+        - scikit-learn
+        - pyyaml
+        - lxml
+        - sqlalchemy
+
+    run:
+        - python 2.7.*
+        - flask
+        - numpy
+        - matplotlib
+        - sklearn
+        - sqlalchemy
+        - lxml
+        - pyteomics
+        - networkx
+        - jinja2
+        - requests
+        - pyyaml
+        - scikit-learn

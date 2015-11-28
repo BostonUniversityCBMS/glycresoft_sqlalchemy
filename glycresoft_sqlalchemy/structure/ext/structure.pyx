@@ -46,7 +46,7 @@ cdef inline AminoAcidStruct* _get_residue_by_symbol(char* symbol) nogil:
 cdef inline AminoAcidStruct* _get_residue_by_name(char* name) nogil:
     return get_residue_by_name(name, AminoAcids)
 
-cdef inline double sequence_position_mass(SequencePositionStruct* position) nogil:
+cdef inline double sequence_position_mass(PeptideSequencePositionStruct* position) nogil:
     cdef:
         size_t i
         double mass
@@ -56,7 +56,7 @@ cdef inline double sequence_position_mass(SequencePositionStruct* position) nogi
         mass += position.modifications.modifications[i].mass
     return mass
 
-cdef size_t _total_seqstring_length(SequenceStruct* seq) nogil:
+cdef size_t _total_seqstring_length(PeptideSequenceStruct* seq) nogil:
     cdef:
         size_t size, i, j
     size = 0
@@ -68,7 +68,7 @@ cdef size_t _total_seqstring_length(SequenceStruct* seq) nogil:
         size += strlen(seq.glycan.name)
     return size
 
-cdef char* sequence_to_string(SequenceStruct* seq) nogil:
+cdef char* sequence_to_string(PeptideSequenceStruct* seq) nogil:
     cdef:
         size_t size, i, j
         char* result
@@ -91,7 +91,7 @@ cdef char* sequence_to_string(SequenceStruct* seq) nogil:
         strcat(result, seq.glycan.name)
     return result
 
-cdef FragmentIonStructArray* fragment_series(SequenceStruct* sequence, char* series, int direction, double offset) nogil:
+cdef FragmentIonStructArray* fragment_series(PeptideSequenceStruct* sequence, char* series, int direction, double offset) nogil:
     cdef:
         size_t i
         double mass
@@ -119,8 +119,7 @@ cdef FragmentIonStructArray* fragment_series(SequenceStruct* sequence, char* ser
             result.fragments[i - 1].index = sequence.size - i
     return result
 
-
-cdef char* fragment_key(FragmentIonStruct* fragment):
+cdef char* fragment_key(FragmentIonStruct* fragment) nogil:
     cdef char* buff
     buff = <char*>malloc(sizeof(char)*20)
     sprintf("%s%d", buff, fragment.series, fragment.index)
@@ -181,17 +180,17 @@ cdef inline ModificationStructArray* get_modification_list_from_sequence(list mo
         array.modifications[i] = _get_modification(PyString_AsString(modlist[i].rule.preferred_name))[0]
     return array
 
-cdef SequenceStruct* sequence_from_object(object obj):
+cdef PeptideSequenceStruct* sequence_from_object(object obj):
     cdef:
         size_t size, i, j
-        SequenceStruct* seq
+        PeptideSequenceStruct* seq
         double mass_accum
         list obj_pos
 
     mass_accum = 0.
     size = len(obj)
-    seq = <SequenceStruct*>malloc(sizeof(SequenceStruct))
-    seq.sequence = <SequencePositionStruct*>malloc(sizeof(SequencePositionStruct)*size)
+    seq = <PeptideSequenceStruct*>malloc(sizeof(PeptideSequenceStruct))
+    seq.sequence = <PeptideSequencePositionStruct*>malloc(sizeof(PeptideSequencePositionStruct)*size)
     seq.size = size
 
     for i in range(size):
@@ -222,7 +221,7 @@ Modifications = create_modification_table(dict(**pymodification.Modification._ta
 
 # Free Functions
 
-cdef void free_sequence(SequenceStruct* seq) nogil:
+cdef void free_sequence(PeptideSequenceStruct* seq) nogil:
     cdef:
         size_t i
     for i in range(seq.size):
@@ -231,7 +230,7 @@ cdef void free_sequence(SequenceStruct* seq) nogil:
     free_simple_glycan(seq.glycan)
     free(seq)
 
-cdef void free_sequence_position(SequencePositionStruct* pos) nogil:
+cdef void free_sequence_position(PeptideSequencePositionStruct* pos) nogil:
     free_modification_array(pos.modifications)
     free(pos)
 

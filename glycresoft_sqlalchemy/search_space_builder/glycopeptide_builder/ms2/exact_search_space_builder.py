@@ -23,13 +23,15 @@ from glycresoft_sqlalchemy.proteomics import get_enzyme
 
 
 from .search_space_builder import TheoreticalSearchSpaceBuilder, constructs
+from ..utils import WorkItemCollection
+
 from glycresoft_sqlalchemy import data_model as model
-from glycresoft_sqlalchemy.data_model import ExactMS1GlycopeptideHypothesisSampleMatch
+from glycresoft_sqlalchemy.data_model import (
+    ExactMS1GlycopeptideHypothesisSampleMatch, TheoreticalGlycopeptideGlycanAssociation)
 
 from sqlalchemy import func
 
 TheoreticalGlycopeptide = model.TheoreticalGlycopeptide
-TheoreticalGlycopeptideGlycanAssociation = model.TheoreticalGlycopeptideGlycanAssociation
 Protein = model.Protein
 
 logger = logging.getLogger("search_space_builder")
@@ -115,8 +117,10 @@ def generate_fragments(seq, ms1_result):
         glycosylated_b_ions=b_ions_hexnac,
         glycosylated_y_ions=y_ions_hexnac,
         protein_id=ms1_result.protein_name,
-        base_composition_id=ms1_result.composition_id
+        base_composition_id=ms1_result.composition_id,
+        glycans=ms1_result.glycans
         )
+    assert theoretical_glycopeptide.glycans.count() > 0
     return theoretical_glycopeptide
 
 
@@ -166,6 +170,7 @@ def from_sequence(ms1_result, database_manager, protein_map, source_type):
         product = generate_fragments(seq, ms1_result)
         if not isinstance(product.protein_id, int):
             product.protein_id = protein_map[product.protein_id]
+        # print product.glycans.all(), product.glycans.count()
         session.close()
         return product
     except Exception, e:
@@ -223,20 +228,21 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         last = 0
         commit_interval = 1000
         task_fn = self.prepare_task_fn()
-        accumulator = []
+        accumulator = WorkItemCollection(session)
+
         session.add(self.hypothesis)
         session.commit()
+        id = self.hypothesis.id
+
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             for theoretical in pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=500):
                 if theoretical is None:
                     continue
-                accumulator.append(theoretical)
+                accumulator.add(theoretical)
                 cntr += 1
                 if cntr > (last + commit_interval):
-                    session.bulk_save_objects(accumulator)
-                    session.commit()
-                    accumulator = []
+                    accumulator.commit()
                     logger.info("%d records handled", cntr)
                     last = cntr
             pool.terminate()
@@ -244,30 +250,27 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
             theoretical = task_fn(ms1_result)
             if theoretical is None:
                 continue
-            accumulator.append(theoretical)
+            accumulator.add(theoretical)
             cntr += 1
             if cntr > last + commit_interval:
-                session.bulk_save_objects(accumulator)
-                session.commit()
-                accumulator = []
+                accumulator.commit()
                 logger.info("%d records handled", cntr)
                 last = cntr
-        id = self.hypothesis.id
 
-        session.bulk_save_objects(accumulator)
-        session.add(self.hypothesis)
-        session.commit()
+        accumulator.commit()
+
         logger.info("Checking integrity")
+
         # Remove duplicates
         ids = session.query(func.min(TheoreticalGlycopeptide.id)).filter(
             TheoreticalGlycopeptide.protein_id == Protein.id,
-            Protein.hypothesis_id == self.hypothesis.id).group_by(
+            Protein.hypothesis_id == id).group_by(
             TheoreticalGlycopeptide.glycopeptide_sequence,
             TheoreticalGlycopeptide.protein_id)
 
         q = session.query(TheoreticalGlycopeptide.id).filter(
             TheoreticalGlycopeptide.protein_id == Protein.id,
-            Protein.hypothesis_id == self.hypothesis.id,
+            Protein.hypothesis_id == id,
             ~TheoreticalGlycopeptide.id.in_(ids.correlate(None)))
         conn = session.connection()
         conn.execute(TheoreticalGlycopeptide.__table__.delete(
@@ -275,7 +278,7 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         session.commit()
         final_count = session.query(TheoreticalGlycopeptide.id).filter(
             TheoreticalGlycopeptide.protein_id == Protein.id,
-            Protein.hypothesis_id == self.hypothesis.id).count()
+            Protein.hypothesis_id == id).count()
 
         logger.info("%d Theoretical Glycopeptides created", final_count)
 

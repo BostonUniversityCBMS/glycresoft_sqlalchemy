@@ -8,6 +8,8 @@ struct PeakRelationStructArray;
 struct RelationSpectrumPair;
 struct RelationSpectrumPairArray;
 struct FittedFeatureStruct;
+struct FittedFeatureStructArray;
+struct PeakAnnotationStruct;
 
 /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":24
  * 
@@ -21,7 +23,7 @@ struct PeakRelationStruct {
   struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct to_peak;
   int from_charge;
   int to_charge;
-  float intensity_ratio;
+  int intensity_ratio;
   char *kind;
   struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *feature;
   int same_terminal;
@@ -75,6 +77,30 @@ struct FittedFeatureStruct {
   struct RelationSpectrumPairArray *relation_pairs;
   struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *feature;
   char *kind;
+};
+
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":57
+ * 
+ * 
+ * cdef public struct FittedFeatureStructArray:             # <<<<<<<<<<<<<<
+ *     FittedFeatureStruct** features
+ *     size_t size
+ */
+struct FittedFeatureStructArray {
+  struct FittedFeatureStruct **features;
+  size_t size;
+};
+
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":62
+ * 
+ * 
+ * cdef public struct PeakAnnotationStruct:             # <<<<<<<<<<<<<<
+ *     PeakStruct* peak
+ *     PeakRelationStructArray* annotations
+ */
+struct PeakAnnotationStruct {
+  struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct *peak;
+  struct PeakRelationStructArray *annotations;
 };
 
 #ifndef __PYX_HAVE_API__glycresoft_sqlalchemy__scoring__offset_frequency__cpeak_relations

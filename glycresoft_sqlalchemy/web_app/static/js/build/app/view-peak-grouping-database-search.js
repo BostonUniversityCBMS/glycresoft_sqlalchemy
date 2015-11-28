@@ -1,7 +1,7 @@
 var viewPeakGroupingDatabaseSearchResults;
 
 viewPeakGroupingDatabaseSearchResults = function() {
-  var currentPage, currentProtein, glycopeptideDetailsModal, glycopeptideTable, setup, setupGlycopeptideCompositionTablePageHandlers, showGlycopeptideCompositionDetailsModal, unload, updateGlycopeptideCompositionTablePage, updateProteinChoice;
+  var currentPage, currentProtein, downloadCSV, glycopeptideDetailsModal, glycopeptideTable, setup, setupGlycopeptideCompositionTablePageHandlers, showGlycopeptideCompositionDetailsModal, unload, updateGlycopeptideCompositionTablePage, updateProteinChoice;
   glycopeptideDetailsModal = void 0;
   glycopeptideTable = void 0;
   currentPage = 1;
@@ -9,7 +9,7 @@ viewPeakGroupingDatabaseSearchResults = function() {
   setup = function() {
     $('.protein-match-table tbody tr').click(updateProteinChoice);
     updateProteinChoice.apply($('.protein-match-table tbody tr'));
-    return console.log("glycopeptideTable", glycopeptideTable);
+    return $("#save-csv-file").click(downloadCSV);
   };
   setupGlycopeptideCompositionTablePageHandlers = function(page) {
     if (page == null) {
@@ -90,6 +90,19 @@ viewPeakGroupingDatabaseSearchResults = function() {
   };
   unload = function() {
     return GlycReSoft.removeCurrentLayer();
+  };
+  downloadCSV = function() {
+    var handle, id;
+    handle = $(this);
+    id = handle.attr('data-target');
+    return $.ajax("/view_database_search_results/export_csv/" + id, {
+      data: JSON.stringify({
+        "context": GlycReSoft.context,
+        "settings": GlycReSoft.settings
+      }),
+      contentType: "application/json",
+      type: 'POST'
+    });
   };
   return setup();
 };

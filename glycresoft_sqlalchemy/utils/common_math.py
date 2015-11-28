@@ -154,11 +154,22 @@ except ImportError, e:
             return temp
 
         def reindex_peak_matches(self):
-            mass_map = dict()
-            for peak_idx, matches in self.peak_match_map.items():
-                mass_map["%0.4f" % matches[0]['observed_mass']] = peak_idx
-            for peak in self.peak_list:
-                idx = mass_map.get("%0.4f" % peak.neutral_mass)
-                if idx is None:
+            peaks = sorted(self.peak_list, key=lambda x: x.neutral_mass)
+            assigned = set()
+            for original_index, matches in self.peak_match_map.items():
+                if len(matches) == 0:
                     continue
-                peak.id = idx
+                match = matches[0]
+                smallest_diff = float('inf')
+                smallest_diff_peak = None
+                for peak in peaks:
+                    if peak.id in assigned:
+                        continue
+                    diff = abs(peak.neutral_mass - match.observed_mass)
+                    if diff < smallest_diff:
+                        smallest_diff = diff
+                        smallest_diff_peak = peak
+                    elif diff > smallest_diff:
+                        smallest_diff_peak.id = original_index
+                        assigned.add(smallest_diff_peak.id)
+                        break

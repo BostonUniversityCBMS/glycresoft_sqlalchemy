@@ -1,18 +1,13 @@
 var contextMenu;
 
 contextMenu = function(target, options, callback) {
-  var action, item;
   if (callback == null) {
     callback = null;
-  }
-  for (item in options) {
-    action = options[item];
-    console.log(item, action);
   }
   $(target).off("contextmenu", false);
   $(document).off("mousedown", false);
   return $(target).on("contextmenu", function(event) {
-    var handle;
+    var action, handle, item;
     event.preventDefault();
     handle = $(".context-menu");
     handle.empty();
@@ -25,9 +20,8 @@ contextMenu = function(target, options, callback) {
     }
     $(".context-menu li").click(function(e) {
       handle = $(this);
-      console.log(handle);
       action = options[handle.attr("data-action")];
-      return action(handle);
+      return action.apply(target);
     });
     return $(".context-menu").finish().toggle(100).css({
       top: event.pageY + 'px',

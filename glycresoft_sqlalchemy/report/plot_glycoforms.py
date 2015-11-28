@@ -27,23 +27,12 @@ from matplotlib.colors import cnames, hex2color
 
 from ..data_model import DatabaseManager, GlycopeptideMatch, Protein, Hypothesis
 from ..structure import sequence
+from .colors import lighten, darken, get_color
 
 
 def clean_file_name(file_name):
     name = re.sub(r"\|", "_", file_name)
     return name
-
-
-def lighten(rgb, factor=0.25):
-    '''Given a triplet of rgb values, lighten the color by `factor`%'''
-    factor += 1
-    return [min(c * factor, 1) for c in rgb]
-
-
-def darken(rgb, factor=0.25):
-    '''Given a triplet of rgb values, darken the color by `factor`%'''
-    factor = 1 - factor
-    return [(c * factor) for c in rgb]
 
 
 colors = cycle([hex2color(cnames[name]) for name in ("red", "blue", "yellow", "purple", "navy", "grey")])
@@ -52,28 +41,6 @@ colors = cycle([hex2color(cnames[name]) for name in ("red", "blue", "yellow", "p
 color_name_map = {
     "HexNAc": hex2color(cnames["steelblue"])
 }
-
-
-def get_color(name):
-    """Given a name, find the color mapped to that name, or
-    select the next color from the `colors` generator and assign
-    it to the name and return the new color.
-
-    Parameters
-    ----------
-    name : object
-        Any hashable object, usually a string
-
-    Returns
-    -------
-    tuple: RGB triplet
-    """
-    try:
-        return color_name_map[name]
-    except KeyError:
-        color_name_map[name] = colors.next()
-        return color_name_map[name]
-
 
 def span_overlap(a, b):
     return a.spans(b.start_position) or a.spans(b.end_position - 1) or\
@@ -173,7 +140,7 @@ def draw_layers(layers, protein, scale_factor=1.0, **kwargs):
                 rect = mpatches.Rectangle(
                     (peptide_pad + gpm.start_position - cur_position, cur_y),
                     width=gpm.sequence_length, height=layer_height,
-                    facecolor='lightseagreen', edgecolor='darkseagreen', linewidth=0.5,
+                    facecolor='lightblue', edgecolor='black', linewidth=0.5,
                     alpha=min(max(gpm.ms2_score * 2, 0.2), 0.8))
                 label = id_mapper.add("glycopeptide-%d", rect, {
                     "sequence": gpm.glycopeptide_sequence,
@@ -224,6 +191,11 @@ def plot_glycoforms(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch.ms2
 
 
 def plot_glycoforms_svg(protein, filterfunc=lambda x: x.filter(GlycopeptideMatch.ms2_score > 0.2), scale=1.5, **kwargs):
+    '''
+    A specialization of :func:`plot_glycoforms` which adds additional features to SVG images, such
+    adding shape metadata to XML tags and properly configuring the viewport and canvas for the figure's
+    dimensions.
+    '''
     ax, id_mapper = plot_glycoforms(protein, filterfunc)
     old_size = matplotlib.rcParams["figure.figsize"]
     xlim = ax.get_xlim()

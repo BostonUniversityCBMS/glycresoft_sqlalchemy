@@ -48,7 +48,7 @@ cdef str PNOISE = PyString_FromString(NOISE)
 
 cdef class PeakRelation(object):
 
-    def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None,
+    def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None,
                  MatchedSpectrum annotation=None):
         self.from_peak = from_peak
         self.to_peak = to_peak
@@ -177,7 +177,8 @@ cdef class FittedFeature(object):
                 min_peak_rank=params.base_peak_rank,
                 max_peak_rank=params.base_peak_rank,
                 peptide_mass_rank=params.peptide_mass_rank,
-                glycan_peptide_ratio=params.glycan_peptide_ratio)
+                glycan_peptide_ratio=params.glycan_peptide_ratio,
+                fixed=self.feature.fixed)
 
             specialized_features.append(feature)
         return specialized_features
@@ -199,7 +200,7 @@ cdef class FittedFeature(object):
 cdef object PeakRelation__new__ = PeakRelation.__new__
 
 
-cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None):
+cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None):
     cdef PeakRelation pr
     pr = <PeakRelation>PyObject_CallFunctionObjArgs(PeakRelation__new__, <PyObject*>PeakRelation, NULL)
     pr.from_peak = from_peak
@@ -276,7 +277,7 @@ cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feat
         related = []
         for j in range(PyList_GET_SIZE(peaks)):
             peak = <DPeak>PyList_GET_ITEM(peaks, j)
-            peak_explained_by = gsm.peak_explained_by(peak.id)
+            peak_explained_by = gsm.peak_explained_by(peak.scan_peak_index)
             peak_explained_by_list = list(peak_explained_by)
 
             matches = search_spectrum(peak, peaks, feature_function)
@@ -289,7 +290,7 @@ cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feat
                 if PyList_GET_SIZE(peak_explained_by_list) == 0:
                     feature_function.ion_type_increment(PNOISE)
                 else:
-                    match_explained_by_list = list(gsm.peak_explained_by(match.id))
+                    match_explained_by_list = list(gsm.peak_explained_by(match.scan_peak_index))
 
                     for m in range(PyList_GET_SIZE(peak_explained_by_list)):
                         ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, m)
@@ -367,7 +368,7 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
             peak = peaks.peaks[j]
 
             # Determine if peak has been identified as on-kind or off-kind
-            peak_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, peak.id)
+            peak_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, peak.scan_peak_index)
             
             # Perform search
             matches = _openmp_search_spectrum(&peak, peaks, feature)
@@ -379,7 +380,7 @@ cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray
                 # Add check for fixed features and agreement between annotations between peak and match
 
                 if feature.fixed:
-                    match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.id)
+                    match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.scan_peak_index)
 
                 if peak_explained_by_list.size == 0:
                     if relations_counter == related.size:
@@ -601,12 +602,12 @@ cdef void resize_peak_relation_array(PeakRelationStructArray* related) nogil:
 
 
 cdef inline void insert_peak_relation_struct(PeakRelationStructArray* related, size_t index, PeakStruct peak, PeakStruct match,
-                                             MSFeatureStruct* feature, double intensity_ratio, char* kind,
+                                             MSFeatureStruct* feature, int intensity_ratio, char* kind,
                                              MatchedSpectrumStruct* annotation) nogil:
     related.relations[index].from_peak = peak
     related.relations[index].to_peak = match
     related.relations[index].feature = feature
-    related.relations[index].intensity_ratio = _intensity_ratio_function(&peak, &match)
+    related.relations[index].intensity_ratio = intensity_ratio
     related.relations[index].kind = kind
     related.relations[index].annotation = annotation
 
@@ -629,4 +630,11 @@ cdef void free_relation_spectrum_pairs_array(RelationSpectrumPairArray* pairs_ar
 
 cdef void free_fitted_feature(FittedFeatureStruct* fitted_feature) nogil:
     free_relation_spectrum_pairs_array(fitted_feature.relation_pairs)
+
+
+cdef void peak_score_distribution(PeakAnnotationStruct* peak) nogil:
+    cdef:
+        IonTypeDoubleMap* distribution
+
+    distribution = new_ion_type_double_map()
 

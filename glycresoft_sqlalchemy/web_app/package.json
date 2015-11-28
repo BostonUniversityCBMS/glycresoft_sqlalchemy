@@ -1,18 +1,23 @@
 {
-  "name": "glycresoft_web_ui",
-  "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
-  "dependencies": {
-    "grunt": "~0.4.5"
+  "main": "static/nwjs/select_project.html",
+  "name": "GlycReSoft",
+  "version": "0.5.0",
+  "window": {
+    "title": "GlycReSoft",
+    "toolbar": false,
+    "height": 800,
+    "width": 600,
+    "frame": true,
+    "icon": "static/nwjs/logo.png"
+  },
+  "node-main": "static/nwjs/nodemain.js",
+  "node-remote": "localhost",
+  "webkit": {
+    "plugin": true
   },
   "devDependencies": {
-    "coffee-script": "~1.9.3",
+    "grunt-contrib-copy": "~0.8.2",
+    "grunt-contrib-coffee": "~0.13.0",
     "grunt-contrib-concat": "~0.5.1"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "BSD-2-Clause"
+  }
 }

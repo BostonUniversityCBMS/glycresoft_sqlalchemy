@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from sqlalchemy.ext.baked import bakery
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
@@ -10,7 +11,7 @@ from .base import Hierarchy
 from .generic import MutableDict, MutableList
 from .data_model import (
     Base, Hypothesis, TheoreticalGlycopeptide, TheoreticalPeptideProductIon,
-    PeptideBase, Glycan, Protein,
+    PeptideBase, Glycan, Protein, GlycopeptideSequenceMS2Base,
     MS1GlycopeptideHypothesis, MS1GlycanHypothesis,
     MS2GlycopeptideHypothesis, MS2GlycanHypothesis,
     ExactMS1GlycopeptideHypothesis, ExactMS2GlycopeptideHypothesis)
@@ -20,7 +21,7 @@ from .glycomics import TheoreticalGlycanComposition, MassShift, with_glycan_comp
 
 from .informed_proteomics import InformedTheoreticalGlycopeptideComposition
 from .json_type import tryjson, clean_dict
-from .observed_ions import SampleRun, Peak, ScanBase, TandemScan
+from .observed_ions import SampleRun, Peak, ScanBase, TandemScan, HasPeakChromatogramData, PeakGroupBase
 from glycresoft_sqlalchemy.utils.data_migrator import Migrator
 
 
@@ -119,6 +120,9 @@ class HypothesisSampleMatch(Base):
 
     hierarchy_root = hypothesis_sample_match_root
 
+    def monosaccharides_in_results(self):
+        return NotImplemented
+
 
 class HypothesisSampleMatchToSample(Base):
     __tablename__ = "HypothesisSampleMatchToSample"
@@ -155,6 +159,9 @@ class MS1GlycanHypothesisSampleMatch(HypothesisSampleMatch):
     @property
     def basis_for(self):
         return MS2GlycanHypothesis
+
+    def monosaccharides_in_results(self):
+        return NotImplemented
 
 
 @hypothesis_sample_match_root.references(MS2GlycanHypothesis)
@@ -218,6 +225,16 @@ class MS1GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
     def basis_for(self):
         return MS2GlycopeptideHypothesis
 
+    def monosaccharides_in_results(self):
+        session = object_session(self)
+        search_type, res_query = self.results().next()
+        extents = search_type.glycan_composition_extents(
+            session, lambda q: q.join(search_type).join(
+                self.results_type, search_type.id == self.results_type.theoretical_match_id).filter(
+                self.results_type.hypothesis_sample_match_id == self.id,
+                self.results_type.ms1_score > 0.1))
+        return [str(r[0]) for r in extents]
+
 
 @hypothesis_sample_match_root.references(ExactMS1GlycopeptideHypothesis)
 class ExactMS1GlycopeptideHypothesisSampleMatch(MS1GlycopeptideHypothesisSampleMatch):
@@ -278,6 +295,16 @@ class MS2GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
     def results_type(self):
         return (GlycopeptideMatch)
 
+    def monosaccharides_in_results(self, threshold=0.1):
+        session = object_session(self)
+        search_type, res_query = self.results().next()
+        extents = search_type.glycan_composition_extents(
+            session, lambda q: q.join(
+                search_type).filter(
+                search_type.hypothesis_sample_match_id == self.id,
+                search_type.ms2_score >= threshold, search_type.is_not_decoy())).all()
+        return [str(r[0]) for r in extents]
+
 
 @hypothesis_sample_match_root.references(ExactMS2GlycopeptideHypothesis)
 class ExactMS2GlycopeptideHypothesisSampleMatch(MS2GlycopeptideHypothesisSampleMatch):
@@ -316,7 +343,7 @@ GlycopeptideMatchGlycanAssociation = Table(
 
 
 @with_glycan_composition("glycan_composition_str")
-class GlycopeptideMatch(PeptideBase, Base):
+class GlycopeptideMatch(PeptideBase, Base, GlycopeptideSequenceMS2Base):
     __tablename__ = "GlycopeptideMatch"
 
     id = Column(Integer, primary_key=True)
@@ -326,27 +353,9 @@ class GlycopeptideMatch(PeptideBase, Base):
     hypothesis_sample_match = relationship(
         HypothesisSampleMatch, backref=backref("glycopeptide_matches", lazy='dynamic'))
 
-    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
     ms2_score = Column(Numeric(10, 6, asdecimal=False), index=True)
 
     glycans = relationship(Glycan, secondary=GlycopeptideMatchGlycanAssociation, lazy='dynamic')
-
-    observed_mass = Column(Numeric(12, 6, asdecimal=False))
-    glycan_mass = Column(Numeric(12, 6, asdecimal=False))
-    ppm_error = Column(Numeric(12, 6, asdecimal=False))
-    volume = Column(Numeric(12, 4, asdecimal=False))
-
-    glycopeptide_sequence = Column(Unicode(128), index=True)
-    glycan_composition_str = Column(Unicode(128), index=True)
-
-    oxonium_ions = Column(MutableList.as_mutable(PickleType))
-    stub_ions = Column(MutableList.as_mutable(PickleType))
-
-    bare_b_ions = Column(MutableList.as_mutable(PickleType))
-    glycosylated_b_ions = Column(MutableList.as_mutable(PickleType))
-
-    bare_y_ions = Column(MutableList.as_mutable(PickleType))
-    glycosylated_y_ions = Column(MutableList.as_mutable(PickleType))
 
     # As defined in [1]
     p_value = Column(Numeric(10, 6, asdecimal=False))
@@ -370,30 +379,23 @@ class GlycopeptideMatch(PeptideBase, Base):
         return rep
 
 
-class GlycopeptideSpectrumMatch(Base):
-    __tablename__ = "GlycopeptideSpectrumMatch"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
+class SpectrumMatchBase(object):
     scan_time = Column(Integer, index=True)
-    glycopeptide_match_id = Column(Integer, ForeignKey(GlycopeptideMatch.id), index=True)
     peak_match_map = Column(MutableDict.as_mutable(PickleType))
     peaks_explained = Column(Integer, index=True)
     peaks_unexplained = Column(Integer)
     best_match = Column(Boolean, index=True)
-    hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), index=True)
-    hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), index=True)
 
-    def __repr__(self):
-        return "<GlycopeptideSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
-            self.glycopeptide_match.glycopeptide_sequence,
-            self.scan_time, len(self.peak_match_map))
+    @declared_attr
+    def hypothesis_sample_match_id(cls):
+        return Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), index=True)
+
+    @declared_attr
+    def hypothesis_id(cls):
+        return Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), index=True)
 
     def __iter__(self):
         return iter(self.spectrum)
-
-    @property
-    def glycopeptide_sequence(self):
-        return self.glycopeptide_match.glycopeptide_sequence
 
     @property
     def spectrum(self):
@@ -434,6 +436,22 @@ class GlycopeptideSpectrumMatch(Base):
             for match in matches:
                 if match['key'] == key:
                     yield match
+
+
+class GlycopeptideSpectrumMatch(Base, SpectrumMatchBase):
+    __tablename__ = "GlycopeptideSpectrumMatch"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    glycopeptide_match_id = Column(Integer, ForeignKey(GlycopeptideMatch.id), index=True)
+
+    def __repr__(self):
+        return "<GlycopeptideSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
+            self.glycopeptide_match.glycopeptide_sequence,
+            self.scan_time, len(self.peak_match_map))
+
+    @property
+    def glycopeptide_sequence(self):
+        return self.glycopeptide_match.glycopeptide_sequence
 
 
 class GlycanStructureMatch(Base):
@@ -500,29 +518,11 @@ class GlycanStructureMatch(Base):
         return rep
 
 
-class GlycanSpectrumMatch(Base):
+class GlycanSpectrumMatch(Base, SpectrumMatchBase):
     __tablename__ = "GlycanSpectrumMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    scan_time = Column(Integer)
     glycan_structure_match_id = Column(Integer, ForeignKey(GlycanStructureMatch.id), index=True)
-    peak_match_map = Column(MutableDict.as_mutable(PickleType))
-    peaks_explained = Column(Integer, index=True)
-    peaks_unexplained = Column(Integer)
-    best_match = Column(Boolean, index=True)
-    hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), index=True)
-    hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id, ondelete="CASCADE"), index=True)
-
-    @property
-    def spectrum(self):
-        session = object_session(self)
-        s = session.query(TandemScan).join(
-            HypothesisSampleMatchToSample,
-            TandemScan.sample_run_id == HypothesisSampleMatchToSample.sample_run_id).filter(
-            HypothesisSampleMatch.id == self.hypothesis_sample_match_id).filter(
-            TandemScan.sample_run_id == SampleRun.id,
-            TandemScan.time == self.scan_time)
-        return s.first()
 
     def __repr__(self):
         return "<GlycanSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
@@ -537,18 +537,18 @@ TheoreticalCompositionMap = {
 }
 
 
-class PeakGroupMatch(Base):
-    __tablename__ = "PeakGroupMatch"
+class PeakGroupMatchBase(object):
+    @declared_attr
+    def hypothesis_sample_match_id(cls):
+        return Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
-    hypothesis_sample_match = relationship(HypothesisSampleMatch, backref=backref("peak_group_matches", lazy='dynamic'))
+    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
+    matched = Column(Boolean, index=True)
+
+    ppm_error = Column(Numeric(10, 8, asdecimal=False))
 
     theoretical_match_type = Column(Unicode(128), index=True)
     theoretical_match_id = Column(Integer, index=True)
-
-    # ForeignKey across database boundaries
-    peak_group_id = Column(Integer, index=True)
 
     @property
     def theoretical_match(self):
@@ -558,27 +558,15 @@ class PeakGroupMatch(Base):
         except KeyError:
             return None
 
-    charge_state_count = Column(Integer)
-    scan_count = Column(Integer)
-    first_scan_id = Column(Integer)
-    last_scan_id = Column(Integer)
 
-    ppm_error = Column(Numeric(10, 4, asdecimal=False))
+class PeakGroupMatch(Base, HasPeakChromatogramData, PeakGroupBase, PeakGroupMatchBase):
+    __tablename__ = "PeakGroupMatch"
 
-    scan_density = Column(Numeric(10, 4, asdecimal=False))
-    weighted_monoisotopic_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
 
-    total_volume = Column(Numeric(12, 4, asdecimal=False))
-    average_a_to_a_plus_2_ratio = Column(Numeric(12, 4, asdecimal=False))
-    a_peak_intensity_error = Column(Numeric(10, 6, asdecimal=False))
-    centroid_scan_estimate = Column(Numeric(12, 4, asdecimal=False))
-    centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
-    average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
-
-    peak_data = Column(MutableDict.as_mutable(PickleType))
-
-    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
-    matched = Column(Boolean, index=True)
+    hypothesis_sample_match = relationship(HypothesisSampleMatch, backref=backref("peak_group_matches", lazy='dynamic'))
+    # ForeignKey across database boundaries
+    peak_group_id = Column(Integer, index=True)
 
     mass_shift_type = Column(Integer, ForeignKey(MassShift.id))
     mass_shift = relationship(MassShift)
@@ -599,65 +587,44 @@ def protein_peak_group_matches(protein):
 Protein.peak_group_matches = property(fget=protein_peak_group_matches)
 
 
-class TempPeakGroupMatch(Base):
+class TempPeakGroupMatch(Base, HasPeakChromatogramData, PeakGroupBase):
     __tablename__ = "TempPeakGroupMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     sample_run_id = Column(Integer, index=True)
 
-    charge_state_count = Column(Integer)
-    scan_count = Column(Integer)
-    first_scan_id = Column(Integer)
-    last_scan_id = Column(Integer)
-
-    scan_density = Column(Numeric(10, 6, asdecimal=False))
-    weighted_monoisotopic_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
-
-    total_volume = Column(Numeric(12, 4, asdecimal=False))
-    average_a_to_a_plus_2_ratio = Column(Numeric(12, 4, asdecimal=False))
-    a_peak_intensity_error = Column(Numeric(10, 6, asdecimal=False))
-    centroid_scan_estimate = Column(Numeric(12, 4, asdecimal=False))
-    centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
-    average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
-
     peak_ids = Column(MutableList.as_mutable(PickleType))
-    peak_data = Column(MutableDict.as_mutable(PickleType))
 
     ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
     matched = Column(Boolean, index=True)
 
 
-class JointPeakGroupMatch(Base):
+class JointPeakGroupMatch(Base, HasPeakChromatogramData, PeakGroupBase, PeakGroupMatchBase):
     __tablename__ = "JointPeakGroupMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    sample_run_id = Column(Integer, index=True)
-
-    charge_state_count = Column(Integer)
-    scan_count = Column(Integer)
-    first_scan_id = Column(Integer)
-    last_scan_id = Column(Integer)
-
-    scan_density = Column(Numeric(10, 6, asdecimal=False))
-    weighted_monoisotopic_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
-
-    total_volume = Column(Numeric(12, 4, asdecimal=False))
-    average_a_to_a_plus_2_ratio = Column(Numeric(12, 4, asdecimal=False))
-    a_peak_intensity_error = Column(Numeric(10, 6, asdecimal=False))
-    centroid_scan_estimate = Column(Numeric(12, 4, asdecimal=False))
-    centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
-    average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
     modification_state_count = Column(Integer)
 
-    ms1_score = Column(Numeric(10, 6, asdecimal=False), index=True)
-    matched = Column(Boolean, index=True)
-    peak_data = Column(MutableDict.as_mutable(PickleType))
+    fingerprint = Column(UnicodeText, index=True)
+
     subgroups = relationship(PeakGroupMatch, secondary=lambda: PeakGroupMatchToJointPeakGroupMatch, lazy='dynamic')
 
     def __repr__(self):
-        rep = "<JointPeakGroupMatch {id} {ms1_score:0.4f} {weighted_monoisotopic_mass:0.4f}" +\
-              " {modification_state_count} {theoretical_match_type}>"
-        return rep.format(**self.__dict__)
+        if self.ms1_score is None:
+            ms1_score = ""
+        else:
+            ms1_score = "%0.4f" % self.ms1_score
+        weighted_monoisotopic_mass = self.weighted_monoisotopic_mass
+        id = self.id
+        modification_state_count = self.modification_state_count
+
+        theoretical_match_type = self.theoretical_match_type
+
+        rep = "<JointPeakGroupMatch {id} {ms1_score} {weighted_monoisotopic_mass:0.4f}" +\
+            " {modification_state_count} {theoretical_match_type}>"
+        return rep.format(
+            id=id, ms1_score=ms1_score, weighted_monoisotopic_mass=weighted_monoisotopic_mass,
+            modification_state_count=modification_state_count, theoretical_match_type=theoretical_match_type)
 
 
 PeakGroupMatchToJointPeakGroupMatch = Table(

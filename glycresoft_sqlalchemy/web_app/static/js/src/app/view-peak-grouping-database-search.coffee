@@ -9,7 +9,7 @@ viewPeakGroupingDatabaseSearchResults = ->
     setup = ->
         $('.protein-match-table tbody tr').click updateProteinChoice
         updateProteinChoice.apply $('.protein-match-table tbody tr')
-        console.log "glycopeptideTable", glycopeptideTable
+        $("#save-csv-file").click downloadCSV
 
     setupGlycopeptideCompositionTablePageHandlers = (page=1) ->
         $('.glycopeptide-match-row').click(showGlycopeptideCompositionDetailsModal)
@@ -66,5 +66,14 @@ viewPeakGroupingDatabaseSearchResults = ->
 
     unload = ->
         GlycReSoft.removeCurrentLayer()
+
+
+    downloadCSV = ->
+        handle = $(this)
+        id = handle.attr('data-target')
+        $.ajax "/view_database_search_results/export_csv/" + id,
+                data: JSON.stringify({"context": GlycReSoft.context, "settings": GlycReSoft.settings}),
+                contentType: "application/json"
+                type: 'POST'
 
     setup()

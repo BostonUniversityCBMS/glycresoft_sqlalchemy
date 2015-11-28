@@ -3,6 +3,7 @@ import re
 from .modification import Modification
 from .composition import Composition
 from ..utils.collectiontools import descending_combination_counter
+from ..utils import simple_repr
 
 fragment_pairing = {
     "a": "x",
@@ -28,7 +29,7 @@ fragment_direction = {
 }
 
 
-class Fragment(object):
+class PeptideFragment(object):
     """Glycopeptide Fragment"""
 
     parser = re.compile(r"(?P<kind>[abcxyz])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
@@ -63,7 +64,7 @@ class Fragment(object):
 
         self.flanking_amino_acids = flanking_amino_acids
 
-        self.pos = pos
+        self.position = pos
         self.mod_dict = mod_dict
 
         for key, value in self.mod_dict.items():
@@ -75,7 +76,7 @@ class Fragment(object):
         """Simply return string like b2, y3 with no modificaiton information."""
         fragment_name = []
         fragment_name.append(self.type)
-        fragment_name.append(str(self.pos))
+        fragment_name.append(str(self.position))
         return ''.join(fragment_name)
 
     def get_mass(self):
@@ -95,7 +96,7 @@ class Fragment(object):
         """Connect the information into string."""
         fragment_name = []
         fragment_name.append(self.type)
-        fragment_name.append(str(self.pos))
+        fragment_name.append(str(self.position))
 
         # Only concerned modifications are reported.
         for mod_name in self.concerned_mods:
@@ -118,7 +119,7 @@ class Fragment(object):
         other_mods = {k: v for k, v in mods.items() if k not in modifications}
         for mod in descending_combination_counter(mods_of_interest):
             other_mods.update({k: v for k, v in mod.items() if v != 0})
-            yield Fragment(self.type, self.pos, dict(other_mods), self.bare_mass,
+            yield Fragment(self.type, self.position, dict(other_mods), self.bare_mass,
                            golden_pairs=self.golden_pairs, flanking_amino_acids=self.flanking_amino_acids)
 
     def to_json(self):
@@ -130,4 +131,82 @@ class Fragment(object):
         return self.get_fragment_name()
 
     def __repr__(self):
-        return "Fragment(%(type)s @ %(pos)s %(mass)s [%(mod_dict)s])" % self.__dict__
+        return "Fragment(%(type)s @ %(position)s %(mass)s %(mod_dict)s %(flanking_amino_acids)s)" % self.__dict__
+
+
+Fragment = PeptideFragment
+
+
+class SimpleFragment(object):
+    def __init__(self, name, mass, kind):
+        self.name = name
+        self.mass = mass
+        self.kind = (kind)
+
+    def __repr__(self):
+        return "SimpleFragment(name={self.name}, mass={self.mass:.04f}, kind={self.kind})".format(self=self)
+
+
+class MemoizedIonSeriesMetaclass(type):
+    def __call__(self, name=None, *args, **kwargs):
+        if not hasattr(self, "_cache"):
+            self._cache = dict()
+        try:
+            if name is not None:
+                return self._cache[name]
+            else:
+                raise Exception("Must provide a name parameter")
+        except KeyError:
+            if name is not None:
+                inst = type.__call__(self, name=name, *args, **kwargs)
+                self._cache[inst.name] = inst
+                return inst
+            else:
+                raise KeyError("Cannot find an IonSeries for %r" % (name))
+
+
+class IonSeries(object):
+    __metaclass__ = MemoizedIonSeriesMetaclass
+
+    @classmethod
+    def get(cls, name):
+        return cls(name)
+
+    def __init__(self, name, direction=None, includes_peptide=True, mass_shift=None):
+        if direction is None:
+            if name in fragment_direction:
+                direction = fragment_direction[name]
+            else:
+                direction = 0
+        if mass_shift is None:
+            if name in fragment_shift:
+                mass_shift = fragment_shift[name]
+            else:
+                mass_shift = 0.
+        self.name = name
+        self.direction = direction
+        self.includes_peptide = includes_peptide
+        self.mass_shift = mass_shift
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        try:
+            return self.name == other.name
+        except AttributeError:
+            return self.name == other
+
+    def __ne__(self, other):
+        return not self == other
+
+    __repr__ = simple_repr
+
+    def __str__(self):
+        return str(self.name)
+
+
+IonSeries.b = IonSeries("b")
+IonSeries.y = IonSeries("y")
+IonSeries.oxonium_ion = IonSeries("oxonium_ion", includes_peptide=False)
+IonSeries.stub_glycopeptide = IonSeries("stub_glycopeptide")

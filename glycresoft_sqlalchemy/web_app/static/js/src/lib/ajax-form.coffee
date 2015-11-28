@@ -1,12 +1,14 @@
-ajaxForm = (formHandle, success, error) ->
+ajaxForm = (formHandle, success, error, transform) ->
     console.log "Ajaxifying ", formHandle
     $(formHandle).on 'submit', (event) ->
         console.log formHandle, "submitting..."
         event.preventDefault()
         handle = $(this)
+        if !transform?
+            transform = (form) -> new FormData(form)
         url = handle.attr('action')
         method = handle.attr('method')
-        data = new FormData(this)
+        data = transform(this)
         encoding = handle.attr('enctype') or 'application/x-www-form-urlencoded; charset=UTF-8'
         ajaxParams = 
             'url': url

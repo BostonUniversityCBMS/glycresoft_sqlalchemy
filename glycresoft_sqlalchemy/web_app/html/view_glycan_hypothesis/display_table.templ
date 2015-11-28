@@ -1,0 +1,53 @@
+<div class='row'>  
+    <div class='col s8'>
+        <div class='table-container'>
+            <table class='bordered display-table' style='width: 100%;'>
+                <thead>
+                    <tr>
+                    <th></th>
+                    <th class='very-wide'>Composition</th>
+                    <th>Theoretical Mass</th>
+                    <th></th>
+                    </tr>
+                </thead>
+                <tbody style='height:550px;'>
+                    {% for element in paginator.items %}
+                    <tr>
+                        <td>
+                            {{loop.index + base_index}}
+                        </td>
+                        <td class='very-wide'>
+                            {{element.composition}}
+                        </td>
+                        <td>
+                            {{element.calculated_mass}}
+                        </td>
+                        <td></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class='row'>
+    <div class='col s5'>
+    <ul class='pagination'>
+        <li class={{"disabled" if paginator.page == 1 else ""}}>
+            <a class='previous-page'><i class="material-icons">chevron_left</i></a>
+        </li>
+        {% for page in paginator.iter_pages() %}
+            {% if page is not none %}
+                <li class='{{"waves-effect" if page != paginator.page else "active teal"}}'>
+                    <a data-index="{{page}}">{{page}}</a>
+                </li>
+            {% else %}
+                <li> ... </li>
+            {% endif %}
+        {% endfor %}
+        <li class={{"disabled" if paginator.page == paginator.pages else ""}}>
+            <a class='next-page '><i class="material-icons">chevron_right</i></a>
+        </li>
+    </ul>        
+    </div>
+</div>

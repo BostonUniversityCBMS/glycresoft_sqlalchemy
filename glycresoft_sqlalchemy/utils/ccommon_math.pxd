@@ -47,6 +47,7 @@ cdef class DPeak(object):
     cdef:
         public double neutral_mass
         public long id
+        public long scan_peak_index
         public int charge
         public double intensity
         public int rank
@@ -84,7 +85,7 @@ cdef class FragmentMatch(object):
         public double intensity
         public str key
         public str ion_type
-        public long peak_id
+        public long peak_index
 
 
 # Scalar Structs
@@ -92,6 +93,7 @@ cdef class FragmentMatch(object):
 cdef struct PeakStruct:
     double neutral_mass
     long id
+    long scan_peak_index
     int charge
     double intensity
     int rank
@@ -118,7 +120,7 @@ cdef struct FragmentMatchStruct:
     double intensity
     char* key
     char* ion_type
-    long peak_id
+    long peak_index
 
 cdef struct MatchedSpectrumStruct:
     FragmentMatchStructArray* peak_match_list
@@ -142,10 +144,6 @@ cdef struct IonTypeDoubleMap:
     IonTypeIndex* index_ref
     double* values
 
-cdef struct ElementStruct:
-    char* symbol
-    double mass
-    double abundance
 
 # Array Structs
 

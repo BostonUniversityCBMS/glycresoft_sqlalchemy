@@ -450,6 +450,7 @@ cdef class DPeak(object):
             self.id = PyInt_AsLong(peak.id)
             self.charge = PyInt_AsLong(peak.charge)
             self.intensity = PyFloat_AsDouble(peak.intensity)
+            self.scan_peak_index = PyInt_AsLong(peak.scan_peak_index) 
         self.peak_relations = []
 
     def __repr__(self):
@@ -464,6 +465,7 @@ cdef class DPeak(object):
         result.intensity = self.intensity
         result.rank = self.rank
         result.mass_charge_ratio = self.mass_charge_ratio
+        result.scan_peak_index = self.scan_peak_index
         return result
 
     def __getstate__(self):
@@ -509,7 +511,7 @@ cdef class MatchedSpectrum(object):
     def __init__(self, gsm=None):
         if gsm is not None:
             self.peak_match_map = {
-                pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list]
+                pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list if frag_dict['intensity'] >= 200]
                 for pid, fragment_list in gsm.peak_match_map.items()
             }
             self.peak_list = list(gsm)
@@ -529,21 +531,12 @@ cdef class MatchedSpectrum(object):
             self.peptide_mass_rank = peptide_mass_rank(peptide_mass)
             self.glycan_peptide_ratio = glycan_peptide_ratio(glycan_mass, peptide_mass)            
 
-    @cython.boundscheck(False)
     def reindex_peak_matches(self):
-        cdef:
-            list peaks, matches
-            set assigned
-            long original_index
-            double diff, smallest_diff
-            FragmentMatch match
-            DPeak peak
-            DPeak smallest_diff_peak
-
-
         peaks = sorted(self.peak_list, key=lambda x: x.neutral_mass)
         assigned = set()
         for original_index, matches in self.peak_match_map.items():
+            if len(matches) == 0:
+                continue
             match = matches[0]
             smallest_diff = float('inf')
             smallest_diff_peak = None
@@ -577,7 +570,7 @@ cdef class MatchedSpectrum(object):
             o = <DPeak>PyList_GET_ITEM(self.peak_list, i)
             yield o
 
-    cpdef set peak_explained_by(self, object peak_id):
+    cpdef set peak_explained_by(self, object peak_index):
         cdef:
             set explained
             list matches
@@ -586,7 +579,7 @@ cdef class MatchedSpectrum(object):
             Py_ssize_t i
 
         explained = set()
-        temp = PyDict_GetItem(self.peak_match_map, peak_id)
+        temp = PyDict_GetItem(self.peak_match_map, peak_index)
         if temp == NULL:
             return explained
         matches = <list>temp
@@ -641,27 +634,27 @@ cdef class MatchedSpectrum(object):
 
 
 cdef class FragmentMatch(object):
-    def __init__(self, observed_mass, intensity, key, peak_id, ion_type=None, **kwargs):
+    def __init__(self, observed_mass, intensity, key, peak_index, ion_type=None, **kwargs):
         if ion_type is None:
             ion_type = interpolate_fragment_ion_type(key)
         self.observed_mass = observed_mass
         self.intensity = intensity
         self.key = key
-        self.peak_id = peak_id
+        self.peak_index = peak_index
         self.ion_type = ion_type
 
     def __repr__(self):
         return "<FragmentMatch {} {} {}>".format(self.observed_mass, self.intensity, self.key)
 
     def __reduce__(self):
-        return FragmentMatch, (self.observed_mass, self.intensity, self.key, self.peak_id, self.ion_type)
+        return FragmentMatch, (self.observed_mass, self.intensity, self.key, self.peak_index, self.ion_type)
 
     def _asdict(self):
         d = {
             "observed_mass": self.observed_mass,
             "intensity": self.intensity,
             "key": self.key,
-            "peak_id": self.peak_id,
+            "peak_index": self.peak_index,
             "ion_type": self.ion_type            
         }
         return d
@@ -727,6 +720,7 @@ cdef PeakStructArray* unwrap_peak_list(list py_peaks):
         cpeak.intensity = dpeak.intensity
         cpeak.rank = dpeak.rank
         cpeak.mass_charge_ratio = dpeak.mass_charge_ratio
+        cpeak.scan_peak_index = dpeak.scan_peak_index
         peaks.peaks[i] = cpeak
     return peaks
 
@@ -774,7 +768,7 @@ cdef MatchedSpectrumStruct* unwrap_matched_spectrum(MatchedSpectrum ms):
             current_match.intensity = fm.intensity
             current_match.key = PyString_AsString(fm.key)
             current_match.ion_type = PyString_AsString(fm.ion_type)
-            current_match.peak_id = fm.peak_id
+            current_match.peak_index = fm.peak_index
             total += 1
     ms_struct.peak_match_list = frag_matches
     return ms_struct
@@ -785,7 +779,7 @@ cdef FragmentMatchStruct* unwrap_fragment_match(FragmentMatch fm):
     result.intensity = fm.intensity
     result.key = PyString_AsString(fm.key)
     result.ion_type = PyString_AsString(fm.ion_type)
-    result.peak_id = fm.peak_id
+    result.peak_index = fm.peak_index
     return result
 
 
@@ -797,6 +791,7 @@ cdef DPeak wrap_peak(PeakStruct* peak):
     dpeak.intensity = peak.intensity
     dpeak.rank = peak.rank
     dpeak.id = peak.id
+    dpeak.scan_peak_index = peak.scan_peak_index
     return dpeak
 
 
@@ -854,9 +849,9 @@ cdef MatchedSpectrum wrap_matched_spectrum_struct(MatchedSpectrumStruct* ms):
         frag_match = ms.peak_match_list.matches[i]
         frag_match_obj = FragmentMatch(
             frag_match.observed_mass, frag_match.intensity,
-            PyString_FromString(frag_match.key), frag_match.peak_id,
+            PyString_FromString(frag_match.key), frag_match.peak_index,
             PyString_FromString(frag_match.ion_type))
-        matches_list = frag_matches.setdefault(frag_match.peak_id, [])
+        matches_list = frag_matches.setdefault(frag_match.peak_index, [])
         matches_list.append(frag_match_obj)
 
     result.peak_match_map = frag_matches
@@ -867,7 +862,7 @@ cdef MatchedSpectrum wrap_matched_spectrum_struct(MatchedSpectrumStruct* ms):
 # 
 
 
-cdef FragmentMatchStructArray* matched_spectrum_struct_peak_explained_by(MatchedSpectrumStruct* ms, long peak_id) nogil:
+cdef FragmentMatchStructArray* matched_spectrum_struct_peak_explained_by(MatchedSpectrumStruct* ms, long peak_index) nogil:
     cdef:
         size_t i, j
         FragmentMatchStruct current
@@ -880,7 +875,7 @@ cdef FragmentMatchStructArray* matched_spectrum_struct_peak_explained_by(Matched
 
     for i in range(ms.peak_match_list.size):
         current = ms.peak_match_list.matches[i]
-        if current.peak_id == peak_id:
+        if current.peak_index == peak_index:
             results.matches[j] = current
             j += 1
             if j == 10:

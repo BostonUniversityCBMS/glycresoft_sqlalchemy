@@ -88,7 +88,7 @@ def database_exists(url):
         return bool(engine.execute(text).scalar())
 
     elif engine.dialect.name == 'sqlite':
-        return database == ':memory:' or os.path.exists(database)
+        return database is None or os.path.exists(database)
 
     else:
         text = 'SELECT 1'

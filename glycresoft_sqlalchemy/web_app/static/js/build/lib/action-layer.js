@@ -24,6 +24,9 @@ ActionLayerManager = (function(superClass) {
   };
 
   ActionLayerManager.prototype.add = function(layer) {
+    if (layer.options.closeable == null) {
+      layer.options.closeable = true;
+    }
     this.layers[layer.id] = layer;
     this.container.append(layer.container);
     this.emit("layer-added", {
@@ -66,6 +69,9 @@ ActionLayerManager = (function(superClass) {
   };
 
   ActionLayerManager.prototype.addLayer = function(options, params) {
+    if (options.closeable == null) {
+      options.closeable = true;
+    }
     new ActionLayer(this, options, params);
     return this;
   };
@@ -139,6 +145,7 @@ ActionLayer = (function() {
         if (!_this.showing) {
           _this.container.hide();
         }
+        _this.options.document = doc;
         _this.container.html(doc);
         _this.container.find('script').each(function(i, tag) {
           var srcURL;
@@ -150,7 +157,10 @@ ActionLayer = (function() {
           }
         });
         materialRefresh();
-        return _this.container.prepend("<div>\n    <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
+        console.log("This layer can be closed? " + _this.options.closeable);
+        if (_this.options.closeable) {
+          return _this.container.prepend("<div>\n    <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
+        }
       };
     })(this);
     if (this.method === "get") {
@@ -166,6 +176,23 @@ ActionLayer = (function() {
         success: callback,
         type: "POST"
       });
+    }
+  };
+
+  ActionLayer.prototype.reload = function() {
+    this.container.html(this.options.document);
+    this.container.find('script').each(function(i, tag) {
+      var srcURL;
+      tag = $(tag);
+      srcURL = tag.attr('src');
+      console.log("Setting up script", tag);
+      if (srcURL !== void 0) {
+        return $.getScript(srcURL);
+      }
+    });
+    materialRefresh();
+    if (this.options.closeable) {
+      return this.container.prepend("<div>\n<a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
     }
   };
 

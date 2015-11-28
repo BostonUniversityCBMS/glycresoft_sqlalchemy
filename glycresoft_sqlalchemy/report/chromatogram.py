@@ -29,7 +29,7 @@ import numpy as np
 
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, Decon2LSPeakGroup, PeakGroupMatch,
-    Hypothesis, Decon2LSPeak)
+    Hypothesis, Decon2LSPeak, HasPeakChromatogramData)
 
 from ..utils.collectiontools import groupby
 
@@ -41,8 +41,8 @@ scan_time_getter = operator.attrgetter('scan.time')
 def draw_chromatogram(peak_list, ax=None, set_bounds=True, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(1)
-    if isinstance(peak_list, (Decon2LSPeakGroup, PeakGroupMatch)):
-        time, abundance_over_time = get_chromatogram_peak_data(peak_list.peak_data)
+    if isinstance(peak_list, (HasPeakChromatogramData)):
+        time, abundance_over_time = peak_list.get_chromatogram()
     elif isinstance(peak_list[0], Decon2LSPeak):
         time, abundance_over_time = get_chromatogram(peak_list)
     else:

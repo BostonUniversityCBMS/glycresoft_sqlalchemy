@@ -256,56 +256,33 @@ class TagFinder(object):
                     print y_start, b_start
 
 
-class DegenerateSymbol(object):
-    def __init__(self, symbols):
-        self.symbols = symbols
-
-    def __str__(self):
-        return "[%s]" % '|'.join(map(str, self.symbols))
-
-    def __eq__(self, other):
-        for sym in self.symbols:
-            if sym == other:
-                return True
-        return False
-
-    def __ne__(self, other):
-        return not self == other
-
-
-def resolve_sequence_segment(total_mass, blocks, shift=0, tolerance=default_match_tolerance):
-    solutions = set()
-
-    def extend_segment(base, blocks):
-        for block in blocks:
-            ext = base.clone()
-            ext[block] += 1
-            ext._mass = base.mass + block.neutral_mass
-            yield ext
-
-    candidates = [SequenceComposition()]
-    next_round = set()
-    while True:
-        for candidate in candidates:
-            extents = set(extend_segment(candidate, blocks))
-            for case in extents:
-                case_mass = case.mass + shift
-                if abs(ppm_error(case_mass, total_mass)) <= tolerance:
-                    solutions.add(case)
-                elif case_mass < total_mass + 1:
-                    next_round.add(case)
-        if len(next_round) == 0:
-            break
-        else:
-            candidates = next_round
-            next_round = set()
-
-    return solutions
-
-
 class SpectrumGraph(object):
     def __init__(self, peaks):
         self.peaks = sorted(peaks, key=neutral_mass_getter)
+        self.nodes = [SpectrumNode(p) for p in self.peaks]
+        self.edges = defaultdict(list)
+
+    def find_edges(self, blocks, tolerance=2e-5):
+        for i, a_peak in enumerate(self.nodes):
+            a_mass = a_peak.neutral_mass
+            for block in blocks:
+                a_mass += block.neutral_mass
+                for b_peak in self.nodes[i:]:
+                    if abs(ppm_error(a_mass, b_peak.neutral_mass)) <= tolerance:
+                        self.edges[a_peak, b_peak].append(SpectrumEdge(a_peak, b_peak, annotation=block))
+                a_mass -= block.neutral_mass
+
+    def as_adjacency_matrix(self):
+        matrix = np.zeroes((len(self.nodes), len(self.nodes)))
+        index_of = {node: i for i, node in enumerate(self.nodes)}
+        for node, i in index_of.items():
+            for edge in node.out_edges:
+                j = index_of[edge.child]
+                matrix[i][j] = 1
+            for edge in node.in_edges:
+                j = index_of[edge.parent]
+                matrix[i][j] = 1
+        return matrix
 
 
 class SpectrumNode(object):
@@ -329,13 +306,15 @@ class SpectrumNode(object):
         return not self == other
 
     def __hash__(self):
-        return hash(self.neutral_mass)
+        return hash(int(self.neutral_mass))
 
 
 class SpectrumEdge(object):
     def __init__(self, parent, child, mass_shift, annotation):
         self.parent = parent
         self.child = child
+        parent.out_edges.append(self)
+        child.in_edges.append(self)
         self.mass_shift = mass_shift
         self.annotation = annotation
 

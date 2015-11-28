@@ -2,7 +2,7 @@
     <div class='row'>
         <div class='col s6'>
             <h6><b>Glycopeptide Sequence</b></h6>
-            <div class='sequence-emphasis'>{{glycopeptide.glycopeptide_sequence}}</div>
+            <div class='sequence-emphasis'>{{glycopeptide.glycopeptide_sequence|glycopeptide_string(long=True)}}</div>
             <b>Start Position</b>: {{glycopeptide.start_position}} <b>End Position</b>: {{glycopeptide.end_position}}
             <table>
                 <thead>

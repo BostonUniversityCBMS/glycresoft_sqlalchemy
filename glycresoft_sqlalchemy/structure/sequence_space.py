@@ -7,7 +7,7 @@ from .sequence import Sequence
 
 class SequenceSpace:
     """Generate all theoretical glycopeptide sequences"""
-    def __init__(self, seq, glycan_compo, glycan_sites, mod_list):
+    def __init__(self, seq, glycan_sites, mod_list):
         """
             seq -- sequence code
             glycan_compo -- glycan compositions, dict.
@@ -16,14 +16,12 @@ class SequenceSpace:
         """
         # Filter the glycan composition. Get the max number of HexNAc
         self.seq = Sequence(seq)  # Sequence object
-        self.glycan_composition = glycan_compo
         self.candidate_sites = glycan_sites
         self.modifications = mod_list
 
     def __repr__(self):
         rep = """
 sequence:{seq2}
-glycan:{glycan_composition}
 candidate_sites:{candidate_sites}
 modifications:{modifications}""".format(seq2=self.seq.get_sequence(), **self.__dict__)
         return rep

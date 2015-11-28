@@ -16,13 +16,14 @@
                     <h6>Protein List</h6>
                     <div class="btn">
                         <span>Select File...</span>
-                        <input name='protein-fasta-file' type="file"/>
+                        <input name='protein-list-file' id='protein-list-file' type="file"/>
                     </div>
                     <input class="file-path validate" type="text" style="width: 60%;padding-left:5px;"/>
+                    <input type='hidden' name='proteomics-file-type' id="proteomics-file-type" />
                 </div>
             </div>
             <small class='col s4' id='protein-list-file-help'>
-            A list of protein sequences to digest and glycosylate <em>in-silico</em>, provided in Fasta format. 
+            A list of protein sequences to digest and glycosylate <em>in-silico</em>, provided in Fasta format or mzIdentML. 
             </small>
         </div>
         <div class='row'>
@@ -42,25 +43,28 @@
         </div>
 
         <div class='row'>
-            <div class='col s4'>
+            <div class='col s4' id='constant-modifications-container'>
                 <h6>Constant Modifications</h6>
             {% with select_name='constant_modifications' %}
                 {% include 'components/modification_selection.templ' %}        
             {% endwith %}
             </div>
-            <div class='col s4'>
+            <div class='col s4' id='variable-modifications-container'>
                 <h6>Variable Modifications</h6>
             {% with select_name='variable_modifications' %}
-                {% include 'components/modification_selection.templ' %}        
+                {% include 'components/modification_selection.templ' %}     
             {% endwith %}
+                <br>
+                <span class='message'></span>
             </div>
-            <div class='col s4'>
+            <div class='col s4' id='enzyme-container'>
                 <h6>Enzymatic Digest</h6>
             {% with select_name='enzyme' %}
                 {% include 'components/peptidase_selection.templ' %}        
             {% endwith %}
             <label for='missed_cleavages'>Missed Cleavages Allowed</label>
             <input class='validate' type='number' min="0" id='missed_cleavages' name='missed_cleavages' value="2"/>
+            <span class='message'></span>
             </div>
         </div>
         <div class='row'>
@@ -90,12 +94,68 @@
     </form>
 </div>
 <script>
+(function(){
+$("#protein-list-file").on("change", function(event){
+    if(this.files[0] === undefined){
+        return
+    }
+    identifyProteomicsFormat(this.files[0], function(format){
+        $("#proteomics-file-type").val(format)
+        updateFormatOptions(format)
+    })
+})
+
+function updateFormatOptions(format){
+    console.log(format)
+    if(format === "fasta"){
+        var handle = $("#variable-modifications-container")
+        handle.find("select").removeAttr("disabled").css("cursor", "default")
+        handle.find("h6").removeClass("grey-text")
+        handle.find("span.message").text("")
+
+        handle = $("#enzyme-container")
+        handle.find("select").removeAttr("disabled").css("cursor", "default")
+        handle.find("input").removeAttr("disabled").css("cursor", "default")
+        handle.find("h6").removeClass("grey-text")
+        handle.find("span.message").text("")
+
+    }
+    else{
+        var handle = $("#variable-modifications-container")
+        handle.find("select").attr("disabled", true).css("cursor", "not-allowed")
+        handle.find("h6").addClass("grey-text")
+        handle.find("span.message").text("Informed Hypotheses do not need variable modification rules")
+
+        handle = $("#enzyme-container")
+        handle.find("select").attr("disabled", true).css("cursor", "not-allowed")
+        handle.find("input").attr("disabled", true).css("cursor", "not-allowed")
+        handle.find("h6").addClass("grey-text")
+        handle.find("span.message").text("Informed Hypotheses do not need proteolytic enzyme rules")
+
+    }
+}
+
+function selectModificationOption(select, value){
+    for(var i=0; i<select.options.length; i++){
+        if(select.options[i].value === value){
+            return select.options[i]
+        }
+    }
+}
+
+selectModificationOption(
+    $("#constant-modifications-container").find("select")[0],
+    "Carbamidomethyl (C)").selected = true
+
 ajaxForm($("form#glycopeptide-hypothesis-form"), function(){
     var currentAction = GlycReSoft.getShowingLayer()
     GlycReSoft.setShowingLayer("home-layer")
     currentAction.dispose()
 }, function(err){
     console.log(arguments)
+}, function(form){
+    return new FormData(form)
 })
 materialFileInput()
+})()
 </script>

@@ -141,9 +141,10 @@ def has_glycan_composition(model, composition_attr):
     else:
         class MonosaccharideBaseCounter(Base):
             __tablename__ = "%s_GlycanCompositionAssociation" % model.__name__
+            id = Column(Integer, primary_key=True)
             referent = Column(
-                Integer, ForeignKey(model.id, ondelete="CASCADE"), primary_key=True)
-            base_type = Column(Unicode(30), primary_key=True)
+                Integer, ForeignKey(model.id, ondelete="CASCADE"), index=True)
+            base_type = Column(Unicode(30), index=True)
             count = Column(Integer)
 
             composition = relationship(model, backref=backref(
@@ -394,3 +395,34 @@ TheoreticalGlycanStructureToMotifTable = Table(
     Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanStructure.id"), index=True),
     Column("motif_id", Integer, ForeignKey("StructureMotif.id"), index=True)
     )
+
+TheoreticalGlycanCombinationTheoreticalGlycanComposition = Table(
+    "TheoreticalGlycanCombinationTheoreticalGlycanComposition", Base.metadata,
+    Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanComposition.id"), index=True),
+    Column("combination_id", Integer, ForeignKey("TheoreticalGlycanCombination.id"), index=True)
+    )
+
+
+class TheoreticalGlycanCombination(Base, GlycanBase):
+    r'''
+    A class for storing combinations of glycan compositions for association
+    with peptides.
+
+    .. note: This class is not yet integrated. It is a planned solution to
+        the complex join table system needed to map glycopeptides to their
+        glycans.
+    '''
+    __tablename__ = "TheoreticalGlycanCombination"
+
+    id = Column(Integer, primary_key=True)
+    count = Column(Integer)
+
+    components = relationship(
+        TheoreticalGlycanComposition,
+        secondary=TheoreticalGlycanCombinationTheoreticalGlycanComposition,
+        lazy='dynamic')
+
+    __mapper_args__ = {
+        'polymorphic_identity': u'TheoreticalGlycanCombination',
+        "concrete": True
+    }

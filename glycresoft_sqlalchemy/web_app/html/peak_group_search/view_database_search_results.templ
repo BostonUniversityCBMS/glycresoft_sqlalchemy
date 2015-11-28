@@ -12,12 +12,15 @@
     </div>
     <div class='col s4'>
         <h5>Target Database:</h5>
-        <a href='{{ url_for(".view_hypothesis", id=hsm.target_hypothesis.id) }}'>
+        <a>
             <h6>{{hsm.target_hypothesis.name}}</h6>
         </a>
         <h5>Sample Searched:</h5>
         <h6>{{hsm.sample_run_name}}</h6>
     </div>
+    <button class='btn no-shadow narrow-btn tooltipped'  data-tooltip="Save CSV">
+        <i data-target="{{hsm.target_hypothesis.id}}" id='save-csv-file' class="material-icons">insert_drive_file</i>
+    </button>
 </div>
 <div id='chosen-protein-container'>
     <div class="progress"><div class="indeterminate"></div></div>

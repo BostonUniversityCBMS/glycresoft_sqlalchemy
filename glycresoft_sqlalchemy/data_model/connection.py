@@ -1,5 +1,7 @@
 import os
-from sqlalchemy import create_engine
+import warnings
+
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.engine.url import make_url
@@ -13,22 +15,30 @@ import logging
 logger = logging.getLogger("database_manager")
 
 
+warnings.filterwarnings(
+    action='ignore',
+    message=r"(Converters and adapters are deprecated)|(Any type mapping should happen in layer above this module)",
+    module="pysqlite2.dbapi2")
+
+
 class ConnectionManager(object):
     echo = False
 
     def __init__(self, database_uri, database_uri_prefix="",
                  connect_args=None):
-        self.database_uri = database_uri
+        self.database_uri = str(database_uri)
         self.database_uri_prefix = database_uri_prefix
         self.connect_args = connect_args or {}
 
     def connect(self):
         url = self.construct_url()
-        return create_engine(
+        engine = create_engine(
             url,
             echo=self.echo,
             connect_args=self.connect_args,
             poolclass=NullPool)
+        self._configure_creation(engine)
+        return engine
 
     def construct_url(self):
         return "{}{}".format(self.database_uri_prefix, self.database_uri)
@@ -55,7 +65,7 @@ class ConnectionManager(object):
         if not database_utils.database_exists(url):
             logger.info("No database exists at %s", url)
             engine = database_utils.create_database(url)
-            self._configure_creation(engine)
+            # self._configure_creation(engine)
 
     def _configure_creation(self, connection):
         pass
@@ -75,7 +85,7 @@ class SQLiteConnectionManager(ConnectionManager):
         super(
             SQLiteConnectionManager,
             self).__init__(
-            path,
+            str(path),
             self.database_uri_prefix,
             connect_args)
 
@@ -93,8 +103,21 @@ class SQLiteConnectionManager(ConnectionManager):
         return engine
 
     def _configure_creation(self, connection):
-        connection.execute("PRAGMA page_size = 5120")
-        connection.execute("PRAGMA cache_size = 4000")
+        def do_connect(dbapi_connection, connection_record):
+            # disable pysqlite's emitting of the BEGIN statement entirely.
+            # also stops it from emitting COMMIT before any DDL.
+            iso_level = dbapi_connection.isolation_level
+            dbapi_connection.isolation_level = None
+            r = dbapi_connection.execute("PRAGMA page_size = 5120;")
+            r = dbapi_connection.execute("PRAGMA cache_size = 4000;")
+            dbapi_connection.isolation_level = iso_level
+
+        event.listens_for(connection, "connect")(do_connect)
+
+        # def do_begin(conn):
+        #     # emit our own BEGIN
+        #     conn.execute("BEGIN")
+        # event.listens_for(connection, "begin")(do_begin)
 
 
 class LocalPostgresConnectionManager(ConnectionManager):
@@ -127,6 +150,8 @@ class DatabaseManager(object):
         if isinstance(path, ConnectionManager):
             return path
         try:
+            path = str(path)
+            # Ensure that the path is in fact a URI
             make_url(path)
             return ConnectionManager(path)
         except:
@@ -155,6 +180,11 @@ class DatabaseManager(object):
         if connection is None:
             connection = self.connect()
         return sessionmaker(bind=connection, autoflush=False)()
+
+    __call__ = session
+
+    def query(self, *args, **kwargs):
+        return self().query(*args, **kwargs)
 
     def bridge_address(self):
         return self.connection_manager.bridge_address()

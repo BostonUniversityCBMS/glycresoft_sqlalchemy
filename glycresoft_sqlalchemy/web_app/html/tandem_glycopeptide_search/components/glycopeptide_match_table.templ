@@ -22,7 +22,7 @@
     {% for gpm in glycopeptides %}    
         <tr class='glycopeptide-match-row' data-target="{{gpm.id}}">
             <td>{{"%0.4f"|format(gpm.observed_mass)}}</td>
-            <td class='wide'><span>{{gpm.modified_peptide_sequence}}</span></td>
+            <td class='wide'><span>{{gpm.modified_peptide_sequence|glycopeptide_string}}</span></td>
             <td class='wide'>{{gpm.glycan_composition_str}}</td>
             <td>{{"%0.4f"|format(gpm.ms2_score)}}</td>
             <td class='narrow'>{{"%0.3f"|format(gpm.q_value) if gpm.q_value != 0.0 else 0.0}}</td>

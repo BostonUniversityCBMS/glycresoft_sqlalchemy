@@ -67,6 +67,7 @@ def reverse_preserve_sequon(sequence, prefix_len=0, suffix_len=1):
         rev_sequence = (list_to_sequence(pref + list(rot_body) + suf))
     rev_sequence.n_term = original.n_term
     rev_sequence.c_term = original.c_term
+    rev_sequence.glycan = original.glycan
     return rev_sequence
 
 
@@ -86,6 +87,7 @@ def reverse_sequence(sequence, prefix_len=0, suffix_len=1):
         rev_sequence = (list_to_sequence(pref + list(rot_body) + suf))
     rev_sequence.n_term = n_term
     rev_sequence.c_term = c_term
+    rev_sequence.glycan = glycan
     return rev_sequence
 
 
@@ -120,7 +122,7 @@ def make_decoy(theoretical_sequence, prefix_len=0, suffix_len=1,
             base_peptide_sequence=strip_modifications(str(permuted_sequence)),
             modified_peptide_sequence=str(permuted_sequence),
             peptide_modifications=theoretical_sequence.peptide_modifications,
-            glycopeptide_sequence=str(permuted_sequence) + theoretical_sequence.glycan_composition_str,
+            glycopeptide_sequence=str(permuted_sequence),
             sequence_length=len(permuted_sequence),
             glycan_composition_str=theoretical_sequence.glycan_composition_str,
             bare_b_ions=bare_b_ions,

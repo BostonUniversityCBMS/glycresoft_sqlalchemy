@@ -5,6 +5,7 @@ import functools
 from .search_space_builder import (MS1GlycopeptideResult, constructs,
                                    get_peptide_modifications, get_search_space,
                                    generate_fragments, TheoreticalSearchSpaceBuilder)
+from ..utils import WorkItemCollection
 from glycresoft_sqlalchemy.data_model import MS1GlycopeptideHypothesisSampleMatch
 
 logger = logging.getLogger("search_space_builder")
@@ -115,30 +116,27 @@ class PoolingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         cntr = 0
         checkpoint = 0
         accumulator = []
+        accumulator = WorkItemCollection(self.session)
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
             for res in worker_pool.imap_unordered(task_fn, self.stream_results(), chunksize=500):
-                accumulator.extend(res)
+                [accumulator.add(i) for i in res]
                 cntr += len(res)
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
-                    self.session.bulk_save_objects(accumulator, update_changed_only=False)
-                    self.session.commit()
-                    accumulator = []
+                    accumulator.commit()
                     checkpoint = cntr + self.commit_checkpoint
             worker_pool.terminate()
         else:
             logger.debug("Building theoretical sequences sequentially")
             for row in self.ms1_results_reader:
                 res = task_fn(row)
-                accumulator.extend(res)
+                [accumulator.add(i) for i in res]
                 cntr += len(res)
                 if cntr >= checkpoint:
                     logger.info("Committing, %d records made", cntr)
-                    self.session.bulk_save_objects(accumulator, update_changed_only=False)
-                    self.session.commit()
-                    accumulator = []
+                    accumulator.commit()
                     checkpoint = cntr + self.commit_checkpoint
-        self.session.commit()
+        accumulator.commit()
         return self.hypothesis_id

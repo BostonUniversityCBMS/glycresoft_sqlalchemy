@@ -11,7 +11,9 @@ from glycresoft_sqlalchemy.data_model import (
 
 from task.task_process import TaskManager, pickle
 from task.dummy import DummyTask
+
 from glycresoft_sqlalchemy.web_app.common import logmethod
+from glycresoft_sqlalchemy.utils import sqlitedict
 
 logger = logging.getLogger("project_manager")
 
@@ -19,6 +21,7 @@ logger = logging.getLogger("project_manager")
 class ProjectManager(DatabaseManager, TaskManager):
     def __init__(self, database_path, sample_dir=None, results_dir=None, temp_dir=None, task_dir=None):
         DatabaseManager.__init__(self, database_path)
+        print self.connection_manager
         self.initialize()
         if sample_dir is None:
             sample_dir = path.join(path.dirname(database_path), 'sample_dir')
@@ -41,6 +44,7 @@ class ProjectManager(DatabaseManager, TaskManager):
                 self.sample_submanagers.append(manager)
             except:
                 pass
+        self.app_data = sqlitedict.SqliteDict(self.get_temp_path("app_data.db"), autocommit=True)
         TaskManager.__init__(self, task_dir)
 
     def _ensure_paths_exist(self):
@@ -130,3 +134,9 @@ class ProjectManager(DatabaseManager, TaskManager):
         TaskManager.add_task(self, task)
         path = self.get_task_path(task.name)
         pickle.dump(task.args[:-1], open(path, 'wb'))
+
+    def __getitem__(self, key):
+        return self.app_data[key]
+
+    def __setitem__(self, key, value):
+        self.app_data[key] = value

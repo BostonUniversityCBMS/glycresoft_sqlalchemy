@@ -12,13 +12,14 @@ from .utils import (
 
 from glycresoft_sqlalchemy.utils.memoize import memoize
 from glycresoft_sqlalchemy.structure.sequence import (
-    Sequence, fragment_shift, Fragment, Composition,
+    Sequence, fragment_shift, PeptideFragment, Composition,
     structure_constants)
 
 
 # Lacking a reasonable definition of the "space between fragmentation sites"
 SMALLEST_UNIT = 1000 * 2e-5
 NOISE = "noise"
+
 
 def preprocess_glycopeptide_spectrum_match(gsms):
     return map(MatchedSpectrum, gsms)
@@ -53,15 +54,15 @@ def _delta_series(sequence, mass_shift=0.0, step=1):
         frag_dri = []
         # If incremental loss of HexNAc is not allowed, only one fragment of a given type is generated
         if not structure_constants.PARTIAL_HEXNAC_LOSS:
-            frag = Fragment(str(mass_shift), idx + structure_constants.FRAG_OFFSET, (mod_dict).copy(), current_mass)
+            frag = PeptideFragment(str(mass_shift), idx + structure_constants.FRAG_OFFSET, (mod_dict).copy(), current_mass)
             frag_dri.append(frag)
             bare_dict = (mod_dict).copy()
             bare_dict["HexNAc"] = 0
-            frag = Fragment(str(mass_shift), idx + structure_constants.FRAG_OFFSET, (bare_dict).copy(), current_mass)
+            frag = PeptideFragment(str(mass_shift), idx + structure_constants.FRAG_OFFSET, (bare_dict).copy(), current_mass)
             frag_dri.append(frag)
         # Else a fragment for each incremental loss of HexNAc must be generated
         else:
-            frag = Fragment(str(mass_shift), idx + structure_constants.FRAG_OFFSET, (mod_dict).copy(), current_mass)
+            frag = PeptideFragment(str(mass_shift), idx + structure_constants.FRAG_OFFSET, (mod_dict).copy(), current_mass)
             frag_dri.extend(frag.partial_loss())
         yield frag_dri
 

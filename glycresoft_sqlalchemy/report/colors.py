@@ -26,7 +26,7 @@ class ColorMapper(object):
 
     def __init__(self):
         self.color_name_map = {
-            "HexNAc": hex2color(cnames["steelblue"]),
+            "HexNAc": hex2color(cnames["mediumseagreen"]),
         }
         self.color_generator = cycle(self.colors)
 
@@ -61,8 +61,18 @@ class ColorMapper(object):
     darken = staticmethod(darken)
     lighten = staticmethod(lighten)
 
+    def keys(self):
+        return self.color_name_map.keys()
+
+    def items(self):
+        return self.color_name_map.items()
+
 
 _color_mapper = ColorMapper()
 
 color_name_map = _color_mapper.color_name_map
 get_color = _color_mapper.get_color
+
+
+def color_dict():
+    return dict(**_color_mapper)

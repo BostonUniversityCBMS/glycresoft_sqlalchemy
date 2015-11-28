@@ -8,7 +8,7 @@ try:
     logger = logging.getLogger(__name__)
 except:
     pass
-from os.path import splitext
+
 from collections import defaultdict
 
 from ..spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
@@ -102,9 +102,9 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                             match = ({'key': theoretical_ion['key'],
                                       "observed_mass": protonated_mass,
                                       "intensity": peak.intensity,
-                                      'ppm_error': match_error, "peak_id": peak.id})
+                                      'ppm_error': match_error, "peak_id": peak.scan_peak_index})
                             collect(match)
-                            peak_match_map[peak.id].append(match)
+                            peak_match_map[peak.scan_peak_index].append(match)
                             c += 1
                         elif protonated_mass > query_mass + 10:
                             break
@@ -124,9 +124,9 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                             match = ({'key': theoretical_ion['key'],
                                       "intensity": peak.intensity,
                                       "observed_mass": observed_mass,
-                                      'ppm_error': match_error, "peak_id": peak.id})
+                                      'ppm_error': match_error, "peak_id": peak.scan_peak_index})
                             collect(match)
-                            peak_match_map[peak.id].append(match)
+                            peak_match_map[peak.scan_peak_index].append(match)
                         elif observed_mass > query_mass + 10:
                             break
 
@@ -141,9 +141,9 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                             match = ({'key': theoretical_ion['key'],
                                       "observed_mass": observed_mass,
                                       "intensity": peak.intensity,
-                                      'ppm_error': match_error, "peak_id": peak.id})
+                                      'ppm_error': match_error, "peak_id": peak.scan_peak_index})
                             collect(match)
-                            peak_match_map[peak.id].append(match)
+                            peak_match_map[peak.scan_peak_index].append(match)
                         elif observed_mass > query_mass + 10:
                             break
 
@@ -158,9 +158,9 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                             match = ({'key': theoretical_ion['key'],
                                       "observed_mass": observed_mass,
                                       "intensity": peak.intensity,
-                                      'ppm_error': match_error, "peak_id": peak.id})
+                                      'ppm_error': match_error, "peak_id": peak.scan_peak_index})
                             collect(match)
-                            peak_match_map[peak.id].append(match)
+                            peak_match_map[peak.scan_peak_index].append(match)
                         elif observed_mass > query_mass + 10:
                             break
 
@@ -175,9 +175,9 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                             match = ({'key': theoretical_ion['key'],
                                       "observed_mass": observed_mass,
                                       "intensity": peak.intensity,
-                                      'ppm_error': match_error, "peak_id": peak.id})
+                                      'ppm_error': match_error, "peak_id": peak.scan_peak_index})
                             collect(match)
-                            peak_match_map[peak.id].append(match)
+                            peak_match_map[peak.scan_peak_index].append(match)
                         elif observed_mass > query_mass + 10:
                             break
 
@@ -192,9 +192,9 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                             match = ({'key': theoretical_ion['key'],
                                       "observed_mass": observed_mass,
                                       "intensity": peak.intensity,
-                                      'ppm_error': match_error, "peak_id": peak.id})
+                                      'ppm_error': match_error, "peak_id": peak.scan_peak_index})
                             collect(match)
-                            peak_match_map[peak.id].append(match)
+                            peak_match_map[peak.scan_peak_index].append(match)
                         elif observed_mass > query_mass + 10:
                             break
 

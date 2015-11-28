@@ -22,7 +22,7 @@ class MonosaccharideFilter
         residue.name = residue
         residue.sanitizeName = sanitizeName = residue.replace(/[\(\),]/g, "_")
         template = """
-            <span class="col s2" style='display: inline-block; width: 130px;' data-name='#{residue}'>
+            <span class="col s2" style='display:inline-block; width: 130px;' data-name='#{residue}'>
                 <p style='margin: 0px; margin-bottom: -10px;'>
                     <input type="checkbox" id="#{sanitizeName}_include" name="#{sanitizeName}_include"/>
                     <label for="#{sanitizeName}_include"><b>#{residue}</b></label>

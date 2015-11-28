@@ -485,7 +485,6 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatchStruct
 struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStruct;
 struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_IonTypeIndex;
 struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_IonTypeDoubleMap;
-struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_ElementStruct;
 struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStructArray;
 struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStructArray;
 struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatchStructArray;
@@ -528,7 +527,7 @@ struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffset
   PyObject *slot;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":92
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":93
  * # Scalar Structs
  * 
  * cdef struct PeakStruct:             # <<<<<<<<<<<<<<
@@ -538,13 +537,14 @@ struct __pyx_opt_args_21glycresoft_sqlalchemy_5utils_12ccommon_math_17MassOffset
 struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct {
   double neutral_mass;
   long id;
+  long scan_peak_index;
   int charge;
   double intensity;
   int rank;
   double mass_charge_ratio;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":100
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":102
  *     double mass_charge_ratio
  * 
  * cdef struct MSFeatureStruct:             # <<<<<<<<<<<<<<
@@ -568,7 +568,7 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct {
   int peptide_mass_rank;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":116
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":118
  *     int peptide_mass_rank
  * 
  * cdef struct FragmentMatchStruct:             # <<<<<<<<<<<<<<
@@ -580,11 +580,11 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatchStruct
   double intensity;
   char *key;
   char *ion_type;
-  long peak_id;
+  long peak_index;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":123
- *     long peak_id
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":125
+ *     long peak_index
  * 
  * cdef struct MatchedSpectrumStruct:             # <<<<<<<<<<<<<<
  *     FragmentMatchStructArray* peak_match_list
@@ -604,7 +604,7 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStru
   int glycan_peptide_ratio;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":136
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":138
  *     int glycan_peptide_ratio
  * 
  * cdef struct IonTypeIndex:             # <<<<<<<<<<<<<<
@@ -617,7 +617,7 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_IonTypeIndex {
   size_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":141
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":143
  *     size_t size
  * 
  * cdef struct IonTypeDoubleMap:             # <<<<<<<<<<<<<<
@@ -629,20 +629,7 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_IonTypeDoubleMap {
   double *values;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":145
- *     double* values
- * 
- * cdef struct ElementStruct:             # <<<<<<<<<<<<<<
- *     char* symbol
- *     double mass
- */
-struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_ElementStruct {
-  char *symbol;
-  double mass;
-  double abundance;
-};
-
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":152
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":150
  * # Array Structs
  * 
  * cdef struct PeakStructArray:             # <<<<<<<<<<<<<<
@@ -654,7 +641,7 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStructArray {
   Py_ssize_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":156
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":154
  *     Py_ssize_t size
  * 
  * cdef struct MSFeatureStructArray:             # <<<<<<<<<<<<<<
@@ -666,7 +653,7 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStructArra
   Py_ssize_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":160
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":158
  *     Py_ssize_t size
  * 
  * cdef struct FragmentMatchStructArray:             # <<<<<<<<<<<<<<
@@ -678,7 +665,7 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatchStruct
   size_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":164
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":162
  *     size_t size
  * 
  * cdef struct MatchedSpectrumStructArray:             # <<<<<<<<<<<<<<
@@ -690,7 +677,7 @@ struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStru
   size_t size;
 };
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":168
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":166
  *     size_t size
  * 
  * cdef struct PeakToPeakShiftMatches:             # <<<<<<<<<<<<<<
@@ -708,6 +695,8 @@ struct PeakRelationStructArray;
 struct RelationSpectrumPair;
 struct RelationSpectrumPairArray;
 struct FittedFeatureStruct;
+struct FittedFeatureStructArray;
+struct PeakAnnotationStruct;
 struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation;
 struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_search_features_on_spectrum;
 struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_feature_function_estimator;
@@ -724,7 +713,7 @@ struct PeakRelationStruct {
   struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct to_peak;
   int from_charge;
   int to_charge;
-  float intensity_ratio;
+  int intensity_ratio;
   char *kind;
   struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *feature;
   int same_terminal;
@@ -780,10 +769,34 @@ struct FittedFeatureStruct {
   char *kind;
 };
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":202
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":57
  * 
  * 
- * cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None):             # <<<<<<<<<<<<<<
+ * cdef public struct FittedFeatureStructArray:             # <<<<<<<<<<<<<<
+ *     FittedFeatureStruct** features
+ *     size_t size
+ */
+struct FittedFeatureStructArray {
+  struct FittedFeatureStruct **features;
+  size_t size;
+};
+
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":62
+ * 
+ * 
+ * cdef public struct PeakAnnotationStruct:             # <<<<<<<<<<<<<<
+ *     PeakStruct* peak
+ *     PeakRelationStructArray* annotations
+ */
+struct PeakAnnotationStruct {
+  struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct *peak;
+  struct PeakRelationStructArray *annotations;
+};
+
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":203
+ * 
+ * 
+ * cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None):             # <<<<<<<<<<<<<<
  *     cdef PeakRelation pr
  *     pr = <PeakRelation>PyObject_CallFunctionObjArgs(PeakRelation__new__, <PyObject*>PeakRelation, NULL)
  */
@@ -792,7 +805,7 @@ struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpea
   PyObject *kind;
 };
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":215
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":216
  * 
  * 
  * cpdef dict search_features_on_spectrum(DPeak peak, list peak_list, list features, str kind=None):             # <<<<<<<<<<<<<<
@@ -804,7 +817,7 @@ struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpea
   PyObject *kind;
 };
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":242
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":243
  * 
  * 
  * cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feature_function, str kind='b'):             # <<<<<<<<<<<<<<
@@ -855,6 +868,7 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak {
   struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_vtab;
   double neutral_mass;
   long id;
+  long scan_peak_index;
   int charge;
   double intensity;
   int rank;
@@ -863,7 +877,7 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak {
 };
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":58
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":59
  *         cdef PeakStruct* as_struct(self)
  * 
  * cdef class TheoreticalFragment(object):             # <<<<<<<<<<<<<<
@@ -877,7 +891,7 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragme
 };
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":63
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":64
  *         public str key
  * 
  * cdef class MatchedSpectrum(object):             # <<<<<<<<<<<<<<
@@ -901,7 +915,7 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum {
 };
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":81
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":82
  *     cpdef DPeak get_peak(self, long id)
  * 
  * cdef class FragmentMatch(object):             # <<<<<<<<<<<<<<
@@ -914,7 +928,7 @@ struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch {
   double intensity;
   PyObject *key;
   PyObject *ion_type;
-  long peak_id;
+  long peak_index;
 };
 
 
@@ -931,7 +945,7 @@ struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_rel
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *to_peak;
   int from_charge;
   int to_charge;
-  float intensity_ratio;
+  int intensity_ratio;
   PyObject *kind;
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *feature;
   int same_terminal;
@@ -983,7 +997,7 @@ struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_rel
 };
 
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":185
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":186
  *         return specialized_features
  * 
  *     def peak_relations(self, include_noise=True):             # <<<<<<<<<<<<<<
@@ -1036,7 +1050,7 @@ struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak {
 static struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak;
 
 
-/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":63
+/* "glycresoft_sqlalchemy\utils\ccommon_math.pxd":64
  *         public str key
  * 
  * cdef class MatchedSpectrum(object):             # <<<<<<<<<<<<<<
@@ -1513,7 +1527,7 @@ static PyTypeObject *__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequ
 static PyTypeObject *__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_2_peak_relations = 0;
 static PyObject *__pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PNOISE = 0;
 static PyObject *__pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation__new__ = 0;
-static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, float, struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation *__pyx_optional_args); /*proto*/
+static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, int, struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation *__pyx_optional_args); /*proto*/
 static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_search_features_on_spectrum(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *, PyObject *, PyObject *, int __pyx_skip_dispatch, struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_search_features_on_spectrum *__pyx_optional_args); /*proto*/
 static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_FittedFeature *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_feature_function_estimator(PyObject *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, int __pyx_skip_dispatch, struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_feature_function_estimator *__pyx_optional_args); /*proto*/
 static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations__feature_function_estimator(struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStructArray *, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *, char *, int); /*proto*/
@@ -1522,7 +1536,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
 static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_wrap_spectrum_relation_pair(struct RelationSpectrumPair *, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *, PyObject *); /*proto*/
 static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_FittedFeature *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_wrap_fitted_feature(struct FittedFeatureStruct *, PyObject *); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_resize_peak_relation_array(struct PeakRelationStructArray *); /*proto*/
-static CYTHON_INLINE void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_insert_peak_relation_struct(struct PeakRelationStructArray *, size_t, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *, double, char *, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStruct *); /*proto*/
+static CYTHON_INLINE void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_insert_peak_relation_struct(struct PeakRelationStructArray *, size_t, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *, int, char *, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStruct *); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_peak_relations_array(struct PeakRelationStructArray *); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_relation_spectrum_pairs_array(struct RelationSpectrumPairArray *); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_fitted_feature(struct FittedFeatureStruct *); /*proto*/
@@ -1561,6 +1575,7 @@ static char __pyx_k_test[] = "__test__";
 static char __pyx_k_time[] = "time";
 static char __pyx_k_ckind[] = "ckind";
 static char __pyx_k_close[] = "close";
+static char __pyx_k_fixed[] = "fixed";
 static char __pyx_k_items[] = "items";
 static char __pyx_k_peaks[] = "peaks";
 static char __pyx_k_print[] = "print";
@@ -1648,6 +1663,7 @@ static PyObject *__pyx_n_s_features;
 static PyObject *__pyx_n_s_ff;
 static PyObject *__pyx_n_s_file;
 static PyObject *__pyx_n_s_fit_features;
+static PyObject *__pyx_n_s_fixed;
 static PyObject *__pyx_n_s_format;
 static PyObject *__pyx_n_s_from_charge;
 static PyObject *__pyx_n_s_from_peak;
@@ -1706,7 +1722,7 @@ static PyObject *__pyx_n_s_to_peak;
 static PyObject *__pyx_n_s_tolerance;
 static PyObject *__pyx_n_s_totals;
 static PyObject *__pyx_n_s_values;
-static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation___init__(struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_v_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_from_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_to_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature, float __pyx_v_intensity_ratio, PyObject *__pyx_v_kind, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_annotation); /* proto */
+static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation___init__(struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_v_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_from_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_to_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature, int __pyx_v_intensity_ratio, PyObject *__pyx_v_kind, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_annotation); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation_2__repr__(struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation_4__getstate__(struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation_6__setstate__(struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_v_self, PyObject *__pyx_v_d); /* proto */
@@ -1772,7 +1788,7 @@ static PyObject *__pyx_codeobj__3;
 /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":51
  * cdef class PeakRelation(object):
  * 
- *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None,             # <<<<<<<<<<<<<<
+ *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None,             # <<<<<<<<<<<<<<
  *                  MatchedSpectrum annotation=None):
  *         self.from_peak = from_peak
  */
@@ -1783,7 +1799,7 @@ static int __pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_from_peak = 0;
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_to_peak = 0;
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature = 0;
-  float __pyx_v_intensity_ratio;
+  int __pyx_v_intensity_ratio;
   PyObject *__pyx_v_kind = 0;
   struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_annotation = 0;
   int __pyx_lineno = 0;
@@ -1799,7 +1815,7 @@ static int __pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
 
     /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":52
  * 
- *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None,
+ *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None,
  *                  MatchedSpectrum annotation=None):             # <<<<<<<<<<<<<<
  *         self.from_peak = from_peak
  *         self.to_peak = to_peak
@@ -1867,7 +1883,7 @@ static int __pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
     __pyx_v_from_peak = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)values[0]);
     __pyx_v_to_peak = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)values[1]);
     __pyx_v_feature = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)values[2]);
-    __pyx_v_intensity_ratio = __pyx_PyFloat_AsFloat(values[3]); if (unlikely((__pyx_v_intensity_ratio == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_intensity_ratio = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_intensity_ratio == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     __pyx_v_kind = ((PyObject*)values[4]);
     __pyx_v_annotation = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)values[5]);
   }
@@ -1889,7 +1905,7 @@ static int __pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":51
  * cdef class PeakRelation(object):
  * 
- *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None,             # <<<<<<<<<<<<<<
+ *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None,             # <<<<<<<<<<<<<<
  *                  MatchedSpectrum annotation=None):
  *         self.from_peak = from_peak
  */
@@ -1903,14 +1919,14 @@ static int __pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   return __pyx_r;
 }
 
-static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation___init__(struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_v_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_from_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_to_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature, float __pyx_v_intensity_ratio, PyObject *__pyx_v_kind, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_annotation) {
+static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation___init__(struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_v_self, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_from_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_to_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature, int __pyx_v_intensity_ratio, PyObject *__pyx_v_kind, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *__pyx_v_annotation) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("__init__", 0);
 
   /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":53
- *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None,
+ *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None,
  *                  MatchedSpectrum annotation=None):
  *         self.from_peak = from_peak             # <<<<<<<<<<<<<<
  *         self.to_peak = to_peak
@@ -2006,7 +2022,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":51
  * cdef class PeakRelation(object):
  * 
- *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None,             # <<<<<<<<<<<<<<
+ *     def __init__(self, DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None,             # <<<<<<<<<<<<<<
  *                  MatchedSpectrum annotation=None):
  *         self.from_peak = from_peak
  */
@@ -2215,7 +2231,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  *         d["kind"] = self.kind
  *         d['annotation'] = self.annotation
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   if (unlikely(PyDict_SetItem(__pyx_v_d, __pyx_n_s_intensity_ratio, __pyx_t_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -2302,7 +2318,6 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
-  float __pyx_t_3;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -2391,9 +2406,9 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   __pyx_t_1 = PyObject_GetItem(__pyx_v_d, __pyx_n_s_intensity_ratio); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 85; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_3 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 85; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 85; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_self->intensity_ratio = __pyx_t_3;
+  __pyx_v_self->intensity_ratio = __pyx_t_2;
 
   /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":86
  *         self.feature = d["feature"]
@@ -2495,7 +2510,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  * 
  * 
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
 
   /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":90
@@ -2778,7 +2793,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  *         public DPeak to_peak
  *         public int from_charge             # <<<<<<<<<<<<<<
  *         public int to_charge
- *         public float intensity_ratio
+ *         public int intensity_ratio
  */
 
 /* Python wrapper */
@@ -2859,7 +2874,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  *         public DPeak to_peak
  *         public int from_charge
  *         public int to_charge             # <<<<<<<<<<<<<<
- *         public float intensity_ratio
+ *         public int intensity_ratio
  *         public str kind
  */
 
@@ -2940,7 +2955,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
 /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":12
  *         public int from_charge
  *         public int to_charge
- *         public float intensity_ratio             # <<<<<<<<<<<<<<
+ *         public int intensity_ratio             # <<<<<<<<<<<<<<
  *         public str kind
  *         public MassOffsetFeature feature
  */
@@ -2967,7 +2982,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->intensity_ratio); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3000,12 +3015,12 @@ static int __pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
 static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_12PeakRelation_15intensity_ratio_2__set__(struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
-  float __pyx_t_1;
+  int __pyx_t_1;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __pyx_PyFloat_AsFloat(__pyx_v_value); if (unlikely((__pyx_t_1 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->intensity_ratio = __pyx_t_1;
 
   /* function exit code */
@@ -3021,7 +3036,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
 
 /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":13
  *         public int to_charge
- *         public float intensity_ratio
+ *         public int intensity_ratio
  *         public str kind             # <<<<<<<<<<<<<<
  *         public MassOffsetFeature feature
  *         public bint same_terminal
@@ -3128,7 +3143,7 @@ static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
 }
 
 /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pxd":14
- *         public float intensity_ratio
+ *         public int intensity_ratio
  *         public str kind
  *         public MassOffsetFeature feature             # <<<<<<<<<<<<<<
  *         public bint same_terminal
@@ -5452,7 +5467,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  *                 min_peak_rank=params.base_peak_rank,
  *                 max_peak_rank=params.base_peak_rank,             # <<<<<<<<<<<<<<
  *                 peptide_mass_rank=params.peptide_mass_rank,
- *                 glycan_peptide_ratio=params.glycan_peptide_ratio)
+ *                 glycan_peptide_ratio=params.glycan_peptide_ratio,
  */
     __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_params, __pyx_n_s_base_peak_rank); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 178; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
@@ -5463,8 +5478,8 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  *                 min_peak_rank=params.base_peak_rank,
  *                 max_peak_rank=params.base_peak_rank,
  *                 peptide_mass_rank=params.peptide_mass_rank,             # <<<<<<<<<<<<<<
- *                 glycan_peptide_ratio=params.glycan_peptide_ratio)
- * 
+ *                 glycan_peptide_ratio=params.glycan_peptide_ratio,
+ *                 fixed=self.feature.fixed)
  */
     __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_params, __pyx_n_s_peptide_mass_rank); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 179; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
@@ -5474,13 +5489,25 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":180
  *                 max_peak_rank=params.base_peak_rank,
  *                 peptide_mass_rank=params.peptide_mass_rank,
- *                 glycan_peptide_ratio=params.glycan_peptide_ratio)             # <<<<<<<<<<<<<<
+ *                 glycan_peptide_ratio=params.glycan_peptide_ratio,             # <<<<<<<<<<<<<<
+ *                 fixed=self.feature.fixed)
  * 
- *             specialized_features.append(feature)
  */
     __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_params, __pyx_n_s_glycan_peptide_ratio); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 180; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_glycan_peptide_ratio, __pyx_t_3) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 170; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":181
+ *                 peptide_mass_rank=params.peptide_mass_rank,
+ *                 glycan_peptide_ratio=params.glycan_peptide_ratio,
+ *                 fixed=self.feature.fixed)             # <<<<<<<<<<<<<<
+ * 
+ *             specialized_features.append(feature)
+ */
+    __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_v_self->feature->fixed); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 181; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_fixed, __pyx_t_3) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 170; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
     /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":169
@@ -5496,14 +5523,14 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     __Pyx_XDECREF_SET(__pyx_v_feature, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_t_3));
     __pyx_t_3 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":182
- *                 glycan_peptide_ratio=params.glycan_peptide_ratio)
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":183
+ *                 fixed=self.feature.fixed)
  * 
  *             specialized_features.append(feature)             # <<<<<<<<<<<<<<
  *         return specialized_features
  * 
  */
-    __pyx_t_10 = __Pyx_PyList_Append(__pyx_v_specialized_features, ((PyObject *)__pyx_v_feature)); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 182; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_10 = __Pyx_PyList_Append(__pyx_v_specialized_features, ((PyObject *)__pyx_v_feature)); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 183; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
     /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":168
  *                 parameters.add(params)
@@ -5515,7 +5542,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":183
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":184
  * 
  *             specialized_features.append(feature)
  *         return specialized_features             # <<<<<<<<<<<<<<
@@ -5557,7 +5584,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
 }
 static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_13FittedFeature_18generator(__pyx_CoroutineObject *__pyx_generator, PyObject *__pyx_sent_value); /* proto */
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":185
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":186
  *         return specialized_features
  * 
  *     def peak_relations(self, include_noise=True):             # <<<<<<<<<<<<<<
@@ -5596,7 +5623,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "peak_relations") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 185; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "peak_relations") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -5609,7 +5636,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("peak_relations", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 185; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("peak_relations", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.scoring.offset_frequency.cpeak_relations.FittedFeature.peak_relations", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -5643,7 +5670,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_include_noise);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_include_noise);
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_13FittedFeature_18generator, (PyObject *) __pyx_cur_scope, __pyx_n_s_peak_relations, __pyx_n_s_FittedFeature_peak_relations); if (unlikely(!gen)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 185; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_13FittedFeature_18generator, (PyObject *) __pyx_cur_scope, __pyx_n_s_peak_relations, __pyx_n_s_FittedFeature_peak_relations); if (unlikely(!gen)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -5688,9 +5715,9 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 185; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__pyx_sent_value)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":186
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":187
  * 
  *     def peak_relations(self, include_noise=True):
  *         for spectrum_match, peak_relations in self.relations:             # <<<<<<<<<<<<<<
@@ -5699,15 +5726,15 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   if (unlikely(__pyx_cur_scope->__pyx_v_self->relations == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __pyx_t_1 = __pyx_cur_scope->__pyx_v_self->relations; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
   for (;;) {
     if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
     #if CYTHON_COMPILING_IN_CPYTHON
-    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_3); __pyx_t_2++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_3); __pyx_t_2++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     #else
-    __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
     #endif
     if ((likely(PyTuple_CheckExact(__pyx_t_3))) || (PyList_CheckExact(__pyx_t_3))) {
@@ -5720,7 +5747,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       }
       #if CYTHON_COMPILING_IN_CPYTHON
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -5733,15 +5760,15 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
       __Pyx_INCREF(__pyx_t_4);
       __Pyx_INCREF(__pyx_t_5);
       #else
-      __pyx_t_4 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_4 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_5);
       #endif
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_6 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_7 = Py_TYPE(__pyx_t_6)->tp_iternext;
@@ -5749,7 +5776,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
       __Pyx_GOTREF(__pyx_t_4);
       index = 1; __pyx_t_5 = __pyx_t_7(__pyx_t_6); if (unlikely(!__pyx_t_5)) goto __pyx_L6_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_5);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_7(__pyx_t_6), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_7(__pyx_t_6), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_t_7 = NULL;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       goto __pyx_L7_unpacking_done;
@@ -5757,7 +5784,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_t_7 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_L7_unpacking_done:;
     }
     __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_spectrum_match);
@@ -5769,7 +5796,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     __Pyx_GIVEREF(__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":187
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":188
  *     def peak_relations(self, include_noise=True):
  *         for spectrum_match, peak_relations in self.relations:
  *             for pr in peak_relations:             # <<<<<<<<<<<<<<
@@ -5780,26 +5807,26 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
       __pyx_t_3 = __pyx_cur_scope->__pyx_v_peak_relations; __Pyx_INCREF(__pyx_t_3); __pyx_t_8 = 0;
       __pyx_t_9 = NULL;
     } else {
-      __pyx_t_8 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_cur_scope->__pyx_v_peak_relations); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_8 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_cur_scope->__pyx_v_peak_relations); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_9 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_9 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
     for (;;) {
       if (likely(!__pyx_t_9)) {
         if (likely(PyList_CheckExact(__pyx_t_3))) {
           if (__pyx_t_8 >= PyList_GET_SIZE(__pyx_t_3)) break;
           #if CYTHON_COMPILING_IN_CPYTHON
-          __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           #else
-          __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_5);
           #endif
         } else {
           if (__pyx_t_8 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
           #if CYTHON_COMPILING_IN_CPYTHON
-          __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           #else
-          __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_5);
           #endif
         }
@@ -5809,7 +5836,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+            else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           }
           break;
         }
@@ -5820,29 +5847,29 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
       __Pyx_GIVEREF(__pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":188
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":189
  *         for spectrum_match, peak_relations in self.relations:
  *             for pr in peak_relations:
  *                 if not include_noise and pr.kind == PNOISE:             # <<<<<<<<<<<<<<
  *                     continue
  *                 yield pr
  */
-      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_cur_scope->__pyx_v_include_noise); if (unlikely(__pyx_t_11 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_cur_scope->__pyx_v_include_noise); if (unlikely(__pyx_t_11 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 189; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_t_12 = ((!__pyx_t_11) != 0);
       if (__pyx_t_12) {
       } else {
         __pyx_t_10 = __pyx_t_12;
         goto __pyx_L11_bool_binop_done;
       }
-      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_pr, __pyx_n_s_kind); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_pr, __pyx_n_s_kind); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 189; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_12 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PNOISE, Py_EQ)); if (unlikely(__pyx_t_12 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 188; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_12 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PNOISE, Py_EQ)); if (unlikely(__pyx_t_12 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 189; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_t_10 = __pyx_t_12;
       __pyx_L11_bool_binop_done:;
       if (__pyx_t_10) {
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":189
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":190
  *             for pr in peak_relations:
  *                 if not include_noise and pr.kind == PNOISE:
  *                     continue             # <<<<<<<<<<<<<<
@@ -5851,7 +5878,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
         goto __pyx_L8_continue;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":188
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":189
  *         for spectrum_match, peak_relations in self.relations:
  *             for pr in peak_relations:
  *                 if not include_noise and pr.kind == PNOISE:             # <<<<<<<<<<<<<<
@@ -5860,7 +5887,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
       }
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":190
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":191
  *                 if not include_noise and pr.kind == PNOISE:
  *                     continue
  *                 yield pr             # <<<<<<<<<<<<<<
@@ -5891,9 +5918,9 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
       __Pyx_XGOTREF(__pyx_t_3);
       __pyx_t_8 = __pyx_cur_scope->__pyx_t_3;
       __pyx_t_9 = __pyx_cur_scope->__pyx_t_4;
-      if (unlikely(!__pyx_sent_value)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 190; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (unlikely(!__pyx_sent_value)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 191; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":187
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":188
  *     def peak_relations(self, include_noise=True):
  *         for spectrum_match, peak_relations in self.relations:
  *             for pr in peak_relations:             # <<<<<<<<<<<<<<
@@ -5904,7 +5931,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     }
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":186
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":187
  * 
  *     def peak_relations(self, include_noise=True):
  *         for spectrum_match, peak_relations in self.relations:             # <<<<<<<<<<<<<<
@@ -5914,7 +5941,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":185
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":186
  *         return specialized_features
  * 
  *     def peak_relations(self, include_noise=True):             # <<<<<<<<<<<<<<
@@ -5940,7 +5967,7 @@ static PyObject *__pyx_gb_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":192
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":193
  *                 yield pr
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -5972,7 +5999,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__iter__", 0);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":193
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":194
  * 
  *     def __iter__(self):
  *         return self.peak_relations()             # <<<<<<<<<<<<<<
@@ -5980,7 +6007,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  *     def __call__(self, *args, **kwargs):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_peak_relations); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 193; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_peak_relations); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 194; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_2))) {
@@ -5993,10 +6020,10 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     }
   }
   if (__pyx_t_3) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 193; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 194; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
-    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 193; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 194; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -6004,7 +6031,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":192
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":193
  *                 yield pr
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -6025,7 +6052,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":195
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":196
  *         return self.peak_relations()
  * 
  *     def __call__(self, *args, **kwargs):             # <<<<<<<<<<<<<<
@@ -6068,7 +6095,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__call__", 0);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":196
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":197
  * 
  *     def __call__(self, *args, **kwargs):
  *         return self.feature(*args, **kwargs)             # <<<<<<<<<<<<<<
@@ -6076,13 +6103,13 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_v_self->feature), __pyx_v_args, __pyx_v_kwargs); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 196; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_v_self->feature), __pyx_v_args, __pyx_v_kwargs); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 197; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":195
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":196
  *         return self.peak_relations()
  * 
  *     def __call__(self, *args, **kwargs):             # <<<<<<<<<<<<<<
@@ -6317,15 +6344,15 @@ static int __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":202
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":203
  * 
  * 
- * cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None):             # <<<<<<<<<<<<<<
+ * cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None):             # <<<<<<<<<<<<<<
  *     cdef PeakRelation pr
  *     pr = <PeakRelation>PyObject_CallFunctionObjArgs(PeakRelation__new__, <PyObject*>PeakRelation, NULL)
  */
 
-static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_from_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_to_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature, float __pyx_v_intensity_ratio, struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation *__pyx_optional_args) {
+static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_from_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *__pyx_v_to_peak, struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *__pyx_v_feature, int __pyx_v_intensity_ratio, struct __pyx_opt_args_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation *__pyx_optional_args) {
   PyObject *__pyx_v_kind = ((PyObject*)Py_None);
   struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_v_pr = 0;
   struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *__pyx_r = NULL;
@@ -6343,8 +6370,8 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
     }
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":204
- * cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None):
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":205
+ * cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None):
  *     cdef PeakRelation pr
  *     pr = <PeakRelation>PyObject_CallFunctionObjArgs(PeakRelation__new__, <PyObject*>PeakRelation, NULL)             # <<<<<<<<<<<<<<
  *     pr.from_peak = from_peak
@@ -6352,7 +6379,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
  */
   __pyx_t_1 = __pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation__new__;
   __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_CallFunctionObjArgs(__pyx_t_1, ((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation), NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 204; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyObject_CallFunctionObjArgs(__pyx_t_1, ((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation), NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 205; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = __pyx_t_2;
@@ -6361,7 +6388,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
   __pyx_v_pr = ((struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":205
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":206
  *     cdef PeakRelation pr
  *     pr = <PeakRelation>PyObject_CallFunctionObjArgs(PeakRelation__new__, <PyObject*>PeakRelation, NULL)
  *     pr.from_peak = from_peak             # <<<<<<<<<<<<<<
@@ -6374,7 +6401,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
   __Pyx_DECREF(((PyObject *)__pyx_v_pr->from_peak));
   __pyx_v_pr->from_peak = __pyx_v_from_peak;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":206
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":207
  *     pr = <PeakRelation>PyObject_CallFunctionObjArgs(PeakRelation__new__, <PyObject*>PeakRelation, NULL)
  *     pr.from_peak = from_peak
  *     pr.to_peak = to_peak             # <<<<<<<<<<<<<<
@@ -6387,7 +6414,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
   __Pyx_DECREF(((PyObject *)__pyx_v_pr->to_peak));
   __pyx_v_pr->to_peak = __pyx_v_to_peak;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":207
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":208
  *     pr.from_peak = from_peak
  *     pr.to_peak = to_peak
  *     pr.from_charge = from_peak.charge             # <<<<<<<<<<<<<<
@@ -6397,7 +6424,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
   __pyx_t_3 = __pyx_v_from_peak->charge;
   __pyx_v_pr->from_charge = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":208
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":209
  *     pr.to_peak = to_peak
  *     pr.from_charge = from_peak.charge
  *     pr.to_charge = to_peak.charge             # <<<<<<<<<<<<<<
@@ -6407,7 +6434,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
   __pyx_t_3 = __pyx_v_to_peak->charge;
   __pyx_v_pr->to_charge = __pyx_t_3;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":209
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":210
  *     pr.from_charge = from_peak.charge
  *     pr.to_charge = to_peak.charge
  *     pr.feature = feature             # <<<<<<<<<<<<<<
@@ -6420,7 +6447,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
   __Pyx_DECREF(((PyObject *)__pyx_v_pr->feature));
   __pyx_v_pr->feature = __pyx_v_feature;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":210
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":211
  *     pr.to_charge = to_peak.charge
  *     pr.feature = feature
  *     pr.intensity_ratio = intensity_ratio             # <<<<<<<<<<<<<<
@@ -6429,7 +6456,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
  */
   __pyx_v_pr->intensity_ratio = __pyx_v_intensity_ratio;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":211
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":212
  *     pr.feature = feature
  *     pr.intensity_ratio = intensity_ratio
  *     pr.kind = kind             # <<<<<<<<<<<<<<
@@ -6442,7 +6469,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
   __Pyx_DECREF(__pyx_v_pr->kind);
   __pyx_v_pr->kind = __pyx_v_kind;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":212
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":213
  *     pr.intensity_ratio = intensity_ratio
  *     pr.kind = kind
  *     return pr             # <<<<<<<<<<<<<<
@@ -6454,10 +6481,10 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
   __pyx_r = __pyx_v_pr;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":202
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":203
  * 
  * 
- * cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, float intensity_ratio, str kind=None):             # <<<<<<<<<<<<<<
+ * cdef inline PeakRelation make_peak_relation(DPeak from_peak, DPeak to_peak, MassOffsetFeature feature, int intensity_ratio, str kind=None):             # <<<<<<<<<<<<<<
  *     cdef PeakRelation pr
  *     pr = <PeakRelation>PyObject_CallFunctionObjArgs(PeakRelation__new__, <PyObject*>PeakRelation, NULL)
  */
@@ -6475,7 +6502,7 @@ static CYTHON_INLINE struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":215
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":216
  * 
  * 
  * cpdef dict search_features_on_spectrum(DPeak peak, list peak_list, list features, str kind=None):             # <<<<<<<<<<<<<<
@@ -6516,19 +6543,19 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
     }
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":217
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":218
  * cpdef dict search_features_on_spectrum(DPeak peak, list peak_list, list features, str kind=None):
  *     cdef:
  *         dict peak_match_relations = {}             # <<<<<<<<<<<<<<
  *         list match_list
  *         PyObject* temp
  */
-  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 217; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_peak_match_relations = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":225
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":226
  *         PeakRelation pr
  * 
  *     for i in range(PyList_GET_SIZE(peak_list)):             # <<<<<<<<<<<<<<
@@ -6539,7 +6566,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":226
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":227
  * 
  *     for i in range(PyList_GET_SIZE(peak_list)):
  *         query_peak = <DPeak>PyList_GET_ITEM(peak_list, i)             # <<<<<<<<<<<<<<
@@ -6552,7 +6579,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
     __Pyx_XDECREF_SET(__pyx_v_query_peak, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":227
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":228
  *     for i in range(PyList_GET_SIZE(peak_list)):
  *         query_peak = <DPeak>PyList_GET_ITEM(peak_list, i)
  *         for j in range(PyList_GET_SIZE(features)):             # <<<<<<<<<<<<<<
@@ -6563,7 +6590,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_j = __pyx_t_6;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":228
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":229
  *         query_peak = <DPeak>PyList_GET_ITEM(peak_list, i)
  *         for j in range(PyList_GET_SIZE(features)):
  *             feature = <MassOffsetFeature>PyList_GET_ITEM(features, j)             # <<<<<<<<<<<<<<
@@ -6576,7 +6603,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
       __Pyx_XDECREF_SET(__pyx_v_feature, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_t_1));
       __pyx_t_1 = 0;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":229
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":230
  *         for j in range(PyList_GET_SIZE(features)):
  *             feature = <MassOffsetFeature>PyList_GET_ITEM(features, j)
  *             if feature.test(peak, query_peak):             # <<<<<<<<<<<<<<
@@ -6586,7 +6613,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
       __pyx_t_7 = (((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature->__pyx_vtab)->test(__pyx_v_feature, __pyx_v_peak, __pyx_v_query_peak) != 0);
       if (__pyx_t_7) {
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":230
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":231
  *             feature = <MassOffsetFeature>PyList_GET_ITEM(features, j)
  *             if feature.test(peak, query_peak):
  *                 temp = PyDict_GetItem(peak_match_relations, feature)             # <<<<<<<<<<<<<<
@@ -6595,7 +6622,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
  */
         __pyx_v_temp = PyDict_GetItem(__pyx_v_peak_match_relations, ((PyObject *)__pyx_v_feature));
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":231
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":232
  *             if feature.test(peak, query_peak):
  *                 temp = PyDict_GetItem(peak_match_relations, feature)
  *                 if temp == NULL:             # <<<<<<<<<<<<<<
@@ -6605,19 +6632,19 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
         __pyx_t_7 = ((__pyx_v_temp == NULL) != 0);
         if (__pyx_t_7) {
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":232
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":233
  *                 temp = PyDict_GetItem(peak_match_relations, feature)
  *                 if temp == NULL:
  *                     match_list = []             # <<<<<<<<<<<<<<
  *                 else:
  *                     match_list = <list>temp
  */
-          __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 233; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_XDECREF_SET(__pyx_v_match_list, ((PyObject*)__pyx_t_1));
           __pyx_t_1 = 0;
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":231
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":232
  *             if feature.test(peak, query_peak):
  *                 temp = PyDict_GetItem(peak_match_relations, feature)
  *                 if temp == NULL:             # <<<<<<<<<<<<<<
@@ -6627,7 +6654,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
           goto __pyx_L8;
         }
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":234
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":235
  *                     match_list = []
  *                 else:
  *                     match_list = <list>temp             # <<<<<<<<<<<<<<
@@ -6642,7 +6669,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
         }
         __pyx_L8:;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":235
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":236
  *                 else:
  *                     match_list = <list>temp
  *                 pr = make_peak_relation(peak, query_peak, feature, intensity_ratio_function(peak, query_peak), kind)             # <<<<<<<<<<<<<<
@@ -6651,12 +6678,12 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
  */
         __pyx_t_8.__pyx_n = 1;
         __pyx_t_8.kind = __pyx_v_kind;
-        __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation(__pyx_v_peak, __pyx_v_query_peak, __pyx_v_feature, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio_function(__pyx_v_peak, __pyx_v_query_peak), &__pyx_t_8)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 235; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation(__pyx_v_peak, __pyx_v_query_peak, __pyx_v_feature, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio_function(__pyx_v_peak, __pyx_v_query_peak), &__pyx_t_8)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 236; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_XDECREF_SET(__pyx_v_pr, ((struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *)__pyx_t_1));
         __pyx_t_1 = 0;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":236
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":237
  *                     match_list = <list>temp
  *                 pr = make_peak_relation(peak, query_peak, feature, intensity_ratio_function(peak, query_peak), kind)
  *                 match_list.append(pr)             # <<<<<<<<<<<<<<
@@ -6665,11 +6692,11 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
  */
         if (unlikely(__pyx_v_match_list == Py_None)) {
           PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "append");
-          {__pyx_filename = __pyx_f[0]; __pyx_lineno = 236; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         }
-        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_match_list, ((PyObject *)__pyx_v_pr)); if (unlikely(__pyx_t_9 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 236; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_match_list, ((PyObject *)__pyx_v_pr)); if (unlikely(__pyx_t_9 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":237
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":238
  *                 pr = make_peak_relation(peak, query_peak, feature, intensity_ratio_function(peak, query_peak), kind)
  *                 match_list.append(pr)
  *                 if temp == NULL:             # <<<<<<<<<<<<<<
@@ -6679,16 +6706,16 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
         __pyx_t_7 = ((__pyx_v_temp == NULL) != 0);
         if (__pyx_t_7) {
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":238
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":239
  *                 match_list.append(pr)
  *                 if temp == NULL:
  *                     PyDict_SetItem(peak_match_relations, feature, match_list)             # <<<<<<<<<<<<<<
  *     return peak_match_relations
  * 
  */
-          __pyx_t_10 = PyDict_SetItem(__pyx_v_peak_match_relations, ((PyObject *)__pyx_v_feature), __pyx_v_match_list); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 238; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_10 = PyDict_SetItem(__pyx_v_peak_match_relations, ((PyObject *)__pyx_v_feature), __pyx_v_match_list); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 239; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":237
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":238
  *                 pr = make_peak_relation(peak, query_peak, feature, intensity_ratio_function(peak, query_peak), kind)
  *                 match_list.append(pr)
  *                 if temp == NULL:             # <<<<<<<<<<<<<<
@@ -6697,7 +6724,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
  */
         }
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":229
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":230
  *         for j in range(PyList_GET_SIZE(features)):
  *             feature = <MassOffsetFeature>PyList_GET_ITEM(features, j)
  *             if feature.test(peak, query_peak):             # <<<<<<<<<<<<<<
@@ -6708,7 +6735,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
     }
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":239
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":240
  *                 if temp == NULL:
  *                     PyDict_SetItem(peak_match_relations, feature, match_list)
  *     return peak_match_relations             # <<<<<<<<<<<<<<
@@ -6720,7 +6747,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
   __pyx_r = __pyx_v_peak_match_relations;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":215
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":216
  * 
  * 
  * cpdef dict search_features_on_spectrum(DPeak peak, list peak_list, list features, str kind=None):             # <<<<<<<<<<<<<<
@@ -6780,12 +6807,12 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_peak_list)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("search_features_on_spectrum", 0, 3, 4, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("search_features_on_spectrum", 0, 3, 4, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_features)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("search_features_on_spectrum", 0, 3, 4, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("search_features_on_spectrum", 0, 3, 4, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  3:
         if (kw_args > 0) {
@@ -6794,7 +6821,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "search_features_on_spectrum") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "search_features_on_spectrum") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -6813,16 +6840,16 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("search_features_on_spectrum", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("search_features_on_spectrum", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.scoring.offset_frequency.cpeak_relations.search_features_on_spectrum", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_list), (&PyList_Type), 1, "peak_list", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_features), (&PyList_Type), 1, "features", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_kind), (&PyString_Type), 1, "kind", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_list), (&PyList_Type), 1, "peak_list", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_features), (&PyList_Type), 1, "features", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_kind), (&PyString_Type), 1, "kind", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_search_features_on_spectrum(__pyx_self, __pyx_v_peak, __pyx_v_peak_list, __pyx_v_features, __pyx_v_kind);
 
   /* function exit code */
@@ -6846,7 +6873,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.kind = __pyx_v_kind;
-  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_search_features_on_spectrum(__pyx_v_peak, __pyx_v_peak_list, __pyx_v_features, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_search_features_on_spectrum(__pyx_v_peak, __pyx_v_peak_list, __pyx_v_features, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6863,7 +6890,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":242
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":243
  * 
  * 
  * cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feature_function, str kind='b'):             # <<<<<<<<<<<<<<
@@ -6921,19 +6948,19 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   if (__pyx_optional_args) {
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":261
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":262
  *         bint on_type_match
  * 
  *     peak_relations = []             # <<<<<<<<<<<<<<
  *     for i in range(PyList_GET_SIZE(gsms)):
  *         gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 261; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_peak_relations = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":262
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":263
  * 
  *     peak_relations = []
  *     for i in range(PyList_GET_SIZE(gsms)):             # <<<<<<<<<<<<<<
@@ -6944,7 +6971,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":263
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":264
  *     peak_relations = []
  *     for i in range(PyList_GET_SIZE(gsms)):
  *         gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)             # <<<<<<<<<<<<<<
@@ -6957,7 +6984,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
     __Pyx_XDECREF_SET(__pyx_v_gsm, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":264
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":265
  *     for i in range(PyList_GET_SIZE(gsms)):
  *         gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)
  *         if not feature_function._precursor_context(gsm):             # <<<<<<<<<<<<<<
@@ -6967,7 +6994,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
     __pyx_t_5 = ((!(((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature_function->__pyx_vtab)->_precursor_context(__pyx_v_feature_function, __pyx_v_gsm) != 0)) != 0);
     if (__pyx_t_5) {
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":265
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":266
  *         gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)
  *         if not feature_function._precursor_context(gsm):
  *             continue             # <<<<<<<<<<<<<<
@@ -6976,7 +7003,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
       goto __pyx_L3_continue;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":264
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":265
  *     for i in range(PyList_GET_SIZE(gsms)):
  *         gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)
  *         if not feature_function._precursor_context(gsm):             # <<<<<<<<<<<<<<
@@ -6985,7 +7012,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
     }
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":266
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":267
  *         if not feature_function._precursor_context(gsm):
  *             continue
  *         peaks = gsm.peak_list             # <<<<<<<<<<<<<<
@@ -6997,7 +7024,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
     __Pyx_XDECREF_SET(__pyx_v_peaks, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":267
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":268
  *             continue
  *         peaks = gsm.peak_list
  *         intensity_rank(peaks)             # <<<<<<<<<<<<<<
@@ -7006,19 +7033,19 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
     __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank(__pyx_v_peaks, NULL);
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":268
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":269
  *         peaks = gsm.peak_list
  *         intensity_rank(peaks)
  *         _peaks = []             # <<<<<<<<<<<<<<
  *         # peaks = [p for p in peaks if p.rank > 0]
  *         for j in range(PyList_GET_SIZE(peaks)):
  */
-    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 268; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 269; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v__peaks, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":270
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":271
  *         _peaks = []
  *         # peaks = [p for p in peaks if p.rank > 0]
  *         for j in range(PyList_GET_SIZE(peaks)):             # <<<<<<<<<<<<<<
@@ -7029,7 +7056,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
     for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
       __pyx_v_j = __pyx_t_7;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":271
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":272
  *         # peaks = [p for p in peaks if p.rank > 0]
  *         for j in range(PyList_GET_SIZE(peaks)):
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)             # <<<<<<<<<<<<<<
@@ -7042,7 +7069,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
       __Pyx_XDECREF_SET(__pyx_v_peak, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_1));
       __pyx_t_1 = 0;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":272
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":273
  *         for j in range(PyList_GET_SIZE(peaks)):
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
  *             rank = peak.rank             # <<<<<<<<<<<<<<
@@ -7052,7 +7079,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
       __pyx_t_8 = __pyx_v_peak->rank;
       __pyx_v_rank = __pyx_t_8;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":273
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":274
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
  *             rank = peak.rank
  *             if rank > 0:             # <<<<<<<<<<<<<<
@@ -7062,16 +7089,16 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
       __pyx_t_5 = ((__pyx_v_rank > 0) != 0);
       if (__pyx_t_5) {
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":274
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":275
  *             rank = peak.rank
  *             if rank > 0:
  *                 PyList_Append(_peaks, peak)             # <<<<<<<<<<<<<<
  *         peaks = _peaks
  *         related = []
  */
-        __pyx_t_8 = PyList_Append(__pyx_v__peaks, ((PyObject *)__pyx_v_peak)); if (unlikely(__pyx_t_8 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 274; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_8 = PyList_Append(__pyx_v__peaks, ((PyObject *)__pyx_v_peak)); if (unlikely(__pyx_t_8 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 275; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":273
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":274
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
  *             rank = peak.rank
  *             if rank > 0:             # <<<<<<<<<<<<<<
@@ -7081,7 +7108,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
       }
     }
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":275
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":276
  *             if rank > 0:
  *                 PyList_Append(_peaks, peak)
  *         peaks = _peaks             # <<<<<<<<<<<<<<
@@ -7091,34 +7118,34 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
     __Pyx_INCREF(__pyx_v__peaks);
     __Pyx_DECREF_SET(__pyx_v_peaks, __pyx_v__peaks);
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":276
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":277
  *                 PyList_Append(_peaks, peak)
  *         peaks = _peaks
  *         related = []             # <<<<<<<<<<<<<<
  *         for j in range(PyList_GET_SIZE(peaks)):
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
  */
-    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_related, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":277
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":278
  *         peaks = _peaks
  *         related = []
  *         for j in range(PyList_GET_SIZE(peaks)):             # <<<<<<<<<<<<<<
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
- *             peak_explained_by = gsm.peak_explained_by(peak.id)
+ *             peak_explained_by = gsm.peak_explained_by(peak.scan_peak_index)
  */
     __pyx_t_6 = PyList_GET_SIZE(__pyx_v_peaks);
     for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
       __pyx_v_j = __pyx_t_7;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":278
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":279
  *         related = []
  *         for j in range(PyList_GET_SIZE(peaks)):
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)             # <<<<<<<<<<<<<<
- *             peak_explained_by = gsm.peak_explained_by(peak.id)
+ *             peak_explained_by = gsm.peak_explained_by(peak.scan_peak_index)
  *             peak_explained_by_list = list(peak_explained_by)
  */
       __pyx_t_4 = PyList_GET_ITEM(__pyx_v_peaks, __pyx_v_j);
@@ -7127,46 +7154,46 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
       __Pyx_XDECREF_SET(__pyx_v_peak, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_1));
       __pyx_t_1 = 0;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":279
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":280
  *         for j in range(PyList_GET_SIZE(peaks)):
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
- *             peak_explained_by = gsm.peak_explained_by(peak.id)             # <<<<<<<<<<<<<<
+ *             peak_explained_by = gsm.peak_explained_by(peak.scan_peak_index)             # <<<<<<<<<<<<<<
  *             peak_explained_by_list = list(peak_explained_by)
  * 
  */
-      __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_peak->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_peak->scan_peak_index); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_9 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_gsm->__pyx_vtab)->peak_explained_by(__pyx_v_gsm, __pyx_t_1, 0); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_9 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_gsm->__pyx_vtab)->peak_explained_by(__pyx_v_gsm, __pyx_t_1, 0); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_XDECREF_SET(__pyx_v_peak_explained_by, ((PyObject*)__pyx_t_9));
       __pyx_t_9 = 0;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":280
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":281
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
- *             peak_explained_by = gsm.peak_explained_by(peak.id)
+ *             peak_explained_by = gsm.peak_explained_by(peak.scan_peak_index)
  *             peak_explained_by_list = list(peak_explained_by)             # <<<<<<<<<<<<<<
  * 
  *             matches = search_spectrum(peak, peaks, feature_function)
  */
-      __pyx_t_9 = PySequence_List(__pyx_v_peak_explained_by); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_9 = PySequence_List(__pyx_v_peak_explained_by); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 281; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_XDECREF_SET(__pyx_v_peak_explained_by_list, ((PyObject*)__pyx_t_9));
       __pyx_t_9 = 0;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":282
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":283
  *             peak_explained_by_list = list(peak_explained_by)
  * 
  *             matches = search_spectrum(peak, peaks, feature_function)             # <<<<<<<<<<<<<<
  *             for k in range(PyList_GET_SIZE(matches)):
  *                 match = <DPeak>PyList_GET_ITEM(matches, k)
  */
-      __pyx_t_9 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum(__pyx_v_peak, __pyx_v_peaks, __pyx_v_feature_function, 0); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_9 = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_search_spectrum(__pyx_v_peak, __pyx_v_peaks, __pyx_v_feature_function, 0); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 283; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_XDECREF_SET(__pyx_v_matches, ((PyObject*)__pyx_t_9));
       __pyx_t_9 = 0;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":283
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":284
  * 
  *             matches = search_spectrum(peak, peaks, feature_function)
  *             for k in range(PyList_GET_SIZE(matches)):             # <<<<<<<<<<<<<<
@@ -7177,7 +7204,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
       for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_10; __pyx_t_11+=1) {
         __pyx_v_k = __pyx_t_11;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":284
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":285
  *             matches = search_spectrum(peak, peaks, feature_function)
  *             for k in range(PyList_GET_SIZE(matches)):
  *                 match = <DPeak>PyList_GET_ITEM(matches, k)             # <<<<<<<<<<<<<<
@@ -7190,28 +7217,28 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
         __Pyx_XDECREF_SET(__pyx_v_match, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_9));
         __pyx_t_9 = 0;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":285
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":286
  *             for k in range(PyList_GET_SIZE(matches)):
  *                 match = <DPeak>PyList_GET_ITEM(matches, k)
  *                 pr = make_peak_relation(peak, match, feature_function, intensity_ratio_function(peak, match))             # <<<<<<<<<<<<<<
  *                 related.append(pr)
  *                 # Add check for fixed features and agreement between annotations between peak and match
  */
-        __pyx_t_9 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation(__pyx_v_peak, __pyx_v_match, __pyx_v_feature_function, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio_function(__pyx_v_peak, __pyx_v_match), NULL)); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_9 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_make_peak_relation(__pyx_v_peak, __pyx_v_match, __pyx_v_feature_function, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_ratio_function(__pyx_v_peak, __pyx_v_match), NULL)); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_XDECREF_SET(__pyx_v_pr, ((struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *)__pyx_t_9));
         __pyx_t_9 = 0;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":286
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":287
  *                 match = <DPeak>PyList_GET_ITEM(matches, k)
  *                 pr = make_peak_relation(peak, match, feature_function, intensity_ratio_function(peak, match))
  *                 related.append(pr)             # <<<<<<<<<<<<<<
  *                 # Add check for fixed features and agreement between annotations between peak and match
  * 
  */
-        __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_related, ((PyObject *)__pyx_v_pr)); if (unlikely(__pyx_t_12 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_related, ((PyObject *)__pyx_v_pr)); if (unlikely(__pyx_t_12 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 287; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":289
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":290
  *                 # Add check for fixed features and agreement between annotations between peak and match
  * 
  *                 if PyList_GET_SIZE(peak_explained_by_list) == 0:             # <<<<<<<<<<<<<<
@@ -7221,21 +7248,21 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
         __pyx_t_5 = ((PyList_GET_SIZE(__pyx_v_peak_explained_by_list) == 0) != 0);
         if (__pyx_t_5) {
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":290
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":291
  * 
  *                 if PyList_GET_SIZE(peak_explained_by_list) == 0:
  *                     feature_function.ion_type_increment(PNOISE)             # <<<<<<<<<<<<<<
  *                 else:
- *                     match_explained_by_list = list(gsm.peak_explained_by(match.id))
+ *                     match_explained_by_list = list(gsm.peak_explained_by(match.scan_peak_index))
  */
           __pyx_t_9 = __pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PNOISE;
           __Pyx_INCREF(__pyx_t_9);
-          __pyx_t_1 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature_function->__pyx_vtab)->ion_type_increment(__pyx_v_feature_function, ((PyObject*)__pyx_t_9), 0, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 290; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_1 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature_function->__pyx_vtab)->ion_type_increment(__pyx_v_feature_function, ((PyObject*)__pyx_t_9), 0, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":289
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":290
  *                 # Add check for fixed features and agreement between annotations between peak and match
  * 
  *                 if PyList_GET_SIZE(peak_explained_by_list) == 0:             # <<<<<<<<<<<<<<
@@ -7245,27 +7272,27 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
           goto __pyx_L13;
         }
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":292
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":293
  *                     feature_function.ion_type_increment(PNOISE)
  *                 else:
- *                     match_explained_by_list = list(gsm.peak_explained_by(match.id))             # <<<<<<<<<<<<<<
+ *                     match_explained_by_list = list(gsm.peak_explained_by(match.scan_peak_index))             # <<<<<<<<<<<<<<
  * 
  *                     for m in range(PyList_GET_SIZE(peak_explained_by_list)):
  */
         /*else*/ {
-          __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_match->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 292; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_match->scan_peak_index); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_9 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_gsm->__pyx_vtab)->peak_explained_by(__pyx_v_gsm, __pyx_t_1, 0); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 292; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_9 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_v_gsm->__pyx_vtab)->peak_explained_by(__pyx_v_gsm, __pyx_t_1, 0); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_9);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-          __pyx_t_1 = PySequence_List(__pyx_t_9); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 292; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_1 = PySequence_List(__pyx_t_9); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
           __Pyx_XDECREF_SET(__pyx_v_match_explained_by_list, ((PyObject*)__pyx_t_1));
           __pyx_t_1 = 0;
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":294
- *                     match_explained_by_list = list(gsm.peak_explained_by(match.id))
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":295
+ *                     match_explained_by_list = list(gsm.peak_explained_by(match.scan_peak_index))
  * 
  *                     for m in range(PyList_GET_SIZE(peak_explained_by_list)):             # <<<<<<<<<<<<<<
  *                         ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, m)
@@ -7275,7 +7302,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
           for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
             __pyx_v_m = __pyx_t_14;
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":295
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":296
  * 
  *                     for m in range(PyList_GET_SIZE(peak_explained_by_list)):
  *                         ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, m)             # <<<<<<<<<<<<<<
@@ -7288,7 +7315,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
             __Pyx_XDECREF_SET(__pyx_v_ion_type, ((PyObject*)__pyx_t_1));
             __pyx_t_1 = 0;
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":296
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":297
  *                     for m in range(PyList_GET_SIZE(peak_explained_by_list)):
  *                         ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, m)
  *                         if feature_function.fixed:             # <<<<<<<<<<<<<<
@@ -7298,7 +7325,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
             __pyx_t_5 = (__pyx_v_feature_function->fixed != 0);
             if (__pyx_t_5) {
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":297
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":298
  *                         ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, m)
  *                         if feature_function.fixed:
  *                             on_type_match = False             # <<<<<<<<<<<<<<
@@ -7307,7 +7334,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
               __pyx_v_on_type_match = 0;
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":298
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":299
  *                         if feature_function.fixed:
  *                             on_type_match = False
  *                             for n in range(PyList_GET_SIZE(match_explained_by_list)):             # <<<<<<<<<<<<<<
@@ -7318,7 +7345,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
               for (__pyx_t_16 = 0; __pyx_t_16 < __pyx_t_15; __pyx_t_16+=1) {
                 __pyx_v_n = __pyx_t_16;
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":299
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":300
  *                             on_type_match = False
  *                             for n in range(PyList_GET_SIZE(match_explained_by_list)):
  *                                 match_ion_type = <str>PyList_GET_ITEM(match_explained_by_list, n)             # <<<<<<<<<<<<<<
@@ -7331,18 +7358,18 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
                 __Pyx_XDECREF_SET(__pyx_v_match_ion_type, ((PyObject*)__pyx_t_1));
                 __pyx_t_1 = 0;
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":300
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":301
  *                             for n in range(PyList_GET_SIZE(match_explained_by_list)):
  *                                 match_ion_type = <str>PyList_GET_ITEM(match_explained_by_list, n)
  *                                 if ion_type == match_ion_type:             # <<<<<<<<<<<<<<
  *                                     on_type_match = True
  *                                     break
  */
-                __pyx_t_5 = (__Pyx_PyString_Equals(__pyx_v_ion_type, __pyx_v_match_ion_type, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 300; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+                __pyx_t_5 = (__Pyx_PyString_Equals(__pyx_v_ion_type, __pyx_v_match_ion_type, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 301; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
                 __pyx_t_17 = (__pyx_t_5 != 0);
                 if (__pyx_t_17) {
 
-                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":301
+                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":302
  *                                 match_ion_type = <str>PyList_GET_ITEM(match_explained_by_list, n)
  *                                 if ion_type == match_ion_type:
  *                                     on_type_match = True             # <<<<<<<<<<<<<<
@@ -7351,7 +7378,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
                   __pyx_v_on_type_match = 1;
 
-                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":302
+                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":303
  *                                 if ion_type == match_ion_type:
  *                                     on_type_match = True
  *                                     break             # <<<<<<<<<<<<<<
@@ -7360,7 +7387,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
                   goto __pyx_L18_break;
 
-                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":300
+                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":301
  *                             for n in range(PyList_GET_SIZE(match_explained_by_list)):
  *                                 match_ion_type = <str>PyList_GET_ITEM(match_explained_by_list, n)
  *                                 if ion_type == match_ion_type:             # <<<<<<<<<<<<<<
@@ -7371,7 +7398,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
               }
               __pyx_L18_break:;
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":303
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":304
  *                                     on_type_match = True
  *                                     break
  *                             if not on_type_match:             # <<<<<<<<<<<<<<
@@ -7381,7 +7408,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
               __pyx_t_17 = ((!(__pyx_v_on_type_match != 0)) != 0);
               if (__pyx_t_17) {
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":304
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":305
  *                                     break
  *                             if not on_type_match:
  *                                 ion_type = PNOISE             # <<<<<<<<<<<<<<
@@ -7391,7 +7418,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
                 __Pyx_INCREF(__pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PNOISE);
                 __Pyx_DECREF_SET(__pyx_v_ion_type, __pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PNOISE);
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":303
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":304
  *                                     on_type_match = True
  *                                     break
  *                             if not on_type_match:             # <<<<<<<<<<<<<<
@@ -7400,7 +7427,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
               }
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":296
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":297
  *                     for m in range(PyList_GET_SIZE(peak_explained_by_list)):
  *                         ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, m)
  *                         if feature_function.fixed:             # <<<<<<<<<<<<<<
@@ -7409,14 +7436,14 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
             }
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":306
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":307
  *                                 ion_type = PNOISE
  * 
  *                         feature_function.ion_type_increment(ion_type)             # <<<<<<<<<<<<<<
  * 
  *             # Add check for fixed features and agreement between annotations between peak and match
  */
-            __pyx_t_1 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature_function->__pyx_vtab)->ion_type_increment(__pyx_v_feature_function, __pyx_v_ion_type, 0, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 306; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+            __pyx_t_1 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature_function->__pyx_vtab)->ion_type_increment(__pyx_v_feature_function, __pyx_v_ion_type, 0, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 307; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           }
@@ -7424,7 +7451,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
         __pyx_L13:;
       }
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":309
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":310
  * 
  *             # Add check for fixed features and agreement between annotations between peak and match
  *             if PyList_GET_SIZE(peak_explained_by_list) == 0:             # <<<<<<<<<<<<<<
@@ -7434,7 +7461,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
       __pyx_t_17 = ((PyList_GET_SIZE(__pyx_v_peak_explained_by_list) == 0) != 0);
       if (__pyx_t_17) {
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":310
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":311
  *             # Add check for fixed features and agreement between annotations between peak and match
  *             if PyList_GET_SIZE(peak_explained_by_list) == 0:
  *                 feature_function.ion_type_increment(PNOISE, "totals")             # <<<<<<<<<<<<<<
@@ -7445,12 +7472,12 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_18.__pyx_n = 1;
         __pyx_t_18.slot = __pyx_n_s_totals;
-        __pyx_t_9 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature_function->__pyx_vtab)->ion_type_increment(__pyx_v_feature_function, ((PyObject*)__pyx_t_1), 0, &__pyx_t_18); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 310; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_9 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature_function->__pyx_vtab)->ion_type_increment(__pyx_v_feature_function, ((PyObject*)__pyx_t_1), 0, &__pyx_t_18); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 311; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":309
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":310
  * 
  *             # Add check for fixed features and agreement between annotations between peak and match
  *             if PyList_GET_SIZE(peak_explained_by_list) == 0:             # <<<<<<<<<<<<<<
@@ -7459,7 +7486,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
       }
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":311
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":312
  *             if PyList_GET_SIZE(peak_explained_by_list) == 0:
  *                 feature_function.ion_type_increment(PNOISE, "totals")
  *             for k in range(PyList_GET_SIZE(peak_explained_by_list)):             # <<<<<<<<<<<<<<
@@ -7470,7 +7497,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
       for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_10; __pyx_t_11+=1) {
         __pyx_v_k = __pyx_t_11;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":312
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":313
  *                 feature_function.ion_type_increment(PNOISE, "totals")
  *             for k in range(PyList_GET_SIZE(peak_explained_by_list)):
  *                 ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, k)             # <<<<<<<<<<<<<<
@@ -7483,7 +7510,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
         __Pyx_XDECREF_SET(__pyx_v_ion_type, ((PyObject*)__pyx_t_9));
         __pyx_t_9 = 0;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":313
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":314
  *             for k in range(PyList_GET_SIZE(peak_explained_by_list)):
  *                 ion_type = <str>PyList_GET_ITEM(peak_explained_by_list, k)
  *                 feature_function.ion_type_increment(ion_type, "totals")             # <<<<<<<<<<<<<<
@@ -7492,13 +7519,13 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
         __pyx_t_18.__pyx_n = 1;
         __pyx_t_18.slot = __pyx_n_s_totals;
-        __pyx_t_9 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature_function->__pyx_vtab)->ion_type_increment(__pyx_v_feature_function, __pyx_v_ion_type, 0, &__pyx_t_18); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 313; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_9 = ((struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_v_feature_function->__pyx_vtab)->ion_type_increment(__pyx_v_feature_function, __pyx_v_ion_type, 0, &__pyx_t_18); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 314; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
       }
     }
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":316
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":317
  * 
  * 
  *         if PyList_GET_SIZE(related) > 0:             # <<<<<<<<<<<<<<
@@ -7508,14 +7535,14 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
     __pyx_t_17 = ((PyList_GET_SIZE(__pyx_v_related) > 0) != 0);
     if (__pyx_t_17) {
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":317
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":318
  * 
  *         if PyList_GET_SIZE(related) > 0:
  *             peak_relations.append((gsm, related))             # <<<<<<<<<<<<<<
  * 
  * 
  */
-      __pyx_t_9 = PyTuple_New(2); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 317; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_9 = PyTuple_New(2); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 318; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_INCREF(((PyObject *)__pyx_v_gsm));
       __Pyx_GIVEREF(((PyObject *)__pyx_v_gsm));
@@ -7523,10 +7550,10 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
       __Pyx_INCREF(__pyx_v_related);
       __Pyx_GIVEREF(__pyx_v_related);
       PyTuple_SET_ITEM(__pyx_t_9, 1, __pyx_v_related);
-      __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_peak_relations, __pyx_t_9); if (unlikely(__pyx_t_12 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 317; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_peak_relations, __pyx_t_9); if (unlikely(__pyx_t_12 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 318; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":316
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":317
  * 
  * 
  *         if PyList_GET_SIZE(related) > 0:             # <<<<<<<<<<<<<<
@@ -7537,7 +7564,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
     __pyx_L3_continue:;
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":320
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":321
  * 
  * 
  *     return FittedFeature(feature_function, peak_relations)             # <<<<<<<<<<<<<<
@@ -7545,7 +7572,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  * 
  */
   __Pyx_XDECREF(((PyObject *)__pyx_r));
-  __pyx_t_9 = PyTuple_New(2); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 320; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_9 = PyTuple_New(2); if (unlikely(!__pyx_t_9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 321; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_INCREF(((PyObject *)__pyx_v_feature_function));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_feature_function));
@@ -7553,14 +7580,14 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   __Pyx_INCREF(__pyx_v_peak_relations);
   __Pyx_GIVEREF(__pyx_v_peak_relations);
   PyTuple_SET_ITEM(__pyx_t_9, 1, __pyx_v_peak_relations);
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_FittedFeature), __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 320; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_FittedFeature), __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 321; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
   __pyx_r = ((struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_FittedFeature *)__pyx_t_1);
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":242
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":243
  * 
  * 
  * cpdef FittedFeature feature_function_estimator(list gsms, MassOffsetFeature feature_function, str kind='b'):             # <<<<<<<<<<<<<<
@@ -7628,7 +7655,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_feature_function)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("feature_function_estimator", 0, 2, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("feature_function_estimator", 0, 2, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 243; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (kw_args > 0) {
@@ -7637,7 +7664,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "feature_function_estimator") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "feature_function_estimator") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 243; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -7654,15 +7681,15 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("feature_function_estimator", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("feature_function_estimator", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 243; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.scoring.offset_frequency.cpeak_relations.feature_function_estimator", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_gsms), (&PyList_Type), 1, "gsms", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_feature_function), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature, 1, "feature_function", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_kind), (&PyString_Type), 1, "kind", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_gsms), (&PyList_Type), 1, "gsms", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 243; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_feature_function), __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature, 1, "feature_function", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 243; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_kind), (&PyString_Type), 1, "kind", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 243; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_2feature_function_estimator(__pyx_self, __pyx_v_gsms, __pyx_v_feature_function, __pyx_v_kind);
 
   /* function exit code */
@@ -7686,7 +7713,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.kind = __pyx_v_kind;
-  __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_feature_function_estimator(__pyx_v_gsms, __pyx_v_feature_function, 0, &__pyx_t_2)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_feature_function_estimator(__pyx_v_gsms, __pyx_v_feature_function, 0, &__pyx_t_2)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 243; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7703,7 +7730,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":323
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":324
  * 
  * 
  * cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray* gsms, MSFeatureStruct* feature, char* kind, bint filter_peak_ranks) nogil:             # <<<<<<<<<<<<<<
@@ -7749,7 +7776,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
   size_t __pyx_t_12;
   size_t __pyx_t_13;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":343
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":344
  *         FittedFeatureStruct* result
  * 
  *     features_found_counter = 0             # <<<<<<<<<<<<<<
@@ -7758,7 +7785,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
   __pyx_v_features_found_counter = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":345
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":346
  *     features_found_counter = 0
  * 
  *     peak_relations = <RelationSpectrumPairArray*>malloc(sizeof(RelationSpectrumPairArray))             # <<<<<<<<<<<<<<
@@ -7767,7 +7794,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
   __pyx_v_peak_relations = ((struct RelationSpectrumPairArray *)malloc((sizeof(struct RelationSpectrumPairArray))));
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":346
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":347
  * 
  *     peak_relations = <RelationSpectrumPairArray*>malloc(sizeof(RelationSpectrumPairArray))
  *     peak_relations.pairs = <RelationSpectrumPair*>malloc(sizeof(RelationSpectrumPair) * gsms.size)             # <<<<<<<<<<<<<<
@@ -7776,7 +7803,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
   __pyx_v_peak_relations->pairs = ((struct RelationSpectrumPair *)malloc(((sizeof(struct RelationSpectrumPair)) * __pyx_v_gsms->size)));
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":347
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":348
  *     peak_relations = <RelationSpectrumPairArray*>malloc(sizeof(RelationSpectrumPairArray))
  *     peak_relations.pairs = <RelationSpectrumPair*>malloc(sizeof(RelationSpectrumPair) * gsms.size)
  *     peak_relations.size = gsms.size             # <<<<<<<<<<<<<<
@@ -7786,7 +7813,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
   __pyx_t_1 = __pyx_v_gsms->size;
   __pyx_v_peak_relations->size = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":349
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":350
  *     peak_relations.size = gsms.size
  * 
  *     if filter_peak_ranks:             # <<<<<<<<<<<<<<
@@ -7796,7 +7823,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
   __pyx_t_2 = (__pyx_v_filter_peak_ranks != 0);
   if (__pyx_t_2) {
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":350
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":351
  * 
  *     if filter_peak_ranks:
  *         _preprocess_peak_lists(gsms)             # <<<<<<<<<<<<<<
@@ -7805,7 +7832,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations__preprocess_peak_lists(__pyx_v_gsms);
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":349
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":350
  *     peak_relations.size = gsms.size
  * 
  *     if filter_peak_ranks:             # <<<<<<<<<<<<<<
@@ -7814,7 +7841,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":351
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":352
  *     if filter_peak_ranks:
  *         _preprocess_peak_lists(gsms)
  *     for i in range(gsms.size):             # <<<<<<<<<<<<<<
@@ -7825,7 +7852,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_1; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":352
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":353
  *         _preprocess_peak_lists(gsms)
  *     for i in range(gsms.size):
  *         gsm = &gsms.matches[i]             # <<<<<<<<<<<<<<
@@ -7834,7 +7861,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     __pyx_v_gsm = (&(__pyx_v_gsms->matches[__pyx_v_i]));
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":353
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":354
  *     for i in range(gsms.size):
  *         gsm = &gsms.matches[i]
  *         if not _precursor_context(feature, gsm):             # <<<<<<<<<<<<<<
@@ -7844,7 +7871,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
     __pyx_t_2 = ((!(__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__precursor_context(__pyx_v_feature, __pyx_v_gsm) != 0)) != 0);
     if (__pyx_t_2) {
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":354
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":355
  *         gsm = &gsms.matches[i]
  *         if not _precursor_context(feature, gsm):
  *             continue             # <<<<<<<<<<<<<<
@@ -7853,7 +7880,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
       goto __pyx_L4_continue;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":353
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":354
  *     for i in range(gsms.size):
  *         gsm = &gsms.matches[i]
  *         if not _precursor_context(feature, gsm):             # <<<<<<<<<<<<<<
@@ -7862,7 +7889,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     }
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":355
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":356
  *         if not _precursor_context(feature, gsm):
  *             continue
  *         peaks = gsm.peak_list             # <<<<<<<<<<<<<<
@@ -7872,7 +7899,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
     __pyx_t_4 = __pyx_v_gsm->peak_list;
     __pyx_v_peaks = __pyx_t_4;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":359
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":360
  *         # Pre-allocate space for a handful of relations assuming that there won't
  *         # be many per spectrum
  *         base_relations_size = 3             # <<<<<<<<<<<<<<
@@ -7881,7 +7908,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     __pyx_v_base_relations_size = 3;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":360
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":361
  *         # be many per spectrum
  *         base_relations_size = 3
  *         related = <PeakRelationStructArray*>malloc(sizeof(PeakRelationStructArray))             # <<<<<<<<<<<<<<
@@ -7890,7 +7917,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     __pyx_v_related = ((struct PeakRelationStructArray *)malloc((sizeof(struct PeakRelationStructArray))));
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":361
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":362
  *         base_relations_size = 3
  *         related = <PeakRelationStructArray*>malloc(sizeof(PeakRelationStructArray))
  *         related.relations = <PeakRelationStruct*>malloc(sizeof(PeakRelationStruct) * base_relations_size)             # <<<<<<<<<<<<<<
@@ -7899,7 +7926,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     __pyx_v_related->relations = ((struct PeakRelationStruct *)malloc(((sizeof(struct PeakRelationStruct)) * __pyx_v_base_relations_size)));
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":362
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":363
  *         related = <PeakRelationStructArray*>malloc(sizeof(PeakRelationStructArray))
  *         related.relations = <PeakRelationStruct*>malloc(sizeof(PeakRelationStruct) * base_relations_size)
  *         related.size = base_relations_size             # <<<<<<<<<<<<<<
@@ -7908,7 +7935,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     __pyx_v_related->size = __pyx_v_base_relations_size;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":363
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":364
  *         related.relations = <PeakRelationStruct*>malloc(sizeof(PeakRelationStruct) * base_relations_size)
  *         related.size = base_relations_size
  *         relations_counter = 0             # <<<<<<<<<<<<<<
@@ -7917,7 +7944,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     __pyx_v_relations_counter = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":366
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":367
  * 
  *         # Search all peaks against all other peaks using the given feature
  *         for j in range(peaks.size):             # <<<<<<<<<<<<<<
@@ -7928,7 +7955,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_j = __pyx_t_6;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":367
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":368
  *         # Search all peaks against all other peaks using the given feature
  *         for j in range(peaks.size):
  *             peak = peaks.peaks[j]             # <<<<<<<<<<<<<<
@@ -7937,16 +7964,16 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
       __pyx_v_peak = (__pyx_v_peaks->peaks[__pyx_v_j]);
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":370
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":371
  * 
  *             # Determine if peak has been identified as on-kind or off-kind
- *             peak_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, peak.id)             # <<<<<<<<<<<<<<
+ *             peak_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, peak.scan_peak_index)             # <<<<<<<<<<<<<<
  * 
  *             # Perform search
  */
-      __pyx_v_peak_explained_by_list = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_matched_spectrum_struct_peak_explained_by(__pyx_v_gsm, __pyx_v_peak.id);
+      __pyx_v_peak_explained_by_list = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_matched_spectrum_struct_peak_explained_by(__pyx_v_gsm, __pyx_v_peak.scan_peak_index);
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":373
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":374
  * 
  *             # Perform search
  *             matches = _openmp_search_spectrum(&peak, peaks, feature)             # <<<<<<<<<<<<<<
@@ -7955,7 +7982,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
       __pyx_v_matches = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__openmp_search_spectrum((&__pyx_v_peak), __pyx_v_peaks, __pyx_v_feature);
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":376
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":377
  * 
  *             # For each match, construct a PeakRelationStruct and save it to `related`
  *             for k in range(matches.size):             # <<<<<<<<<<<<<<
@@ -7966,7 +7993,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
       for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
         __pyx_v_k = __pyx_t_8;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":377
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":378
  *             # For each match, construct a PeakRelationStruct and save it to `related`
  *             for k in range(matches.size):
  *                 match = matches.peaks[k]             # <<<<<<<<<<<<<<
@@ -7975,36 +8002,36 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
         __pyx_v_match = (__pyx_v_matches->peaks[__pyx_v_k]);
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":381
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":382
  *                 # Add check for fixed features and agreement between annotations between peak and match
  * 
  *                 if feature.fixed:             # <<<<<<<<<<<<<<
- *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.id)
+ *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.scan_peak_index)
  * 
  */
         __pyx_t_2 = (__pyx_v_feature->fixed != 0);
         if (__pyx_t_2) {
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":382
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":383
  * 
  *                 if feature.fixed:
- *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.id)             # <<<<<<<<<<<<<<
+ *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.scan_peak_index)             # <<<<<<<<<<<<<<
  * 
  *                 if peak_explained_by_list.size == 0:
  */
-          __pyx_v_match_explained_by_list = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_matched_spectrum_struct_peak_explained_by(__pyx_v_gsm, __pyx_v_match.id);
+          __pyx_v_match_explained_by_list = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_matched_spectrum_struct_peak_explained_by(__pyx_v_gsm, __pyx_v_match.scan_peak_index);
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":381
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":382
  *                 # Add check for fixed features and agreement between annotations between peak and match
  * 
  *                 if feature.fixed:             # <<<<<<<<<<<<<<
- *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.id)
+ *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.scan_peak_index)
  * 
  */
         }
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":384
- *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.id)
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":385
+ *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.scan_peak_index)
  * 
  *                 if peak_explained_by_list.size == 0:             # <<<<<<<<<<<<<<
  *                     if relations_counter == related.size:
@@ -8013,7 +8040,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
         __pyx_t_2 = ((__pyx_v_peak_explained_by_list->size == 0) != 0);
         if (__pyx_t_2) {
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":385
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":386
  * 
  *                 if peak_explained_by_list.size == 0:
  *                     if relations_counter == related.size:             # <<<<<<<<<<<<<<
@@ -8023,7 +8050,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
           __pyx_t_2 = ((__pyx_v_relations_counter == __pyx_v_related->size) != 0);
           if (__pyx_t_2) {
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":386
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":387
  *                 if peak_explained_by_list.size == 0:
  *                     if relations_counter == related.size:
  *                         resize_peak_relation_array(related)             # <<<<<<<<<<<<<<
@@ -8032,7 +8059,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
             __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_resize_peak_relation_array(__pyx_v_related);
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":385
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":386
  * 
  *                 if peak_explained_by_list.size == 0:
  *                     if relations_counter == related.size:             # <<<<<<<<<<<<<<
@@ -8041,7 +8068,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
           }
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":388
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":389
  *                         resize_peak_relation_array(related)
  * 
  *                     ion_type_double_inc_name(feature.ion_type_matches, NOISE)             # <<<<<<<<<<<<<<
@@ -8050,7 +8077,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
           __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_inc_name(__pyx_v_feature->ion_type_matches, __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_NOISE);
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":389
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":390
  * 
  *                     ion_type_double_inc_name(feature.ion_type_matches, NOISE)
  *                     insert_peak_relation_struct(related, relations_counter, peak, match, feature,             # <<<<<<<<<<<<<<
@@ -8059,7 +8086,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
           __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_insert_peak_relation_struct(__pyx_v_related, __pyx_v_relations_counter, __pyx_v_peak, __pyx_v_match, __pyx_v_feature, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ratio_function((&__pyx_v_peak), (&__pyx_v_match)), __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_NOISE, __pyx_v_gsm);
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":391
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":392
  *                     insert_peak_relation_struct(related, relations_counter, peak, match, feature,
  *                                                 _intensity_ratio_function(&peak, &match), NOISE, gsm)
  *                     relations_counter += 1             # <<<<<<<<<<<<<<
@@ -8068,8 +8095,8 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
           __pyx_v_relations_counter = (__pyx_v_relations_counter + 1);
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":384
- *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.id)
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":385
+ *                     match_explained_by_list = matched_spectrum_struct_peak_explained_by(gsm, match.scan_peak_index)
  * 
  *                 if peak_explained_by_list.size == 0:             # <<<<<<<<<<<<<<
  *                     if relations_counter == related.size:
@@ -8078,7 +8105,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
           goto __pyx_L12;
         }
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":393
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":394
  *                     relations_counter += 1
  *                 else:
  *                     for m in range(peak_explained_by_list.size):             # <<<<<<<<<<<<<<
@@ -8090,7 +8117,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
           for (__pyx_t_10 = 0; __pyx_t_10 < __pyx_t_9; __pyx_t_10+=1) {
             __pyx_v_m = __pyx_t_10;
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":394
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":395
  *                 else:
  *                     for m in range(peak_explained_by_list.size):
  *                         if relations_counter == related.size:             # <<<<<<<<<<<<<<
@@ -8100,7 +8127,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
             __pyx_t_2 = ((__pyx_v_relations_counter == __pyx_v_related->size) != 0);
             if (__pyx_t_2) {
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":395
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":396
  *                     for m in range(peak_explained_by_list.size):
  *                         if relations_counter == related.size:
  *                             resize_peak_relation_array(related)             # <<<<<<<<<<<<<<
@@ -8109,7 +8136,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
               __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_resize_peak_relation_array(__pyx_v_related);
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":394
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":395
  *                 else:
  *                     for m in range(peak_explained_by_list.size):
  *                         if relations_counter == related.size:             # <<<<<<<<<<<<<<
@@ -8118,7 +8145,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
             }
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":397
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":398
  *                             resize_peak_relation_array(related)
  * 
  *                         fragment_match = peak_explained_by_list.matches[m]             # <<<<<<<<<<<<<<
@@ -8127,7 +8154,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
             __pyx_v_fragment_match = (__pyx_v_peak_explained_by_list->matches[__pyx_v_m]);
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":398
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":399
  * 
  *                         fragment_match = peak_explained_by_list.matches[m]
  *                         ion_type = fragment_match.ion_type             # <<<<<<<<<<<<<<
@@ -8137,7 +8164,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
             __pyx_t_11 = __pyx_v_fragment_match.ion_type;
             __pyx_v_ion_type = __pyx_t_11;
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":403
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":404
  *                         # be independent, so it is translated through the ION_TYPE_INDEX global variable which
  *                         # lives for the duration of the program
  *                         ion_type = ion_type_name(ION_TYPE_INDEX, ion_type_index(ION_TYPE_INDEX, ion_type))             # <<<<<<<<<<<<<<
@@ -8146,7 +8173,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
             __pyx_v_ion_type = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_name(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_index(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX, __pyx_v_ion_type));
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":405
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":406
  *                         ion_type = ion_type_name(ION_TYPE_INDEX, ion_type_index(ION_TYPE_INDEX, ion_type))
  * 
  *                         if feature.fixed:             # <<<<<<<<<<<<<<
@@ -8156,7 +8183,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
             __pyx_t_2 = (__pyx_v_feature->fixed != 0);
             if (__pyx_t_2) {
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":406
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":407
  * 
  *                         if feature.fixed:
  *                             is_on_kind = False             # <<<<<<<<<<<<<<
@@ -8165,7 +8192,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
               __pyx_v_is_on_kind = 0;
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":407
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":408
  *                         if feature.fixed:
  *                             is_on_kind = False
  *                             for n in range(match_explained_by_list.size):             # <<<<<<<<<<<<<<
@@ -8176,7 +8203,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
               for (__pyx_t_13 = 0; __pyx_t_13 < __pyx_t_12; __pyx_t_13+=1) {
                 __pyx_v_n = __pyx_t_13;
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":408
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":409
  *                             is_on_kind = False
  *                             for n in range(match_explained_by_list.size):
  *                                 matched_ion_type = match_explained_by_list.matches[n].ion_type             # <<<<<<<<<<<<<<
@@ -8186,7 +8213,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
                 __pyx_t_11 = (__pyx_v_match_explained_by_list->matches[__pyx_v_n]).ion_type;
                 __pyx_v_matched_ion_type = __pyx_t_11;
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":409
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":410
  *                             for n in range(match_explained_by_list.size):
  *                                 matched_ion_type = match_explained_by_list.matches[n].ion_type
  *                                 matched_ion_type = ion_type_name(ION_TYPE_INDEX, ion_type_index(ION_TYPE_INDEX, matched_ion_type))             # <<<<<<<<<<<<<<
@@ -8195,7 +8222,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
                 __pyx_v_matched_ion_type = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_name(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_index(__pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_ION_TYPE_INDEX, __pyx_v_matched_ion_type));
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":410
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":411
  *                                 matched_ion_type = match_explained_by_list.matches[n].ion_type
  *                                 matched_ion_type = ion_type_name(ION_TYPE_INDEX, ion_type_index(ION_TYPE_INDEX, matched_ion_type))
  *                                 if strcmp(matched_ion_type, ion_type) == 0:             # <<<<<<<<<<<<<<
@@ -8205,7 +8232,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
                 __pyx_t_2 = ((strcmp(__pyx_v_matched_ion_type, __pyx_v_ion_type) == 0) != 0);
                 if (__pyx_t_2) {
 
-                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":411
+                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":412
  *                                 matched_ion_type = ion_type_name(ION_TYPE_INDEX, ion_type_index(ION_TYPE_INDEX, matched_ion_type))
  *                                 if strcmp(matched_ion_type, ion_type) == 0:
  *                                     is_on_kind = True             # <<<<<<<<<<<<<<
@@ -8214,7 +8241,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
                   __pyx_v_is_on_kind = 1;
 
-                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":412
+                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":413
  *                                 if strcmp(matched_ion_type, ion_type) == 0:
  *                                     is_on_kind = True
  *                                     break             # <<<<<<<<<<<<<<
@@ -8223,7 +8250,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
                   goto __pyx_L19_break;
 
-                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":410
+                  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":411
  *                                 matched_ion_type = match_explained_by_list.matches[n].ion_type
  *                                 matched_ion_type = ion_type_name(ION_TYPE_INDEX, ion_type_index(ION_TYPE_INDEX, matched_ion_type))
  *                                 if strcmp(matched_ion_type, ion_type) == 0:             # <<<<<<<<<<<<<<
@@ -8234,7 +8261,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
               }
               __pyx_L19_break:;
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":413
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":414
  *                                     is_on_kind = True
  *                                     break
  *                             if not is_on_kind:             # <<<<<<<<<<<<<<
@@ -8244,7 +8271,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
               __pyx_t_2 = ((!(__pyx_v_is_on_kind != 0)) != 0);
               if (__pyx_t_2) {
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":414
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":415
  *                                     break
  *                             if not is_on_kind:
  *                                 ion_type = NOISE             # <<<<<<<<<<<<<<
@@ -8253,7 +8280,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
                 __pyx_v_ion_type = __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_NOISE;
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":413
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":414
  *                                     is_on_kind = True
  *                                     break
  *                             if not is_on_kind:             # <<<<<<<<<<<<<<
@@ -8262,7 +8289,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
               }
 
-              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":405
+              /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":406
  *                         ion_type = ion_type_name(ION_TYPE_INDEX, ion_type_index(ION_TYPE_INDEX, ion_type))
  * 
  *                         if feature.fixed:             # <<<<<<<<<<<<<<
@@ -8271,7 +8298,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
             }
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":418
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":419
  * 
  * 
  *                         ion_type_double_inc_name(             # <<<<<<<<<<<<<<
@@ -8280,7 +8307,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
             __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_inc_name(__pyx_v_feature->ion_type_matches, __pyx_v_ion_type);
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":422
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":423
  *                             ion_type)
  * 
  *                         insert_peak_relation_struct(related, relations_counter, peak, match, feature,             # <<<<<<<<<<<<<<
@@ -8289,7 +8316,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
             __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_insert_peak_relation_struct(__pyx_v_related, __pyx_v_relations_counter, __pyx_v_peak, __pyx_v_match, __pyx_v_feature, __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ratio_function((&__pyx_v_peak), (&__pyx_v_match)), __pyx_v_ion_type, __pyx_v_gsm);
 
-            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":425
+            /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":426
  *                                                     _intensity_ratio_function(&peak, &match),
  *                                                     ion_type, gsm)
  *                         relations_counter += 1             # <<<<<<<<<<<<<<
@@ -8301,7 +8328,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
         }
         __pyx_L12:;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":427
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":428
  *                         relations_counter += 1
  * 
  *                 if feature.fixed:             # <<<<<<<<<<<<<<
@@ -8311,7 +8338,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
         __pyx_t_2 = (__pyx_v_feature->fixed != 0);
         if (__pyx_t_2) {
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":428
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":429
  * 
  *                 if feature.fixed:
  *                     free_fragment_match_struct_array(match_explained_by_list)             # <<<<<<<<<<<<<<
@@ -8320,7 +8347,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
           __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_match_struct_array(__pyx_v_match_explained_by_list);
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":427
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":428
  *                         relations_counter += 1
  * 
  *                 if feature.fixed:             # <<<<<<<<<<<<<<
@@ -8330,7 +8357,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
         }
       }
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":431
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":432
  * 
  * 
  *             if peak_explained_by_list.size == 0:             # <<<<<<<<<<<<<<
@@ -8340,7 +8367,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
       __pyx_t_2 = ((__pyx_v_peak_explained_by_list->size == 0) != 0);
       if (__pyx_t_2) {
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":432
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":433
  * 
  *             if peak_explained_by_list.size == 0:
  *                 ion_type_double_inc_name(feature.ion_type_totals, NOISE)             # <<<<<<<<<<<<<<
@@ -8349,7 +8376,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
         __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_ion_type_double_inc_name(__pyx_v_feature->ion_type_totals, __pyx_v_21glycresoft_sqlalchemy_5utils_12ccommon_math_NOISE);
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":431
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":432
  * 
  * 
  *             if peak_explained_by_list.size == 0:             # <<<<<<<<<<<<<<
@@ -8359,7 +8386,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
         goto __pyx_L23;
       }
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":434
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":435
  *                 ion_type_double_inc_name(feature.ion_type_totals, NOISE)
  *             else:
  *                 for k in range(peak_explained_by_list.size):             # <<<<<<<<<<<<<<
@@ -8371,7 +8398,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
         for (__pyx_t_9 = 0; __pyx_t_9 < __pyx_t_8; __pyx_t_9+=1) {
           __pyx_v_k = __pyx_t_9;
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":435
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":436
  *             else:
  *                 for k in range(peak_explained_by_list.size):
  *                     fragment_match = peak_explained_by_list.matches[k]             # <<<<<<<<<<<<<<
@@ -8380,7 +8407,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
           __pyx_v_fragment_match = (__pyx_v_peak_explained_by_list->matches[__pyx_v_k]);
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":436
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":437
  *                 for k in range(peak_explained_by_list.size):
  *                     fragment_match = peak_explained_by_list.matches[k]
  *                     ion_type = fragment_match.ion_type             # <<<<<<<<<<<<<<
@@ -8390,7 +8417,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
           __pyx_t_11 = __pyx_v_fragment_match.ion_type;
           __pyx_v_ion_type = __pyx_t_11;
 
-          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":437
+          /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":438
  *                     fragment_match = peak_explained_by_list.matches[k]
  *                     ion_type = fragment_match.ion_type
  *                     ion_type_double_inc_name(             # <<<<<<<<<<<<<<
@@ -8402,7 +8429,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
       }
       __pyx_L23:;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":440
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":441
  *                         feature.ion_type_totals,
  *                         ion_type)
  *             free_fragment_match_struct_array(peak_explained_by_list)             # <<<<<<<<<<<<<<
@@ -8411,7 +8438,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
       __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_free_fragment_match_struct_array(__pyx_v_peak_explained_by_list);
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":441
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":442
  *                         ion_type)
  *             free_fragment_match_struct_array(peak_explained_by_list)
  *             free(matches.peaks)             # <<<<<<<<<<<<<<
@@ -8420,7 +8447,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
       free(__pyx_v_matches->peaks);
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":442
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":443
  *             free_fragment_match_struct_array(peak_explained_by_list)
  *             free(matches.peaks)
  *             free(matches)             # <<<<<<<<<<<<<<
@@ -8430,7 +8457,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
       free(__pyx_v_matches);
     }
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":443
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":444
  *             free(matches.peaks)
  *             free(matches)
  *         related.relations = <PeakRelationStruct*>realloc(related.relations, sizeof(PeakRelationStruct) * relations_counter)             # <<<<<<<<<<<<<<
@@ -8439,7 +8466,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     __pyx_v_related->relations = ((struct PeakRelationStruct *)realloc(__pyx_v_related->relations, ((sizeof(struct PeakRelationStruct)) * __pyx_v_relations_counter)));
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":444
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":445
  *             free(matches)
  *         related.relations = <PeakRelationStruct*>realloc(related.relations, sizeof(PeakRelationStruct) * relations_counter)
  *         related.size = relations_counter             # <<<<<<<<<<<<<<
@@ -8448,7 +8475,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
     __pyx_v_related->size = __pyx_v_relations_counter;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":447
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":448
  * 
  *             # Save results or free un-needed memory
  *         if relations_counter > 0:             # <<<<<<<<<<<<<<
@@ -8458,7 +8485,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
     __pyx_t_2 = ((__pyx_v_relations_counter > 0) != 0);
     if (__pyx_t_2) {
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":448
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":449
  *             # Save results or free un-needed memory
  *         if relations_counter > 0:
  *             if features_found_counter == peak_relations.size:             # <<<<<<<<<<<<<<
@@ -8468,7 +8495,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
       __pyx_t_2 = ((__pyx_v_features_found_counter == __pyx_v_peak_relations->size) != 0);
       if (__pyx_t_2) {
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":449
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":450
  *         if relations_counter > 0:
  *             if features_found_counter == peak_relations.size:
  *                 peak_relations.pairs = <RelationSpectrumPair*>realloc(peak_relations.pairs, sizeof(RelationSpectrumPair) * peak_relations.size * 2)             # <<<<<<<<<<<<<<
@@ -8477,7 +8504,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
         __pyx_v_peak_relations->pairs = ((struct RelationSpectrumPair *)realloc(__pyx_v_peak_relations->pairs, (((sizeof(struct RelationSpectrumPair)) * __pyx_v_peak_relations->size) * 2)));
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":450
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":451
  *             if features_found_counter == peak_relations.size:
  *                 peak_relations.pairs = <RelationSpectrumPair*>realloc(peak_relations.pairs, sizeof(RelationSpectrumPair) * peak_relations.size * 2)
  *                 peak_relations.size = peak_relations.size * 2             # <<<<<<<<<<<<<<
@@ -8486,7 +8513,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
         __pyx_v_peak_relations->size = (__pyx_v_peak_relations->size * 2);
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":448
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":449
  *             # Save results or free un-needed memory
  *         if relations_counter > 0:
  *             if features_found_counter == peak_relations.size:             # <<<<<<<<<<<<<<
@@ -8495,7 +8522,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
       }
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":451
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":452
  *                 peak_relations.pairs = <RelationSpectrumPair*>realloc(peak_relations.pairs, sizeof(RelationSpectrumPair) * peak_relations.size * 2)
  *                 peak_relations.size = peak_relations.size * 2
  *             peak_relations.pairs[features_found_counter].matched_spectrum = gsm             # <<<<<<<<<<<<<<
@@ -8504,7 +8531,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
       (__pyx_v_peak_relations->pairs[__pyx_v_features_found_counter]).matched_spectrum = __pyx_v_gsm;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":452
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":453
  *                 peak_relations.size = peak_relations.size * 2
  *             peak_relations.pairs[features_found_counter].matched_spectrum = gsm
  *             peak_relations.pairs[features_found_counter].relations = related             # <<<<<<<<<<<<<<
@@ -8513,7 +8540,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
       (__pyx_v_peak_relations->pairs[__pyx_v_features_found_counter]).relations = __pyx_v_related;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":453
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":454
  *             peak_relations.pairs[features_found_counter].matched_spectrum = gsm
  *             peak_relations.pairs[features_found_counter].relations = related
  *             features_found_counter += 1             # <<<<<<<<<<<<<<
@@ -8522,7 +8549,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
       __pyx_v_features_found_counter = (__pyx_v_features_found_counter + 1);
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":447
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":448
  * 
  *             # Save results or free un-needed memory
  *         if relations_counter > 0:             # <<<<<<<<<<<<<<
@@ -8532,7 +8559,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
       goto __pyx_L26;
     }
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":455
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":456
  *             features_found_counter += 1
  *         else:
  *             free_peak_relations_array(related)             # <<<<<<<<<<<<<<
@@ -8546,7 +8573,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
     __pyx_L4_continue:;
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":457
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":458
  *             free_peak_relations_array(related)
  * 
  *     peak_relations.pairs = <RelationSpectrumPair*>realloc(peak_relations.pairs, sizeof(RelationSpectrumPair) * features_found_counter)             # <<<<<<<<<<<<<<
@@ -8555,7 +8582,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
   __pyx_v_peak_relations->pairs = ((struct RelationSpectrumPair *)realloc(__pyx_v_peak_relations->pairs, ((sizeof(struct RelationSpectrumPair)) * __pyx_v_features_found_counter)));
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":458
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":459
  * 
  *     peak_relations.pairs = <RelationSpectrumPair*>realloc(peak_relations.pairs, sizeof(RelationSpectrumPair) * features_found_counter)
  *     peak_relations.size = features_found_counter             # <<<<<<<<<<<<<<
@@ -8564,7 +8591,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
   __pyx_v_peak_relations->size = __pyx_v_features_found_counter;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":460
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":461
  *     peak_relations.size = features_found_counter
  * 
  *     result = <FittedFeatureStruct*>malloc(sizeof(FittedFeatureStruct))             # <<<<<<<<<<<<<<
@@ -8573,7 +8600,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
   __pyx_v_result = ((struct FittedFeatureStruct *)malloc((sizeof(struct FittedFeatureStruct))));
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":461
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":462
  * 
  *     result = <FittedFeatureStruct*>malloc(sizeof(FittedFeatureStruct))
  *     result.feature = feature             # <<<<<<<<<<<<<<
@@ -8582,7 +8609,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
   __pyx_v_result->feature = __pyx_v_feature;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":462
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":463
  *     result = <FittedFeatureStruct*>malloc(sizeof(FittedFeatureStruct))
  *     result.feature = feature
  *     result.relation_pairs = peak_relations             # <<<<<<<<<<<<<<
@@ -8591,7 +8618,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
  */
   __pyx_v_result->relation_pairs = __pyx_v_peak_relations;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":463
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":464
  *     result.feature = feature
  *     result.relation_pairs = peak_relations
  *     return result             # <<<<<<<<<<<<<<
@@ -8601,7 +8628,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
   __pyx_r = __pyx_v_result;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":323
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":324
  * 
  * 
  * cdef FittedFeatureStruct* _feature_function_estimator(MatchedSpectrumStructArray* gsms, MSFeatureStruct* feature, char* kind, bint filter_peak_ranks) nogil:             # <<<<<<<<<<<<<<
@@ -8614,7 +8641,7 @@ static struct FittedFeatureStruct *__pyx_f_21glycresoft_sqlalchemy_7scoring_16of
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":467
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":468
  * 
  * 
  * cdef void preprocess_peak_lists(list gsms):             # <<<<<<<<<<<<<<
@@ -8644,7 +8671,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("preprocess_peak_lists", 0);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":476
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":477
  *         MatchedSpectrum gsm
  * 
  *     for i in range(PyList_GET_SIZE(gsms)):             # <<<<<<<<<<<<<<
@@ -8655,7 +8682,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":477
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":478
  * 
  *     for i in range(PyList_GET_SIZE(gsms)):
  *         gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)             # <<<<<<<<<<<<<<
@@ -8668,7 +8695,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
     __Pyx_XDECREF_SET(__pyx_v_gsm, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_t_4));
     __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":478
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":479
  *     for i in range(PyList_GET_SIZE(gsms)):
  *         gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)
  *         peaks = gsm.peak_list             # <<<<<<<<<<<<<<
@@ -8680,7 +8707,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
     __Pyx_XDECREF_SET(__pyx_v_peaks, ((PyObject*)__pyx_t_4));
     __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":479
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":480
  *         gsm = <MatchedSpectrum>PyList_GET_ITEM(gsms, i)
  *         peaks = gsm.peak_list
  *         intensity_rank(peaks)             # <<<<<<<<<<<<<<
@@ -8689,19 +8716,19 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
     __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_intensity_rank(__pyx_v_peaks, NULL);
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":480
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":481
  *         peaks = gsm.peak_list
  *         intensity_rank(peaks)
  *         _peaks = []             # <<<<<<<<<<<<<<
  *         for j in range(PyList_GET_SIZE(peaks)):
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
  */
-    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 480; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 481; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_XDECREF_SET(__pyx_v__peaks, ((PyObject*)__pyx_t_4));
     __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":481
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":482
  *         intensity_rank(peaks)
  *         _peaks = []
  *         for j in range(PyList_GET_SIZE(peaks)):             # <<<<<<<<<<<<<<
@@ -8712,7 +8739,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_j = __pyx_t_6;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":482
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":483
  *         _peaks = []
  *         for j in range(PyList_GET_SIZE(peaks)):
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)             # <<<<<<<<<<<<<<
@@ -8725,7 +8752,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
       __Pyx_XDECREF_SET(__pyx_v_peak, ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak *)__pyx_t_4));
       __pyx_t_4 = 0;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":483
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":484
  *         for j in range(PyList_GET_SIZE(peaks)):
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
  *             rank = peak.rank             # <<<<<<<<<<<<<<
@@ -8735,7 +8762,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
       __pyx_t_7 = __pyx_v_peak->rank;
       __pyx_v_rank = __pyx_t_7;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":484
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":485
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
  *             rank = peak.rank
  *             if rank > 0:             # <<<<<<<<<<<<<<
@@ -8745,16 +8772,16 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
       __pyx_t_8 = ((__pyx_v_rank > 0) != 0);
       if (__pyx_t_8) {
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":485
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":486
  *             rank = peak.rank
  *             if rank > 0:
  *                 PyList_Append(_peaks, peak)             # <<<<<<<<<<<<<<
  *         gsm.peaks = _peaks
  * 
  */
-        __pyx_t_7 = PyList_Append(__pyx_v__peaks, ((PyObject *)__pyx_v_peak)); if (unlikely(__pyx_t_7 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 485; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_7 = PyList_Append(__pyx_v__peaks, ((PyObject *)__pyx_v_peak)); if (unlikely(__pyx_t_7 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 486; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":484
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":485
  *             peak = <DPeak>PyList_GET_ITEM(peaks, j)
  *             rank = peak.rank
  *             if rank > 0:             # <<<<<<<<<<<<<<
@@ -8764,17 +8791,17 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
       }
     }
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":486
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":487
  *             if rank > 0:
  *                 PyList_Append(_peaks, peak)
  *         gsm.peaks = _peaks             # <<<<<<<<<<<<<<
  * 
  * 
  */
-    if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_gsm), __pyx_n_s_peaks, __pyx_v__peaks) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 486; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_gsm), __pyx_n_s_peaks, __pyx_v__peaks) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 487; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":467
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":468
  * 
  * 
  * cdef void preprocess_peak_lists(list gsms):             # <<<<<<<<<<<<<<
@@ -8795,7 +8822,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   __Pyx_RefNannyFinishContext();
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":489
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":490
  * 
  * 
  * cdef void _preprocess_peak_lists(MatchedSpectrumStructArray* gsms) nogil:             # <<<<<<<<<<<<<<
@@ -8818,7 +8845,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   size_t __pyx_t_5;
   int __pyx_t_6;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":497
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":498
  *         PeakStruct stack_peak
  * 
  *     for i in range(gsms.size):             # <<<<<<<<<<<<<<
@@ -8829,7 +8856,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":498
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":499
  * 
  *     for i in range(gsms.size):
  *         gsm = &gsms.matches[i]             # <<<<<<<<<<<<<<
@@ -8838,7 +8865,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
     __pyx_v_gsm = (&(__pyx_v_gsms->matches[__pyx_v_i]));
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":499
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":500
  *     for i in range(gsms.size):
  *         gsm = &gsms.matches[i]
  *         peaks = gsm.peak_list             # <<<<<<<<<<<<<<
@@ -8848,7 +8875,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
     __pyx_t_3 = __pyx_v_gsm->peak_list;
     __pyx_v_peaks = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":500
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":501
  *         gsm = &gsms.matches[i]
  *         peaks = gsm.peak_list
  *         _intensity_rank(peaks)             # <<<<<<<<<<<<<<
@@ -8857,7 +8884,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
     __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_rank(__pyx_v_peaks, NULL);
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":501
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":502
  *         peaks = gsm.peak_list
  *         _intensity_rank(peaks)
  *         peak_count = 0             # <<<<<<<<<<<<<<
@@ -8866,7 +8893,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
     __pyx_v_peak_count = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":502
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":503
  *         _intensity_rank(peaks)
  *         peak_count = 0
  *         _peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peaks.size)             # <<<<<<<<<<<<<<
@@ -8875,7 +8902,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
     __pyx_v__peaks = ((struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct *)malloc(((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct)) * __pyx_v_peaks->size)));
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":503
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":504
  *         peak_count = 0
  *         _peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peaks.size)
  *         for j in range(peaks.size):             # <<<<<<<<<<<<<<
@@ -8886,7 +8913,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
     for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
       __pyx_v_j = __pyx_t_5;
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":504
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":505
  *         _peaks = <PeakStruct*>malloc(sizeof(PeakStruct) * peaks.size)
  *         for j in range(peaks.size):
  *             stack_peak = peaks.peaks[j]             # <<<<<<<<<<<<<<
@@ -8895,7 +8922,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
       __pyx_v_stack_peak = (__pyx_v_peaks->peaks[__pyx_v_j]);
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":505
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":506
  *         for j in range(peaks.size):
  *             stack_peak = peaks.peaks[j]
  *             if stack_peak.rank > 0:             # <<<<<<<<<<<<<<
@@ -8905,7 +8932,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
       __pyx_t_6 = ((__pyx_v_stack_peak.rank > 0) != 0);
       if (__pyx_t_6) {
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":506
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":507
  *             stack_peak = peaks.peaks[j]
  *             if stack_peak.rank > 0:
  *                 _peaks[peak_count] = stack_peak             # <<<<<<<<<<<<<<
@@ -8914,7 +8941,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
         (__pyx_v__peaks[__pyx_v_peak_count]) = __pyx_v_stack_peak;
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":507
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":508
  *             if stack_peak.rank > 0:
  *                 _peaks[peak_count] = stack_peak
  *                 peak_count += 1             # <<<<<<<<<<<<<<
@@ -8923,7 +8950,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
         __pyx_v_peak_count = (__pyx_v_peak_count + 1);
 
-        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":505
+        /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":506
  *         for j in range(peaks.size):
  *             stack_peak = peaks.peaks[j]
  *             if stack_peak.rank > 0:             # <<<<<<<<<<<<<<
@@ -8933,7 +8960,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
       }
     }
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":508
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":509
  *                 _peaks[peak_count] = stack_peak
  *                 peak_count += 1
  *         free(peaks.peaks)             # <<<<<<<<<<<<<<
@@ -8942,7 +8969,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
     free(__pyx_v_peaks->peaks);
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":509
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":510
  *                 peak_count += 1
  *         free(peaks.peaks)
  *         peaks.peaks = _peaks             # <<<<<<<<<<<<<<
@@ -8951,7 +8978,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
     __pyx_v_peaks->peaks = __pyx_v__peaks;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":510
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":511
  *         free(peaks.peaks)
  *         peaks.peaks = _peaks
  *         peaks.size = peak_count             # <<<<<<<<<<<<<<
@@ -8961,7 +8988,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
     __pyx_v_peaks->size = __pyx_v_peak_count;
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":489
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":490
  * 
  * 
  * cdef void _preprocess_peak_lists(MatchedSpectrumStructArray* gsms) nogil:             # <<<<<<<<<<<<<<
@@ -8972,7 +8999,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":513
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":514
  * 
  * 
  * def fit_features(list gsms, list features, str kind, int n_threads=8):             # <<<<<<<<<<<<<<
@@ -9016,12 +9043,12 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_features)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("fit_features", 0, 3, 4, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("fit_features", 0, 3, 4, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_kind)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("fit_features", 0, 3, 4, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("fit_features", 0, 3, 4, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  3:
         if (kw_args > 0) {
@@ -9030,7 +9057,7 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "fit_features") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "fit_features") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -9046,22 +9073,22 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     __pyx_v_features = ((PyObject*)values[1]);
     __pyx_v_kind = ((PyObject*)values[2]);
     if (values[3]) {
-      __pyx_v_n_threads = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_n_threads == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_n_threads = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_n_threads == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_n_threads = ((int)8);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("fit_features", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("fit_features", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.scoring.offset_frequency.cpeak_relations.fit_features", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_gsms), (&PyList_Type), 1, "gsms", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_features), (&PyList_Type), 1, "features", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_kind), (&PyString_Type), 1, "kind", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_gsms), (&PyList_Type), 1, "gsms", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_features), (&PyList_Type), 1, "features", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_kind), (&PyString_Type), 1, "kind", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_4fit_features(__pyx_self, __pyx_v_gsms, __pyx_v_features, __pyx_v_kind, __pyx_v_n_threads);
 
   /* function exit code */
@@ -9105,7 +9132,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("fit_features", 0);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":524
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":525
  *         FittedFeatureStruct ff
  *         double start, end
  *     spectra = <MatchedSpectrumStructArray*>malloc(sizeof(MatchedSpectrumStructArray))             # <<<<<<<<<<<<<<
@@ -9114,7 +9141,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   __pyx_v_spectra = ((struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStructArray *)malloc((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStructArray))));
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":525
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":526
  *         double start, end
  *     spectra = <MatchedSpectrumStructArray*>malloc(sizeof(MatchedSpectrumStructArray))
  *     spectra.matches = <MatchedSpectrumStruct*>malloc(sizeof(MatchedSpectrumStruct) * len(gsms))             # <<<<<<<<<<<<<<
@@ -9123,12 +9150,12 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   if (unlikely(__pyx_v_gsms == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 525; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 526; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_gsms); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 525; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_gsms); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 526; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_spectra->matches = ((struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStruct *)malloc(((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStruct)) * __pyx_t_1)));
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":526
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":527
  *     spectra = <MatchedSpectrumStructArray*>malloc(sizeof(MatchedSpectrumStructArray))
  *     spectra.matches = <MatchedSpectrumStruct*>malloc(sizeof(MatchedSpectrumStruct) * len(gsms))
  *     spectra.size = len(gsms)             # <<<<<<<<<<<<<<
@@ -9137,34 +9164,34 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   if (unlikely(__pyx_v_gsms == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 526; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 527; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_gsms); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 526; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_gsms); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 527; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_spectra->size = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":527
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":528
  *     spectra.matches = <MatchedSpectrumStruct*>malloc(sizeof(MatchedSpectrumStruct) * len(gsms))
  *     spectra.size = len(gsms)
  *     from time import time             # <<<<<<<<<<<<<<
  *     matched_spectrum_map = {gsm.id: gsm for gsm in gsms}
  *     for i in range(spectra.size):
  */
-  __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 527; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_n_s_time);
   __Pyx_GIVEREF(__pyx_n_s_time);
   PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_time);
-  __pyx_t_3 = __Pyx_Import(__pyx_n_s_time, __pyx_t_2, -1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 527; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_Import(__pyx_n_s_time, __pyx_t_2, -1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_time); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 527; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_time); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_t_2);
   __pyx_v_time = __pyx_t_2;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":528
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":529
  *     spectra.size = len(gsms)
  *     from time import time
  *     matched_spectrum_map = {gsm.id: gsm for gsm in gsms}             # <<<<<<<<<<<<<<
@@ -9173,26 +9200,26 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   { /* enter inner scope */
     PyObject *__pyx_8genexpr2__pyx_v_gsm = NULL;
-    __pyx_t_3 = PyDict_New(); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
+    __pyx_t_3 = PyDict_New(); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 529; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
     __Pyx_GOTREF(__pyx_t_3);
     if (unlikely(__pyx_v_gsms == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 529; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
     }
     __pyx_t_2 = __pyx_v_gsms; __Pyx_INCREF(__pyx_t_2); __pyx_t_1 = 0;
     for (;;) {
       if (__pyx_t_1 >= PyList_GET_SIZE(__pyx_t_2)) break;
       #if CYTHON_COMPILING_IN_CPYTHON
-      __pyx_t_4 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_1); __Pyx_INCREF(__pyx_t_4); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
+      __pyx_t_4 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_1); __Pyx_INCREF(__pyx_t_4); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 529; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
       #else
-      __pyx_t_4 = PySequence_ITEM(__pyx_t_2, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
+      __pyx_t_4 = PySequence_ITEM(__pyx_t_2, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 529; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
       __Pyx_GOTREF(__pyx_t_4);
       #endif
       __Pyx_XDECREF_SET(__pyx_8genexpr2__pyx_v_gsm, __pyx_t_4);
       __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_8genexpr2__pyx_v_gsm, __pyx_n_s_id); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_8genexpr2__pyx_v_gsm, __pyx_n_s_id); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 529; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
       __Pyx_GOTREF(__pyx_t_4);
-      if (unlikely(PyDict_SetItem(__pyx_t_3, (PyObject*)__pyx_t_4, (PyObject*)__pyx_8genexpr2__pyx_v_gsm))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
+      if (unlikely(PyDict_SetItem(__pyx_t_3, (PyObject*)__pyx_t_4, (PyObject*)__pyx_8genexpr2__pyx_v_gsm))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 529; __pyx_clineno = __LINE__; goto __pyx_L5_error;}
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9206,7 +9233,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __pyx_v_matched_spectrum_map = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":529
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":530
  *     from time import time
  *     matched_spectrum_map = {gsm.id: gsm for gsm in gsms}
  *     for i in range(spectra.size):             # <<<<<<<<<<<<<<
@@ -9217,7 +9244,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
     __pyx_v_i = __pyx_t_6;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":530
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":531
  *     matched_spectrum_map = {gsm.id: gsm for gsm in gsms}
  *     for i in range(spectra.size):
  *         spectra.matches[i] = unwrap_matched_spectrum(gsms[i])[0]             # <<<<<<<<<<<<<<
@@ -9226,16 +9253,16 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
     if (unlikely(__pyx_v_gsms == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 530; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 531; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
-    __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_gsms, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 530; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_gsms, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 531; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_3);
-    if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 530; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 531; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     (__pyx_v_spectra->matches[__pyx_v_i]) = (__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_unwrap_matched_spectrum(((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum *)__pyx_t_3))[0]);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":532
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":533
  *         spectra.matches[i] = unwrap_matched_spectrum(gsms[i])[0]
  * 
  *     cfeatures = unwrap_feature_functions(features)             # <<<<<<<<<<<<<<
@@ -9244,41 +9271,41 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   __pyx_v_cfeatures = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_unwrap_feature_functions(__pyx_v_features);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":533
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":534
  * 
  *     cfeatures = unwrap_feature_functions(features)
  *     print cfeatures.size             # <<<<<<<<<<<<<<
  *     ckind = PyString_AsString(kind)
  *     print ckind
  */
-  __pyx_t_3 = PyInt_FromSsize_t(__pyx_v_cfeatures->size); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 533; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = PyInt_FromSsize_t(__pyx_v_cfeatures->size); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 534; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_PrintOne(0, __pyx_t_3) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 533; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_PrintOne(0, __pyx_t_3) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 534; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":534
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":535
  *     cfeatures = unwrap_feature_functions(features)
  *     print cfeatures.size
  *     ckind = PyString_AsString(kind)             # <<<<<<<<<<<<<<
  *     print ckind
  *     start = time()
  */
-  __pyx_t_7 = PyString_AsString(__pyx_v_kind); if (unlikely(__pyx_t_7 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 534; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_7 = PyString_AsString(__pyx_v_kind); if (unlikely(__pyx_t_7 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 535; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_ckind = __pyx_t_7;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":535
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":536
  *     print cfeatures.size
  *     ckind = PyString_AsString(kind)
  *     print ckind             # <<<<<<<<<<<<<<
  *     start = time()
  *     n_p = cfeatures.size
  */
-  __pyx_t_3 = __Pyx_PyBytes_FromString(__pyx_v_ckind); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 535; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyBytes_FromString(__pyx_v_ckind); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 536; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_PrintOne(0, __pyx_t_3) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 535; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_PrintOne(0, __pyx_t_3) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 536; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":536
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":537
  *     ckind = PyString_AsString(kind)
  *     print ckind
  *     start = time()             # <<<<<<<<<<<<<<
@@ -9297,18 +9324,18 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     }
   }
   if (__pyx_t_4) {
-    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 536; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 537; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   } else {
-    __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 536; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 537; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 536; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 537; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_start = __pyx_t_8;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":537
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":538
  *     print ckind
  *     start = time()
  *     n_p = cfeatures.size             # <<<<<<<<<<<<<<
@@ -9318,7 +9345,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __pyx_t_1 = __pyx_v_cfeatures->size;
   __pyx_v_n_p = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":538
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":539
  *     start = time()
  *     n_p = cfeatures.size
  *     out = <FittedFeatureStruct*>malloc(sizeof(FittedFeatureStruct) * n_p)             # <<<<<<<<<<<<<<
@@ -9327,7 +9354,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   __pyx_v_out = ((struct FittedFeatureStruct *)malloc(((sizeof(struct FittedFeatureStruct)) * __pyx_v_n_p)));
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":539
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":540
  *     n_p = cfeatures.size
  *     out = <FittedFeatureStruct*>malloc(sizeof(FittedFeatureStruct) * n_p)
  *     _preprocess_peak_lists(spectra)             # <<<<<<<<<<<<<<
@@ -9336,16 +9363,16 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations__preprocess_peak_lists(__pyx_v_spectra);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":541
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":542
  *     _preprocess_peak_lists(spectra)
  * 
  *     print "begin parallel"             # <<<<<<<<<<<<<<
  *     with nogil, parallel(num_threads=n_threads):
  * 
  */
-  if (__Pyx_PrintOne(0, __pyx_kp_s_begin_parallel) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 541; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_PrintOne(0, __pyx_kp_s_begin_parallel) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 542; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":542
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":543
  * 
  *     print "begin parallel"
  *     with nogil, parallel(num_threads=n_threads):             # <<<<<<<<<<<<<<
@@ -9366,11 +9393,11 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
                 #define unlikely(x) (x)
             #endif
             #ifdef _OPENMP
-            #pragma omp parallel  private(__pyx_t_11, __pyx_t_9, __pyx_t_10) num_threads(__pyx_v_n_threads)
+            #pragma omp parallel  private(__pyx_t_9, __pyx_t_11, __pyx_t_10) num_threads(__pyx_v_n_threads)
             #endif /* _OPENMP */
             {
 
-                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":544
+                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":545
  *     with nogil, parallel(num_threads=n_threads):
  * 
  *         for i_p in prange(n_p, schedule='guided'):             # <<<<<<<<<<<<<<
@@ -9390,7 +9417,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
                             {
                                 __pyx_v_i_p = 0 + 1 * __pyx_t_10;
 
-                                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":546
+                                /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":547
  *         for i_p in prange(n_p, schedule='guided'):
  *             # printf("%d Thread id %d of %d -- %d\n", n_p, omp_get_thread_num(), omp_get_num_threads(), omp_in_parallel())
  *             out[i_p] = _feature_function_estimator(spectra, &cfeatures.features[i_p], ckind, False)[0]             # <<<<<<<<<<<<<<
@@ -9412,7 +9439,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
         #endif
       }
 
-      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":542
+      /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":543
  * 
  *     print "begin parallel"
  *     with nogil, parallel(num_threads=n_threads):             # <<<<<<<<<<<<<<
@@ -9430,7 +9457,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
       }
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":548
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":549
  *             out[i_p] = _feature_function_estimator(spectra, &cfeatures.features[i_p], ckind, False)[0]
  * 
  *     end = time() - start             # <<<<<<<<<<<<<<
@@ -9449,48 +9476,48 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     }
   }
   if (__pyx_t_4) {
-    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 548; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_4); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   } else {
-    __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 548; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_start); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 548; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_start); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyNumber_Subtract(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 548; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyNumber_Subtract(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_t_4); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 548; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_t_4); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_end = __pyx_t_8;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":549
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":550
  * 
  *     end = time() - start
  *     print end             # <<<<<<<<<<<<<<
  *     copy = list()
  *     for i in range(n_p):
  */
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_end); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_end); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 550; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
-  if (__Pyx_PrintOne(0, __pyx_t_4) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 549; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_PrintOne(0, __pyx_t_4) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 550; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":550
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":551
  *     end = time() - start
  *     print end
  *     copy = list()             # <<<<<<<<<<<<<<
  *     for i in range(n_p):
  *         copy.append(wrap_fitted_feature(&out[i], matched_spectrum_map))
  */
-  __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 550; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 551; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_v_copy = ((PyObject*)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":551
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":552
  *     print end
  *     copy = list()
  *     for i in range(n_p):             # <<<<<<<<<<<<<<
@@ -9501,31 +9528,31 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_11; __pyx_t_5+=1) {
     __pyx_v_i = __pyx_t_5;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":552
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":553
  *     copy = list()
  *     for i in range(n_p):
  *         copy.append(wrap_fitted_feature(&out[i], matched_spectrum_map))             # <<<<<<<<<<<<<<
  *         print(copy[-1])
  *         free_fitted_feature(&out[i])
  */
-    __pyx_t_4 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_wrap_fitted_feature((&(__pyx_v_out[__pyx_v_i])), __pyx_v_matched_spectrum_map)); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 552; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_wrap_fitted_feature((&(__pyx_v_out[__pyx_v_i])), __pyx_v_matched_spectrum_map)); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 553; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_copy, __pyx_t_4); if (unlikely(__pyx_t_12 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 552; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_copy, __pyx_t_4); if (unlikely(__pyx_t_12 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 553; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":553
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":554
  *     for i in range(n_p):
  *         copy.append(wrap_fitted_feature(&out[i], matched_spectrum_map))
  *         print(copy[-1])             # <<<<<<<<<<<<<<
  *         free_fitted_feature(&out[i])
  *     free(out)
  */
-    __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_copy, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(__pyx_t_4 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 553; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_copy, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(__pyx_t_4 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 554; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_4);
-    if (__Pyx_PrintOne(0, __pyx_t_4) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 553; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (__Pyx_PrintOne(0, __pyx_t_4) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 554; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":554
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":555
  *         copy.append(wrap_fitted_feature(&out[i], matched_spectrum_map))
  *         print(copy[-1])
  *         free_fitted_feature(&out[i])             # <<<<<<<<<<<<<<
@@ -9535,7 +9562,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
     __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_fitted_feature((&(__pyx_v_out[__pyx_v_i])));
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":555
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":556
  *         print(copy[-1])
  *         free_fitted_feature(&out[i])
  *     free(out)             # <<<<<<<<<<<<<<
@@ -9544,19 +9571,19 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
  */
   free(__pyx_v_out);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":556
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":557
  *         free_fitted_feature(&out[i])
  *     free(out)
  *     print end             # <<<<<<<<<<<<<<
  *     return copy
  * 
  */
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_end); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 556; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_end); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 557; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
-  if (__Pyx_PrintOne(0, __pyx_t_4) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 556; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_PrintOne(0, __pyx_t_4) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 557; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":557
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":558
  *     free(out)
  *     print end
  *     return copy             # <<<<<<<<<<<<<<
@@ -9568,7 +9595,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   __pyx_r = __pyx_v_copy;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":513
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":514
  * 
  * 
  * def fit_features(list gsms, list features, str kind, int n_threads=8):             # <<<<<<<<<<<<<<
@@ -9592,7 +9619,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":560
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":561
  * 
  * 
  * cdef PeakRelation wrap_peak_relation(PeakRelationStruct* peak_relation, MassOffsetFeature feature, dict spectrum_match_map):             # <<<<<<<<<<<<<<
@@ -9615,47 +9642,47 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("wrap_peak_relation", 0);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":563
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":564
  *     cdef PeakRelation py_peak_relation
  *     py_peak_relation = PeakRelation(
  *         wrap_peak(&(peak_relation.from_peak)),             # <<<<<<<<<<<<<<
  *         wrap_peak(&(peak_relation.to_peak)),
  *         feature,
  */
-  __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_peak((&__pyx_v_peak_relation->from_peak))); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 563; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_peak((&__pyx_v_peak_relation->from_peak))); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 564; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":564
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":565
  *     py_peak_relation = PeakRelation(
  *         wrap_peak(&(peak_relation.from_peak)),
  *         wrap_peak(&(peak_relation.to_peak)),             # <<<<<<<<<<<<<<
  *         feature,
  *         peak_relation.intensity_ratio,
  */
-  __pyx_t_2 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_peak((&__pyx_v_peak_relation->to_peak))); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 564; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_peak((&__pyx_v_peak_relation->to_peak))); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 565; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":566
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":567
  *         wrap_peak(&(peak_relation.to_peak)),
  *         feature,
  *         peak_relation.intensity_ratio,             # <<<<<<<<<<<<<<
  *         peak_relation.kind,
  *         spectrum_match_map.get(peak_relation.annotation.id))
  */
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_peak_relation->intensity_ratio); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 566; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_peak_relation->intensity_ratio); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 567; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":567
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":568
  *         feature,
  *         peak_relation.intensity_ratio,
  *         peak_relation.kind,             # <<<<<<<<<<<<<<
  *         spectrum_match_map.get(peak_relation.annotation.id))
  *     return py_peak_relation
  */
-  __pyx_t_4 = __Pyx_PyBytes_FromString(__pyx_v_peak_relation->kind); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 567; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyBytes_FromString(__pyx_v_peak_relation->kind); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 568; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":568
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":569
  *         peak_relation.intensity_ratio,
  *         peak_relation.kind,
  *         spectrum_match_map.get(peak_relation.annotation.id))             # <<<<<<<<<<<<<<
@@ -9664,22 +9691,22 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
  */
   if (unlikely(__pyx_v_spectrum_match_map == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "get");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 568; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 569; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_peak_relation->annotation->id); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 568; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_peak_relation->annotation->id); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 569; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyDict_GetItemDefault(__pyx_v_spectrum_match_map, __pyx_t_5, Py_None); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 568; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = __Pyx_PyDict_GetItemDefault(__pyx_v_spectrum_match_map, __pyx_t_5, Py_None); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 569; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":562
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":563
  * cdef PeakRelation wrap_peak_relation(PeakRelationStruct* peak_relation, MassOffsetFeature feature, dict spectrum_match_map):
  *     cdef PeakRelation py_peak_relation
  *     py_peak_relation = PeakRelation(             # <<<<<<<<<<<<<<
  *         wrap_peak(&(peak_relation.from_peak)),
  *         wrap_peak(&(peak_relation.to_peak)),
  */
-  __pyx_t_5 = PyTuple_New(6); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 562; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = PyTuple_New(6); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 563; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1);
@@ -9699,13 +9726,13 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   __pyx_t_3 = 0;
   __pyx_t_4 = 0;
   __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation), __pyx_t_5, NULL); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 562; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation), __pyx_t_5, NULL); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 563; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_py_peak_relation = ((struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *)__pyx_t_6);
   __pyx_t_6 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":569
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":570
  *         peak_relation.kind,
  *         spectrum_match_map.get(peak_relation.annotation.id))
  *     return py_peak_relation             # <<<<<<<<<<<<<<
@@ -9717,7 +9744,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   __pyx_r = __pyx_v_py_peak_relation;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":560
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":561
  * 
  * 
  * cdef PeakRelation wrap_peak_relation(PeakRelationStruct* peak_relation, MassOffsetFeature feature, dict spectrum_match_map):             # <<<<<<<<<<<<<<
@@ -9742,7 +9769,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":571
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":572
  *     return py_peak_relation
  * 
  * cdef tuple wrap_spectrum_relation_pair(RelationSpectrumPair* pair, MassOffsetFeature feature, dict spectrum_match_map):             # <<<<<<<<<<<<<<
@@ -9766,19 +9793,19 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("wrap_spectrum_relation_pair", 0);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":572
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":573
  * 
  * cdef tuple wrap_spectrum_relation_pair(RelationSpectrumPair* pair, MassOffsetFeature feature, dict spectrum_match_map):
  *     cdef list relations = []             # <<<<<<<<<<<<<<
  *     cdef size_t i
  *     cdef PeakRelation pr
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 572; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 573; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_relations = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":576
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":577
  *     cdef PeakRelation pr
  * 
  *     for i in range(pair.relations.size):             # <<<<<<<<<<<<<<
@@ -9789,29 +9816,29 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":577
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":578
  * 
  *     for i in range(pair.relations.size):
  *         pr = wrap_peak_relation(&pair.relations.relations[i], feature, spectrum_match_map)             # <<<<<<<<<<<<<<
  *         relations.append(pr)
  *     return (spectrum_match_map.get(pair.matched_spectrum.id), relations)
  */
-    __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_wrap_peak_relation((&(__pyx_v_pair->relations->relations[__pyx_v_i])), __pyx_v_feature, __pyx_v_spectrum_match_map)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 577; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_wrap_peak_relation((&(__pyx_v_pair->relations->relations[__pyx_v_i])), __pyx_v_feature, __pyx_v_spectrum_match_map)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 578; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_pr, ((struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":578
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":579
  *     for i in range(pair.relations.size):
  *         pr = wrap_peak_relation(&pair.relations.relations[i], feature, spectrum_match_map)
  *         relations.append(pr)             # <<<<<<<<<<<<<<
  *     return (spectrum_match_map.get(pair.matched_spectrum.id), relations)
  * 
  */
-    __pyx_t_4 = __Pyx_PyList_Append(__pyx_v_relations, ((PyObject *)__pyx_v_pr)); if (unlikely(__pyx_t_4 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 578; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = __Pyx_PyList_Append(__pyx_v_relations, ((PyObject *)__pyx_v_pr)); if (unlikely(__pyx_t_4 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 579; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":579
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":580
  *         pr = wrap_peak_relation(&pair.relations.relations[i], feature, spectrum_match_map)
  *         relations.append(pr)
  *     return (spectrum_match_map.get(pair.matched_spectrum.id), relations)             # <<<<<<<<<<<<<<
@@ -9821,14 +9848,14 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(__pyx_v_spectrum_match_map == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "get");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 579; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 580; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_pair->matched_spectrum->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 579; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_pair->matched_spectrum->id); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 580; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyDict_GetItemDefault(__pyx_v_spectrum_match_map, __pyx_t_1, Py_None); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 579; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __Pyx_PyDict_GetItemDefault(__pyx_v_spectrum_match_map, __pyx_t_1, Py_None); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 580; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 579; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 580; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5);
@@ -9840,7 +9867,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":571
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":572
  *     return py_peak_relation
  * 
  * cdef tuple wrap_spectrum_relation_pair(RelationSpectrumPair* pair, MassOffsetFeature feature, dict spectrum_match_map):             # <<<<<<<<<<<<<<
@@ -9862,7 +9889,7 @@ static PyObject *__pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15c
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":581
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":582
  *     return (spectrum_match_map.get(pair.matched_spectrum.id), relations)
  * 
  * cdef FittedFeature wrap_fitted_feature(FittedFeatureStruct* feature, dict spectrum_match_map):             # <<<<<<<<<<<<<<
@@ -9888,31 +9915,31 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("wrap_fitted_feature", 0);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":589
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":590
  *         FittedFeature fitted_feature
  *         tuple relations
  *         list pairs = []             # <<<<<<<<<<<<<<
  *     py_feature = wrap_feature(feature.feature)
  *     for i in range(feature.relation_pairs.size):
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 589; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 590; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_pairs = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":590
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":591
  *         tuple relations
  *         list pairs = []
  *     py_feature = wrap_feature(feature.feature)             # <<<<<<<<<<<<<<
  *     for i in range(feature.relation_pairs.size):
  *         relations = wrap_spectrum_relation_pair(&feature.relation_pairs.pairs[i], py_feature, spectrum_match_map)
  */
-  __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_feature(__pyx_v_feature->feature)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 590; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_wrap_feature(__pyx_v_feature->feature)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 591; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_py_feature = ((struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":591
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":592
  *         list pairs = []
  *     py_feature = wrap_feature(feature.feature)
  *     for i in range(feature.relation_pairs.size):             # <<<<<<<<<<<<<<
@@ -9923,36 +9950,36 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":592
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":593
  *     py_feature = wrap_feature(feature.feature)
  *     for i in range(feature.relation_pairs.size):
  *         relations = wrap_spectrum_relation_pair(&feature.relation_pairs.pairs[i], py_feature, spectrum_match_map)             # <<<<<<<<<<<<<<
  *         pairs.append(relations)
  *     fitted_feature = FittedFeature(py_feature, pairs)
  */
-    __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_wrap_spectrum_relation_pair((&(__pyx_v_feature->relation_pairs->pairs[__pyx_v_i])), __pyx_v_py_feature, __pyx_v_spectrum_match_map); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 592; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_wrap_spectrum_relation_pair((&(__pyx_v_feature->relation_pairs->pairs[__pyx_v_i])), __pyx_v_py_feature, __pyx_v_spectrum_match_map); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 593; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_relations, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":593
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":594
  *     for i in range(feature.relation_pairs.size):
  *         relations = wrap_spectrum_relation_pair(&feature.relation_pairs.pairs[i], py_feature, spectrum_match_map)
  *         pairs.append(relations)             # <<<<<<<<<<<<<<
  *     fitted_feature = FittedFeature(py_feature, pairs)
  *     return fitted_feature
  */
-    __pyx_t_4 = __Pyx_PyList_Append(__pyx_v_pairs, __pyx_v_relations); if (unlikely(__pyx_t_4 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 593; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = __Pyx_PyList_Append(__pyx_v_pairs, __pyx_v_relations); if (unlikely(__pyx_t_4 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 594; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":594
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":595
  *         relations = wrap_spectrum_relation_pair(&feature.relation_pairs.pairs[i], py_feature, spectrum_match_map)
  *         pairs.append(relations)
  *     fitted_feature = FittedFeature(py_feature, pairs)             # <<<<<<<<<<<<<<
  *     return fitted_feature
  * 
  */
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 594; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 595; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(((PyObject *)__pyx_v_py_feature));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_py_feature));
@@ -9960,13 +9987,13 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   __Pyx_INCREF(__pyx_v_pairs);
   __Pyx_GIVEREF(__pyx_v_pairs);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_pairs);
-  __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_FittedFeature), __pyx_t_1, NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 594; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_FittedFeature), __pyx_t_1, NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 595; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_fitted_feature = ((struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_FittedFeature *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":595
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":596
  *         pairs.append(relations)
  *     fitted_feature = FittedFeature(py_feature, pairs)
  *     return fitted_feature             # <<<<<<<<<<<<<<
@@ -9978,7 +10005,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   __pyx_r = __pyx_v_fitted_feature;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":581
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":582
  *     return (spectrum_match_map.get(pair.matched_spectrum.id), relations)
  * 
  * cdef FittedFeature wrap_fitted_feature(FittedFeatureStruct* feature, dict spectrum_match_map):             # <<<<<<<<<<<<<<
@@ -10002,7 +10029,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":598
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":599
  * 
  * 
  * cdef void resize_peak_relation_array(PeakRelationStructArray* related) nogil:             # <<<<<<<<<<<<<<
@@ -10012,7 +10039,7 @@ static struct __pyx_obj_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cp
 
 static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_resize_peak_relation_array(struct PeakRelationStructArray *__pyx_v_related) {
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":599
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":600
  * 
  * cdef void resize_peak_relation_array(PeakRelationStructArray* related) nogil:
  *     related.relations = <PeakRelationStruct*>realloc(related.relations, sizeof(PeakRelationStruct) * related.size * 2)             # <<<<<<<<<<<<<<
@@ -10021,7 +10048,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
   __pyx_v_related->relations = ((struct PeakRelationStruct *)realloc(__pyx_v_related->relations, (((sizeof(struct PeakRelationStruct)) * __pyx_v_related->size) * 2)));
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":600
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":601
  * cdef void resize_peak_relation_array(PeakRelationStructArray* related) nogil:
  *     related.relations = <PeakRelationStruct*>realloc(related.relations, sizeof(PeakRelationStruct) * related.size * 2)
  *     related.size = related.size * 2             # <<<<<<<<<<<<<<
@@ -10030,7 +10057,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
   __pyx_v_related->size = (__pyx_v_related->size * 2);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":598
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":599
  * 
  * 
  * cdef void resize_peak_relation_array(PeakRelationStructArray* related) nogil:             # <<<<<<<<<<<<<<
@@ -10041,18 +10068,18 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":603
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":604
  * 
  * 
  * cdef inline void insert_peak_relation_struct(PeakRelationStructArray* related, size_t index, PeakStruct peak, PeakStruct match,             # <<<<<<<<<<<<<<
- *                                              MSFeatureStruct* feature, double intensity_ratio, char* kind,
+ *                                              MSFeatureStruct* feature, int intensity_ratio, char* kind,
  *                                              MatchedSpectrumStruct* annotation) nogil:
  */
 
-static CYTHON_INLINE void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_insert_peak_relation_struct(struct PeakRelationStructArray *__pyx_v_related, size_t __pyx_v_index, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct __pyx_v_peak, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct __pyx_v_match, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *__pyx_v_feature, CYTHON_UNUSED double __pyx_v_intensity_ratio, char *__pyx_v_kind, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStruct *__pyx_v_annotation) {
+static CYTHON_INLINE void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_insert_peak_relation_struct(struct PeakRelationStructArray *__pyx_v_related, size_t __pyx_v_index, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct __pyx_v_peak, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_PeakStruct __pyx_v_match, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MSFeatureStruct *__pyx_v_feature, int __pyx_v_intensity_ratio, char *__pyx_v_kind, struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrumStruct *__pyx_v_annotation) {
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":606
- *                                              MSFeatureStruct* feature, double intensity_ratio, char* kind,
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":607
+ *                                              MSFeatureStruct* feature, int intensity_ratio, char* kind,
  *                                              MatchedSpectrumStruct* annotation) nogil:
  *     related.relations[index].from_peak = peak             # <<<<<<<<<<<<<<
  *     related.relations[index].to_peak = match
@@ -10060,44 +10087,44 @@ static CYTHON_INLINE void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_freq
  */
   (__pyx_v_related->relations[__pyx_v_index]).from_peak = __pyx_v_peak;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":607
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":608
  *                                              MatchedSpectrumStruct* annotation) nogil:
  *     related.relations[index].from_peak = peak
  *     related.relations[index].to_peak = match             # <<<<<<<<<<<<<<
  *     related.relations[index].feature = feature
- *     related.relations[index].intensity_ratio = _intensity_ratio_function(&peak, &match)
+ *     related.relations[index].intensity_ratio = intensity_ratio
  */
   (__pyx_v_related->relations[__pyx_v_index]).to_peak = __pyx_v_match;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":608
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":609
  *     related.relations[index].from_peak = peak
  *     related.relations[index].to_peak = match
  *     related.relations[index].feature = feature             # <<<<<<<<<<<<<<
- *     related.relations[index].intensity_ratio = _intensity_ratio_function(&peak, &match)
+ *     related.relations[index].intensity_ratio = intensity_ratio
  *     related.relations[index].kind = kind
  */
   (__pyx_v_related->relations[__pyx_v_index]).feature = __pyx_v_feature;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":609
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":610
  *     related.relations[index].to_peak = match
  *     related.relations[index].feature = feature
- *     related.relations[index].intensity_ratio = _intensity_ratio_function(&peak, &match)             # <<<<<<<<<<<<<<
+ *     related.relations[index].intensity_ratio = intensity_ratio             # <<<<<<<<<<<<<<
  *     related.relations[index].kind = kind
  *     related.relations[index].annotation = annotation
  */
-  (__pyx_v_related->relations[__pyx_v_index]).intensity_ratio = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math__intensity_ratio_function((&__pyx_v_peak), (&__pyx_v_match));
+  (__pyx_v_related->relations[__pyx_v_index]).intensity_ratio = __pyx_v_intensity_ratio;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":610
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":611
  *     related.relations[index].feature = feature
- *     related.relations[index].intensity_ratio = _intensity_ratio_function(&peak, &match)
+ *     related.relations[index].intensity_ratio = intensity_ratio
  *     related.relations[index].kind = kind             # <<<<<<<<<<<<<<
  *     related.relations[index].annotation = annotation
  * 
  */
   (__pyx_v_related->relations[__pyx_v_index]).kind = __pyx_v_kind;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":611
- *     related.relations[index].intensity_ratio = _intensity_ratio_function(&peak, &match)
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":612
+ *     related.relations[index].intensity_ratio = intensity_ratio
  *     related.relations[index].kind = kind
  *     related.relations[index].annotation = annotation             # <<<<<<<<<<<<<<
  * 
@@ -10105,18 +10132,18 @@ static CYTHON_INLINE void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_freq
  */
   (__pyx_v_related->relations[__pyx_v_index]).annotation = __pyx_v_annotation;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":603
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":604
  * 
  * 
  * cdef inline void insert_peak_relation_struct(PeakRelationStructArray* related, size_t index, PeakStruct peak, PeakStruct match,             # <<<<<<<<<<<<<<
- *                                              MSFeatureStruct* feature, double intensity_ratio, char* kind,
+ *                                              MSFeatureStruct* feature, int intensity_ratio, char* kind,
  *                                              MatchedSpectrumStruct* annotation) nogil:
  */
 
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":614
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":615
  * 
  * 
  * cdef void free_peak_relations_array(PeakRelationStructArray* relations) nogil:             # <<<<<<<<<<<<<<
@@ -10126,7 +10153,7 @@ static CYTHON_INLINE void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_freq
 
 static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_peak_relations_array(struct PeakRelationStructArray *__pyx_v_relations) {
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":615
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":616
  * 
  * cdef void free_peak_relations_array(PeakRelationStructArray* relations) nogil:
  *     free(relations.relations)             # <<<<<<<<<<<<<<
@@ -10135,7 +10162,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
   free(__pyx_v_relations->relations);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":616
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":617
  * cdef void free_peak_relations_array(PeakRelationStructArray* relations) nogil:
  *     free(relations.relations)
  *     free(relations)             # <<<<<<<<<<<<<<
@@ -10144,7 +10171,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
   free(__pyx_v_relations);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":614
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":615
  * 
  * 
  * cdef void free_peak_relations_array(PeakRelationStructArray* relations) nogil:             # <<<<<<<<<<<<<<
@@ -10155,7 +10182,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":619
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":620
  * 
  * 
  * cdef void free_relation_spectrum_pair(RelationSpectrumPair* pair) nogil:             # <<<<<<<<<<<<<<
@@ -10165,7 +10192,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
 
 static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_relation_spectrum_pair(struct RelationSpectrumPair *__pyx_v_pair) {
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":620
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":621
  * 
  * cdef void free_relation_spectrum_pair(RelationSpectrumPair* pair) nogil:
  *     free_peak_relations_array(pair.relations)             # <<<<<<<<<<<<<<
@@ -10174,7 +10201,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
   __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_peak_relations_array(__pyx_v_pair->relations);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":619
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":620
  * 
  * 
  * cdef void free_relation_spectrum_pair(RelationSpectrumPair* pair) nogil:             # <<<<<<<<<<<<<<
@@ -10185,7 +10212,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":623
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":624
  * 
  * 
  * cdef void free_relation_spectrum_pairs_array(RelationSpectrumPairArray* pairs_array) nogil:             # <<<<<<<<<<<<<<
@@ -10198,7 +10225,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   size_t __pyx_t_1;
   size_t __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":625
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":626
  * cdef void free_relation_spectrum_pairs_array(RelationSpectrumPairArray* pairs_array) nogil:
  *     cdef size_t i
  *     for i in range(pairs_array.size):             # <<<<<<<<<<<<<<
@@ -10209,7 +10236,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":626
+    /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":627
  *     cdef size_t i
  *     for i in range(pairs_array.size):
  *         free_peak_relations_array(pairs_array.pairs[i].relations)             # <<<<<<<<<<<<<<
@@ -10219,7 +10246,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
     __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_peak_relations_array((__pyx_v_pairs_array->pairs[__pyx_v_i]).relations);
   }
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":627
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":628
  *     for i in range(pairs_array.size):
  *         free_peak_relations_array(pairs_array.pairs[i].relations)
  *     free(pairs_array.pairs)             # <<<<<<<<<<<<<<
@@ -10228,7 +10255,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
   free(__pyx_v_pairs_array->pairs);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":628
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":629
  *         free_peak_relations_array(pairs_array.pairs[i].relations)
  *     free(pairs_array.pairs)
  *     free(pairs_array)             # <<<<<<<<<<<<<<
@@ -10237,7 +10264,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
  */
   free(__pyx_v_pairs_array);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":623
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":624
  * 
  * 
  * cdef void free_relation_spectrum_pairs_array(RelationSpectrumPairArray* pairs_array) nogil:             # <<<<<<<<<<<<<<
@@ -10248,7 +10275,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":630
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":631
  *     free(pairs_array)
  * 
  * cdef void free_fitted_feature(FittedFeatureStruct* fitted_feature) nogil:             # <<<<<<<<<<<<<<
@@ -10258,20 +10285,51 @@ static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_
 
 static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_fitted_feature(struct FittedFeatureStruct *__pyx_v_fitted_feature) {
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":631
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":632
  * 
  * cdef void free_fitted_feature(FittedFeatureStruct* fitted_feature) nogil:
  *     free_relation_spectrum_pairs_array(fitted_feature.relation_pairs)             # <<<<<<<<<<<<<<
  * 
+ * 
  */
   __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_free_relation_spectrum_pairs_array(__pyx_v_fitted_feature->relation_pairs);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":630
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":631
  *     free(pairs_array)
  * 
  * cdef void free_fitted_feature(FittedFeatureStruct* fitted_feature) nogil:             # <<<<<<<<<<<<<<
  *     free_relation_spectrum_pairs_array(fitted_feature.relation_pairs)
  * 
+ */
+
+  /* function exit code */
+}
+
+/* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":635
+ * 
+ * 
+ * cdef void peak_score_distribution(PeakAnnotationStruct* peak) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         IonTypeDoubleMap* distribution
+ */
+
+static void __pyx_f_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_peak_score_distribution(CYTHON_UNUSED struct PeakAnnotationStruct *__pyx_v_peak) {
+  CYTHON_UNUSED struct __pyx_t_21glycresoft_sqlalchemy_5utils_12ccommon_math_IonTypeDoubleMap *__pyx_v_distribution;
+
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":639
+ *         IonTypeDoubleMap* distribution
+ * 
+ *     distribution = new_ion_type_double_map()             # <<<<<<<<<<<<<<
+ * 
+ */
+  __pyx_v_distribution = __pyx_f_21glycresoft_sqlalchemy_5utils_12ccommon_math_new_ion_type_double_map();
+
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":635
+ * 
+ * 
+ * cdef void peak_score_distribution(PeakAnnotationStruct* peak) nogil:             # <<<<<<<<<<<<<<
+ *     cdef:
+ *         IonTypeDoubleMap* distribution
  */
 
   /* function exit code */
@@ -11125,6 +11183,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_ff, __pyx_k_ff, sizeof(__pyx_k_ff), 0, 0, 1, 1},
   {&__pyx_n_s_file, __pyx_k_file, sizeof(__pyx_k_file), 0, 0, 1, 1},
   {&__pyx_n_s_fit_features, __pyx_k_fit_features, sizeof(__pyx_k_fit_features), 0, 0, 1, 1},
+  {&__pyx_n_s_fixed, __pyx_k_fixed, sizeof(__pyx_k_fixed), 0, 0, 1, 1},
   {&__pyx_n_s_format, __pyx_k_format, sizeof(__pyx_k_format), 0, 0, 1, 1},
   {&__pyx_n_s_from_charge, __pyx_k_from_charge, sizeof(__pyx_k_from_charge), 0, 0, 1, 1},
   {&__pyx_n_s_from_peak, __pyx_k_from_peak, sizeof(__pyx_k_from_peak), 0, 0, 1, 1},
@@ -11187,7 +11246,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 };
 static int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_sum = __Pyx_GetBuiltinName(__pyx_n_s_sum); if (!__pyx_builtin_sum) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 226; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -11197,17 +11256,17 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":513
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":514
  * 
  * 
  * def fit_features(list gsms, list features, str kind, int n_threads=8):             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i
  */
-  __pyx_tuple__2 = PyTuple_Pack(18, __pyx_n_s_gsms, __pyx_n_s_features, __pyx_n_s_kind, __pyx_n_s_n_threads, __pyx_n_s_i, __pyx_n_s_n_p, __pyx_n_s_i_p, __pyx_n_s_spectra, __pyx_n_s_cfeature, __pyx_n_s_cfeatures, __pyx_n_s_ckind, __pyx_n_s_out, __pyx_n_s_ff, __pyx_n_s_start, __pyx_n_s_end, __pyx_n_s_time, __pyx_n_s_matched_spectrum_map, __pyx_n_s_copy); if (unlikely(!__pyx_tuple__2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__2 = PyTuple_Pack(18, __pyx_n_s_gsms, __pyx_n_s_features, __pyx_n_s_kind, __pyx_n_s_n_threads, __pyx_n_s_i, __pyx_n_s_n_p, __pyx_n_s_i_p, __pyx_n_s_spectra, __pyx_n_s_cfeature, __pyx_n_s_cfeatures, __pyx_n_s_ckind, __pyx_n_s_out, __pyx_n_s_ff, __pyx_n_s_start, __pyx_n_s_end, __pyx_n_s_time, __pyx_n_s_matched_spectrum_map, __pyx_n_s_copy); if (unlikely(!__pyx_tuple__2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
-  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(4, 0, 18, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_fit_features, 513, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(4, 0, 18, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_fit_features, 514, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -11343,7 +11402,7 @@ PyMODINIT_FUNC PyInit_cpeak_relations(void)
   if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_1_genexpr) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_type_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_1_genexpr.tp_print = 0;
   __pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_1_genexpr = &__pyx_type_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_1_genexpr;
-  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_2_peak_relations) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 185; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyType_Ready(&__pyx_type_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_2_peak_relations) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_type_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_2_peak_relations.tp_print = 0;
   __pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_2_peak_relations = &__pyx_type_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations___pyx_scope_struct_2_peak_relations;
   /*--- Type import code ---*/
@@ -11351,10 +11410,10 @@ PyMODINIT_FUNC PyInit_cpeak_relations(void)
   __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature = (struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature*)__Pyx_GetVtable(__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature->tp_dict); if (unlikely(!__pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MassOffsetFeature)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 20; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak = __Pyx_ImportType("glycresoft_sqlalchemy.utils.ccommon_math", "DPeak", sizeof(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak), 1); if (unlikely(!__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak = (struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak*)__Pyx_GetVtable(__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak->tp_dict); if (unlikely(!__pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_DPeak)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment = __Pyx_ImportType("glycresoft_sqlalchemy.utils.ccommon_math", "TheoreticalFragment", sizeof(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment), 1); if (unlikely(!__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum = __Pyx_ImportType("glycresoft_sqlalchemy.utils.ccommon_math", "MatchedSpectrum", sizeof(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum), 1); if (unlikely(!__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum = (struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum*)__Pyx_GetVtable(__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum->tp_dict); if (unlikely(!__pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch = __Pyx_ImportType("glycresoft_sqlalchemy.utils.ccommon_math", "FragmentMatch", sizeof(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch), 1); if (unlikely(!__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 81; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment = __Pyx_ImportType("glycresoft_sqlalchemy.utils.ccommon_math", "TheoreticalFragment", sizeof(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment), 1); if (unlikely(!__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_TheoreticalFragment)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum = __Pyx_ImportType("glycresoft_sqlalchemy.utils.ccommon_math", "MatchedSpectrum", sizeof(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum), 1); if (unlikely(!__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 64; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum = (struct __pyx_vtabstruct_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum*)__Pyx_GetVtable(__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum->tp_dict); if (unlikely(!__pyx_vtabptr_21glycresoft_sqlalchemy_5utils_12ccommon_math_MatchedSpectrum)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 64; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch = __Pyx_ImportType("glycresoft_sqlalchemy.utils.ccommon_math", "FragmentMatch", sizeof(struct __pyx_obj_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch), 1); if (unlikely(!__pyx_ptype_21glycresoft_sqlalchemy_5utils_12ccommon_math_FragmentMatch)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 82; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_ptype_7cpython_4type_type = __Pyx_ImportType(__Pyx_BUILTIN_MODULE_NAME, "type", 
   #if CYTHON_COMPILING_IN_PYPY
   sizeof(PyTypeObject),
@@ -11507,30 +11566,30 @@ PyMODINIT_FUNC PyInit_cpeak_relations(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_FeatureSpecialization, __pyx_t_4) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":199
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":200
  * 
  * 
  * cdef object PeakRelation__new__ = PeakRelation.__new__             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation), __pyx_n_s_new); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation), __pyx_n_s_new); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 200; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_XGOTREF(__pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation__new__);
   __Pyx_DECREF_SET(__pyx_v_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_PeakRelation__new__, __pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":513
+  /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":514
  * 
  * 
  * def fit_features(list gsms, list features, str kind, int n_threads=8):             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i
  */
-  __pyx_t_4 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_5fit_features, NULL, __pyx_n_s_glycresoft_sqlalchemy_scoring_of); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_7scoring_16offset_frequency_15cpeak_relations_5fit_features, NULL, __pyx_n_s_glycresoft_sqlalchemy_scoring_of); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_fit_features, __pyx_t_4) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 513; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_fit_features, __pyx_t_4) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 514; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "glycresoft_sqlalchemy\scoring\offset_frequency\cpeak_relations.pyx":1

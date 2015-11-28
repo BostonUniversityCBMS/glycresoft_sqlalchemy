@@ -4,14 +4,12 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title></title>
-    <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/materialize.css') }}">    
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='font/icons.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='dist/css/bundle.css') }}">    
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
-    <script src="{{ url_for('static',filename='js/dist/vendor-bundle.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/dist/lib-bundle.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/dist/app-bundle.js') }}"></script>
+    <script src="{{ url_for('static',filename='dist/js/vendor-bundle.js') }}"></script>
+    <script src="{{ url_for('static',filename='dist/js/lib-bundle.js') }}"></script>
+    <script src="{{ url_for('static',filename='dist/js/app-bundle.js') }}"></script>
     <script>
 
 $(function() {

@@ -1,5 +1,6 @@
 import csv
 import os
+import uuid
 
 from glycresoft_sqlalchemy.data_model import PipelineModule
 from glycresoft_sqlalchemy.data_model.observed_ions import (
@@ -34,7 +35,8 @@ class Decon2LSIsosParser(PipelineModule):
         self.manager.initialize()
         session = self.manager.session()
         sample_run = Decon2LSLCMSSampleRun(
-            name=os.path.basename(self.file_path), parameters={"deconvoluted_by": 'decon2ls'})
+            name=os.path.basename(self.file_path), parameters={"deconvoluted_by": 'decon2ls'},
+            uuid=uuid.uuid4().hex)
         session.add(sample_run)
         session.commit()
         sample_run_id = sample_run.id
@@ -46,6 +48,7 @@ class Decon2LSIsosParser(PipelineModule):
         last_key = -1
         for i, row in enumerate(csv.DictReader(open(self.file_path))):
             remap = {v: row[k] for k, v in isos_to_db_map.items()}
+            remap['scan_peak_index'] = i
             if remap['scan_id'] != last_scan_id:
                 scan = MSScan(time=remap['scan_id'], sample_run_id=sample_run_id)
                 session.add(scan)

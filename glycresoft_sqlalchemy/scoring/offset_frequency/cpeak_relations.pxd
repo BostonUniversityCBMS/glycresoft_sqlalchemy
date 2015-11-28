@@ -9,7 +9,7 @@ cdef class PeakRelation(object):
         public DPeak to_peak
         public int from_charge
         public int to_charge
-        public float intensity_ratio
+        public int intensity_ratio
         public str kind
         public MassOffsetFeature feature
         public bint same_terminal
@@ -26,7 +26,7 @@ cdef public struct PeakRelationStruct:
     PeakStruct to_peak
     int from_charge
     int to_charge
-    float intensity_ratio
+    int intensity_ratio
     char* kind
     MSFeatureStruct* feature
     bint same_terminal
@@ -53,3 +53,12 @@ cdef public struct FittedFeatureStruct:
     MSFeatureStruct* feature
     char* kind
 
+
+cdef public struct FittedFeatureStructArray:
+    FittedFeatureStruct** features
+    size_t size
+
+
+cdef public struct PeakAnnotationStruct:
+    PeakStruct* peak
+    PeakRelationStructArray* annotations

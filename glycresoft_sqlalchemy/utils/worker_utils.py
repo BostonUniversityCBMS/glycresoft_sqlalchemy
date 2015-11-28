@@ -39,13 +39,14 @@ def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None,
             task.wait(0.1)
             if task.ready():
                 try:
-                    result_callback(task.get())
+                    if task.ready():
+                        result_callback(task.get())
                 except Exception, e:
                     logger.exception("An error occurred", exc_info=e)
             else:
                 next_round.append(task)
         work_queue = next_round
-        elapsed = time.time() - timer > update_window
+        elapsed = (time.time() - timer) > update_window
         if last_length != len(work_queue) or elapsed:
             last_length = len(work_queue)
             logger.info("%d tasks remaining", last_length)
@@ -56,6 +57,7 @@ def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None,
                     work_loader.next()
                 except StopIteration:
                     work_left = False
+
     end_time = time.time()
     logger.info("Time elapsed: %0.2fs", (end_time - begin_time))
 
@@ -67,5 +69,3 @@ class ResultCounter(object):
 
     def __call__(self, i):
         self.n += i
-        if self.logger is not None:
-            self.logger.info("%d completed", self.n)

@@ -260,7 +260,10 @@ class Proteome(object):
 
     def _load_proteins(self):
         session = self.manager.session()
-        get_or_create(session, self.hypothesis_type, id=self.hypothesis_id)
+        hypothesis, created = get_or_create(session, self.hypothesis_type, id=self.hypothesis_id)
+        session.add(hypothesis)
+        session.commit()
+        self.hypothesis_id = hypothesis.id
         for protein in self.parser.iterfind(
                 "ProteinDetectionHypothesis", retrieve_refs=True, recursive=False, iterative=True):
             session.add(
@@ -275,9 +278,13 @@ class Proteome(object):
         session = self.manager.session()
         counter = 0
         last = 0
+        i = 0
         for spectrum_identification in self.parser.iterfind(
                 "SpectrumIdentificationItem", retrieve_refs=True, iterative=True):
             counter += convert_dict_to_sequence(spectrum_identification, session)
+            i += 1
+            if i % 1000 == 0:
+                logger.info("%d spectrum matches processed.", i)
             if (counter - last) > 1000:
                 session.commit()
                 last = counter

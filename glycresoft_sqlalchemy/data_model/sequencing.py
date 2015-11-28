@@ -28,3 +28,7 @@ class AminoAcidComposition(Base):
     mass = Column(Numeric(12, 6, asdecimal=False), index=True)
     size = Column(Integer, index=True)
     count_n_glycosylation = Column(Integer)
+
+    def __repr__(self):
+        return "AminoAcidComposition({} {} {} {})".format(
+            self.id, self.composition, self.mass, self.count_n_glycosylation)

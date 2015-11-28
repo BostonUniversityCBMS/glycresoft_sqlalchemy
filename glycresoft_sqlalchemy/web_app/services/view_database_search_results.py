@@ -1,0 +1,143 @@
+from flask import request, g, render_template, Response, Blueprint
+
+from glycresoft_sqlalchemy.data_model import HypothesisSampleMatch, GlycopeptideMatch, PeakGroupMatch, Protein
+from glycresoft_sqlalchemy.report import microheterogeneity
+from glycresoft_sqlalchemy.web_app.utils.pagination import paginate
+
+view_database_search_results = Blueprint("view_database_search_results", __name__)
+
+app = view_database_search_results
+
+
+@app.route("/view_database_search_results/<int:id>", methods=["POST"])
+def view_database_search_results_dispatch(id):
+    hsm = g.db.query(HypothesisSampleMatch).get(id)
+    results_type = hsm.results_type
+    if PeakGroupMatch == results_type:
+        return view_composition_database_search_results(id)
+    elif GlycopeptideMatch == results_type:
+        return view_tandem_glycopeptide_database_search_results(id)
+    return Response("No Match, " + results_type.__name__)
+
+
+# ----------------------------------------------------------------------
+#           View Tandem Glycopeptide Database Search Results
+# ----------------------------------------------------------------------
+def view_tandem_glycopeptide_database_search_results(id):
+    hsm = g.db.query(HypothesisSampleMatch).get(id)
+    hypothesis_sample_match_id = id
+
+    state = request.get_json()
+    settings = state['settings']
+    context = state['context']
+
+    minimum_score = settings.get('minimum_ms2_score', 0.2)
+
+    def filter_context(q):
+        return q.filter_by(
+            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
+            GlycopeptideMatch.ms2_score > minimum_score)
+
+    return render_template(
+        "tandem_glycopeptide_search/view_database_search_results.templ",
+        hsm=hsm,
+        filter_context=filter_context)
+
+
+@app.route("/view_database_search_results/protein_view/<int:id>", methods=["POST"])
+def view_tandem_glycopeptide_protein_results(id):
+    parameters = request.get_json()
+    print parameters
+    print id
+    hypothesis_sample_match_id = parameters['context']['hypothesis_sample_match_id']
+    protein = g.db.query(Protein).get(id)
+
+    minimum_score = float(parameters['settings'].get("minimum_ms2_score", 0.2))
+
+    def filter_context(q):
+        return q.filter_by(
+            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
+            GlycopeptideMatch.ms2_score > minimum_score)
+
+    site_summary = microheterogeneity.GlycoproteinMicroheterogeneitySummary(
+        protein, filter_context)
+
+    return render_template(
+        "tandem_glycopeptide_search/components/protein_view.templ",
+        protein=protein,
+        site_summary=site_summary,
+        filter_context=filter_context)
+
+
+@app.route("/view_database_search_results/view_glycopeptide_details/<int:id>")
+def view_tandem_glycopeptide_glycopeptide_details(id):
+    gpm = g.db.query(GlycopeptideMatch).get(id)
+    return render_template(
+        "tandem_glycopeptide_search/components/glycopeptide_details.templ", glycopeptide=gpm)
+
+
+# ----------------------------------------------------------------------
+#           View Peak Grouping Database Search Results
+# ----------------------------------------------------------------------
+
+
+# Dispatch through view_database_search_results
+def view_composition_database_search_results(id):
+    hsm = g.db.query(HypothesisSampleMatch).get(id)
+    hypothesis_sample_match_id = id
+
+    def filter_context(q):
+        return q.filter_by(
+            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
+            PeakGroupMatch.ms1_score > 0.2)
+
+    return render_template(
+        "peak_group_search/view_database_search_results.templ",
+        hsm=hsm,
+        filter_context=filter_context)
+
+
+@app.route("/view_database_search_results/protein_composition_view/<int:id>", methods=["POST"])
+def view_composition_glycopeptide_protein_results(id):
+    print request.values
+    hypothesis_sample_match_id = request.values["hypothesis_sample_match_id"]
+    protein = g.db.query(Protein).get(id)
+
+    def filter_context(q):
+        return q.filter(
+            PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
+            PeakGroupMatch.ms1_score > 0.2)
+
+    return render_template(
+        "peak_group_search/components/protein_view.templ",
+        protein=protein,
+        filter_context=filter_context)
+
+
+@app.route("/view_database_search_results/glycopeptide_matches_composition_table"
+           "/<int:protein_id>/<int:page>", methods=["POST"])
+def view_composition_glycopeptide_table_partial(protein_id, page):
+    hypothesis_sample_match_id = request.get_json()["context"]["hypothesis_sample_match_id"]
+    protein = g.db.query(Protein).get(protein_id)
+
+    def filter_context(q):
+        return q.filter(
+            PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
+            PeakGroupMatch.ms1_score > 0.2)
+
+    paginator = paginate(filter_context(protein.peak_group_matches).order_by(PeakGroupMatch.ms1_score.desc()), page, 50)
+
+    return render_template(
+        "peak_group_search/components/glycopeptide_match_table.templ",
+        paginator=paginator)
+
+
+@app.route("/view_database_search_results/view_glycopeptide_composition_details/<int:id>")
+def view_peak_grouping_glycopeptide_composition_details(id):
+    pgm = g.db.query(PeakGroupMatch).get(id)
+    ambiguous_with = g.db.query(PeakGroupMatch).filter(
+        PeakGroupMatch.peak_group_id == pgm.peak_group_id,
+        PeakGroupMatch.id != pgm.id).all()
+    return render_template(
+        "peak_group_search/components/glycopeptide_details.templ", pgm=pgm,
+        ambiguous_with=ambiguous_with)

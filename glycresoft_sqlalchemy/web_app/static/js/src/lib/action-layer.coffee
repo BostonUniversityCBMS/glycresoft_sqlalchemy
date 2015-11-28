@@ -14,6 +14,8 @@ class ActionLayerManager extends EventEmitter
         return @layerCounter
 
     add: (layer) ->
+        if !layer.options.closeable?
+            layer.options.closeable = true
         @layers[layer.id] = layer
         @container.append layer.container
         @emit "layer-added", "layer": layer
@@ -43,6 +45,8 @@ class ActionLayerManager extends EventEmitter
         @emit 'layer-change', 'layer': next
 
     addLayer: (options, params) ->
+        if !options.closeable?
+            options.closeable = true
         new ActionLayer(this, options, params)
         return @
 
@@ -87,7 +91,7 @@ class ActionLayer
         if @manager.getShowingLayer() == undefined
             @show()
 
-    setup: ->
+    setup: () ->
         console.log("Setting up", @)
         if @options.contentURLTemplate?
             @contentURL = @options.contentURLTemplate.format @params
@@ -104,10 +108,12 @@ class ActionLayer
                 if srcURL != undefined
                     $.getScript srcURL
             materialRefresh()
-            @container.prepend("""
-    <div>
-        <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>
-    </div>""")
+            console.log("This layer can be closed? #{@options.closeable}")
+            if @options.closeable
+                @container.prepend("""
+        <div>
+            <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>
+        </div>""")
         if @method == "get"
             $.get(@contentURL).success callback
         else if @method == "post"
@@ -127,10 +133,11 @@ class ActionLayer
             if srcURL != undefined
                 $.getScript srcURL
         materialRefresh()
-        @container.prepend("""
-    <div>
-    <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>
-    </div>""")
+        if @options.closeable
+            @container.prepend("""
+        <div>
+        <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>
+        </div>""")
 
     show: ->
         @container.fadeIn 100

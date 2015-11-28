@@ -80,30 +80,6 @@ Sequence Highlights
     color: maroon;
 }
 
-/*
-
-Protein Match Table
-
-*/
-
-.protein-match-table th, .protein-match-table td {
-    width: 180px;
-    padding: 5px;
-}
-
-.protein-match-table thead, .protein-match-table tbody {
-    display: block;
-    overflow-y: auto;
-}
-
-.protein-match-table tbody tr{
-    cursor: hand;
-}
-
-.protein-match-cell {
-    text-align: left;
-    padding: 5px;
-}
 
 
 /*
@@ -139,7 +115,7 @@ Glycopeptide Match Table
 }
 
 .glycopeptide-match-table td {
-
+    cursor: pointer;
 }
 
 .fragment-ion-table td, .fragment-ion-table th {
@@ -187,6 +163,18 @@ Mass Shift Input
 }
 .mass-shift-input-table{
     margin-top: 11px;
+}
+
+
+/*
+
+Pagination
+
+*/
+
+
+.previous-page, .next-page {
+    cursor: pointer;
 }
 
 /*

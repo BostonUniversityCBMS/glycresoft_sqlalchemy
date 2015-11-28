@@ -229,6 +229,7 @@ class TaskManager(object):
         self.timer.start()
         self.messages = Queue()
         self.running_lock = RLock()
+        self.halting = False
 
     def add_task(self, task):
         """Add a `Task` object to the set of all tasks being managed
@@ -252,6 +253,10 @@ class TaskManager(object):
 
     def stoploop(self):
         self.timer.stop()
+
+    def terminate(self):
+        self.stoploop()
+        # Clean up here
 
     def tick(self):
         """Check each managed task for status updates, schedule new tasks

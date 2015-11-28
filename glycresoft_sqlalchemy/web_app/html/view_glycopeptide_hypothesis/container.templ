@@ -1,0 +1,26 @@
+<div class='row'>
+    <div class='col s8'>
+        <h4>{{hypothesis.name}}</h4>
+        <span>ID: {{hypothesis.id}}</span>
+    </div>
+</div>
+<div class='row'>
+    <div class='row'>
+        <div class='col s4'>
+            {% with proteins=hypothesis.proteins %}
+                {% include "view_glycopeptide_hypothesis/components/protein_matches_table.templ"%}
+            {% endwith %}        
+            <div id='protein-container'>
+                {% with protein=hypothesis.proteins.values()[0] %}
+                    {% include "view_glycopeptide_hypothesis/components/protein_view.templ" %}
+                {% endwith %}
+            </div>
+        </div>        
+    </div>
+    <div id="display-table-container" class='col s8'>
+        
+    </div>
+</div>
+<script>
+viewGlycopeptideHypothesis({{hypothesis.id}})
+</script>

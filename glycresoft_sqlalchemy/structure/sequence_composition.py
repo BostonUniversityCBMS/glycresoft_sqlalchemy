@@ -1,15 +1,21 @@
 import re
-
+import itertools
 from glypy import MonosaccharideResidue
 
-from .residue import Residue as AminoAcidResidue, memoize
+from .residue import Residue as AminoAcidResidue, memoize, get_all_residues
 from .composition import Composition
 from .modification import Modification
 from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet
 
 
 class AminoAcidSequenceBuildingBlock(object):
-    def __init__(self, residue_, modifications, neutral_mass=None):
+    @classmethod
+    def get_all_common_residues(cls):
+        return map(cls, get_all_residues())
+
+    def __init__(self, residue_, modifications=None, neutral_mass=None):
+        if modifications is None:
+            modifications = ()
         self.residue = residue_
         self.modifications = tuple(modifications)
         if neutral_mass is None:
@@ -46,7 +52,6 @@ class AminoAcidSequenceBuildingBlock(object):
         if len(parts) > 1:
             mod = (Modification(parts[1][:-1]),)
         return cls(aa, mod)
-
 
 
 class SequenceSegmentBlock(object):
@@ -103,6 +108,8 @@ class SequenceComposition(dict):
         self.extend(*args)
 
     def __setitem__(self, key, value):
+        if key is None:
+            return
         dict.__setitem__(self, key, value)
         self._mass = None
 
@@ -213,22 +220,37 @@ class SequenceComposition(dict):
             inst[AminoAcidSequenceBuildingBlock.from_str(residue)] = int(count)
         return inst
 
+    def maybe_n_glycosylation(self):
+        n_N = self["N"]
+        n_S = self["S"]
+        n_T = self["T"]
+        used = 0
+        possible_sequons = 0
+        while(n_N > 0):
+            if n_S > 0 or n_T > 0:
+                if sum(self.values()) - used > 3:
+                    n_N -= 1
+                    if n_S > 0:
+                        n_S -= 1
+                    elif n_T > 0:
+                        n_T -= 1
+                    else:
+                        break
+                    used += 3
+                    possible_sequons += 1
+                    continue
+            break
+        return possible_sequons
 
-def all_compositions(blocks, count=20):
-    def extend_segment(base, blocks):
-        for block in blocks:
-            ext = base.clone()
-            ext[block] += 1
-            ext._mass = base.mass + block.neutral_mass
-            yield ext
+    def possible_sequences(self):
+        for ordering in itertools.permute(self.flatten()):
+            yield Sequence(ordering)
 
-    candidates = [SequenceComposition()]
-    next_round = SqliteSet()
-    for i in range(count):
-        for candidate in candidates:
-            extents = (extend_segment(candidate, blocks))
-            for case in extents:
-                next_round.add(case)
-        candidates = next_round
-        next_round = SqliteSet()
-    return set(candidates)
+
+def all_compositions(blocks, size=20):
+    components = [None] + list(blocks)
+    for case in itertools.combinations_with_replacement(components, size):
+        sc = SequenceComposition(*case)
+        if len(sc) == 0:
+            continue
+        yield sc

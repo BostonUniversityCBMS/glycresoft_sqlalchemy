@@ -4,6 +4,7 @@ import itertools
 
 from glycresoft_sqlalchemy.structure import sequence, constants
 from glycresoft_sqlalchemy.structure import stub_glycopeptides
+from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptideGlycanAssociation
 
 Sequence = sequence.Sequence
 StubGlycopeptide = stub_glycopeptides.StubGlycopeptide
@@ -65,23 +66,33 @@ def fragments(sequence):
             stub_ions)
 
 
+class WorkItemCollection(object):
+    def __init__(self, session):
+        self.session = session
+        self.accumulator = []
+        self.glycan_accumulator = []
+
+    def add(self, glycopeptide_record):
+        self.accumulator.append(glycopeptide_record)
+        self.glycan_accumulator.append(glycopeptide_record.glycans.all())
+
+    def reset(self):
+        self.session.expunge_all()
+        self.accumulator = []
+        self.glycan_accumulator = []
+
+    def commit(self):
+        session = self.session
+        session.add_all(self.accumulator)
+        session.flush()
+        session.execute(
+            TheoreticalGlycopeptideGlycanAssociation.insert(),
+            [{"peptide_id": p.id, "glycan_id": g.id} for p, gs in zip(self.accumulator, self.glycan_accumulator)
+             for g in gs])
+        session.commit()
+
+        self.reset()
+
+
 def flatten(iterable):
     return tuple(itertools.chain.from_iterable(iterable))
-
-
-def concatenate_csv(csv_list, merge_file):
-    if isinstance(csv_list, basestring):
-        csv_list = [csv_list]
-    headered = False
-    with open(merge_file, 'wb') as merge_handle:
-        outwriter = csv.writer(merge_handle)
-        for path in csv_list:
-            with open(path, 'rb') as handle:
-                reader = csv.reader(handle)
-                g = iter(reader)
-                if headered:
-                    g.next()
-                else:
-                    outwriter.writerow(g.next())
-                    headered = True
-                outwriter.writerows(g)

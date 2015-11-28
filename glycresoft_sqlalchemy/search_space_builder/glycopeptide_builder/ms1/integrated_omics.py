@@ -34,6 +34,8 @@ from glycresoft_sqlalchemy.structure import constants
 
 
 logger = logging.getLogger(__name__)
+if logging.getLogger().root.handle == []:
+    print "No logger"
 
 Sequence = sequence.Sequence
 Modification = modification.Modification
@@ -131,6 +133,7 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
             glycan_assoc_acc.extend((informed_glycopeptide, glycan_id) for glycan_id in glycan_ids)
             i += 1
             if i % 5000 == 0:
+                print "Flushing", i, peptide
                 session.add_all(glycopeptide_acc)
                 session.flush()
                 session.execute(
@@ -180,7 +183,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
     HypothesisType = ExactMS1GlycopeptideHypothesis
 
     def __init__(self, database_path, hypothesis_id=None, protein_ids=None, mzid_path=None,
-                 glycomics_path=None, glycomics_format='txt', n_processes=4):
+                 glycomics_path=None, glycomics_format='txt', hypothesis_name=None, n_processes=4):
         self.manager = self.manager_type(database_path)
         if not os.path.exists(database_path):
             self.manager.initialize()
@@ -191,6 +194,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
         self.glycomics_format = glycomics_format
         self.protein_ids = protein_ids
         self.n_processes = n_processes
+        self.hypothesis_name = hypothesis_name
 
     def bootstrap_hypothesis(self):
         session = self.manager.session()
@@ -200,10 +204,15 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
             hypothesis = session.query(Hypothesis).get(self.hypothesis_id)
 
         if hypothesis is None:
-            hypothesis = self.HypothesisType(name=make_name(self.mzid_path, self.glycomics_path))
+            if self.hypothesis_name is None:
+                self.hypothesis_name = make_name(self.mzid_path, self.glycomics_path)
+            hypothesis = self.HypothesisType(name=self.hypothesis_name)
             session.add(hypothesis)
             session.commit()
-            load_proteomics(self.database_path, self.mzid_path, hypothesis_id=hypothesis.id, hypothesis_type=self.HypothesisType)
+            load_proteomics(
+                self.database_path, self.mzid_path,
+                hypothesis_id=hypothesis.id,
+                hypothesis_type=self.HypothesisType)
             load_glycomics_naive(self.database_path, self.glycomics_path, hypothesis.id, format=self.glycomics_format)
 
         self.hypothesis_id = hypothesis.id

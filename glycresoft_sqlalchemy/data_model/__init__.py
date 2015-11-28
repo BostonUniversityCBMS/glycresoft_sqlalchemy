@@ -4,6 +4,7 @@ from .proteomics import *
 from .observed_ions import *
 from .database_search import *
 from .glycomics import *
+from .sequencing import *
 
 from .connection import *
 from pipeline_module import PipelineModule, Message, User

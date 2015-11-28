@@ -11,10 +11,10 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table,
 from sqlalchemy.orm.exc import DetachedInstanceError
 from .generic import MutableDict, MutableList
 from .base import Base
-from .glycomics import TheoreticalGlycanComposition as Glycan, has_glycan_composition
+from .glycomics import TheoreticalGlycanComposition as Glycan, with_glycan_composition
 from . import glycomics
 
-from ..structure import sequence
+from ..structure import sequence, fragment
 
 
 class Hypothesis(Base):
@@ -181,16 +181,9 @@ TheoreticalGlycopeptideGlycanAssociation = Table(
     Column("glycan_id", Integer, ForeignKey(Glycan.id, ondelete="CASCADE")))
 
 
-class TheoreticalGlycopeptide(PeptideBase, Base):
-    __tablename__ = "TheoreticalGlycopeptide"
+class GlycopeptideSequenceMS2Base(object):
 
-    id = Column(Integer, primary_key=True)
-    glycans = relationship(Glycan, secondary=TheoreticalGlycopeptideGlycanAssociation,
-                           backref='glycopeptides', lazy='dynamic',
-                           cascade="delete")
     ms1_score = Column(Numeric(12, 6, asdecimal=False), index=True)
-
-    base_composition_id = Column(Integer, ForeignKey("PeakGroupMatch.id"), index=True)
 
     observed_mass = Column(Numeric(12, 6, asdecimal=False))
     glycan_mass = Column(Numeric(12, 6, asdecimal=False))
@@ -208,6 +201,18 @@ class TheoreticalGlycopeptide(PeptideBase, Base):
 
     bare_y_ions = Column(MutableList.as_mutable(PickleType))
     glycosylated_y_ions = Column(MutableList.as_mutable(PickleType))
+
+
+@with_glycan_composition("glycan_composition_str")
+class TheoreticalGlycopeptide(PeptideBase, Base, GlycopeptideSequenceMS2Base):
+    __tablename__ = "TheoreticalGlycopeptide"
+
+    id = Column(Integer, primary_key=True)
+    glycans = relationship(Glycan, secondary=TheoreticalGlycopeptideGlycanAssociation,
+                           backref='glycopeptides', lazy='dynamic',
+                           cascade="delete")
+
+    base_composition_id = Column(Integer, ForeignKey("PeakGroupMatch.id"), index=True)
 
     def fragments(self, kind=('ox', 'b', 'y', 'gb', 'gy', 'stub')):
         '''
@@ -248,7 +253,6 @@ class TheoreticalGlycopeptide(PeptideBase, Base):
     def __repr__(self):
         rep = "<TheoreticalGlycopeptide {} {}>".format(self.glycopeptide_sequence, self.observed_mass)
         return rep
-has_glycan_composition(TheoreticalGlycopeptide, "glycan_composition_str")
 
 
 class TheoreticalPeptideProductIon(Base):
@@ -289,11 +293,21 @@ class TheoreticalGlycopeptideStubIon(Base):
     name = Column(Unicode(64), index=True)
     calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
     ion_ladder = Column(Unicode(10), index=True)
-    peptide_backbone = Column(Boolean)
+    includes_peptide = Column(Boolean)
 
     def __repr__(self):
         return "<TheoreticalGlycopeptideStubIon %s %s %0.3f>" % (
             self.name, self.ion_ladder, self.calculated_mass)
+
+    @classmethod
+    def from_simple_fragment(cls, frag):
+        inst = cls(
+            name=frag.name,
+            calculated_mass=frag.mass,
+            ion_ladder=frag.kind,
+            includes_peptide=fragment.IonSeries(frag.kind).includes_peptide
+            )
+        return inst
 
 
 class MS1GlycanHypothesis(Hypothesis):
@@ -369,3 +383,10 @@ class ExactMS2GlycopeptideHypothesis(MS2GlycopeptideHypothesis):
     }
 
     theoretical_structure_type = TheoreticalGlycopeptide
+
+
+class HypothesisToGlycanHypothesis(Base):
+    __tablename__ = "HypothesisToGlycanHypothesis"
+
+    glycan_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id), index=True, primary_key=True)
+    linked_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id), index=True, primary_key=True)

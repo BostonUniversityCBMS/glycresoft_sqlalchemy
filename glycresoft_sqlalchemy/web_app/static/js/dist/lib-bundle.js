@@ -24,6 +24,9 @@ ActionLayerManager = (function(superClass) {
   };
 
   ActionLayerManager.prototype.add = function(layer) {
+    if (layer.options.closeable == null) {
+      layer.options.closeable = true;
+    }
     this.layers[layer.id] = layer;
     this.container.append(layer.container);
     this.emit("layer-added", {
@@ -66,6 +69,9 @@ ActionLayerManager = (function(superClass) {
   };
 
   ActionLayerManager.prototype.addLayer = function(options, params) {
+    if (options.closeable == null) {
+      options.closeable = true;
+    }
     new ActionLayer(this, options, params);
     return this;
   };
@@ -139,6 +145,7 @@ ActionLayer = (function() {
         if (!_this.showing) {
           _this.container.hide();
         }
+        _this.options.document = doc;
         _this.container.html(doc);
         _this.container.find('script').each(function(i, tag) {
           var srcURL;
@@ -150,7 +157,10 @@ ActionLayer = (function() {
           }
         });
         materialRefresh();
-        return _this.container.prepend("<div>\n    <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
+        console.log("This layer can be closed? " + _this.options.closeable);
+        if (_this.options.closeable) {
+          return _this.container.prepend("<div>\n    <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
+        }
       };
     })(this);
     if (this.method === "get") {
@@ -166,6 +176,23 @@ ActionLayer = (function() {
         success: callback,
         type: "POST"
       });
+    }
+  };
+
+  ActionLayer.prototype.reload = function() {
+    this.container.html(this.options.document);
+    this.container.find('script').each(function(i, tag) {
+      var srcURL;
+      tag = $(tag);
+      srcURL = tag.attr('src');
+      console.log("Setting up script", tag);
+      if (srcURL !== void 0) {
+        return $.getScript(srcURL);
+      }
+    });
+    materialRefresh();
+    if (this.options.closeable) {
+      return this.container.prepend("<div>\n<a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
     }
   };
 
@@ -189,18 +216,24 @@ ActionLayer = (function() {
 })();
 
 //# sourceMappingURL=action-layer.js.map
-;var ajaxForm, setupAjaxForm;
 
-ajaxForm = function(formHandle, success, error) {
+var ajaxForm, setupAjaxForm;
+
+ajaxForm = function(formHandle, success, error, transform) {
   console.log("Ajaxifying ", formHandle);
   return $(formHandle).on('submit', function(event) {
     var ajaxParams, data, encoding, handle, method, url;
     console.log(formHandle, "submitting...");
     event.preventDefault();
     handle = $(this);
+    if (transform == null) {
+      transform = function(form) {
+        return new FormData(form);
+      };
+    }
     url = handle.attr('action');
     method = handle.attr('method');
-    data = new FormData(this);
+    data = transform(this);
     encoding = handle.attr('enctype') || 'application/x-www-form-urlencoded; charset=UTF-8';
     ajaxParams = {
       'url': url,
@@ -243,21 +276,17 @@ setupAjaxForm = function(sourceUrl, container) {
 };
 
 //# sourceMappingURL=ajax-form.js.map
-;var contextMenu;
+
+var contextMenu;
 
 contextMenu = function(target, options, callback) {
-  var action, item;
   if (callback == null) {
     callback = null;
-  }
-  for (item in options) {
-    action = options[item];
-    console.log(item, action);
   }
   $(target).off("contextmenu", false);
   $(document).off("mousedown", false);
   return $(target).on("contextmenu", function(event) {
-    var handle;
+    var action, handle, item;
     event.preventDefault();
     handle = $(".context-menu");
     handle.empty();
@@ -270,9 +299,8 @@ contextMenu = function(target, options, callback) {
     }
     $(".context-menu li").click(function(e) {
       handle = $(this);
-      console.log(handle);
       action = options[handle.attr("data-action")];
-      return action(handle);
+      return action.apply(target);
     });
     return $(".context-menu").finish().toggle(100).css({
       top: event.pageY + 'px',
@@ -288,7 +316,8 @@ $(document).on("mousedown", function(e) {
 });
 
 //# sourceMappingURL=context-menu.js.map
-;$(function() {
+
+$(function() {
   var $body, $tooltip, closeTooltip, openTooltip, xOffset, yOffset;
   yOffset = -3;
   xOffset = 3;
@@ -327,7 +356,8 @@ $(document).on("mousedown", function(e) {
 });
 
 //# sourceMappingURL=custom-tooltip.js.map
-;(function() {
+
+(function() {
 
   /*
   Implements {named} replacements similar to the simple format() method of strings from Python
@@ -364,7 +394,75 @@ $(document).on("mousedown", function(e) {
 })();
 
 //# sourceMappingURL=formatstring.js.map
-;
+
+var getProteinName, getProteinNamesFromMzIdentML, identifyProteomicsFormat;
+
+identifyProteomicsFormat = function(file, callback) {
+  var isMzidentML, reader;
+  isMzidentML = function(lines) {
+    var i, len, line;
+    for (i = 0, len = lines.length; i < len; i++) {
+      line = lines[i];
+      if (/mzIdentML/.test(line)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  reader = new FileReader();
+  reader.onload = function() {
+    var lines, proteomicsFileType;
+    lines = this.result.split("\n");
+    console.log(lines);
+    proteomicsFileType = "fasta";
+    if (isMzidentML(lines)) {
+      proteomicsFileType = "mzIdentML";
+    }
+    return callback(proteomicsFileType);
+  };
+  return reader.readAsText(file.slice(0, 100));
+};
+
+getProteinName = function(line) {
+  return line.split("_", 2)[1];
+};
+
+getProteinNamesFromMzIdentML = function(file, callback) {
+  var chunksize, fr, offset, proteins, seek;
+  fr = new FileReader();
+  chunksize = 1024 * 8;
+  offset = 0;
+  proteins = {};
+  fr.onload = function() {
+    var i, len, line, lines, name;
+    lines = this.result.split("\n");
+    for (i = 0, len = lines.length; i < len; i++) {
+      line = lines[i];
+      if (/<ProteinDetectionHypothesis/i.test(line)) {
+        name = getProteinName(line);
+        console.log(name);
+        proteins[name] = true;
+      }
+    }
+    return seek();
+  };
+  fr.onerror = function(error) {
+    return console.log(error);
+  };
+  seek = function() {
+    if (offset >= file.size) {
+      return callback(Object.keys(proteins));
+    } else {
+      fr.readAsText(file.slice(offset, offset + chunksize));
+      return offset += chunksize / 2;
+    }
+  };
+  return seek();
+};
+
+//# sourceMappingURL=infer-protein-data-format.js.map
+
+
 /*
 The file name mirroring done by the .file-field group in Materialize is set up on page load.
 When these elements are added dynamically, they must be configured manually.
@@ -403,7 +501,8 @@ materialFileInput = function() {
 };
 
 //# sourceMappingURL=material-shim.js.map
-;var TinyNotification;
+
+var TinyNotification;
 
 TinyNotification = (function() {
   TinyNotification.prototype.template = "<div class='notification-container'>\n    <a class='dismiss-notification mdi-content-clear'></a>\n    <div class='notification-content'>\n    </div>\n</div>";

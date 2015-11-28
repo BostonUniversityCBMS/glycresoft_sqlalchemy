@@ -93,12 +93,45 @@ def build_glycan_glycome_db(
         taxonomy_path=None, taxon_id=None, include_descendent_taxa=False, include_structures=True,
         motif_family=None, reduction=None, derivatization=None, *args, **kwargs):
     print args, kwargs
-    job = glycomedb_utils.GlycomeDBHypothesis(database_path, hypothesis_id=None, glycomedb_path=glycomedb_path,
-            taxonomy_path=taxonomy_path, taxa_ids=taxon_id, include_descendent_taxa=include_descendent_taxa,
-            include_structures=include_structures,
-            motif_family=motif_family, reduction=reduction, derivatization=derivatization)
+    job = glycomedb_utils.GlycomeDBHypothesis(
+        database_path, hypothesis_id=None, glycomedb_path=glycomedb_path,
+        taxonomy_path=taxonomy_path, taxa_ids=taxon_id, include_descendent_taxa=include_descendent_taxa,
+        include_structures=include_structures,
+        motif_family=motif_family, reduction=reduction, derivatization=derivatization)
     job.start()
 
+
+def build_glycan_text(database_path, text_file_path, reduction=None, derivatization=None, *args, **kwargs):
+    print args, kwargs
+    job = composition_source.TextGlycanCompositionHypothesisBuilder(
+        database_path=database_path, text_file_path=text_file_path, reduction=reduction,
+        derivatization=derivatization, hypothesis_id=None)
+    job.start()
+
+
+def build_glycan_other_hypothesis(database_path, source_hypothesis_id=None, reduction=None,
+                                  derivatization=None, *args, **kwargs):
+    print args, kwargs
+    job = composition_source.OtherGlycanHypothesisGlycanHypothesisBuilder(
+        database_path, source_hypothesis_id=source_hypothesis_id, reduction=reduction,
+        derivatization=derivatization, *args, **kwargs)
+    job.start()
+
+
+def build_glycan_rules(database_path, rules_file_path, reduction=None, derivatization=None, *args, **kwargs):
+    print args, kwargs
+    job = constrained_combinatorics.ConstrainedCombinatoricsGlycanHypothesisBuilder(
+        database_path, rules_file_path, reduction=reduction, derivatization=derivatization)
+    job.start()
+
+
+def dispatch_glycomics(database_path, glycan_file, glycan_file_type, derivatization, reduction, *args, **kwargs):
+    if glycan_file_type == "text":
+        build_glycan_text(database_path, glycan_file, derivatization=derivatization, reduction=reduction, *args, **kwargs)
+    elif glycan_file_type == "rules":
+        build_glycan_rules(database_path, glycan_file, derivatization=derivatization, reduction=reduction, *args, **kwargs)
+    else:
+        raise Exception("Glycan File Type Not Supported")
 
 app = argparse.ArgumentParser("build-database")
 app.add_argument("-n", "--n-processes", default=4, type=int, help='Number of processes to run on')
@@ -170,6 +203,7 @@ with let(subparsers.add_parser("glycomics")) as c:
     c.add_argument("-f", "--glycan-file-type", choices=('text', 'glycoct', 'rules'), help="The format of --glycan-file")
     c.add_argument("-e", "--derivatization")
     c.add_argument("-r", "--reduction")
+    c.set_defaults(task=dispatch_glycomics)
 
 with let(subparsers.add_parser("glycomics-glycomedb")) as c:
     c.add_argument(

@@ -13,16 +13,30 @@ logger = logging.getLogger("glycan_composition_constrained_combinatorics")
 class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
     HypothesisType = MS1GlycanHypothesis
 
-    def __init__(self, database_path, rules_table, constraints_list, hypothesis_id=None):
+    def __init__(self, database_path, rules_file=None, hypothesis_id=None,
+                 rules_table=None, constraints_list=None, derivatization=None,
+                 reduction=None, *args, **kwargs):
         self.manager = self.manager_type(database_path)
+        self.rules_file = rules_file
         self.rules_table = rules_table
         self.constraints_list = constraints_list
         self.hypothesis_id = hypothesis_id
+        self.derivatization = derivatization
+        self.reduction = reduction
 
     def run(self):
+        if self.rules_table is None:
+            if self.rules_file is None:
+                raise Exception("Must provide a text file of glycan composition rules")
+            self.rules_table, self.constrains_list = parse_rules_from_file(self.rules_file)
+
+        self.manager.initialize()
         session = self.manager.session()
 
         hypothesis, _ = get_or_create(session, self.HypothesisType, id=self.hypothesis_id)
+        hypothesis.parameters = hypothesis.parameters or {}
+        hypothesis.parameters['rules_table'] = self.rules_table
+        hypothesis.parameters['constraints'] = self.constraints_list
         session.add(hypothesis)
         session.commit()
 
@@ -44,8 +58,52 @@ class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
                 session.add_all(acc)
                 session.commit()
                 acc = []
+        session.add_all(acc)
+        session.commit()
+        acc = []
 
         session.close()
+        return hypothesis_id
+
+
+def parse_rules_from_file(path):
+    ranges = []
+    constraints = []
+    stream = open(path)
+
+    def cast(parts):
+        return parts[0], int(parts[1]), int(parts[2])
+
+    for line in stream:
+        parts = line.replace("\n", "").split(" ")
+        if len(parts) == 3:
+            ranges.append(cast(parts))
+        elif len(parts) == 1:
+            if parts[0] in ["\n", "\r", ""]:
+                break
+            else:
+                raise Exception("Could not interpret line '%r'" % parts)
+
+    def cast(parts):
+        a, op = parts[0], parts[1]
+        b = parts[2]
+        try:
+            b = int(b)
+        except:
+            pass
+        return a, op, b
+
+    for line in stream:
+        parts = line.replace("\n", "").split(" ")
+        if len(parts) == 3:
+            constraints.append(cast(parts))
+        elif len(parts) == 1:
+            if parts[0] in ["\n", "\r", ""]:
+                break
+            else:
+                raise Exception("Could not interpret line '%r'" % parts)
+    rules_table = CombinatoricCompositionGenerator.build_rules_table(*zip(*ranges))
+    return rules_table, constraints
 
 
 def descending_combination_counter(counter):
@@ -56,6 +114,15 @@ def descending_combination_counter(counter):
 
 
 class CombinatoricCompositionGenerator(object):
+    @staticmethod
+    def build_rules_table(residue_list, lower_bound, upper_bound):
+        rules_table = {}
+        for i, residue in enumerate(residue_list):
+            lower = lower_bound[i]
+            upper = upper_bound[i]
+            rules_table[residue] = (lower, upper)
+        return rules_table
+
     def __init__(self, residue_list=None, lower_bound=None, upper_bound=None, constraints=None, rules_table=None):
         self.residue_list = residue_list or []
         self.lower_bound = lower_bound or []

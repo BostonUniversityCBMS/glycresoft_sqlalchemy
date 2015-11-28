@@ -14,6 +14,8 @@ from glycresoft_sqlalchemy.structure import constants
 from glycresoft_sqlalchemy.proteomics import get_enzyme, msdigest_xml_parser
 
 from ..peptide_utilities import SiteListFastaFileParser
+from ..utils import fragments
+
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
     HypothesisSampleMatch, PeakGroupMatch, Protein,
@@ -104,7 +106,8 @@ class MS1GlycopeptideResult(object):
             count_glycosylation_sites=theoretical.count_glycosylation_sites,
             ppm_error=pgm.ppm_error, volume=pgm.total_volume,
             start_pos=theoretical.start_position, end_pos=theoretical.end_position,
-            protein_name=theoretical.protein.name, composition_id=theoretical.id)
+            protein_name=theoretical.protein.name, composition_id=theoretical.id,
+            glycans=theoretical.glycans)
 
     def __init__(self, score=None,
                  calculated_mass=None,
@@ -125,7 +128,8 @@ class MS1GlycopeptideResult(object):
                  id=None,
                  glycopeptide_sequence=None,
                  modified_peptide_sequence=None,
-                 composition_id=None):
+                 composition_id=None,
+                 glycans=None):
         self.ms1_score = score
         self.calculated_mass = calculated_mass
         self.observed_mass = observed_mass
@@ -144,6 +148,8 @@ class MS1GlycopeptideResult(object):
         self.glycopeptide_sequence = glycopeptide_sequence
         self.modified_peptide_sequence = modified_peptide_sequence
         self.composition_id = composition_id
+        self.glycans = glycans
+        assert len(self.glycans) > 0
 
     @property
     def most_detailed_sequence(self):
@@ -240,8 +246,7 @@ def get_search_space(ms1_result, glycan_sites, mod_list):
     """
 
     seq_space = SequenceSpace(
-        ms1_result.modified_peptide_sequence,
-        ms1_result.glycan_composition_map,
+        ms1_result.glycopeptide_sequence,
         glycan_sites, mod_list)
     return seq_space
 
@@ -264,45 +269,9 @@ def generate_fragments(seq, ms1_result):
         as well as the precursor information.
     """
     seq_mod = seq.get_sequence()
-    fragments = zip(*map(seq.break_at, range(1, len(seq))))
-    b_type = fragments[0]
-    b_ions = []
-    b_ions_hexnac = []
-    for b in b_type:
-        for fm in b:
-            key = fm.get_fragment_name()
-            if key == ("b1" or re.search(r'b1\+', key)) and constants.EXCLUDE_B1:
-                # b1 Ions aren't actually seen in reality, but are an artefact of the generation process
-                # so do not include them in the output
-                continue
-            mass = fm.get_mass()
-            golden_pairs = fm.golden_pairs
-            if "HexNAc" in key:
-                b_ions_hexnac.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-            else:
-                b_ions.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-
-    y_type = fragments[1]  # seq.get_fragments('y')
-    y_ions = []
-    y_ions_hexnac = []
-    for y in y_type:
-        for fm in y:
-            key = fm.get_fragment_name()
-            mass = fm.get_mass()
-            golden_pairs = fm.golden_pairs
-            if "HexNAc" in key:
-                y_ions_hexnac.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-            else:
-                y_ions.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-
-    pep_stubs = StubGlycopeptide(
-        ms1_result.base_peptide_sequence,
-        ms1_result.peptide_modifications,
-        ms1_result.count_glycosylation_sites,
-        seq.glycan)
-
-    stub_ions = pep_stubs.get_stubs()
-    oxonium_ions = pep_stubs.get_oxonium_ions()
+    (oxonium_ions, b_ions, y_ions,
+     b_ions_hexnac, y_ions_hexnac,
+     stub_ions) = fragments(seq)
 
     theoretical_glycopeptide = TheoreticalGlycopeptide(
         ms1_score=ms1_result.ms1_score,
@@ -317,7 +286,7 @@ def generate_fragments(seq, ms1_result):
         base_peptide_sequence=ms1_result.base_peptide_sequence,
         modified_peptide_sequence=seq_mod,
         peptide_modifications=ms1_result.peptide_modifications,
-        glycopeptide_sequence=seq_mod + ms1_result.glycan_composition_str,
+        glycopeptide_sequence=seq_mod,
         sequence_length=len(seq),
         glycan_composition_str=ms1_result.glycan_composition_str,
         bare_b_ions=b_ions,
@@ -326,7 +295,8 @@ def generate_fragments(seq, ms1_result):
         stub_ions=stub_ions,
         glycosylated_b_ions=b_ions_hexnac,
         glycosylated_y_ions=y_ions_hexnac,
-        base_composition_id=ms1_result.composition_id
+        base_composition_id=ms1_result.composition_id,
+        glycans=ms1_result.glycans
         )
     return theoretical_glycopeptide
 
@@ -407,7 +377,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
     HypothesisType = MS2GlycopeptideHypothesis
 
     @classmethod
-    def from_hypothesis_sample_match(cls, database_path, hypothesis_sample_match_id, n_processes=4):
+    def from_hypothesis_sample_match(cls, database_path, hypothesis_sample_match_id, n_processes=4, **kwargs):
         dbm = cls.manager_type(database_path)
         session = dbm.session()
         source_hypothesis_sample_match = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
@@ -419,13 +389,16 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
 
         builder = constructs[source_hypothesis_sample_match.__class__]
 
+        name = kwargs.get("hypothesis_name", source_hypothesis.name + " (MS2)")
+
         inst = builder(
             database_path, database_path, enzyme=[enzyme], site_list=None,
             constant_modifications=constant_modifications,
             variable_modifications=variable_modifications,
             n_processes=n_processes, ms1_format=MS1ResultsFacade,
             source_hypothesis_id=hypothesis_id,
-            source_hypothesis_sample_match_id=hypothesis_sample_match_id)
+            source_hypothesis_sample_match_id=hypothesis_sample_match_id,
+            hypothesis_name=name)
         session.close()
         return inst
 
@@ -446,10 +419,11 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         self.session = self.manager.session()
 
         self.ms1_results_file = ms1_results_file
-
-        tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
-
-        self.hypothesis = self.HypothesisType(name=u"target-{}".format(tag))
+        name = kwargs.get("hypothesis_name")
+        if name is None:
+            tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
+            name = u"target-{}".format(tag)
+        self.hypothesis = self.HypothesisType(name=name)
         self.session.add(self.hypothesis)
         self.session.commit()
         self.hypothesis_id = self.hypothesis.id

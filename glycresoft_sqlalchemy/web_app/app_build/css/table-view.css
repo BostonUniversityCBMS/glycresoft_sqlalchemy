@@ -1,0 +1,52 @@
+.table-container {
+    overflow-x: scroll;
+    width: 100%;
+}
+
+/*
+
+Display Table
+
+*/
+
+.display-table th, .display-table td {
+    min-width: 90px;
+    max-width: 90px;
+    padding: 3px;
+    border-left: 1px lightgrey solid;
+    font-size: 0.7em;
+    text-align: center;
+}
+
+.display-table th.wide, .display-table td.wide {
+    min-width: 150px;
+    max-width: 150px;
+    word-break: break-all;
+}
+
+.display-table th.very-wide, .display-table td.very-wide {
+    min-width: 350px;
+    max-width: 350px;
+    word-break: break-all;
+}
+
+.display-table thead, .display-table tbody {
+    display: block;
+    overflow-y: auto;
+}
+
+.display-table th.narrow, .display-table td.narrow {
+    min-width: 70px;
+    max-width: 70px;
+    word-break: break-all;
+}
+
+.display-table td {
+    cursor: pointer;
+}
+
+.fragment-ion-table td, .fragment-ion-table th {
+    font-size: .7em;
+    padding: 3px !important;
+    word-break: break-all;
+}

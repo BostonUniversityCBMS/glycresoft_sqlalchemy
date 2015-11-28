@@ -1,0 +1,10 @@
+<div id='protein-overview'>
+        <div>
+            <h5>>{{protein.name}}</h5>
+            <code>
+                {{
+                protein.protein_sequence | highlight_sequence_site(protein.glycosylation_sites, "glycosylation-site") | n_per_row(50)
+                }}
+            </code>
+        </div>
+<div/>

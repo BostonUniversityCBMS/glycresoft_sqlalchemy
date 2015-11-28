@@ -465,8 +465,8 @@ struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruc
 struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStructArray;
 struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct;
 struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray;
-struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct;
-struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct;
+struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct;
+struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct;
 struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleGlycanStruct;
 struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStruct;
 struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStructArray;
@@ -521,11 +521,11 @@ struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationSt
 /* "glycresoft_sqlalchemy\structure\ext\structure.pxd":22
  * 
  * 
- * cdef struct SequencePositionStruct:             # <<<<<<<<<<<<<<
+ * cdef struct PeptideSequencePositionStruct:             # <<<<<<<<<<<<<<
  *     AminoAcidStruct* residue
  *     ModificationStructArray* modifications
  */
-struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct {
+struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct {
   struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruct *residue;
   struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *modifications;
   double mass;
@@ -534,13 +534,13 @@ struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositi
 /* "glycresoft_sqlalchemy\structure\ext\structure.pxd":28
  * 
  * 
- * cdef struct SequenceStruct:             # <<<<<<<<<<<<<<
+ * cdef struct PeptideSequenceStruct:             # <<<<<<<<<<<<<<
  *     size_t size
- *     SequencePositionStruct* sequence
+ *     PeptideSequencePositionStruct* sequence
  */
-struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct {
+struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct {
   size_t size;
-  struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct *sequence;
+  struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct *sequence;
   double mass;
   int n_glycan_sequon_sites;
   struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleGlycanStruct *glycan;
@@ -868,16 +868,16 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
 static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruct *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__get_residue_by_name(char *); /*proto*/
 static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_get_modification(char *, struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *); /*proto*/
 static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__get_modification(char *); /*proto*/
-static CYTHON_INLINE double __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_position_mass(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct *); /*proto*/
-static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_to_string(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *); /*proto*/
+static CYTHON_INLINE double __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_position_mass(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct *); /*proto*/
+static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_to_string(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *); /*proto*/
 static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStructArray *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_create_amino_acid_table(PyObject *); /*proto*/
 static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_create_modification_table(PyObject *); /*proto*/
-static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_from_object(PyObject *); /*proto*/
+static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_from_object(PyObject *); /*proto*/
 static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleGlycanStruct *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_glycan_from_object(PyObject *); /*proto*/
-static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence_position(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct *); /*proto*/
+static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence_position(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct *); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_modification_array(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *); /*proto*/
 static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_simple_glycan(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleGlycanStruct *); /*proto*/
-static size_t __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__total_seqstring_length(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *); /*proto*/
+static size_t __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__total_seqstring_length(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *); /*proto*/
 static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_get_modification_list_from_sequence(PyObject *); /*proto*/
 #define __Pyx_MODULE_NAME "glycresoft_sqlalchemy.structure.ext.structure"
 int __pyx_module_is_main_glycresoft_sqlalchemy__structure__ext__structure = 0;
@@ -1270,7 +1270,7 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
  * cdef inline AminoAcidStruct* _get_residue_by_name(char* name) nogil:
  *     return get_residue_by_name(name, AminoAcids)             # <<<<<<<<<<<<<<
  * 
- * cdef inline double sequence_position_mass(SequencePositionStruct* position) nogil:
+ * cdef inline double sequence_position_mass(PeptideSequencePositionStruct* position) nogil:
  */
   __pyx_r = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_get_residue_by_name(__pyx_v_name, __pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcids);
   goto __pyx_L0;
@@ -1291,12 +1291,12 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
 /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":49
  *     return get_residue_by_name(name, AminoAcids)
  * 
- * cdef inline double sequence_position_mass(SequencePositionStruct* position) nogil:             # <<<<<<<<<<<<<<
+ * cdef inline double sequence_position_mass(PeptideSequencePositionStruct* position) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i
  */
 
-static CYTHON_INLINE double __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_position_mass(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct *__pyx_v_position) {
+static CYTHON_INLINE double __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_position_mass(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct *__pyx_v_position) {
   size_t __pyx_v_i;
   double __pyx_v_mass;
   double __pyx_r;
@@ -1347,7 +1347,7 @@ static CYTHON_INLINE double __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9str
  *         mass += position.modifications.modifications[i].mass
  *     return mass             # <<<<<<<<<<<<<<
  * 
- * cdef size_t _total_seqstring_length(SequenceStruct* seq) nogil:
+ * cdef size_t _total_seqstring_length(PeptideSequenceStruct* seq) nogil:
  */
   __pyx_r = __pyx_v_mass;
   goto __pyx_L0;
@@ -1355,7 +1355,7 @@ static CYTHON_INLINE double __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9str
   /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":49
  *     return get_residue_by_name(name, AminoAcids)
  * 
- * cdef inline double sequence_position_mass(SequencePositionStruct* position) nogil:             # <<<<<<<<<<<<<<
+ * cdef inline double sequence_position_mass(PeptideSequencePositionStruct* position) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i
  */
@@ -1368,12 +1368,12 @@ static CYTHON_INLINE double __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9str
 /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":59
  *     return mass
  * 
- * cdef size_t _total_seqstring_length(SequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
+ * cdef size_t _total_seqstring_length(PeptideSequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t size, i, j
  */
 
-static size_t __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__total_seqstring_length(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *__pyx_v_seq) {
+static size_t __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__total_seqstring_length(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *__pyx_v_seq) {
   size_t __pyx_v_size;
   size_t __pyx_v_i;
   size_t __pyx_v_j;
@@ -1468,7 +1468,7 @@ static size_t __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__total_
  *         size += strlen(seq.glycan.name)
  *     return size             # <<<<<<<<<<<<<<
  * 
- * cdef char* sequence_to_string(SequenceStruct* seq) nogil:
+ * cdef char* sequence_to_string(PeptideSequenceStruct* seq) nogil:
  */
   __pyx_r = __pyx_v_size;
   goto __pyx_L0;
@@ -1476,7 +1476,7 @@ static size_t __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__total_
   /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":59
  *     return mass
  * 
- * cdef size_t _total_seqstring_length(SequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
+ * cdef size_t _total_seqstring_length(PeptideSequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t size, i, j
  */
@@ -1489,12 +1489,12 @@ static size_t __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__total_
 /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":71
  *     return size
  * 
- * cdef char* sequence_to_string(SequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
+ * cdef char* sequence_to_string(PeptideSequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t size, i, j
  */
 
-static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_to_string(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *__pyx_v_seq) {
+static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_to_string(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *__pyx_v_seq) {
   size_t __pyx_v_size;
   size_t __pyx_v_i;
   size_t __pyx_v_j;
@@ -1646,7 +1646,7 @@ static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence
  *         strcat(result, seq.glycan.name)
  *     return result             # <<<<<<<<<<<<<<
  * 
- * cdef FragmentIonStructArray* fragment_series(SequenceStruct* sequence, char* series, int direction, double offset) nogil:
+ * cdef FragmentIonStructArray* fragment_series(PeptideSequenceStruct* sequence, char* series, int direction, double offset) nogil:
  */
   __pyx_r = __pyx_v_result;
   goto __pyx_L0;
@@ -1654,7 +1654,7 @@ static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence
   /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":71
  *     return size
  * 
- * cdef char* sequence_to_string(SequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
+ * cdef char* sequence_to_string(PeptideSequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t size, i, j
  */
@@ -1667,12 +1667,12 @@ static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence
 /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":94
  *     return result
  * 
- * cdef FragmentIonStructArray* fragment_series(SequenceStruct* sequence, char* series, int direction, double offset) nogil:             # <<<<<<<<<<<<<<
+ * cdef FragmentIonStructArray* fragment_series(PeptideSequenceStruct* sequence, char* series, int direction, double offset) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i
  */
 
-static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStructArray *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_fragment_series(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *__pyx_v_sequence, char *__pyx_v_series, int __pyx_v_direction, double __pyx_v_offset) {
+static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStructArray *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_fragment_series(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *__pyx_v_sequence, char *__pyx_v_series, int __pyx_v_direction, double __pyx_v_offset) {
   size_t __pyx_v_i;
   double __pyx_v_mass;
   struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStructArray *__pyx_v_result;
@@ -1915,7 +1915,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Fragmen
  *             result.fragments[i - 1].index = sequence.size - i
  *     return result             # <<<<<<<<<<<<<<
  * 
- * 
+ * cdef char* fragment_key(FragmentIonStruct* fragment) nogil:
  */
   __pyx_r = __pyx_v_result;
   goto __pyx_L0;
@@ -1923,7 +1923,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Fragmen
   /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":94
  *     return result
  * 
- * cdef FragmentIonStructArray* fragment_series(SequenceStruct* sequence, char* series, int direction, double offset) nogil:             # <<<<<<<<<<<<<<
+ * cdef FragmentIonStructArray* fragment_series(PeptideSequenceStruct* sequence, char* series, int direction, double offset) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i
  */
@@ -1933,10 +1933,10 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Fragmen
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":123
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":122
+ *     return result
  * 
- * 
- * cdef char* fragment_key(FragmentIonStruct* fragment):             # <<<<<<<<<<<<<<
+ * cdef char* fragment_key(FragmentIonStruct* fragment) nogil:             # <<<<<<<<<<<<<<
  *     cdef char* buff
  *     buff = <char*>malloc(sizeof(char)*20)
  */
@@ -1944,11 +1944,9 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Fragmen
 static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_fragment_key(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStruct *__pyx_v_fragment) {
   char *__pyx_v_buff;
   char *__pyx_r;
-  __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("fragment_key", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":125
- * cdef char* fragment_key(FragmentIonStruct* fragment):
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":124
+ * cdef char* fragment_key(FragmentIonStruct* fragment) nogil:
  *     cdef char* buff
  *     buff = <char*>malloc(sizeof(char)*20)             # <<<<<<<<<<<<<<
  *     sprintf("%s%d", buff, fragment.series, fragment.index)
@@ -1956,7 +1954,7 @@ static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_fragment
  */
   __pyx_v_buff = ((char *)malloc(((sizeof(char)) * 20)));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":126
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":125
  *     cdef char* buff
  *     buff = <char*>malloc(sizeof(char)*20)
  *     sprintf("%s%d", buff, fragment.series, fragment.index)             # <<<<<<<<<<<<<<
@@ -1965,7 +1963,7 @@ static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_fragment
  */
   sprintf(__pyx_k_s_d, __pyx_v_buff, __pyx_v_fragment->series, __pyx_v_fragment->index);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":127
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":126
  *     buff = <char*>malloc(sizeof(char)*20)
  *     sprintf("%s%d", buff, fragment.series, fragment.index)
  *     return buff             # <<<<<<<<<<<<<<
@@ -1975,21 +1973,20 @@ static char *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_fragment
   __pyx_r = __pyx_v_buff;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":123
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":122
+ *     return result
  * 
- * 
- * cdef char* fragment_key(FragmentIonStruct* fragment):             # <<<<<<<<<<<<<<
+ * cdef char* fragment_key(FragmentIonStruct* fragment) nogil:             # <<<<<<<<<<<<<<
  *     cdef char* buff
  *     buff = <char*>malloc(sizeof(char)*20)
  */
 
   /* function exit code */
   __pyx_L0:;
-  __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":132
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":131
  * # Convert Functions
  * 
  * cdef AminoAcidStructArray* create_amino_acid_table(dict residue_map):             # <<<<<<<<<<<<<<
@@ -2020,7 +2017,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("create_amino_acid_table", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":138
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":137
  *         AminoAcidStructArray* residues
  *         size_t size, i
  *     size = len(residue_map)             # <<<<<<<<<<<<<<
@@ -2029,12 +2026,12 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
  */
   if (unlikely(__pyx_v_residue_map == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 138; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyDict_Size(__pyx_v_residue_map); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 138; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyDict_Size(__pyx_v_residue_map); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_size = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":139
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":138
  *         size_t size, i
  *     size = len(residue_map)
  *     residues = <AminoAcidStructArray*>malloc(sizeof(AminoAcidStructArray))             # <<<<<<<<<<<<<<
@@ -2043,7 +2040,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
  */
   __pyx_v_residues = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStructArray *)malloc((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStructArray))));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":140
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":139
  *     size = len(residue_map)
  *     residues = <AminoAcidStructArray*>malloc(sizeof(AminoAcidStructArray))
  *     residues.residues = <AminoAcidStruct*>malloc(sizeof(AminoAcidStruct) * size)             # <<<<<<<<<<<<<<
@@ -2052,7 +2049,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
  */
   __pyx_v_residues->residues = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruct *)malloc(((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruct)) * __pyx_v_size)));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":141
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":140
  *     residues = <AminoAcidStructArray*>malloc(sizeof(AminoAcidStructArray))
  *     residues.residues = <AminoAcidStruct*>malloc(sizeof(AminoAcidStruct) * size)
  *     residues.size = size             # <<<<<<<<<<<<<<
@@ -2061,7 +2058,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
  */
   __pyx_v_residues->size = __pyx_v_size;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":143
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":142
  *     residues.size = size
  * 
  *     i = 0             # <<<<<<<<<<<<<<
@@ -2070,7 +2067,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
  */
   __pyx_v_i = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":144
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":143
  * 
  *     i = 0
  *     for key, value in residue_map.items():             # <<<<<<<<<<<<<<
@@ -2079,17 +2076,17 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
  */
   if (unlikely(__pyx_v_residue_map == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "items");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_2 = __Pyx_PyDict_Items(__pyx_v_residue_map); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyDict_Items(__pyx_v_residue_map); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
     __pyx_t_3 = __pyx_t_2; __Pyx_INCREF(__pyx_t_3); __pyx_t_1 = 0;
     __pyx_t_4 = NULL;
   } else {
-    __pyx_t_1 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -2097,17 +2094,17 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
       if (likely(PyList_CheckExact(__pyx_t_3))) {
         if (__pyx_t_1 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_2); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_2); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_1 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_2); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_2); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -2117,7 +2114,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         }
         break;
       }
@@ -2133,7 +2130,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       }
       #if CYTHON_COMPILING_IN_CPYTHON
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -2146,15 +2143,15 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
       __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(__pyx_t_6);
       #else
-      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_6);
       #endif
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_8 = Py_TYPE(__pyx_t_7)->tp_iternext;
@@ -2162,7 +2159,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
       __Pyx_GOTREF(__pyx_t_5);
       index = 1; __pyx_t_6 = __pyx_t_8(__pyx_t_7); if (unlikely(!__pyx_t_6)) goto __pyx_L5_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_6);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_t_8 = NULL;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       goto __pyx_L6_unpacking_done;
@@ -2170,55 +2167,55 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __pyx_t_8 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_L6_unpacking_done:;
     }
-    if (!(likely(PyString_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_5)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!(likely(PyString_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_5)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_XDECREF_SET(__pyx_v_key, ((PyObject*)__pyx_t_5));
     __pyx_t_5 = 0;
     __Pyx_XDECREF_SET(__pyx_v_value, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":145
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":144
  *     i = 0
  *     for key, value in residue_map.items():
  *         residues.residues[i].name = strdup(PyString_AsString(value.name))             # <<<<<<<<<<<<<<
  *         residues.residues[i].symbol = strdup(PyString_AsString(value.symbol))
  *         residues.residues[i].mass = PyFloat_AsDouble(value.mass)
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_name); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 145; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_name); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_9 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_9 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 145; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_9 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_9 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     (__pyx_v_residues->residues[__pyx_v_i]).name = strdup(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":146
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":145
  *     for key, value in residue_map.items():
  *         residues.residues[i].name = strdup(PyString_AsString(value.name))
  *         residues.residues[i].symbol = strdup(PyString_AsString(value.symbol))             # <<<<<<<<<<<<<<
  *         residues.residues[i].mass = PyFloat_AsDouble(value.mass)
  *         i += 1
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_symbol); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 146; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_symbol); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 145; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_9 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_9 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 146; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_9 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_9 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 145; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     (__pyx_v_residues->residues[__pyx_v_i]).symbol = strdup(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":147
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":146
  *         residues.residues[i].name = strdup(PyString_AsString(value.name))
  *         residues.residues[i].symbol = strdup(PyString_AsString(value.symbol))
  *         residues.residues[i].mass = PyFloat_AsDouble(value.mass)             # <<<<<<<<<<<<<<
  *         i += 1
  * 
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_mass); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 147; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_mass); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 146; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_10 = PyFloat_AsDouble(__pyx_t_2); if (unlikely(__pyx_t_10 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 147; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_10 = PyFloat_AsDouble(__pyx_t_2); if (unlikely(__pyx_t_10 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 146; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     (__pyx_v_residues->residues[__pyx_v_i]).mass = __pyx_t_10;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":148
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":147
  *         residues.residues[i].symbol = strdup(PyString_AsString(value.symbol))
  *         residues.residues[i].mass = PyFloat_AsDouble(value.mass)
  *         i += 1             # <<<<<<<<<<<<<<
@@ -2227,7 +2224,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
  */
     __pyx_v_i = (__pyx_v_i + 1);
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":144
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":143
  * 
  *     i = 0
  *     for key, value in residue_map.items():             # <<<<<<<<<<<<<<
@@ -2237,7 +2234,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":150
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":149
  *         i += 1
  * 
  *     return residues             # <<<<<<<<<<<<<<
@@ -2247,7 +2244,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
   __pyx_r = __pyx_v_residues;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":132
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":131
  * # Convert Functions
  * 
  * cdef AminoAcidStructArray* create_amino_acid_table(dict residue_map):             # <<<<<<<<<<<<<<
@@ -2271,7 +2268,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAc
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":152
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":151
  *     return residues
  * 
  * cdef ModificationStructArray* create_modification_table(dict modification_map):             # <<<<<<<<<<<<<<
@@ -2302,7 +2299,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("create_modification_table", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":159
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":158
  *         size_t size, i
  * 
  *     size = len(modification_map)             # <<<<<<<<<<<<<<
@@ -2311,12 +2308,12 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
  */
   if (unlikely(__pyx_v_modification_map == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 159; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 158; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyDict_Size(__pyx_v_modification_map); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 159; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyDict_Size(__pyx_v_modification_map); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 158; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_size = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":160
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":159
  * 
  *     size = len(modification_map)
  *     modifications = <ModificationStructArray*>malloc(sizeof(ModificationStructArray))             # <<<<<<<<<<<<<<
@@ -2325,7 +2322,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
  */
   __pyx_v_modifications = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *)malloc((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray))));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":161
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":160
  *     size = len(modification_map)
  *     modifications = <ModificationStructArray*>malloc(sizeof(ModificationStructArray))
  *     modifications.modifications = <ModificationStruct*>malloc(sizeof(ModificationStruct) * size)             # <<<<<<<<<<<<<<
@@ -2334,7 +2331,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
  */
   __pyx_v_modifications->modifications = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct *)malloc(((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct)) * __pyx_v_size)));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":162
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":161
  *     modifications = <ModificationStructArray*>malloc(sizeof(ModificationStructArray))
  *     modifications.modifications = <ModificationStruct*>malloc(sizeof(ModificationStruct) * size)
  *     modifications.size = size             # <<<<<<<<<<<<<<
@@ -2343,7 +2340,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
  */
   __pyx_v_modifications->size = __pyx_v_size;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":164
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":163
  *     modifications.size = size
  * 
  *     i = 0             # <<<<<<<<<<<<<<
@@ -2352,7 +2349,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
  */
   __pyx_v_i = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":165
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":164
  * 
  *     i = 0
  *     for key, value in modification_map.items():             # <<<<<<<<<<<<<<
@@ -2361,17 +2358,17 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
  */
   if (unlikely(__pyx_v_modification_map == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "items");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_2 = __Pyx_PyDict_Items(__pyx_v_modification_map); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyDict_Items(__pyx_v_modification_map); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
     __pyx_t_3 = __pyx_t_2; __Pyx_INCREF(__pyx_t_3); __pyx_t_1 = 0;
     __pyx_t_4 = NULL;
   } else {
-    __pyx_t_1 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -2379,17 +2376,17 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
       if (likely(PyList_CheckExact(__pyx_t_3))) {
         if (__pyx_t_1 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_2); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_2); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_1 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_2); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_1); __Pyx_INCREF(__pyx_t_2); __pyx_t_1++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_1); __pyx_t_1++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -2399,7 +2396,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         }
         break;
       }
@@ -2415,7 +2412,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       }
       #if CYTHON_COMPILING_IN_CPYTHON
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -2428,15 +2425,15 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
       __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(__pyx_t_6);
       #else
-      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_6);
       #endif
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_8 = Py_TYPE(__pyx_t_7)->tp_iternext;
@@ -2444,7 +2441,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
       __Pyx_GOTREF(__pyx_t_5);
       index = 1; __pyx_t_6 = __pyx_t_8(__pyx_t_7); if (unlikely(!__pyx_t_6)) goto __pyx_L5_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_6);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_t_8 = NULL;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       goto __pyx_L6_unpacking_done;
@@ -2452,7 +2449,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __pyx_t_8 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 164; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_L6_unpacking_done:;
     }
     __Pyx_XDECREF_SET(__pyx_v_key, __pyx_t_5);
@@ -2460,39 +2457,39 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
     __Pyx_XDECREF_SET(__pyx_v_value, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":166
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":165
  *     i = 0
  *     for key, value in modification_map.items():
  *         modifications.modifications[i].name = strdup(PyString_AsString(value.preferred_name.encode('ascii', 'ignore')))             # <<<<<<<<<<<<<<
  *         modifications.modifications[i].mass = PyFloat_AsDouble(value.mass)
  *         i += 1
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_preferred_name); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 166; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_preferred_name); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_encode); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 166; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_encode); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 166; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_9 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_9 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 166; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_9 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_9 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     (__pyx_v_modifications->modifications[__pyx_v_i]).name = strdup(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":167
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":166
  *     for key, value in modification_map.items():
  *         modifications.modifications[i].name = strdup(PyString_AsString(value.preferred_name.encode('ascii', 'ignore')))
  *         modifications.modifications[i].mass = PyFloat_AsDouble(value.mass)             # <<<<<<<<<<<<<<
  *         i += 1
  *     return modifications
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_mass); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 167; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_value, __pyx_n_s_mass); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 166; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_10 = PyFloat_AsDouble(__pyx_t_2); if (unlikely(__pyx_t_10 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 167; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_10 = PyFloat_AsDouble(__pyx_t_2); if (unlikely(__pyx_t_10 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 166; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     (__pyx_v_modifications->modifications[__pyx_v_i]).mass = __pyx_t_10;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":168
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":167
  *         modifications.modifications[i].name = strdup(PyString_AsString(value.preferred_name.encode('ascii', 'ignore')))
  *         modifications.modifications[i].mass = PyFloat_AsDouble(value.mass)
  *         i += 1             # <<<<<<<<<<<<<<
@@ -2501,7 +2498,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
  */
     __pyx_v_i = (__pyx_v_i + 1);
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":165
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":164
  * 
  *     i = 0
  *     for key, value in modification_map.items():             # <<<<<<<<<<<<<<
@@ -2511,7 +2508,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":169
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":168
  *         modifications.modifications[i].mass = PyFloat_AsDouble(value.mass)
  *         i += 1
  *     return modifications             # <<<<<<<<<<<<<<
@@ -2521,7 +2518,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
   __pyx_r = __pyx_v_modifications;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":152
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":151
  *     return residues
  * 
  * cdef ModificationStructArray* create_modification_table(dict modification_map):             # <<<<<<<<<<<<<<
@@ -2545,7 +2542,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modific
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":171
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":170
  *     return modifications
  * 
  * cdef inline ModificationStructArray* get_modification_list_from_sequence(list modlist):             # <<<<<<<<<<<<<<
@@ -2570,7 +2567,7 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_modification_list_from_sequence", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":175
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":174
  *         ModificationStructArray* array
  *         size_t size, i, j
  *     size = len(modlist)             # <<<<<<<<<<<<<<
@@ -2579,12 +2576,12 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
  */
   if (unlikely(__pyx_v_modlist == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 175; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 174; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_modlist); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 175; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_modlist); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 174; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_size = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":176
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":175
  *         size_t size, i, j
  *     size = len(modlist)
  *     array = <ModificationStructArray*>malloc(sizeof(ModificationStructArray))             # <<<<<<<<<<<<<<
@@ -2593,7 +2590,7 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
  */
   __pyx_v_array = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *)malloc((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray))));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":177
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":176
  *     size = len(modlist)
  *     array = <ModificationStructArray*>malloc(sizeof(ModificationStructArray))
  *     array.modifications = <ModificationStruct*>malloc(sizeof(ModificationStruct) * size)             # <<<<<<<<<<<<<<
@@ -2602,7 +2599,7 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
  */
   __pyx_v_array->modifications = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct *)malloc(((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct)) * __pyx_v_size)));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":178
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":177
  *     array = <ModificationStructArray*>malloc(sizeof(ModificationStructArray))
  *     array.modifications = <ModificationStruct*>malloc(sizeof(ModificationStruct) * size)
  *     array.size = size             # <<<<<<<<<<<<<<
@@ -2611,7 +2608,7 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
  */
   __pyx_v_array->size = __pyx_v_size;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":180
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":179
  *     array.size = size
  * 
  *     for i in range(size):             # <<<<<<<<<<<<<<
@@ -2622,7 +2619,7 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":181
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":180
  * 
  *     for i in range(size):
  *         array.modifications[i] = _get_modification(PyString_AsString(modlist[i].rule.preferred_name))[0]             # <<<<<<<<<<<<<<
@@ -2631,32 +2628,32 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
  */
     if (unlikely(__pyx_v_modlist == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 181; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 180; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
-    __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_modlist, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1); if (unlikely(__pyx_t_4 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 181; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_modlist, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1); if (unlikely(__pyx_t_4 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 180; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_rule); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 181; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_rule); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 180; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_preferred_name); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 181; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_preferred_name); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 180; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_6 = PyString_AsString(__pyx_t_4); if (unlikely(__pyx_t_6 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 181; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_6 = PyString_AsString(__pyx_t_4); if (unlikely(__pyx_t_6 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 180; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     (__pyx_v_array->modifications[__pyx_v_i]) = (__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__get_modification(__pyx_t_6)[0]);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":182
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":181
  *     for i in range(size):
  *         array.modifications[i] = _get_modification(PyString_AsString(modlist[i].rule.preferred_name))[0]
  *     return array             # <<<<<<<<<<<<<<
  * 
- * cdef SequenceStruct* sequence_from_object(object obj):
+ * cdef PeptideSequenceStruct* sequence_from_object(object obj):
  */
   __pyx_r = __pyx_v_array;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":171
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":170
  *     return modifications
  * 
  * cdef inline ModificationStructArray* get_modification_list_from_sequence(list modlist):             # <<<<<<<<<<<<<<
@@ -2675,21 +2672,21 @@ static CYTHON_INLINE struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9str
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":184
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":183
  *     return array
  * 
- * cdef SequenceStruct* sequence_from_object(object obj):             # <<<<<<<<<<<<<<
+ * cdef PeptideSequenceStruct* sequence_from_object(object obj):             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t size, i, j
  */
 
-static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_from_object(PyObject *__pyx_v_obj) {
+static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_from_object(PyObject *__pyx_v_obj) {
   size_t __pyx_v_size;
   size_t __pyx_v_i;
-  struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *__pyx_v_seq;
+  struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *__pyx_v_seq;
   CYTHON_UNUSED double __pyx_v_mass_accum;
   PyObject *__pyx_v_obj_pos = 0;
-  struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *__pyx_r;
+  struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *__pyx_r;
   __Pyx_RefNannyDeclarations
   Py_ssize_t __pyx_t_1;
   size_t __pyx_t_2;
@@ -2706,53 +2703,53 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("sequence_from_object", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":191
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":190
  *         list obj_pos
  * 
  *     mass_accum = 0.             # <<<<<<<<<<<<<<
  *     size = len(obj)
- *     seq = <SequenceStruct*>malloc(sizeof(SequenceStruct))
+ *     seq = <PeptideSequenceStruct*>malloc(sizeof(PeptideSequenceStruct))
  */
   __pyx_v_mass_accum = 0.;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":192
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":191
  * 
  *     mass_accum = 0.
  *     size = len(obj)             # <<<<<<<<<<<<<<
- *     seq = <SequenceStruct*>malloc(sizeof(SequenceStruct))
- *     seq.sequence = <SequencePositionStruct*>malloc(sizeof(SequencePositionStruct)*size)
+ *     seq = <PeptideSequenceStruct*>malloc(sizeof(PeptideSequenceStruct))
+ *     seq.sequence = <PeptideSequencePositionStruct*>malloc(sizeof(PeptideSequencePositionStruct)*size)
  */
-  __pyx_t_1 = PyObject_Length(__pyx_v_obj); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 192; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyObject_Length(__pyx_v_obj); if (unlikely(__pyx_t_1 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 191; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_size = __pyx_t_1;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":193
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":192
  *     mass_accum = 0.
  *     size = len(obj)
- *     seq = <SequenceStruct*>malloc(sizeof(SequenceStruct))             # <<<<<<<<<<<<<<
- *     seq.sequence = <SequencePositionStruct*>malloc(sizeof(SequencePositionStruct)*size)
+ *     seq = <PeptideSequenceStruct*>malloc(sizeof(PeptideSequenceStruct))             # <<<<<<<<<<<<<<
+ *     seq.sequence = <PeptideSequencePositionStruct*>malloc(sizeof(PeptideSequencePositionStruct)*size)
  *     seq.size = size
  */
-  __pyx_v_seq = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *)malloc((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct))));
+  __pyx_v_seq = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *)malloc((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct))));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":194
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":193
  *     size = len(obj)
- *     seq = <SequenceStruct*>malloc(sizeof(SequenceStruct))
- *     seq.sequence = <SequencePositionStruct*>malloc(sizeof(SequencePositionStruct)*size)             # <<<<<<<<<<<<<<
+ *     seq = <PeptideSequenceStruct*>malloc(sizeof(PeptideSequenceStruct))
+ *     seq.sequence = <PeptideSequencePositionStruct*>malloc(sizeof(PeptideSequencePositionStruct)*size)             # <<<<<<<<<<<<<<
  *     seq.size = size
  * 
  */
-  __pyx_v_seq->sequence = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct *)malloc(((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct)) * __pyx_v_size)));
+  __pyx_v_seq->sequence = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct *)malloc(((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct)) * __pyx_v_size)));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":195
- *     seq = <SequenceStruct*>malloc(sizeof(SequenceStruct))
- *     seq.sequence = <SequencePositionStruct*>malloc(sizeof(SequencePositionStruct)*size)
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":194
+ *     seq = <PeptideSequenceStruct*>malloc(sizeof(PeptideSequenceStruct))
+ *     seq.sequence = <PeptideSequencePositionStruct*>malloc(sizeof(PeptideSequencePositionStruct)*size)
  *     seq.size = size             # <<<<<<<<<<<<<<
  * 
  *     for i in range(size):
  */
   __pyx_v_seq->size = __pyx_v_size;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":197
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":196
  *     seq.size = size
  * 
  *     for i in range(size):             # <<<<<<<<<<<<<<
@@ -2763,20 +2760,20 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":198
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":197
  * 
  *     for i in range(size):
  *         obj_pos = obj[i]             # <<<<<<<<<<<<<<
  *         seq.sequence[i].residue = _get_residue_by_symbol(obj_pos[0].symbol)
  *         seq.sequence[i].modifications = get_modification_list_from_sequence(obj_pos[1])
  */
-    __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_obj, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 0, 0, 1); if (unlikely(__pyx_t_4 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 198; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_obj, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 0, 0, 1); if (unlikely(__pyx_t_4 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 197; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_4);
-    if (!(likely(PyList_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_4)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 198; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!(likely(PyList_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_4)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 197; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_XDECREF_SET(__pyx_v_obj_pos, ((PyObject*)__pyx_t_4));
     __pyx_t_4 = 0;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":199
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":198
  *     for i in range(size):
  *         obj_pos = obj[i]
  *         seq.sequence[i].residue = _get_residue_by_symbol(obj_pos[0].symbol)             # <<<<<<<<<<<<<<
@@ -2785,18 +2782,18 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
  */
     if (unlikely(__pyx_v_obj_pos == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 198; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
-    __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_obj_pos, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(__pyx_t_4 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_obj_pos, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(__pyx_t_4 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 198; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_symbol); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_symbol); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 198; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_5); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_5); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 198; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     (__pyx_v_seq->sequence[__pyx_v_i]).residue = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__get_residue_by_symbol(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":200
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":199
  *         obj_pos = obj[i]
  *         seq.sequence[i].residue = _get_residue_by_symbol(obj_pos[0].symbol)
  *         seq.sequence[i].modifications = get_modification_list_from_sequence(obj_pos[1])             # <<<<<<<<<<<<<<
@@ -2805,15 +2802,15 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
  */
     if (unlikely(__pyx_v_obj_pos == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 200; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
-    __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_obj_pos, 1, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(__pyx_t_5 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 200; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+    __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_obj_pos, 1, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(__pyx_t_5 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_5);
-    if (!(likely(PyList_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_5)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 200; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!(likely(PyList_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_5)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     (__pyx_v_seq->sequence[__pyx_v_i]).modifications = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_get_modification_list_from_sequence(((PyObject*)__pyx_t_5));
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":201
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":200
  *         seq.sequence[i].residue = _get_residue_by_symbol(obj_pos[0].symbol)
  *         seq.sequence[i].modifications = get_modification_list_from_sequence(obj_pos[1])
  *         seq.sequence[i].mass = sequence_position_mass(&seq.sequence[i])             # <<<<<<<<<<<<<<
@@ -2823,14 +2820,14 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
     (__pyx_v_seq->sequence[__pyx_v_i]).mass = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_position_mass((&(__pyx_v_seq->sequence[__pyx_v_i])));
   }
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":202
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":201
  *         seq.sequence[i].modifications = get_modification_list_from_sequence(obj_pos[1])
  *         seq.sequence[i].mass = sequence_position_mass(&seq.sequence[i])
  *     if not isinstance(obj.glycan, str) and obj.glycan is not None:             # <<<<<<<<<<<<<<
  *         seq.glycan = glycan_from_object(obj.glycan)
  *     else:
  */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_glycan); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 202; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_glycan); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 201; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_8 = PyString_Check(__pyx_t_5); 
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -2840,7 +2837,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
     __pyx_t_7 = __pyx_t_9;
     goto __pyx_L6_bool_binop_done;
   }
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_glycan); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 202; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_glycan); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 201; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_9 = (__pyx_t_5 != Py_None);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -2849,19 +2846,19 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
   __pyx_L6_bool_binop_done:;
   if (__pyx_t_7) {
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":203
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":202
  *         seq.sequence[i].mass = sequence_position_mass(&seq.sequence[i])
  *     if not isinstance(obj.glycan, str) and obj.glycan is not None:
  *         seq.glycan = glycan_from_object(obj.glycan)             # <<<<<<<<<<<<<<
  *     else:
  *         seq.glycan = NULL
  */
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_glycan); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 203; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_glycan); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 202; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_v_seq->glycan = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_glycan_from_object(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":202
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":201
  *         seq.sequence[i].modifications = get_modification_list_from_sequence(obj_pos[1])
  *         seq.sequence[i].mass = sequence_position_mass(&seq.sequence[i])
  *     if not isinstance(obj.glycan, str) and obj.glycan is not None:             # <<<<<<<<<<<<<<
@@ -2871,7 +2868,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
     goto __pyx_L5;
   }
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":205
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":204
  *         seq.glycan = glycan_from_object(obj.glycan)
  *     else:
  *         seq.glycan = NULL             # <<<<<<<<<<<<<<
@@ -2883,20 +2880,20 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
   }
   __pyx_L5:;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":206
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":205
  *     else:
  *         seq.glycan = NULL
  *     seq.mass = PyFloat_AsDouble(obj.mass)             # <<<<<<<<<<<<<<
  *     return seq
  * 
  */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_mass); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 206; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_mass); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 205; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_10 = PyFloat_AsDouble(__pyx_t_5); if (unlikely(__pyx_t_10 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 206; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_10 = PyFloat_AsDouble(__pyx_t_5); if (unlikely(__pyx_t_10 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 205; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_seq->mass = __pyx_t_10;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":207
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":206
  *         seq.glycan = NULL
  *     seq.mass = PyFloat_AsDouble(obj.mass)
  *     return seq             # <<<<<<<<<<<<<<
@@ -2906,10 +2903,10 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
   __pyx_r = __pyx_v_seq;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":184
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":183
  *     return array
  * 
- * cdef SequenceStruct* sequence_from_object(object obj):             # <<<<<<<<<<<<<<
+ * cdef PeptideSequenceStruct* sequence_from_object(object obj):             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t size, i, j
  */
@@ -2926,7 +2923,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_Sequenc
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":209
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":208
  *     return seq
  * 
  * cdef SimpleGlycanStruct* glycan_from_object(object obj):             # <<<<<<<<<<<<<<
@@ -2948,7 +2945,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleG
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("glycan_from_object", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":213
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":212
  *         SimpleGlycanStruct* glycan
  * 
  *     glycan = <SimpleGlycanStruct*>malloc(sizeof(SimpleGlycanStruct))             # <<<<<<<<<<<<<<
@@ -2957,33 +2954,33 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleG
  */
   __pyx_v_glycan = ((struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleGlycanStruct *)malloc((sizeof(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleGlycanStruct))));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":214
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":213
  * 
  *     glycan = <SimpleGlycanStruct*>malloc(sizeof(SimpleGlycanStruct))
  *     glycan.name = strdup(PyString_AsString(str(obj)))             # <<<<<<<<<<<<<<
  *     glycan.mass = PyFloat_AsDouble(obj.mass())
  *     return glycan
  */
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 214; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 213; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_obj);
   __Pyx_GIVEREF(__pyx_v_obj);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_obj);
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)(&PyString_Type)), __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 214; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)(&PyString_Type)), __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 213; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 214; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = PyString_AsString(__pyx_t_2); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 213; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_glycan->name = strdup(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":215
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":214
  *     glycan = <SimpleGlycanStruct*>malloc(sizeof(SimpleGlycanStruct))
  *     glycan.name = strdup(PyString_AsString(str(obj)))
  *     glycan.mass = PyFloat_AsDouble(obj.mass())             # <<<<<<<<<<<<<<
  *     return glycan
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_obj, __pyx_n_s_mass); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 214; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_4 = NULL;
   if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_1))) {
@@ -2996,18 +2993,18 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleG
     }
   }
   if (__pyx_t_4) {
-    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 214; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   } else {
-    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 214; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_5 = PyFloat_AsDouble(__pyx_t_2); if (unlikely(__pyx_t_5 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = PyFloat_AsDouble(__pyx_t_2); if (unlikely(__pyx_t_5 == -1.0 && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 214; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_glycan->mass = __pyx_t_5;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":216
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":215
  *     glycan.name = strdup(PyString_AsString(str(obj)))
  *     glycan.mass = PyFloat_AsDouble(obj.mass())
  *     return glycan             # <<<<<<<<<<<<<<
@@ -3017,7 +3014,7 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleG
   __pyx_r = __pyx_v_glycan;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":209
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":208
  *     return seq
  * 
  * cdef SimpleGlycanStruct* glycan_from_object(object obj):             # <<<<<<<<<<<<<<
@@ -3037,20 +3034,20 @@ static struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleG
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":225
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":224
  * # Free Functions
  * 
- * cdef void free_sequence(SequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
+ * cdef void free_sequence(PeptideSequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i
  */
 
-static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *__pyx_v_seq) {
+static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *__pyx_v_seq) {
   size_t __pyx_v_i;
   size_t __pyx_t_1;
   size_t __pyx_t_2;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":228
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":227
  *     cdef:
  *         size_t i
  *     for i in range(seq.size):             # <<<<<<<<<<<<<<
@@ -3061,7 +3058,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequ
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":229
+    /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":228
  *         size_t i
  *     for i in range(seq.size):
  *         free_sequence_position(&seq.sequence[i])             # <<<<<<<<<<<<<<
@@ -3071,7 +3068,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequ
     __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence_position((&(__pyx_v_seq->sequence[__pyx_v_i])));
   }
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":231
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":230
  *         free_sequence_position(&seq.sequence[i])
  * 
  *     free_simple_glycan(seq.glycan)             # <<<<<<<<<<<<<<
@@ -3080,19 +3077,19 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequ
  */
   __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_simple_glycan(__pyx_v_seq->glycan);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":232
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":231
  * 
  *     free_simple_glycan(seq.glycan)
  *     free(seq)             # <<<<<<<<<<<<<<
  * 
- * cdef void free_sequence_position(SequencePositionStruct* pos) nogil:
+ * cdef void free_sequence_position(PeptideSequencePositionStruct* pos) nogil:
  */
   free(__pyx_v_seq);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":225
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":224
  * # Free Functions
  * 
- * cdef void free_sequence(SequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
+ * cdef void free_sequence(PeptideSequenceStruct* seq) nogil:             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i
  */
@@ -3100,27 +3097,27 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequ
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":234
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":233
  *     free(seq)
  * 
- * cdef void free_sequence_position(SequencePositionStruct* pos) nogil:             # <<<<<<<<<<<<<<
+ * cdef void free_sequence_position(PeptideSequencePositionStruct* pos) nogil:             # <<<<<<<<<<<<<<
  *     free_modification_array(pos.modifications)
  *     free(pos)
  */
 
-static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence_position(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct *__pyx_v_pos) {
+static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence_position(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct *__pyx_v_pos) {
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":235
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":234
  * 
- * cdef void free_sequence_position(SequencePositionStruct* pos) nogil:
+ * cdef void free_sequence_position(PeptideSequencePositionStruct* pos) nogil:
  *     free_modification_array(pos.modifications)             # <<<<<<<<<<<<<<
  *     free(pos)
  * 
  */
   __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_modification_array(__pyx_v_pos->modifications);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":236
- * cdef void free_sequence_position(SequencePositionStruct* pos) nogil:
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":235
+ * cdef void free_sequence_position(PeptideSequencePositionStruct* pos) nogil:
  *     free_modification_array(pos.modifications)
  *     free(pos)             # <<<<<<<<<<<<<<
  * 
@@ -3128,10 +3125,10 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequ
  */
   free(__pyx_v_pos);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":234
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":233
  *     free(seq)
  * 
- * cdef void free_sequence_position(SequencePositionStruct* pos) nogil:             # <<<<<<<<<<<<<<
+ * cdef void free_sequence_position(PeptideSequencePositionStruct* pos) nogil:             # <<<<<<<<<<<<<<
  *     free_modification_array(pos.modifications)
  *     free(pos)
  */
@@ -3139,7 +3136,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequ
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":238
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":237
  *     free(pos)
  * 
  * cdef void free_modification_array(ModificationStructArray* mod_array) nogil:             # <<<<<<<<<<<<<<
@@ -3149,7 +3146,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequ
 
 static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_modification_array(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *__pyx_v_mod_array) {
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":239
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":238
  * 
  * cdef void free_modification_array(ModificationStructArray* mod_array) nogil:
  *     free(mod_array.modifications)             # <<<<<<<<<<<<<<
@@ -3158,7 +3155,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_modi
  */
   free(__pyx_v_mod_array->modifications);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":240
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":239
  * cdef void free_modification_array(ModificationStructArray* mod_array) nogil:
  *     free(mod_array.modifications)
  *     free(mod_array)             # <<<<<<<<<<<<<<
@@ -3167,7 +3164,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_modi
  */
   free(__pyx_v_mod_array);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":238
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":237
  *     free(pos)
  * 
  * cdef void free_modification_array(ModificationStructArray* mod_array) nogil:             # <<<<<<<<<<<<<<
@@ -3178,7 +3175,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_modi
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":242
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":241
  *     free(mod_array)
  * 
  * cdef void free_amino_acid_array(AminoAcidStructArray* aa_array) nogil:             # <<<<<<<<<<<<<<
@@ -3188,7 +3185,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_modi
 
 static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_amino_acid_array(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStructArray *__pyx_v_aa_array) {
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":243
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":242
  * 
  * cdef void free_amino_acid_array(AminoAcidStructArray* aa_array) nogil:
  *     free(aa_array.residues)             # <<<<<<<<<<<<<<
@@ -3197,7 +3194,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_amin
  */
   free(__pyx_v_aa_array->residues);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":244
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":243
  * cdef void free_amino_acid_array(AminoAcidStructArray* aa_array) nogil:
  *     free(aa_array.residues)
  *     free(aa_array)             # <<<<<<<<<<<<<<
@@ -3206,7 +3203,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_amin
  */
   free(__pyx_v_aa_array);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":242
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":241
  *     free(mod_array)
  * 
  * cdef void free_amino_acid_array(AminoAcidStructArray* aa_array) nogil:             # <<<<<<<<<<<<<<
@@ -3217,7 +3214,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_amin
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":246
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":245
  *     free(aa_array)
  * 
  * cdef void free_fragment_ion_array(FragmentIonStructArray* frag_array) nogil:             # <<<<<<<<<<<<<<
@@ -3227,7 +3224,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_amin
 
 static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_fragment_ion_array(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStructArray *__pyx_v_frag_array) {
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":247
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":246
  * 
  * cdef void free_fragment_ion_array(FragmentIonStructArray* frag_array) nogil:
  *     free(frag_array.fragments)             # <<<<<<<<<<<<<<
@@ -3236,7 +3233,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_frag
  */
   free(__pyx_v_frag_array->fragments);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":248
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":247
  * cdef void free_fragment_ion_array(FragmentIonStructArray* frag_array) nogil:
  *     free(frag_array.fragments)
  *     free(frag_array)             # <<<<<<<<<<<<<<
@@ -3245,7 +3242,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_frag
  */
   free(__pyx_v_frag_array);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":246
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":245
  *     free(aa_array)
  * 
  * cdef void free_fragment_ion_array(FragmentIonStructArray* frag_array) nogil:             # <<<<<<<<<<<<<<
@@ -3256,7 +3253,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_frag
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":250
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":249
  *     free(frag_array)
  * 
  * cdef void free_simple_glycan(SimpleGlycanStruct* g) nogil:             # <<<<<<<<<<<<<<
@@ -3266,7 +3263,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_frag
 
 static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_simple_glycan(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleGlycanStruct *__pyx_v_g) {
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":251
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":250
  * 
  * cdef void free_simple_glycan(SimpleGlycanStruct* g) nogil:
  *     free(g)             # <<<<<<<<<<<<<<
@@ -3275,7 +3272,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_simp
  */
   free(__pyx_v_g);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":250
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":249
  *     free(frag_array)
  * 
  * cdef void free_simple_glycan(SimpleGlycanStruct* g) nogil:             # <<<<<<<<<<<<<<
@@ -3286,7 +3283,7 @@ static void __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_simp
   /* function exit code */
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":255
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":254
  * #
  * 
  * def test(name):             # <<<<<<<<<<<<<<
@@ -3319,17 +3316,17 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_tes
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("test", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":256
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":255
  * 
  * def test(name):
  *     residue = _get_residue_by_name(name)             # <<<<<<<<<<<<<<
  *     return residue[0]
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_AsString(__pyx_v_name); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 256; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_AsString(__pyx_v_name); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 255; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_residue = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__get_residue_by_name(__pyx_t_1);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":257
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":256
  * def test(name):
  *     residue = _get_residue_by_name(name)
  *     return residue[0]             # <<<<<<<<<<<<<<
@@ -3337,13 +3334,13 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_tes
  * def test_residue_sym(symbol):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __pyx_convert__to_py___pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruct((__pyx_v_residue[0])); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 257; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_convert__to_py___pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruct((__pyx_v_residue[0])); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 256; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":255
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":254
  * #
  * 
  * def test(name):             # <<<<<<<<<<<<<<
@@ -3362,7 +3359,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_tes
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":259
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":258
  *     return residue[0]
  * 
  * def test_residue_sym(symbol):             # <<<<<<<<<<<<<<
@@ -3395,17 +3392,17 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_2te
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("test_residue_sym", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":260
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":259
  * 
  * def test_residue_sym(symbol):
  *     residue = _get_residue_by_symbol(symbol)             # <<<<<<<<<<<<<<
  *     return residue[0]
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_AsString(__pyx_v_symbol); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 260; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_AsString(__pyx_v_symbol); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 259; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_residue = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__get_residue_by_symbol(__pyx_t_1);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":261
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":260
  * def test_residue_sym(symbol):
  *     residue = _get_residue_by_symbol(symbol)
  *     return residue[0]             # <<<<<<<<<<<<<<
@@ -3413,13 +3410,13 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_2te
  * def test_modifications(mapping, str name):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __pyx_convert__to_py___pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruct((__pyx_v_residue[0])); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 261; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_convert__to_py___pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruct((__pyx_v_residue[0])); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 260; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":259
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":258
  *     return residue[0]
  * 
  * def test_residue_sym(symbol):             # <<<<<<<<<<<<<<
@@ -3438,7 +3435,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_2te
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":263
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":262
  *     return residue[0]
  * 
  * def test_modifications(mapping, str name):             # <<<<<<<<<<<<<<
@@ -3478,11 +3475,11 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_9structure_3ext_9structure_5te
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_name)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("test_modifications", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("test_modifications", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "test_modifications") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "test_modifications") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -3495,13 +3492,13 @@ static PyObject *__pyx_pw_21glycresoft_sqlalchemy_9structure_3ext_9structure_5te
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("test_modifications", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("test_modifications", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("glycresoft_sqlalchemy.structure.ext.structure.test_modifications", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyString_Type), 1, "name", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyString_Type), 1, "name", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_4test_modifications(__pyx_self, __pyx_v_mapping, __pyx_v_name);
 
   /* function exit code */
@@ -3525,39 +3522,39 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_4te
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("test_modifications", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":267
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":266
  *         ModificationStructArray* array
  *         ModificationStruct* modification
  *     array = create_modification_table(mapping)             # <<<<<<<<<<<<<<
  *     modification = get_modification(PyString_AsString(name), array)
  *     print modification.name
  */
-  if (!(likely(PyDict_CheckExact(__pyx_v_mapping))||((__pyx_v_mapping) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_v_mapping)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 267; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyDict_CheckExact(__pyx_v_mapping))||((__pyx_v_mapping) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_v_mapping)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 266; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_array = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_create_modification_table(((PyObject*)__pyx_v_mapping));
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":268
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":267
  *         ModificationStruct* modification
  *     array = create_modification_table(mapping)
  *     modification = get_modification(PyString_AsString(name), array)             # <<<<<<<<<<<<<<
  *     print modification.name
  *     return modification[0]
  */
-  __pyx_t_1 = PyString_AsString(__pyx_v_name); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 268; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyString_AsString(__pyx_v_name); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 267; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_modification = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_get_modification(__pyx_t_1, __pyx_v_array);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":269
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":268
  *     array = create_modification_table(mapping)
  *     modification = get_modification(PyString_AsString(name), array)
  *     print modification.name             # <<<<<<<<<<<<<<
  *     return modification[0]
  * 
  */
-  __pyx_t_2 = __Pyx_PyBytes_FromString(__pyx_v_modification->name); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 269; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyBytes_FromString(__pyx_v_modification->name); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 268; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  if (__Pyx_PrintOne(0, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 269; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_PrintOne(0, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 268; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":270
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":269
  *     modification = get_modification(PyString_AsString(name), array)
  *     print modification.name
  *     return modification[0]             # <<<<<<<<<<<<<<
@@ -3565,13 +3562,13 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_4te
  * def test_sequence(obj):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __pyx_convert__to_py___pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct((__pyx_v_modification[0])); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 270; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_convert__to_py___pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct((__pyx_v_modification[0])); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 269; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":263
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":262
  *     return residue[0]
  * 
  * def test_modifications(mapping, str name):             # <<<<<<<<<<<<<<
@@ -3590,7 +3587,7 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_4te
   return __pyx_r;
 }
 
-/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":272
+/* "glycresoft_sqlalchemy\structure\ext\structure.pyx":271
  *     return modification[0]
  * 
  * def test_sequence(obj):             # <<<<<<<<<<<<<<
@@ -3620,17 +3617,17 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_6te
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("test_sequence", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":273
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":272
  * 
  * def test_sequence(obj):
  *     print(sequence_to_string(sequence_from_object(obj)))             # <<<<<<<<<<<<<<
  */
-  __pyx_t_1 = __Pyx_PyBytes_FromString(__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_to_string(__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_from_object(__pyx_v_obj))); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 273; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyBytes_FromString(__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_to_string(__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_from_object(__pyx_v_obj))); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (__Pyx_PrintOne(0, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 273; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_PrintOne(0, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":272
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":271
  *     return modification[0]
  * 
  * def test_sequence(obj):             # <<<<<<<<<<<<<<
@@ -3724,63 +3721,63 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":166
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":165
  *     i = 0
  *     for key, value in modification_map.items():
  *         modifications.modifications[i].name = strdup(PyString_AsString(value.preferred_name.encode('ascii', 'ignore')))             # <<<<<<<<<<<<<<
  *         modifications.modifications[i].mass = PyFloat_AsDouble(value.mass)
  *         i += 1
  */
-  __pyx_tuple_ = PyTuple_Pack(2, __pyx_n_s_ascii, __pyx_n_s_ignore); if (unlikely(!__pyx_tuple_)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 166; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple_ = PyTuple_Pack(2, __pyx_n_s_ascii, __pyx_n_s_ignore); if (unlikely(!__pyx_tuple_)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 165; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":255
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":254
  * #
  * 
  * def test(name):             # <<<<<<<<<<<<<<
  *     residue = _get_residue_by_name(name)
  *     return residue[0]
  */
-  __pyx_tuple__2 = PyTuple_Pack(2, __pyx_n_s_name, __pyx_n_s_residue); if (unlikely(!__pyx_tuple__2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 255; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__2 = PyTuple_Pack(2, __pyx_n_s_name, __pyx_n_s_residue); if (unlikely(!__pyx_tuple__2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 254; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
-  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test, 255, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 255; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test, 254, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 254; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":259
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":258
  *     return residue[0]
  * 
  * def test_residue_sym(symbol):             # <<<<<<<<<<<<<<
  *     residue = _get_residue_by_symbol(symbol)
  *     return residue[0]
  */
-  __pyx_tuple__4 = PyTuple_Pack(2, __pyx_n_s_symbol, __pyx_n_s_residue); if (unlikely(!__pyx_tuple__4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 259; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__4 = PyTuple_Pack(2, __pyx_n_s_symbol, __pyx_n_s_residue); if (unlikely(!__pyx_tuple__4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 258; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
-  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__4, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test_residue_sym, 259, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 259; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__4, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test_residue_sym, 258, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 258; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":263
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":262
  *     return residue[0]
  * 
  * def test_modifications(mapping, str name):             # <<<<<<<<<<<<<<
  *     cdef:
  *         ModificationStructArray* array
  */
-  __pyx_tuple__6 = PyTuple_Pack(4, __pyx_n_s_mapping, __pyx_n_s_name, __pyx_n_s_array, __pyx_n_s_modification); if (unlikely(!__pyx_tuple__6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__6 = PyTuple_Pack(4, __pyx_n_s_mapping, __pyx_n_s_name, __pyx_n_s_array, __pyx_n_s_modification); if (unlikely(!__pyx_tuple__6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
-  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test_modifications, 263, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test_modifications, 262, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":272
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":271
  *     return modification[0]
  * 
  * def test_sequence(obj):             # <<<<<<<<<<<<<<
  *     print(sequence_to_string(sequence_from_object(obj)))
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_n_s_obj); if (unlikely(!__pyx_tuple__8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_n_s_obj); if (unlikely(!__pyx_tuple__8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 271; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__8);
   __Pyx_GIVEREF(__pyx_tuple__8);
-  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test_sequence, 272, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test_sequence, 271, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 271; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -3896,15 +3893,15 @@ PyMODINIT_FUNC PyInit_structure(void)
   if (__Pyx_ExportFunction("_get_residue_by_name", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__get_residue_by_name, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStruct *(char *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("get_modification", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_get_modification, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct *(char *, struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("_get_modification", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure__get_modification, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStruct *(char *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__Pyx_ExportFunction("sequence_position_mass", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_position_mass, "double (struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__Pyx_ExportFunction("sequence_to_string", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_to_string, "char *(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__Pyx_ExportFunction("fragment_series", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_fragment_series, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStructArray *(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *, char *, int, double)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("sequence_position_mass", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_position_mass, "double (struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("sequence_to_string", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_to_string, "char *(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("fragment_series", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_fragment_series, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStructArray *(struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *, char *, int, double)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("create_amino_acid_table", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_create_amino_acid_table, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStructArray *(PyObject *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("create_modification_table", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_create_modification_table, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *(PyObject *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__Pyx_ExportFunction("sequence_from_object", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_from_object, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *(PyObject *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("sequence_from_object", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_sequence_from_object, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *(PyObject *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("glycan_from_object", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_glycan_from_object, "struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SimpleGlycanStruct *(PyObject *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__Pyx_ExportFunction("free_sequence", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence, "void (struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequenceStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__Pyx_ExportFunction("free_sequence_position", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence_position, "void (struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_SequencePositionStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("free_sequence", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence, "void (struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequenceStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_ExportFunction("free_sequence_position", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_sequence_position, "void (struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_PeptideSequencePositionStruct *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("free_modification_array", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_modification_array, "void (struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_ModificationStructArray *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("free_amino_acid_array", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_amino_acid_array, "void (struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcidStructArray *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_ExportFunction("free_fragment_ion_array", (void (*)(void))__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_free_fragment_ion_array, "void (struct __pyx_t_21glycresoft_sqlalchemy_9structure_3ext_9structure_FragmentIonStructArray *)") < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -3951,7 +3948,7 @@ PyMODINIT_FUNC PyInit_structure(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":219
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":218
  * 
  * 
  * AminoAcids = create_amino_acid_table({k: pyresidue.Residue(k) for k in pyresidue.residue_table})             # <<<<<<<<<<<<<<
@@ -3960,20 +3957,20 @@ PyMODINIT_FUNC PyInit_structure(void)
  */
   { /* enter inner scope */
     PyObject *__pyx_7genexpr__pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_k = NULL;
-    __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+    __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_pyresidue); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+    __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_pyresidue); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_residue_table); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_residue_table); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
       __pyx_t_1 = __pyx_t_3; __Pyx_INCREF(__pyx_t_1); __pyx_t_4 = 0;
       __pyx_t_5 = NULL;
     } else {
-      __pyx_t_4 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+      __pyx_t_4 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_5 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+      __pyx_t_5 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
     }
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     for (;;) {
@@ -3981,17 +3978,17 @@ PyMODINIT_FUNC PyInit_structure(void)
         if (likely(PyList_CheckExact(__pyx_t_1))) {
           if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_1)) break;
           #if CYTHON_COMPILING_IN_CPYTHON
-          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
           __Pyx_GOTREF(__pyx_t_3);
           #endif
         } else {
           if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
           #if CYTHON_COMPILING_IN_CPYTHON
-          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
           __Pyx_GOTREF(__pyx_t_3);
           #endif
         }
@@ -4001,7 +3998,7 @@ PyMODINIT_FUNC PyInit_structure(void)
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+            else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
           }
           break;
         }
@@ -4009,9 +4006,9 @@ PyMODINIT_FUNC PyInit_structure(void)
       }
       __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_k, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_pyresidue); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+      __pyx_t_6 = __Pyx_GetModuleGlobalName(__pyx_n_s_pyresidue); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_Residue); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_Residue); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_t_6 = NULL;
@@ -4025,21 +4022,21 @@ PyMODINIT_FUNC PyInit_structure(void)
         }
       }
       if (!__pyx_t_6) {
-        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_7, __pyx_7genexpr__pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_k); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_7, __pyx_7genexpr__pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_k); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
         __Pyx_GOTREF(__pyx_t_3);
       } else {
-        __pyx_t_8 = PyTuple_New(1+1); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+        __pyx_t_8 = PyTuple_New(1+1); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
         __Pyx_INCREF(__pyx_7genexpr__pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_k);
         __Pyx_GIVEREF(__pyx_7genexpr__pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_k);
         PyTuple_SET_ITEM(__pyx_t_8, 0+1, __pyx_7genexpr__pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_k);
-        __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_8, NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+        __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_8, NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       }
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      if (unlikely(PyDict_SetItem(__pyx_t_2, (PyObject*)__pyx_7genexpr__pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_k, (PyObject*)__pyx_t_3))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
+      if (unlikely(PyDict_SetItem(__pyx_t_2, (PyObject*)__pyx_7genexpr__pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_k, (PyObject*)__pyx_t_3))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L4_error;}
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -4053,86 +4050,86 @@ PyMODINIT_FUNC PyInit_structure(void)
   __pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_AminoAcids = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_create_amino_acid_table(((PyObject*)__pyx_t_2));
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":220
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":219
  * 
  * AminoAcids = create_amino_acid_table({k: pyresidue.Residue(k) for k in pyresidue.residue_table})
  * Modifications = create_modification_table(dict(**pymodification.Modification._table))             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_pymodification); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 220; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_pymodification); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_Modification); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 220; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_Modification); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_table); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 220; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_table); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (unlikely(__pyx_t_1 == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "argument after ** must be a mapping, not NoneType");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 220; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   if (likely(PyDict_CheckExact(__pyx_t_1))) {
-    __pyx_t_2 = PyDict_Copy(__pyx_t_1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 220; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PyDict_Copy(__pyx_t_1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   } else {
-    __pyx_t_2 = PyObject_CallFunctionObjArgs((PyObject*)&PyDict_Type, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 220; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PyObject_CallFunctionObjArgs((PyObject*)&PyDict_Type, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyDict_Type)), __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 220; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyDict_Type)), __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(PyDict_CheckExact(__pyx_t_1))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 220; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (!(likely(PyDict_CheckExact(__pyx_t_1))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_21glycresoft_sqlalchemy_9structure_3ext_9structure_Modifications = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_create_modification_table(((PyObject*)__pyx_t_1));
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":255
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":254
  * #
  * 
  * def test(name):             # <<<<<<<<<<<<<<
  *     residue = _get_residue_by_name(name)
  *     return residue[0]
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_9structure_3ext_9structure_1test, NULL, __pyx_n_s_glycresoft_sqlalchemy_structure_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 255; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_9structure_3ext_9structure_1test, NULL, __pyx_n_s_glycresoft_sqlalchemy_structure_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 254; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 255; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 254; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":259
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":258
  *     return residue[0]
  * 
  * def test_residue_sym(symbol):             # <<<<<<<<<<<<<<
  *     residue = _get_residue_by_symbol(symbol)
  *     return residue[0]
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_9structure_3ext_9structure_3test_residue_sym, NULL, __pyx_n_s_glycresoft_sqlalchemy_structure_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 259; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_9structure_3ext_9structure_3test_residue_sym, NULL, __pyx_n_s_glycresoft_sqlalchemy_structure_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 258; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test_residue_sym, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 259; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test_residue_sym, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 258; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":263
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":262
  *     return residue[0]
  * 
  * def test_modifications(mapping, str name):             # <<<<<<<<<<<<<<
  *     cdef:
  *         ModificationStructArray* array
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_9structure_3ext_9structure_5test_modifications, NULL, __pyx_n_s_glycresoft_sqlalchemy_structure_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_9structure_3ext_9structure_5test_modifications, NULL, __pyx_n_s_glycresoft_sqlalchemy_structure_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test_modifications, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 263; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test_modifications, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":272
+  /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":271
  *     return modification[0]
  * 
  * def test_sequence(obj):             # <<<<<<<<<<<<<<
  *     print(sequence_to_string(sequence_from_object(obj)))
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_9structure_3ext_9structure_7test_sequence, NULL, __pyx_n_s_glycresoft_sqlalchemy_structure_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_21glycresoft_sqlalchemy_9structure_3ext_9structure_7test_sequence, NULL, __pyx_n_s_glycresoft_sqlalchemy_structure_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 271; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test_sequence, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test_sequence, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 271; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "glycresoft_sqlalchemy\structure\ext\structure.pyx":1

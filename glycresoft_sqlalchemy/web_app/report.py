@@ -9,6 +9,8 @@ except:
     pass
 from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch, DatabaseManager
 from glycresoft_sqlalchemy.report.plot_glycoforms import plot_glycoforms_svg
+from glycresoft_sqlalchemy.report import colors
+from glycresoft_sqlalchemy.structure.sequence import Sequence
 from glycresoft_sqlalchemy.report.chromatogram import draw_chromatogram
 from jinja2 import Environment, PackageLoader, Undefined, FileSystemLoader
 from jinja2 import nodes
@@ -88,13 +90,12 @@ def render_plot(figure, **kwargs):
         figure.patch.set_visible(False)
     buffer = StringIO()
     figure.savefig(buffer, **kwargs)
+    plt.close(figure)
     return buffer
 
 
 def plot_glycoforms(protein, filter_context):
-
     svg = plot_glycoforms_svg(protein, filterfunc=filter_context)
-
     return svg
 
 
@@ -105,6 +106,24 @@ def plot_chromatogram(peak_group):
             }):
         ax = draw_chromatogram(peak_group, color='teal', alpha=0.3)
     return ax
+
+
+def rgbpack(color):
+    return "rgba(%d,%d,%d,0.5)" % tuple(i*255 for i in color)
+
+
+def glycopeptide_string(sequence, long=False):
+    sequence = Sequence(sequence)
+    parts = []
+    template = "(<span class='modification-chip' style='background-color:%s;padding-left:1px;padding-right:2px;' title='%s' data-modification=%s>%s</span>)"
+    for res, mods in sequence:
+        parts.append(res.symbol)
+        for mod in mods:
+            color = colors.get_color(mod)
+            letter = mod.name if long else mod.name[0]
+            parts.append(template % (rgbpack(color), mod.name, mod.name, letter))
+    parts.append(str(sequence.glycan if sequence.glycan is not None else ""))
+    return ''.join(parts)
 
 
 def prepare_environment(env=None):
@@ -126,6 +145,7 @@ def prepare_environment(env=None):
     env.filters['svg_plot'] = svg_plot
     env.filters['png_plot'] = png_plot
     env.filters['fsort'] = fsort
+    env.filters['glycopeptide_string'] = glycopeptide_string
     env.globals
     return env
 
