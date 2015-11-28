@@ -61,7 +61,7 @@ BackendServerControl.prototype.navigateOnReady = function(count, callback){
     var url = this.url
     var self = this
     count = count === undefined ? 1 : count + 1;
-    if(count > 15){
+    if(count > 600){
         throw new Error("Server Not Ready After " + count + " Tries")
     }
     console.log("Calling navigateOnReady with", self, count)

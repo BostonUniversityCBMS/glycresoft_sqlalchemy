@@ -8236,30 +8236,6 @@ Sequence Highlights
     color: maroon;
 }
 
-/*
-
-Protein Match Table
-
-*/
-
-.protein-match-table th, .protein-match-table td {
-    width: 180px;
-    padding: 5px;
-}
-
-.protein-match-table thead, .protein-match-table tbody {
-    display: block;
-    overflow-y: auto;
-}
-
-.protein-match-table tbody tr{
-    cursor: hand;
-}
-
-.protein-match-cell {
-    text-align: left;
-    padding: 5px;
-}
 
 
 /*
@@ -8465,6 +8441,62 @@ Context Menu
 
 /*
 
+Protein Match Table
+
+*/
+
+.protein-match-table th, .protein-match-table td {
+    width: 180px;
+    padding: 5px;
+}
+
+.protein-match-table thead, .protein-match-table tbody {
+    display: block;
+    overflow-y: auto;
+}
+
+.protein-match-table tbody tr{
+    cursor: hand;
+}
+
+.protein-match-cell {
+    text-align: left;
+    padding: 5px;
+}
+
+
+/*
+
+Protein List Table
+
+*/
+
+.protein-list-table {
+    width: 350px;
+}
+
+.protein-list-table th, .protein-list-table td {
+    width: 180px;
+    padding: 5px;
+}
+
+.protein-list-table thead, .protein-list-table tbody {
+    display: block;
+    overflow-y: auto;
+}
+
+.protein-list-table tbody tr{
+    cursor: hand;
+}
+
+.protein-list-cell {
+    text-align: left;
+    padding: 5px;
+}
+
+
+/*
+
 Display Table
 
 */
@@ -8481,6 +8513,12 @@ Display Table
 .display-table th.wide, .display-table td.wide {
     min-width: 150px;
     max-width: 150px;
+    word-break: break-all;
+}
+
+.display-table th.medium-wide, .display-table td.medium-wide {
+    min-width: 250px;
+    max-width: 250px;
     word-break: break-all;
 }
 

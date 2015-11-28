@@ -1,0 +1,42 @@
+package:
+  name: pyteomics
+  version: "3.1.1"
+
+source:
+  fn: pyteomics-3.1.1.tar.gz
+  url: https://pypi.python.org/packages/source/p/pyteomics/pyteomics-3.1.1.tar.gz
+  md5: e367dc7eb11fd7d589183ec7e9b15650
+
+requirements:
+    build:
+        - python
+        - setuptools
+
+    run:
+        - python
+
+test:
+  # Python imports
+  imports:
+    - pyteomics
+
+  # commands:
+    # You can put test commands to be run here.  Use this to test that the
+    # entry points work.
+
+
+  # You can also put a file called run_test.py in the recipe that will be run
+  # at test time.
+
+  # requires:
+    # Put any additional test requirements here.  For example
+    # - nose
+
+about:
+  home: http://hg.theorchromo.ru/pyteomics
+  license: "License :: OSI Approved :: Apache Software License"
+  summary: 'A framework for proteomics data analysis.'
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml

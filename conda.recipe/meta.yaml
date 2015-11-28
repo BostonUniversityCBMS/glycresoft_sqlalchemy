@@ -3,7 +3,7 @@ package:
     version: 0.5.0
 
 source:
-    git_url: https://github.com/mobiusklein/glycresoft_sqlalchemy.git
+    git_url: "https://github.com/mobiusklein/glycresoft_sqlalchemy.git"
 
 requirements:
     build:
@@ -16,18 +16,26 @@ requirements:
         - pyyaml
         - lxml
         - sqlalchemy
+        - pyteomics
+        - requests
+        - glypy
 
     run:
         - python 2.7.*
-        - flask
+        # - flask
+        # - jinja2
         - numpy
         - matplotlib
-        - sklearn
         - sqlalchemy
         - lxml
-        - pyteomics
         - networkx
-        - jinja2
         - requests
         - pyyaml
         - scikit-learn
+        - pyteomics
+        - glypy
+test:
+    imports:
+        - glycresoft_sqlalchemy
+    requires:
+        - python 2.7.*
