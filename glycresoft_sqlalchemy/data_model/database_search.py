@@ -7,6 +7,9 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 from sqlalchemy.orm.session import object_session
 
+import numpy as np
+
+
 from .base import Hierarchy
 from .generic import MutableDict, MutableList
 from .data_model import (
@@ -88,15 +91,15 @@ class HypothesisSampleMatch(Base):
                 Protein.hypothesis_id == Hypothesis.id,
                 ~Hypothesis.is_decoy)
         if self.peak_group_matches.filter(
-                PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition").first() is not None:
+                PeakGroupMatchType.theoretical_match_type == "TheoreticalGlycanComposition").first() is not None:
             yield TheoreticalGlycanComposition, self.peak_group_matches.filter(
-                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition") |
-                (PeakGroupMatch.theoretical_match_type == None))
+                (PeakGroupMatchType.theoretical_match_type == "TheoreticalGlycanComposition") |
+                (PeakGroupMatchType.theoretical_match_type == None))
         if self.peak_group_matches.filter(
-                PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition").first() is not None:
+                PeakGroupMatchType.theoretical_match_type == "TheoreticalGlycopeptideComposition").first() is not None:
             yield TheoreticalGlycopeptideComposition, self.peak_group_matches.filter(
-                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition") |
-                (PeakGroupMatch.theoretical_match_type == None))
+                (PeakGroupMatchType.theoretical_match_type == "TheoreticalGlycopeptideComposition") |
+                (PeakGroupMatchType.theoretical_match_type == None))
 
     def __repr__(self):
         return ("<{self.__class__.__name__} {self.id} {self.target_hypothesis_id}" +
@@ -112,7 +115,7 @@ class HypothesisSampleMatch(Base):
 
     @property
     def results_type(self):
-        return (GlycopeptideMatch, PeakGroupMatch)
+        return (GlycopeptideMatch, PeakGroupMatchType)
 
     @property
     def basis_for(self):
@@ -138,9 +141,10 @@ class MS1GlycanHypothesisSampleMatch(HypothesisSampleMatch):
     id = Column(Integer, ForeignKey(HypothesisSampleMatch.id, ondelete="CASCADE"), primary_key=True)
 
     def results(self):
+        results_type = self.results_type
         yield TheoreticalGlycanComposition, self.peak_group_matches.filter(
-                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition") |
-                (PeakGroupMatch.theoretical_match_type == None))
+                (results_type.theoretical_match_type == "TheoreticalGlycanComposition") |
+                (results_type.theoretical_match_type == None))
 
     __mapper_args__ = {
         "polymorphic_identity": u"MS1GlycanHypothesisSampleMatch",
@@ -150,7 +154,7 @@ class MS1GlycanHypothesisSampleMatch(HypothesisSampleMatch):
 
     @property
     def results_type(self):
-        return (PeakGroupMatch)
+        return (PeakGroupMatchType)
 
     @property
     def hypothesis_type(self):
@@ -172,8 +176,8 @@ class MS2GlycanHypothesisSampleMatch(HypothesisSampleMatch):
     def results(self):
         if self.peak_group_matches.first() is not None:
             yield TheoreticalGlycanComposition, self.peak_group_matches.filter(
-                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycanComposition") |
-                (PeakGroupMatch.theoretical_match_type == None))
+                (PeakGroupMatchType.theoretical_match_type == "TheoreticalGlycanComposition") |
+                (PeakGroupMatchType.theoretical_match_type == None))
         yield TheoreticalGlycanStructure, ()
 
     __mapper_args__ = {
@@ -184,7 +188,7 @@ class MS2GlycanHypothesisSampleMatch(HypothesisSampleMatch):
 
     @property
     def results_type(self):
-        return (PeakGroupMatch)
+        return (PeakGroupMatchType)
 
     @property
     def hypothesis_type(self):
@@ -206,9 +210,10 @@ class MS1GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
     }
 
     def results(self):
+        results_type = self.results_type
         yield TheoreticalGlycopeptideComposition, self.peak_group_matches.filter(
-                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition") |
-                (PeakGroupMatch.theoretical_match_type == None))
+                (results_type.theoretical_match_type == "TheoreticalGlycopeptideComposition") |
+                (results_type.theoretical_match_type == None))
 
     is_exact = False
     ms_level = 1
@@ -219,7 +224,7 @@ class MS1GlycopeptideHypothesisSampleMatch(HypothesisSampleMatch):
 
     @property
     def results_type(self):
-        return (PeakGroupMatch)
+        return (PeakGroupMatchType)
 
     @property
     def basis_for(self):
@@ -247,15 +252,6 @@ class ExactMS1GlycopeptideHypothesisSampleMatch(MS1GlycopeptideHypothesisSampleM
     }
 
     is_exact = True
-
-    def results(self):
-        yield TheoreticalGlycopeptideComposition, self.peak_group_matches.filter(
-                (PeakGroupMatch.theoretical_match_type == "TheoreticalGlycopeptideComposition") |
-                (PeakGroupMatch.theoretical_match_type == None))
-
-    @property
-    def results_type(self):
-        return (PeakGroupMatch)
 
     @property
     def hypothesis_type(self):
@@ -632,6 +628,94 @@ PeakGroupMatchToJointPeakGroupMatch = Table(
     Column("peak_group_id", Integer, ForeignKey("PeakGroupMatch.id"), index=True),
     Column("joint_group_id", Integer, ForeignKey("JointPeakGroupMatch.id"), index=True)
 )
+
+
+class PeakGroupScoringModel(Base):
+    __tablename__ = "PeakGroupScoringModel"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode(30), index=True)
+    source_hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
+    source = relationship(HypothesisSampleMatch)
+
+    modification_state_count = Column(Numeric(8, asdecimal=False))
+    charge_state_count = Column(Numeric(8, asdecimal=False))
+    total_volume = Column(Numeric(8, asdecimal=False))
+    a_peak_intensity_error = Column(Numeric(8, asdecimal=False))
+    centroid_scan_error = Column(Numeric(8, asdecimal=False))
+    average_signal_to_noise = Column(Numeric(8, asdecimal=False))
+    scan_density = Column(Numeric(8, asdecimal=False))
+    scan_count = Column(Numeric(8, asdecimal=False))
+
+    def to_parameter_vector(self):
+        vector = [
+            self.charge_state_count,
+            self.scan_density,
+            self.modification_state_count,
+            self.total_volume,
+            self.a_peak_intensity_error,
+            self.centroid_scan_error,
+            self.scan_count,
+            self.average_signal_to_noise
+        ]
+        return np.array([vector])
+
+    @classmethod
+    def from_parameter_vector(cls, vector):
+        vector = vector[0]
+        names = [
+            "charge_state_count",
+            "scan_density",
+            "modification_state_count",
+            "total_volume",
+            "a_peak_intensity_error",
+            "centroid_scan_error",
+            "scan_count",
+            "average_signal_to_noise"
+        ]
+        return cls(**dict(zip(names, vector)))
+
+    def to_parameter_dict(self):
+        names = [
+            "charge_state_count",
+            "scan_density",
+            "modification_state_count",
+            "total_volume",
+            "a_peak_intensity_error",
+            "centroid_scan_error",
+            "scan_count",
+            "average_signal_to_noise"
+        ]
+        return dict(zip(names, self.to_parameter_vector()[0]))
+
+    def logit(self):
+        X = self.to_parameter_vector()
+        vec = np.log(X) - np.log(1 - X)
+        return self.__class__.from_parameter_vector(vec)
+
+    def inverse_logit(self):
+        X = self.to_parameter_vector()
+        vec = np.exp(X) / (np.exp(X) + 1)
+        return self.__class__.from_parameter_vector(vec)
+
+    def __repr__(self):
+        return "PeakGroupScoringModel(%r)" % self.to_parameter_dict()
+
+    @classmethod
+    def initialize(cls, session):
+        legacy_model_coefficients = [
+            [0.65784006, 1.345376317, 0.219899787,
+             0.0000383503, -0.000349839, -0.001610525,
+             -0.000947516, 0.011453828]
+        ]
+        inst = cls.from_parameter_vector(legacy_model_coefficients)
+        inst.name = "Generic Scoring Model"
+        session.add(inst)
+
+        session.commit()
+
+
+PeakGroupMatchType = JointPeakGroupMatch
 
 
 '''

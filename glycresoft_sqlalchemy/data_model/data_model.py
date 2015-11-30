@@ -47,10 +47,16 @@ class Hypothesis(Base):
         super(Hypothesis, self).__init__(**kwargs)
 
     def to_json(self):
+        serialize_parameters = self.parameters
+        if "decoys" in serialize_parameters:
+            decoy_ops = serialize_parameters['decoys']
+            for decoy in decoy_ops:
+                decoy['type'] = str(decoy['type'])
+            serialize_parameters['decoys'] = decoy_ops
         d = {
             "id": self.id,
             "name": self.name,
-            "parameters": self.parameters,
+            "parameters": serialize_parameters,
             "hypothesis_type": self.hypothesis_type,
             "is_decoy": self.is_decoy
         }

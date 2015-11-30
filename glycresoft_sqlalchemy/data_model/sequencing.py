@@ -1,5 +1,5 @@
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table, Text
+from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table, UnicodeText
 
 from .base import Base
 

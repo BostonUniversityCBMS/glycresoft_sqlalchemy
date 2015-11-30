@@ -12,6 +12,8 @@ from glycresoft_sqlalchemy.data_model import PipelineModule
 
 from ..utils import fragments
 
+from glypy.utils.enum import Enum
+
 Sequence = sequence.Sequence
 
 strip_modifications = sequence.strip_modifications
@@ -143,10 +145,15 @@ def make_decoy(theoretical_sequence, prefix_len=0, suffix_len=1,
     return 1
 
 
-decoy_type_map = {
-    0: reverse_preserve_sequon,
-    1: reverse_sequence
-}
+decoy_type_map = [
+    reverse_preserve_sequon,
+    reverse_sequence
+]
+
+
+class DecoyType(Enum):
+    reverse_preserve_sequon = 0
+    reverse_sequence = 1
 
 
 class DecoySearchSpaceBuilder(PipelineModule):
@@ -157,7 +164,7 @@ class DecoySearchSpaceBuilder(PipelineModule):
     HypothesisType = MS2GlycopeptideHypothesis
 
     def __init__(self, database_path, prefix_len=0, suffix_len=1,
-                 hypothesis_ids=None, n_processes=4, decoy_type=0):
+                 hypothesis_ids=None, n_processes=4, decoy_type=DecoyType.reverse_preserve_sequon):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
         HypothesisType = self.HypothesisType

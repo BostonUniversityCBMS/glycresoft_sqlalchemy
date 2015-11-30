@@ -6,7 +6,7 @@ import logging
 from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide
 
 from .make_decoys import (DecoySearchSpaceBuilder, strip_modifications, decoy_type_map,
-                          reverse_preserve_sequon, fragments)
+                          reverse_preserve_sequon, fragments, DecoyType)
 
 logger = logging.getLogger("make_decoys")
 
@@ -60,7 +60,7 @@ def make_decoy(theoretical_sequence_id, prefix_len=0, suffix_len=1,
 
 class PoolingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
     def __init__(self, database_path, prefix_len=0, suffix_len=1, hypothesis_ids=None,
-                 n_processes=4, decoy_type=0, commit_checkpoint=1000):
+                 n_processes=4, decoy_type=DecoyType.reverse_preserve_sequon, commit_checkpoint=1000):
         super(PoolingDecoySearchSpaceBuilder, self).__init__(
             database_path=database_path, prefix_len=prefix_len,
             suffix_len=suffix_len, hypothesis_ids=hypothesis_ids,

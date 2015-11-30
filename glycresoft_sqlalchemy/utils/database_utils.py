@@ -232,7 +232,10 @@ class toggle_indices(object):
     def drop(self):
         conn = self.session.connection()
         for index in self.table.indexes:
-            index.drop(conn)
+            try:
+                index.drop(conn)
+            except OperationalError, e:
+                print e
         try:
             self.session.commit()
         except:
@@ -241,7 +244,10 @@ class toggle_indices(object):
     def create(self):
         conn = self.session.connection()
         for index in self.table.indexes:
-            index.create(conn)
+            try:
+                index.create(conn)
+            except OperationalError, e:
+                print e
         try:
             self.session.commit()
         except:

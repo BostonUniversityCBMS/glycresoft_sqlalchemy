@@ -22,9 +22,15 @@
         <i data-target="{{hsm.target_hypothesis.id}}" id='save-csv-file' class="material-icons">insert_drive_file</i>
     </button>
 </div>
+<div id='monosaccharide-filters' class='row'>
+</div>
 <div id='chosen-protein-container'>
     <div class="progress"><div class="indeterminate"></div></div>
 </div>
 <script>
 viewPeakGroupingDatabaseSearchResults()
+{% for row in (hsm.monosaccharides_in_results()|batch(8)) %}
+    console.log({{row}})
+new MonosaccharideFilter("#monosaccharide-filters", {{row}}).render()
+{% endfor %}
 </script>

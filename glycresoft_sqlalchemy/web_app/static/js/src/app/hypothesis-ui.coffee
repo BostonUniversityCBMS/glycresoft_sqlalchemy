@@ -3,6 +3,8 @@ Application::renderHypothesisListAt = (container)->
     template = ''
     self = @
     for hypothesis in _.sortBy(_.values(@hypotheses), (o) -> o.name)
+        if hypothesis.is_decoy
+            continue
         row = $("
     <div data-id=#{hypothesis.id} class=''>
         <span class='handle'>#{hypothesis.name.replace('_', ' ')}</span> <small class='right'>#{if hypothesis.hypothesis_type? then hypothesis.hypothesis_type else '-' }

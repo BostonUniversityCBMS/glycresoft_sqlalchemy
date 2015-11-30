@@ -26,7 +26,6 @@
 </div>
 <script>
 viewTandemGlycopeptideDatabaseSearchResults()
-{# {% for row in (hsm.target_hypothesis.parameters.monosaccharide_identities|batch(8)) %} #}
 {% for row in (hsm.monosaccharides_in_results()|batch(8)) %}
     console.log({{row}})
 new MonosaccharideFilter("#monosaccharide-filters", {{row}}).render()

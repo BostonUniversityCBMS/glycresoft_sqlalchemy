@@ -6,10 +6,10 @@ import operator
 import numpy as np
 
 from glycresoft_sqlalchemy.structure import sequence
-from glycresoft_sqlalchemy.utils import simple_repr
 from glycresoft_sqlalchemy.utils.collectiontools import flatten
 
-from glycresoft_sqlalchemy.scoring.offset_frequency.peak_relations import MatchedSpectrum
+from glycresoft_sqlalchemy.scoring import simple_scoring_algorithm
+
 
 from glycresoft_sqlalchemy.data_model import DatabaseManager, GlycopeptideMatch
 
@@ -148,102 +148,14 @@ class FrequencyCounter(object):
         return inst
 
 
-_MAXIMA = 3e6
-_NOISE_FACTOR = 2000 * 2e-9
-
-
-def geometric_mean(values):
-    return np.exp(1./len(values) * np.log(values).sum())
-
-
-def fragment_transform(fragment_mean, min1=.99, max1=.99, min2=1, max2=1):
-    lmin1, lmax1, lmin2, lmax2 = np.log([min1, max1, min2, max2])
-    precursor_fragment_range_ratio = (min(lmax1 - lmin1, 0.1) / (lmax2 - lmin2))
-    fragment_series_range = np.log(fragment_mean) - lmin2 + lmax1
-
-    # print lmin1, lmax1, lmin2, lmax2
-    # print "precursor_fragment_range_ratio", precursor_fragment_range_ratio
-    # print "fragment_series_range", fragment_series_range, np.log(fragment_mean), lmin2, lmax1
-    # print "(precursor_fragment_range_ratio * fragment_series_range)", (precursor_fragment_range_ratio * fragment_series_range)
-
-    return np.exp(precursor_fragment_range_ratio * fragment_series_range)
-
-
-class ScoreMatch(object):
-
-    def __init__(self, match, frequency_counter, tolerance=2e-5, maxima=_MAXIMA, noise_factor=_NOISE_FACTOR):
-        # Constants
-        self.reference = match.glycopeptide_match.theoretical_reference
-        match = MatchedSpectrum(match)
-        match.reindex_peak_matches()
-        self.spectrum = match.peak_list
-        self.match = match
+class FrequencyScorer(object):
+    def __init__(self, frequency_counter):
         self.frequency_counter = frequency_counter
-        self.tolerance = tolerance
-        self.maxima = maxima
-        self.noise_factor = noise_factor
 
-        # Containers
-        self.possible_peak_scores = {}
-        self.possible_peaks = []
-        self.n_peaks_gen = None
-        self.noise_peaks_total = None
-        self.explainable_peaks_total = None
-        self.score = None
+    def evaluate(self, matched, theoretical, **parameters):
+        matched.mean_coverage = simple_scoring_algorithm.mean_coverage2(matched)
+        matched.mean_hexnac_coverage = simple_scoring_algorithm.mean_hexnac_coverage(matched, theoretical)
+        matched.ms2_score = self.calculate_score(matched, theoretical, **parameters)
 
-    def calculate_score(self):
-        MAXIMA = self.maxima
-        NOISE_FACTOR = self.noise_factor
-        tolerance = self.tolerance
-        match = self.match
-        spectrum = self.spectrum
-        frequency_counter = self.frequency_counter
-
-        possible_peak_scores = self.possible_peak_scores = {}
-        reference = self.reference
-        possible_peaks = [p for p in reference.fragments()]
-        self.n_peaks_gen = n_peaks_gen = len(possible_peaks)
-        self.noise_peaks_total = noise_peaks_total = NOISE_FACTOR * (MAXIMA - 2 * (n_peaks_gen * tolerance))
-        self.explainable_peaks_total = explainable_peaks_total = 0.
-
-        fragment_map = make_fragment_map(reference.glycopeptide_sequence)
-
-        for peak in possible_peaks:
-            fkey = peak['key']
-            if fkey in fragment_map:
-                n_term, c_term = fragment_map[fkey].flanking_amino_acids
-                s = frequency_counter.residue_probability(n_term)
-                s *= frequency_counter.residue_probability(c_term)
-                s *= (2 * tolerance)
-                explainable_peaks_total += s
-                possible_peak_scores[fkey] = s
-            else:
-                # TODO:
-                # No model for oxonium ions or stub ions. Future
-                # work would build one.
-                s = (2 * tolerance) * NOISE_FACTOR * 10
-                explainable_peaks_total += s
-                possible_peak_scores[fkey] = s
-
-        total_area = noise_peaks_total + explainable_peaks_total
-
-        self.accumulated_score = accumulated_score = defaultdict(float)
-        peak_match_map = match.peak_match_map
-        for peak in spectrum:
-            if peak.id in peak_match_map:
-                for peak_match in peak_match_map[peak.id]:
-                    fkey = peak_match.key
-                    accumulated_score[peak.id] = max(possible_peak_scores[fkey]/total_area, accumulated_score[peak.id])
-            else:
-                accumulated_score[peak.id] = NOISE_FACTOR / total_area
-
-        self.score = geometric_mean(np.array(accumulated_score.values()))
-        return self.score
-
-    def min_fragment_score(self):
-        return min(self.possible_peak_scores.values())
-
-    def max_fragment_score(self):
-        return max(self.possible_peak_scores.values())
-
-    __repr__ = simple_repr
+    def calculate_score(self, matched, theoretical, **parameters):
+        return 0

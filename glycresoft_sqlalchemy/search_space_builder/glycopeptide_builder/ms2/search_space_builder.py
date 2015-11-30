@@ -18,7 +18,7 @@ from ..utils import fragments
 
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
-    HypothesisSampleMatch, PeakGroupMatch, Protein,
+    HypothesisSampleMatch, PeakGroupMatchType, Protein,
     TheoreticalGlycopeptideGlycanAssociation,
     MS1GlycopeptideHypothesis, Protein,
     TheoreticalGlycopeptide, Hierarchy)
@@ -467,7 +467,6 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
             "variable_modification_list": variable_modifications,
             "ms1_output_file": ms1_results_file,
             "enzyme": enzyme,
-            "tag": tag,
             "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS,
             "source_hypothesis_id": kwargs.get("source_hypothesis_id"),
             "source_hypothesis_sample_match_id": kwargs.get("source_hypothesis_sample_match_id")
@@ -581,21 +580,21 @@ class MS1ResultsFacade(object):
     @staticmethod
     def render(session, obj):
         return MS1GlycopeptideResult.from_peak_group_match(
-            session.query(PeakGroupMatch).get(obj))
+            session.query(PeakGroupMatchType).get(obj))
 
     @classmethod
     def get_renderer(self):
         def render(session, obj):
             return MS1GlycopeptideResult.from_peak_group_match(
-                session.query(PeakGroupMatch).get(obj))
+                session.query(PeakGroupMatchType).get(obj))
         return render
 
     def __iter__(self):
         session = self.manager.session()
         with session.no_autoflush:
-            for pgm_id in session.query(PeakGroupMatch.id).filter(
-                    PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-                    PeakGroupMatch.matched):
+            for pgm_id in session.query(PeakGroupMatchType.id).filter(
+                    PeakGroupMatchType.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
+                    PeakGroupMatchType.matched):
                 yield pgm_id[0]
         session.close()
 

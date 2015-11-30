@@ -283,6 +283,15 @@ class GlycanBase(object):
         rep = "<{self.__class__.__name__} {self.composition}>".format(self=self)
         return rep
 
+    @hybrid_method
+    def from_hypothesis(self, hypothesis_id):
+        return self.hypothesis_id == hypothesis_id
+
+    @from_hypothesis.expression
+    def from_hypothesis(self, hypothesis_id):
+        return (self.hypothesis_id == hypothesis_id)
+
+
 
 @with_glycan_composition("composition")
 class StructureMotif(GlycanBase, HasReferenceAccessionNumber, Base):
