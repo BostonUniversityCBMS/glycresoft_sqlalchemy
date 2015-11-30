@@ -64,7 +64,7 @@ class Application extends ActionLayerManager
                 console.log k, v
             @emit("update_settings")
         ).error (err) ->
-            console.log "error in updateSettings", arguments
+            console.log "error in updateSettings", err, arguments
 
     updateTaskList: ->
         taskListContainer = @sideNav.find('.task-list-container ul')

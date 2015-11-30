@@ -22,7 +22,10 @@ def show_preferences():
 def update_preferences():
     new_preferences = request.values.to_dict()
     print "new_preferences"
-    preferences = g.manager["preferences"]
+    try:
+        preferences = g.manager["preferences"]
+    except KeyError:
+        preferences = {}
     for k, v in default_preferences.items():
         if k not in preferences:
             preferences[k] = v

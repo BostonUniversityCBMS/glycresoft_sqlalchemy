@@ -25,7 +25,7 @@
         </div>
         <div class='col s4'>
             <h6><b>Observed Mass (PPM Error)</b></h6>
-            <span>{{glycopeptide.observed_mass}} ({{"%0.3e"|format(glycopeptide.ppm_error)}})</span>
+            <span>{{glycopeptide.observed_mass}} ({{"%0.3e"|format(glycopeptide.ppm_error) if glycopeptide.ppm_error else " - "}})</span>
         </div>
     </div>
     <div class='row'>

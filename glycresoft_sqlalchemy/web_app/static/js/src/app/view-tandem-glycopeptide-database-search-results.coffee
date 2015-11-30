@@ -10,7 +10,16 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
 
     setup = ->
         $('.protein-match-table tbody tr').click updateProteinChoice
-        updateProteinChoice.apply $('.protein-match-table tbody tr')
+
+        last_id = GlycReSoft.context['protein_id']
+        last_selector = '''.protein-match-table tbody tr[data-target="''' + last_id + '''"]'''
+        console.log(last_selector)
+        handle = $(last_selector)
+        console.log(handle)
+        if handle.length != 0
+            updateProteinChoice.apply handle
+        else    
+            updateProteinChoice.apply $('.protein-match-table tbody tr')
         $(".tooltipped").tooltip()
         $("#save-csv-file").click downloadCSV
 
@@ -65,6 +74,7 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
                     $('.indicator').addClass 'indigo'
                     $('.glycopeptide-match-row').click showGlycopeptideDetailsModal
                     peptideDetailsModal = $('#peptide-detail-modal')
+                    GlycReSoft.context['protein_id'] = id
                 error: (error) ->
                     console.log arguments
 
@@ -87,8 +97,5 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
                 data: JSON.stringify({"context": GlycReSoft.context, "settings": GlycReSoft.settings}),
                 contentType: "application/json"
                 type: 'POST'
-
-    unload = ->
-        GlycReSoft.removeCurrentLayer()
 
     setup()

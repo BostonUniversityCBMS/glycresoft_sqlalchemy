@@ -106,7 +106,7 @@ Application = (function(superClass) {
         return _this.emit("update_settings");
       };
     })(this)).error(function(err) {
-      return console.log("error in updateSettings", arguments);
+      return console.log("error in updateSettings", err, arguments);
     });
   };
 

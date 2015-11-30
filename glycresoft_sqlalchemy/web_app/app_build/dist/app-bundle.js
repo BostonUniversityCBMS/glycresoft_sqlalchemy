@@ -170,7 +170,7 @@ Application = (function(superClass) {
         return _this.emit("update_settings");
       };
     })(this)).error(function(err) {
-      return console.log("error in updateSettings", arguments);
+      return console.log("error in updateSettings", err, arguments);
     });
   };
 
@@ -584,6 +584,9 @@ Application.prototype.renderHypothesisListAt = function(container) {
   });
   for (i = 0, len = ref.length; i < len; i++) {
     hypothesis = ref[i];
+    if (hypothesis.is_decoy) {
+      continue;
+    }
     row = $("<div data-id=" + hypothesis.id + " class=''> <span class='handle'>" + (hypothesis.name.replace('_', ' ')) + "</span> <small class='right'>" + (hypothesis.hypothesis_type != null ? hypothesis.hypothesis_type : '-') + " <a class='remove-hypothesis mdi-content-clear'></a></small></div>");
     chunks.push(row);
     row.click(function(event) {

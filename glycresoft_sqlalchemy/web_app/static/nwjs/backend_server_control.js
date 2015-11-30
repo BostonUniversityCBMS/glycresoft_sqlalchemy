@@ -8,7 +8,7 @@ var child_process = require("child_process")
 
 WINDOW_OPTIONS = {
     "title": "GlycReSoft",
-    "toolbar": false,
+    "toolbar": true,
     "icon": "static/nwjs/logo.png"
 }
 
@@ -29,9 +29,11 @@ BackendServerControl.prototype.launchServer = function(){
     child = child_process.exec("glycresoft-report web " + this.project.getStorePath() + " --port " + this.port)
     child.stdout.on("data", function(){
         console.log("stdout", arguments)
+        console.log(arguments[0])
     })
-    child.stderr.on("error", function(){
+    child.stderr.on("data", function(){
         console.log("stderr", arguments)
+        console.log(arguments[0])
     })
     this.process = child
 }
