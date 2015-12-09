@@ -57,7 +57,8 @@ makePartialGet = function(url, method) {
 };
 
 PartialSource = {
-  glycopeptideCompositionDetailsModal: makePartialGet('/view_database_search_results/view_glycopeptide_composition_details/{id}', "get")
+  glycopeptideCompositionDetailsModal: makePartialGet('/view_database_search_results/view_glycopeptide_composition_details/{id}', "get"),
+  glycanCompositionDetailsModal: makePartialGet('/view_database_search_results/view_glycan_composition_details/{id}', "get")
 };
 
 //# sourceMappingURL=bind-urls.js.map

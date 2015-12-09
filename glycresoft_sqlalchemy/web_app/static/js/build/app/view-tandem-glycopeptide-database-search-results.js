@@ -29,7 +29,19 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
     return $("#save-csv-file").click(downloadCSV);
   };
   initGlycopeptideOverviewPlot = function() {
-    $('svg .glycopeptide').customTooltip(glycopeptideTooltipCallback, 'protein-view-tooltip');
+    var glycopeptide;
+    glycopeptide = $('svg .glycopeptide');
+    glycopeptide.customTooltip(glycopeptideTooltipCallback, 'protein-view-tooltip');
+    glycopeptide.click(function(event) {
+      var handle, id;
+      handle = $(this);
+      id = handle.data("record-id");
+      return $.get('/view_database_search_results/view_glycopeptide_details/' + id).success(function(doc) {
+        peptideDetailsModal.find('.modal-content').html(doc);
+        $(".lean-overlay").remove();
+        return peptideDetailsModal.openModal();
+      });
+    });
     return $('svg .modification path').customTooltip(modificationTooltipCallback, 'protein-view-tooltip');
   };
   glycopeptideTooltipCallback = function(handle) {

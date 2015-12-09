@@ -57,7 +57,8 @@ makePartialGet = function(url, method) {
 };
 
 PartialSource = {
-  glycopeptideCompositionDetailsModal: makePartialGet('/view_database_search_results/view_glycopeptide_composition_details/{id}', "get")
+  glycopeptideCompositionDetailsModal: makePartialGet('/view_database_search_results/view_glycopeptide_composition_details/{id}', "get"),
+  glycanCompositionDetailsModal: makePartialGet('/view_database_search_results/view_glycan_composition_details/{id}', "get")
 };
 
 //# sourceMappingURL=bind-urls.js.map
@@ -539,7 +540,7 @@ Application.prototype.renderHypothesisSampleMatchListAt = function(container) {
     for (i = 0, len = ref.length; i < len; i++) {
       hsm = ref[i];
       hsm.name = hsm.name != null ? hsm.name : "HypothesisSampleMatch:" + hsm.target_hypothesis.name + "@" + hsm.sample_run_name;
-      row = $("<div data-id=" + hsm.id + " class='list-item'> <span class='handle'>" + (hsm.name.replace('_', ' ')) + "</span> <small class='right'>" + (hsm.hypothesis_sample_match_type.replace('HypothesisSampleMatch', '')) + " <a class='remove-hsm mdi-content-clear'></a> </small> </div>");
+      row = $("<div data-id=" + hsm.id + " class='list-item clearfix'> <span class='handle'>" + (hsm.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + (hsm.hypothesis_sample_match_type.replace('HypothesisSampleMatch', '')) + " <a class='remove-hsm mdi-content-clear'></a> </small> </div>");
       chunks.push(row);
       self = this;
       row.click(function(event) {
@@ -556,7 +557,8 @@ Application.prototype.renderHypothesisSampleMatchListAt = function(container) {
       });
       results.push(row.find(".remove-hsm").click(function(event) {
         var handle;
-        return handle = $(this);
+        handle = $(this);
+        return console.log("Removal of HypothesisSampleMatch is not implemented.");
       }));
     }
     return results;
@@ -587,7 +589,7 @@ Application.prototype.renderHypothesisListAt = function(container) {
     if (hypothesis.is_decoy) {
       continue;
     }
-    row = $("<div data-id=" + hypothesis.id + " class=''> <span class='handle'>" + (hypothesis.name.replace('_', ' ')) + "</span> <small class='right'>" + (hypothesis.hypothesis_type != null ? hypothesis.hypothesis_type : '-') + " <a class='remove-hypothesis mdi-content-clear'></a></small></div>");
+    row = $("<div data-id=" + hypothesis.id + " class='list-item clearfix'> <span class='handle'>" + (hypothesis.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + (hypothesis.hypothesis_type != null ? hypothesis.hypothesis_type : '-') + " <a class='remove-hypothesis mdi-content-clear'></a> </small> </div>");
     chunks.push(row);
     row.click(function(event) {
       var handle, hypothesisId, layer;
@@ -621,7 +623,7 @@ var MassShiftInputWidget;
 
 MassShiftInputWidget = (function() {
   var addEmptyRowOnEdit, counter, template;
-  template = "<div class='mass-shift-row row'>\n    <div class='input-field col s3'>\n        <label for='mass_shift_name'>Mass Shift Name</label>\n        <input class='mass-shift-name' type='text' name='mass_shift_name' placeholder='Name'>\n    </div>\n    <div class='input-field col s3'>\n        <label for='mass_shift_mass_delta'>Mass &Delta;</label>\n        <input class='mass-delta' type='number' name='mass_shift_mass_delta' placeholder='Mass Shift'>\n    </div>\n    <div class='input-field col s3'>\n        <label for='mass_shift_max_count'>Maximum Count</label>    \n        <input class='max-count' type='number' min='0' placeholder='Maximum Count' name='mass_shift_max_count'>\n    </div>\n</div>";
+  template = "<div class='mass-shift-row row'>\n    <div class='input-field col s3'>\n        <label for='mass_shift_name'>Mass Shift Name</label>\n        <input class='mass-shift-name' type='text' name='mass_shift_name' placeholder='Name'>\n    </div>\n    <div class='input-field col s3'>\n        <label for='mass_shift_mass_delta'>Mass &Delta;</label>\n        <input class='mass-delta' type='number' name='mass_shift_mass_delta' step=\"0.0001\" placeholder='Mass Shift'>\n    </div>\n    <div class='input-field col s3'>\n        <label for='mass_shift_max_count'>Maximum Count</label>    \n        <input class='max-count' type='number' min='0' placeholder='Maximum Count' name='mass_shift_max_count'>\n    </div>\n</div>";
   counter = 0;
   addEmptyRowOnEdit = function(container, addHeader) {
     var callback, row;
@@ -679,7 +681,7 @@ MonosaccharideFilter = (function() {
     }
     residue.name = residue;
     residue.sanitizeName = sanitizeName = residue.replace(/[\(\),]/g, "_");
-    template = "<span class=\"col s2\" style='display:inline-block; width: 130px;' data-name='" + residue + "'>\n    <p style='margin: 0px; margin-bottom: -10px;'>\n        <input type=\"checkbox\" id=\"" + sanitizeName + "_include\" name=\"" + sanitizeName + "_include\"/>\n        <label for=\"" + sanitizeName + "_include\"><b>" + residue + "</b></label>\n    </p>\n    <p>\n        <input id=\"" + sanitizeName + "_min\" type=\"number\" placeholder=\"Minimum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.minimum + "\" max=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_min\"/> : \n        <input id=\"" + sanitizeName + "_max\" type=\"number\" placeholder=\"Maximum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.maximum + "\" max=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_max\"/>\n    </p>\n</span>";
+    template = "<span class=\"col s2\" style='display:inline-block; width: 130px;' data-name='" + residue + "'>\n    <p style='margin: 0px; margin-bottom: -10px;'>\n        <input type=\"checkbox\" id=\"" + sanitizeName + "_include\" name=\"" + sanitizeName + "_include\"/>\n        <label for=\"" + sanitizeName + "_include\"><b>" + residue + "</b></label>\n    </p>\n    <p>\n        <input id=\"" + sanitizeName + "_min\" type=\"number\" placeholder=\"Minimum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.minimum + "\" max=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_min\"/> : \n        <input id=\"" + sanitizeName + "_max\" type=\"number\" placeholder=\"Maximum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_max\"/>\n    </p>\n</span>";
     self = this;
     rendered = $(template);
     rendered.find("#" + sanitizeName + "_min").change(function() {
@@ -690,7 +692,7 @@ MonosaccharideFilter = (function() {
       rule.maximum = parseInt($(this).val());
       return self.changed();
     });
-    rendered.find("#" + sanitizeName + "_include").prop("checked", rule.include).change(function() {
+    rendered.find("#" + sanitizeName + "_include").prop("checked", rule.include).click(function() {
       rule.include = $(this).prop("checked");
       return self.changed();
     });
@@ -730,7 +732,7 @@ Application.prototype.renderSampleListAt = function(container) {
     results = [];
     for (i = 0, len = ref.length; i < len; i++) {
       sample = ref[i];
-      row = $("<div data-name=" + sample.name + "> <span class='handle'>" + (sample.name.replace('_', ' ')) + "</span> <small class='right'>" + sample.sample_type + " <a class='remove-sample mdi-content-clear'></a></small></div>");
+      row = $("<div data-name=" + sample.name + " class='list-item clearfix'> <span class='handle'>" + (sample.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + sample.sample_type + " <a class='remove-sample mdi-content-clear'></a> </small> </div>");
       chunks.push(row);
       results.push(row.find(".remove-sample").click(function(event) {
         var handle;
@@ -801,6 +803,111 @@ viewGlycanCompositionHypothesis = function(hypothesisId) {
 };
 
 //# sourceMappingURL=view-glycan-composition-hypothesis.js.map
+
+var viewGlycanCompositionPeakGroupingDatabaseSearchResults;
+
+viewGlycanCompositionPeakGroupingDatabaseSearchResults = function() {
+  var currentPage, downloadCSV, glycanDetailsModal, glycanTable, setup, setupGlycanCompositionTablePageHandlers, showGlycanCompositionDetailsModal, unload, updateGlycanCompositionTablePage, updateView;
+  glycanDetailsModal = void 0;
+  glycanTable = void 0;
+  currentPage = 1;
+  setup = function() {
+    updateView();
+    return $("#save-csv-file").click(downloadCSV);
+  };
+  setupGlycanCompositionTablePageHandlers = function(page) {
+    if (page == null) {
+      page = 1;
+    }
+    $('.glycan-match-row').click(showGlycanCompositionDetailsModal);
+    $(':not(.disabled) .next-page').click(function() {
+      return updateGlycanCompositionTablePage(page + 1);
+    });
+    $(':not(.disabled) .previous-page').click(function() {
+      return updateGlycanCompositionTablePage(page - 1);
+    });
+    return $('.pagination li :not(.active)').click(function() {
+      var nextPage;
+      nextPage = $(this).attr("data-index");
+      if (nextPage != null) {
+        nextPage = parseInt(nextPage);
+        return updateGlycanCompositionTablePage(nextPage);
+      }
+    });
+  };
+  updateGlycanCompositionTablePage = function(page) {
+    var url;
+    if (page == null) {
+      page = 1;
+    }
+    url = "/view_database_search_results/glycan_composition_match_table/" + page;
+    console.log(url);
+    return GlycReSoft.ajaxWithContext(url).success(function(doc) {
+      currentPage = page;
+      glycanTable.html(doc);
+      return setupGlycanCompositionTablePageHandlers(page);
+    });
+  };
+  updateView = function() {
+    var handle;
+    handle = $(this);
+    $("#content-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
+    return GlycReSoft.ajaxWithContext('/view_database_search_results/results_view/').success(function(doc) {
+      var tabs;
+      $('#content-container').hide();
+      $('#content-container').html(doc).fadeIn();
+      tabs = $('ul.tabs');
+      tabs.tabs();
+      if (GlycReSoft.context['view-active-tab'] !== void 0) {
+        console.log(GlycReSoft.context['view-active-tab']);
+        $('ul.tabs').tabs('select_tab', GlycReSoft.context['view-active-tab']);
+      } else {
+        $('ul.tabs').tabs('select_tab', 'glycome-overview');
+      }
+      $('.indicator').addClass('indigo');
+      $('ul.tabs .tab a').click(function() {
+        return GlycReSoft.context['view-active-tab'] = $(this).attr('href').slice(1);
+      });
+      glycanDetailsModal = $('#glycan-detail-modal');
+      glycanTable = $("#glycan-table");
+      return updateGlycanCompositionTablePage(1);
+    }).error(function(error) {
+      return console.log(arguments);
+    });
+  };
+  showGlycanCompositionDetailsModal = function() {
+    var handle, id;
+    handle = $(this);
+    id = handle.attr('data-target');
+    console.log(id);
+    return PartialSource.glycanCompositionDetailsModal({
+      "id": id
+    }, function(doc) {
+      glycanDetailsModal.find('.modal-content').html(doc);
+      $(".lean-overlay").remove();
+      return glycanDetailsModal.openModal();
+    });
+  };
+  unload = function() {
+    return GlycReSoft.removeCurrentLayer();
+  };
+  downloadCSV = function() {
+    var handle, id;
+    handle = $(this);
+    id = handle.attr('data-target');
+    return $.ajax("/view_database_search_results/export_csv/" + id, {
+      data: JSON.stringify({
+        "context": GlycReSoft.context,
+        "settings": GlycReSoft.settings
+      }),
+      contentType: "application/json",
+      type: 'POST'
+    });
+  };
+  return setup();
+};
+
+//# sourceMappingURL=view-glycan-composition-peak-group-database-search.js.map
 
 var viewGlycopeptideCompositionHypothesis;
 
@@ -992,7 +1099,6 @@ viewPeakGroupingDatabaseSearchResults = function() {
     var handle, id;
     handle = $(this);
     currentProtein = id = handle.attr('data-target');
-    console.log(glycopeptideDetailsModal);
     $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
     return $.post('/view_database_search_results/protein_composition_view/' + id, GlycReSoft.context).success(function(doc) {
       var tabs;
@@ -1013,7 +1119,7 @@ viewPeakGroupingDatabaseSearchResults = function() {
       });
       glycopeptideDetailsModal = $('#peptide-detail-modal');
       glycopeptideTable = $("#glycopeptide-table");
-      return setupGlycopeptideCompositionTablePageHandlers(1);
+      return updateGlycopeptideCompositionTablePage(1);
     }).error(function(error) {
       return console.log(arguments);
     });
@@ -1022,8 +1128,6 @@ viewPeakGroupingDatabaseSearchResults = function() {
     var handle, id;
     handle = $(this);
     id = handle.attr('data-target');
-    console.log(glycopeptideDetailsModal);
-    console.log(id);
     return PartialSource.glycopeptideCompositionDetailsModal({
       "id": id
     }, function(doc) {
@@ -1084,7 +1188,19 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
     return $("#save-csv-file").click(downloadCSV);
   };
   initGlycopeptideOverviewPlot = function() {
-    $('svg .glycopeptide').customTooltip(glycopeptideTooltipCallback, 'protein-view-tooltip');
+    var glycopeptide;
+    glycopeptide = $('svg .glycopeptide');
+    glycopeptide.customTooltip(glycopeptideTooltipCallback, 'protein-view-tooltip');
+    glycopeptide.click(function(event) {
+      var handle, id;
+      handle = $(this);
+      id = handle.data("record-id");
+      return $.get('/view_database_search_results/view_glycopeptide_details/' + id).success(function(doc) {
+        peptideDetailsModal.find('.modal-content').html(doc);
+        $(".lean-overlay").remove();
+        return peptideDetailsModal.openModal();
+      });
+    });
     return $('svg .modification path').customTooltip(modificationTooltipCallback, 'protein-view-tooltip');
   };
   glycopeptideTooltipCallback = function(handle) {

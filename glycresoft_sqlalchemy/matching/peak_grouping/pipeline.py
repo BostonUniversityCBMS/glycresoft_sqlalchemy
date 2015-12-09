@@ -19,7 +19,7 @@ from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 from glycresoft_sqlalchemy.utils import pickle
 
 from .grouper import Decon2LSPeakGrouper
-from .mass_shift_offset_matching import PeakGroupMatching
+from .mass_shift_offset_matching import PeakGroupMatching, BatchPeakGroupMatching
 from .classification import PeakGroupMassShiftJoiningClassifier, PeakGroupClassification
 
 
@@ -87,9 +87,23 @@ class LCMSPeakClusterSearch(PipelineModule):
                 session.commit()
                 logger.info("Cleared? %r", hypothesis_sample_match.peak_group_matches.filter(
                     ~PeakGroupType.matched).count())
-        hypothesis_sample_match.name = "{}_on_{}_ms1".format(
+        self.options.setdefault("hypothesis_sample_match_name", "{}_on_{}_ms1".format(
             session.query(Hypothesis).get(self.hypothesis_id).name,
-            sample_name)
+            sample_name))
+        hypothesis_sample_match.name = self.options["hypothesis_sample_match_name"]
+
+        hypothesis_sample_match.parameters = dict(
+            observed_ions_path=self.observed_ions_path,
+            hypothesis_id=self.hypothesis_id,
+            sample_run_id=self.sample_run_id,
+            grouping_error_tolerance=self.grouping_error_tolerance,
+            minimum_scan_count=self.minimum_scan_count,
+            hypothesis_sample_match_id=self.hypothesis_sample_match_id,
+            search_type=self.search_type,
+            match_tolerance=self.match_tolerance,
+            mass_shift_map=self.mass_shift_map,
+            n_processes=self.n_processes,
+        )
         session.add(hypothesis_sample_match)
         session.commit()
 
@@ -97,9 +111,6 @@ class LCMSPeakClusterSearch(PipelineModule):
         return hypothesis_sample_match
 
     def do_classification(self):
-        # classifier = PeakGroupClassification(
-        #     self.database_path, self.observed_ions_path, self.hypothesis_id,
-        #     self.sample_run_id, self.hypothesis_sample_match_id, self.regression_parameters)
         classifier = PeakGroupMassShiftJoiningClassifier(
             self.database_path, self.observed_ions_path,
             hypothesis_sample_match_id=self.hypothesis_sample_match_id,

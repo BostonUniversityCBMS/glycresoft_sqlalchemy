@@ -131,7 +131,11 @@ def _merge_groups(group_matches, minimum_abundance_ratio=0.01):
         "intensities": [],
         "scan_times": []
     }
-    maximum_volume = max(g.total_volume for g in group_matches)
+    try:
+        maximum_volume = max(g.total_volume for g in group_matches)
+    except ValueError:
+        maximum_volume = 1.
+
     minimum_abundance = minimum_abundance_ratio * maximum_volume
 
     for peak_group in group_matches:
@@ -180,10 +184,16 @@ def _merge_groups(group_matches, minimum_abundance_ratio=0.01):
     else:
         scan_density = 0.
 
+    try:
+        ppm_error = max(g.ppm_error for g in group_matches)
+    except ValueError:
+        ppm_error = None
+
     instance_dict = {
         "first_scan_id": min_scan,
         "last_scan_id": max_scan,
         "scan_density": scan_density,
+        "ppm_error": ppm_error,
         "centroid_scan_estimate": sum(scan_times) / n,
         "average_a_to_a_plus_2_ratio": average_a_to_a_plus_2_ratio,
         "average_signal_to_noise": average_signal_to_noise,
@@ -211,6 +221,8 @@ def join_unmatched(session, hypothesis_sample_match_id, grouping_error_tolerance
     mass_shift_map = unmatched[0].hypothesis_sample_match.parameters['mass_shift_map']
     conn = session.connection()
     for bunch in _group_unmatched_peak_groups_by_shifts(unmatched, mass_shift_map):
+        if len(bunch) == 0:
+            continue
         group, member_ids = _merge_groups(bunch, minimum_abundance_ratio)
         group['matched'] = False
         group['theoretical_match_id'] = None
@@ -222,6 +234,8 @@ def join_unmatched(session, hypothesis_sample_match_id, grouping_error_tolerance
 def join_matched(session, hypothesis_sample_match_id, minimum_abundance_ratio=0.01):
     conn = session.connection()
     for bunch in _get_groups_by_composition_ids(session, hypothesis_sample_match_id):
+        if len(bunch) == 0:
+            continue
         group, member_ids = _merge_groups(bunch, minimum_abundance_ratio)
         group['matched'] = True
         group['theoretical_match_id'] = bunch[0].theoretical_match_id

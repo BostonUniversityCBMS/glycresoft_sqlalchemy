@@ -11,7 +11,7 @@ Application.prototype.renderHypothesisListAt = function(container) {
     if (hypothesis.is_decoy) {
       continue;
     }
-    row = $("<div data-id=" + hypothesis.id + " class=''> <span class='handle'>" + (hypothesis.name.replace('_', ' ')) + "</span> <small class='right'>" + (hypothesis.hypothesis_type != null ? hypothesis.hypothesis_type : '-') + " <a class='remove-hypothesis mdi-content-clear'></a></small></div>");
+    row = $("<div data-id=" + hypothesis.id + " class='list-item clearfix'> <span class='handle'>" + (hypothesis.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + (hypothesis.hypothesis_type != null ? hypothesis.hypothesis_type : '-') + " <a class='remove-hypothesis mdi-content-clear'></a> </small> </div>");
     chunks.push(row);
     row.click(function(event) {
       var handle, hypothesisId, layer;

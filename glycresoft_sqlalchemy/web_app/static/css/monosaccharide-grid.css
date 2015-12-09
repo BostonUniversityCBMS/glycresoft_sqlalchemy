@@ -1,0 +1,45 @@
+/*
+
+Monosaccharide Grid
+
+*/
+
+
+.monosaccharide-row input{
+    width: 125px;
+    margin-bottom: 0px !important;
+}
+
+.monosaccharide-row .input-field{
+    margin-top: 2px !important;
+    margin-right: 0px !important;
+    padding: 0px !important;
+}
+
+.monosaccharide-row.warning input{
+    border-bottom: 1px solid red;
+    box-shadow: 0 1px 0 0 #000;
+}
+
+.monosaccharide-row {
+    margin-bottom: 2px !important;
+}
+
+.monosaccharide-constraints-row .input-field select::before {
+    margin: 5px;
+}
+
+.monosaccharide-constraints-row .input-field{
+    margin-top: 2px !important;
+    margin-right: 0px !important;
+    padding: 0px !important;
+}
+
+.monosaccharide-constraints-row .warning input{
+    border-bottom: 1px solid red;
+    box-shadow: 0 1px 0 0 #000;
+}
+
+.monosaccharide-constraints-row {
+    margin-bottom: 2px !important;
+}

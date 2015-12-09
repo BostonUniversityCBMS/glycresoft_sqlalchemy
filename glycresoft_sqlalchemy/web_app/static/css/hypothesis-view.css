@@ -1,0 +1,7 @@
+#protein-container {
+
+}
+
+#protein-container #protein-overview {
+    word-break: break-all;
+}

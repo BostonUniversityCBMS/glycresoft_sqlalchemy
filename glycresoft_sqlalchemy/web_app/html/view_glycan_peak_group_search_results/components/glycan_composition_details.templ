@@ -1,0 +1,67 @@
+<div class='glycopeptide-details-container'>
+    {% set theoretical = pgm.theoretical_match %}
+    <div class='row'>
+        <div class='col s8'>
+            <div class='row'>
+                <div class='col s5'>
+                    <h6><b>Putative Glycan Composition</b></h6>
+                    <div class='sequence-emphasis'>
+                        {{theoretical.composition}}
+                    </div>                    
+                </div>
+                <div class='col s3'>
+                    <h6><b>Modification States</b></h6>
+                    <div>
+                        {% for modification, count in pgm.modification_states() %}
+                        {% if modification is none %}
+                            {{"%s"|format("No modification")}}<br>
+                        {% else %}
+                            {{"%s %d"|format(modification.name, count)}} ({{ "+" if modification.mass > 0 else '' }}{{modification.mass * count}})<br>
+                        {% endif %}
+                    {% endfor %}
+                    </div>                    
+                </div>
+            </div>
+            <table class='center-align'>
+                <thead>
+                    <tr>
+                        <th>Profile Score</th>
+                        <th>A:A+2 Peak Ratio<br/>(Estimate Error)</th>
+                        <th>Centroid Scan Estimate<br/>(Estimate Error)</th>
+                        <th>Volume</th>
+                        <th>Scan Density</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{"%0.4f"|format(pgm.ms1_score)}}</td>
+                        <td>{{"%0.4f"|format(pgm.average_a_to_a_plus_2_ratio)}} ({{"%0.4f"|format(pgm.a_peak_intensity_error)}})</td>
+                        <td>{{"%0.4f"|format(pgm.centroid_scan_estimate)}} ({{"%0.4f"|format(pgm.centroid_scan_error)}})</td>
+                        <td>{{pgm.total_volume}}</td>
+                        <td>{{"%0.4f"|format(pgm.scan_density)}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class='col s4'>
+            <h6><b>Observed Mass (PPM Error)</b></h6>
+            <span>{{"%0.4f"|format(pgm.weighted_monoisotopic_mass)}} ({{"%0.3e"|format(pgm.ppm_error)}})</span>
+            {% if ambiguous_with|length > 0 %}
+                <h6>Ambiguous with: </h6>
+                {% for group in ambiguous_with %}
+                    <div>
+                        {% set o_theoretical=group.theoretical_match %}
+                        <small>{{o_theoretical.composition}}</small>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    <div>
+        {{pgm|chromatogram|svg_plot}}
+    </div>
+    <div>
+        <h6>Scans</h6>
+        {{pgm.peak_data["scan_times"]|join(", ")}}
+    </div>
+</div>

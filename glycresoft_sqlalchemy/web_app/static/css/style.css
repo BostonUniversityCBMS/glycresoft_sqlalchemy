@@ -1,16 +1,6 @@
-.dismiss-layer {
-    float: right;
-    cursor: hand;
-    margin-top: 10px;
-}
 
 .handle {
     cursor: hand;
-}
-
-
-.lean-overlay {
-    visibility: none !important;
 }
 
 
@@ -27,21 +17,15 @@
     padding-right: 12px !important;
 }
 
-/*
 
-Modals
-
-*/
-
-.modal.wide {
-    width: 85% !important;
-    height: 80% !important;
+.clearfix:after {
+   content: " "; /* Older browser do not support empty content */
+   visibility: hidden;
+   display: block;
+   height: 0;
+   clear: both;
 }
 
-.modal .row{
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
 
 /*
 
@@ -84,48 +68,6 @@ Sequence Highlights
 
 /*
 
-Glycopeptide Match Table
-
-*/
-
-.glycopeptide-match-table th, .glycopeptide-match-table td {
-    min-width: 90px;
-    max-width: 90px;
-    padding: 3px;
-    border-left: 1px lightgrey solid;
-    font-size: 0.7em;
-    text-align: center;
-}
-
-.glycopeptide-match-table th.wide, .glycopeptide-match-table td.wide {
-    min-width: 150px;
-    max-width: 150px;
-    word-break: break-all;
-}
-
-.glycopeptide-match-table thead, .glycopeptide-match-table tbody {
-    display: block;
-    overflow-y: auto;
-}
-
-.glycopeptide-match-table th.narrow, .glycopeptide-match-table td.narrow {
-    min-width: 70px;
-    max-width: 70px;
-    word-break: break-all;
-}
-
-.glycopeptide-match-table td {
-    cursor: pointer;
-}
-
-.fragment-ion-table td, .fragment-ion-table th {
-    font-size: .7em;
-    padding: 3px !important;
-    word-break: break-all;
-}
-
-/*
-
 Protein Overview Graphic
 
 */
@@ -138,6 +80,7 @@ Protein Overview Graphic
     border-radius: 4px;
     opacity: 0.8;
 }
+
 
 .side-nav.fixed {
     padding-left: 5px;
@@ -166,114 +109,3 @@ Mass Shift Input
 }
 
 
-/*
-
-Pagination
-
-*/
-
-
-.previous-page, .next-page {
-    cursor: pointer;
-}
-
-/*
-
-Monosaccharide Grid
-
-*/
-
-
-.monosaccharide-row input{
-    width: 125px;
-    margin-bottom: 0px !important;
-}
-
-.monosaccharide-row .input-field{
-    margin-top: 2px !important;
-    margin-right: 0px !important;
-    padding: 0px !important;
-}
-
-.monosaccharide-row.warning input{
-    border-bottom: 1px solid red;
-    box-shadow: 0 1px 0 0 #000;
-}
-
-.monosaccharide-row {
-    margin-bottom: 2px !important;
-}
-
-.monosaccharide-constraints-row .input-field select::before {
-    margin: 5px;
-}
-
-.monosaccharide-constraints-row .input-field{
-    margin-top: 2px !important;
-    margin-right: 0px !important;
-    padding: 0px !important;
-}
-
-.monosaccharide-constraints-row .warning input{
-    border-bottom: 1px solid red;
-    box-shadow: 0 1px 0 0 #000;
-}
-
-.monosaccharide-constraints-row {
-    margin-bottom: 2px !important;
-}
-
-/*
-
-Tiny Notification
-
-*/
-
-.notification-container {
-    position: relative;
-    display: inline-block;
-    width: 200px;
-    z-index: 9999;
-}
-
-.notification-container .dismiss-notification{
-    float: left;
-}
-
-.notification-container .dismiss-notification::after{
-    clear:both;
-}
-
-.notification-container .notification-contents{
-    text-align: left;
-}
-
-/*
-
-Context Menu
-
-*/
-.context-menu {
-    display: none;
-    z-index: 1000;
-    position: absolute;
-    overflow: hidden;
-    border: 1px solid #CCC;
-    white-space: nowrap;
-    font-family: sans-serif;
-    background: #FFF;
-    color: #333;
-    border-radius: 2px;
-    padding: 0;
-}
-
-
-.context-menu li {
-    padding: 8px 12px;
-    cursor: pointer;
-    list-style-type: none;
-}
-
-.context-menu li:hover {
-    background-color: #DEF;
-}

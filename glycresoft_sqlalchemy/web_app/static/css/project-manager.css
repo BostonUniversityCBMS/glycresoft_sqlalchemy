@@ -1,0 +1,25 @@
+.project-name {
+    font-weight: 900;
+    font-size: 1.2em;
+    padding-left: 1em;
+}
+
+.project-container {
+    border-bottom: 1px solid grey;
+    border-collapse: collapse;
+    padding: 4px;
+}
+
+.project-list-view {
+    border: 1px solid grey;
+    border-radius: 4px;
+    max-height: 500px;
+    overflow-y: scroll;
+}
+
+.project-container button{
+    background-color: white !important;
+    color: grey;
+    padding-left: 5%;
+    padding-right: 5%;
+}

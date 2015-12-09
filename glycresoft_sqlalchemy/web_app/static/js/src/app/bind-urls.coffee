@@ -39,3 +39,5 @@ makePartialGet = (url, method) -> (parameters, callback) -> $[method](url.format
 PartialSource =
     glycopeptideCompositionDetailsModal: makePartialGet(
         '/view_database_search_results/view_glycopeptide_composition_details/{id}', "get")
+    glycanCompositionDetailsModal: makePartialGet(
+        '/view_database_search_results/view_glycan_composition_details/{id}', "get")

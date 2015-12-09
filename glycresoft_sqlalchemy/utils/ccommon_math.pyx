@@ -511,7 +511,9 @@ cdef class MatchedSpectrum(object):
     def __init__(self, gsm=None):
         if gsm is not None:
             self.peak_match_map = {
-                pid: [FragmentMatch(**frag_dict) for frag_dict in fragment_list if frag_dict['intensity'] >= 200]
+                pid: [FragmentMatch(
+                    observed_mass=frag_dict['observed_mass'], intensity=frag_dict['intensity'],
+                    key=frag_dict['key'], peak_index=frag_dict['peak_id']) for frag_dict in fragment_list if frag_dict['intensity'] >= 200]
                 for pid, fragment_list in gsm.peak_match_map.items()
             }
             self.peak_list = list(gsm)

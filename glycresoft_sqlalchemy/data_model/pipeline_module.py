@@ -1,6 +1,7 @@
 import types
 import logging
 import time
+import datetime
 import pprint
 
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, DateTime, func,
@@ -8,7 +9,7 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table, DateTime, func,
 from sqlalchemy.orm import relationship
 
 from .connection import DatabaseManager
-from .data_model import Base
+from .base import Base2 as Base
 
 logger = logging.getLogger("pipeline_module")
 
@@ -117,30 +118,31 @@ class PipelineModule(object):
             self._end(*args, **kwargs)
             return out
 
-    def _begin(self, *args, **kwargs):
-        self.start_time = time.time()
-        logger.info("Begin %s\n%s\n", self.__class__.__name__, pprint.pformat(self.__dict__))
+    def _begin(self, verbose=True, *args, **kwargs):
+        self.start_time = datetime.datetime.now()
+        if verbose:
+            logger.info("Begin %s\n%s\n", self.__class__.__name__, pprint.pformat(self.__dict__))
 
     def set_runner(self, callable):
         self.run = callable
 
     def inform(self, *args, **kwargs):
-        now = time.time() - self.start_time
+        now = datetime.datetime.now() - self.start_time
         logger.info(
-            "%s: %s time elapsed.", self.__class__.__name__,
-            time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(now)))
+            "%s: %s time elapsed.", self.__class__.__name__, str(now))
         logger.info(*args, **kwargs)
 
-    def _end(self, *args, **kwargs):
-        self.end_time = time.time()
-        logger.info("End %s", self.__class__.__name__)
-        logger.info(self.summarize())
+    def _end(self, verbose=True, *args, **kwargs):
+        self.end_time = datetime.datetime.now()
+        if verbose:
+            logger.info("End %s", self.__class__.__name__)
+            logger.info(self.summarize())
 
     def summarize(self):
         chunks = [
-            "Started at %s." % time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(self.start_time)),
-            "Ended at %s." % time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(self.end_time)),
-            "Total time elapsed: %s" % time.strftime("%j:%H:%M:%S", time.gmtime(self.end_time - self.start_time)),
+            "Started at %s." % self.start_time,
+            "Ended at %s." % self.end_time,
+            "Total time elapsed: %s" % (self.end_time - self.start_time),
             "%s completed successfully." % self.__class__.__name__ if self.status == 0 else
             "%s failed with exit code %d, error message %r" % (self.__class__.__name__, self.status, self.error)
         ]

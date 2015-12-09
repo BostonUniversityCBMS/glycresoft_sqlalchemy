@@ -1,14 +1,23 @@
+from glycresoft_sqlalchemy.utils import Bundle
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
+Base2 = declarative_base()
 
 
-class _Namespace(object):
+class _Namespace(Bundle):
+    def __init__(self, *args, **kwargs):
+        self.initialization_list = []
+        Bundle.__init__(self, *args, **kwargs)
+
+    def initializer(self, fn):
+        self.initialization_list.append(fn)
+        return fn
+
     def __str__(self):
         return "Namespace(%s)" % self.__dict__
 
 Namespace = _Namespace()
-Namespace.initialization_list = []
 
 
 class Hierarchy(dict):

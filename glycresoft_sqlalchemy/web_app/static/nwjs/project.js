@@ -1,6 +1,8 @@
 parts = (function(){
 
 var gui = require("nw.gui")
+var rimraf = require("rimraf")
+var fs = require('fs')
 
 var WINDOW = gui.Window.get()
 var PROJECTS_KEY = "projects"
@@ -68,7 +70,8 @@ function _RemoveProject(project){
         filter = []
         for(var i = 0; i < value.length; i++){
             var project_i = value[i];
-            if(project_i.location === project.location){
+            if(project_i.path === project.path){
+                console.log(project_i)
                 continue;
             }
             filter.push(project_i)
@@ -77,9 +80,48 @@ function _RemoveProject(project){
     })
 }
 
+
+/*function ExistingProjectChooserWidget(container, projects){
+    this.container = container
+    this.projects = projects
+}
+
+ExistingProjectChooserWidget.prototype.draw = function(){
+    var container = $(this.container)
+    container.empty()
+    container.addClass("project-list-view")
+    var template = "<div class='project-container'>" +
+        "<div><span class='project-name'></span></div>" +
+        "<div>" +
+            "<button class='waves-effect btn-flat open-project-button'>Open</button>" +
+            "<button class='waves-effect btn-flat remove-project-button'>Remove</button>" +
+        "</div>" +
+    "</div>"
+
+    var addProjectWidget = function(container, project, i){
+        var entry = $(template)
+        entry.find(".project-name").text(project.name)
+        entry.data("project-index", i)
+        container.append(entry)
+    }
+    for(var i=0; i<this.projects.length;i++){
+        addProjectWidget(container, this.projects[i], i)
+    }
+}*/
+
+
+function makeNewProjectDirectory(path, name){
+    name = name.replace(/\s/g, '_')
+    path = [path, name].join('/')
+    fs.mkdirSync(path)
+    return path
+}
+
+
 function MakeProjectFromDOM(){
     var path = $("input[name='project-location']").val()
     var name = $("#project_name").val()
+    path = makeNewProjectDirectory(path, name)
     return new Project(name, path)
 }
 
@@ -88,9 +130,17 @@ function ProjectSelectionWindow(){
     this.projects = []
     this.window = gui.Window.get()
     this.updateProjectDisplay()
-    self = this
+    var self = this
     $("#create-project-btn").click(function(){self.createProject()})
+    $("#delete-existing-btn").click(function(){self.deleteProject()})
     $("#load-existing-btn").click(function(){self.openProject()})
+
+    process.on("exit", function(){
+        for(var i=0;i<self.controllers.length;i++){
+            var controller = self.controllers[i]
+            controller.terminateServer()
+        }
+    })
 
     self.window.on("close", function(){
         if(self.controllers.length == 0){
@@ -151,10 +201,21 @@ ProjectSelectionWindow.prototype.updateProjectDisplay = function(){
 
 ProjectSelectionWindow.prototype.createProject = function(){
     var project = MakeProjectFromDOM();
-    AddProjectToLocalStorage(project);
-    this.updateProjectDisplay();
+    var self = this
+    AddProjectToLocalStorage(project).then(function(){self.updateProjectDisplay();})
     this.controllers.push(BackendServerControl.launch(
         project, {callback: this.dropBackendController.bind(this)}))
+}
+
+ProjectSelectionWindow.prototype.deleteProject = function(){
+    var selectProjectTag = $("select#existing-project"); 
+    var project = this.projects[selectProjectTag.val()]
+    var self = this
+    console.log(project)
+    _RemoveProject(project)
+    rimraf(project.path, function(){
+        self.updateProjectDisplay()
+    })
 }
 
 
@@ -165,6 +226,7 @@ return [Project, ProjectSelectionWindow]
 
 Project = parts[0]
 ProjectSelectionWindow = parts[1]
+
 
 var Controller = null
 

@@ -115,6 +115,19 @@ def chunk_iterator(iterator, chunk_size):
         yield list(chunk)
 
 
+def chunk_iterator2(iterator, chunk_size):
+    current_chunk = []
+    i = 0
+    for o in iterator:
+        current_chunk.append(o)
+        i += 1
+        if i > chunk_size:
+            yield current_chunk
+            current_chunk = []
+            i = 0
+    yield current_chunk
+
+
 def invert_index(list_of_lists, key_fn=_identity):
     groups = defaultdict(list)
     for chunk in list_of_lists:

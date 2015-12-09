@@ -39,6 +39,8 @@ def clean_dict(d):
                     rv.append(x)
         elif isinstance(v, dict):
             rv = clean_dict(v)
+        elif isinstance(v, type):
+            rv = v.__name__
         else:
             rv = v
 

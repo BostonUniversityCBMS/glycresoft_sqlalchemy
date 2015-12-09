@@ -31,7 +31,7 @@ class MonosaccharideFilter
                     <input id="#{sanitizeName}_min" type="number" placeholder="Minimum #{residue}" style='width: 45px;' min="0"
                            value="#{rule.minimum}" max="#{rule.maximum}" name="#{sanitizeName}_min"/> : 
                     <input id="#{sanitizeName}_max" type="number" placeholder="Maximum #{residue}" style='width: 45px;' min="0"
-                           value="#{rule.maximum}" max="#{rule.maximum}" name="#{sanitizeName}_max"/>
+                           value="#{rule.maximum}" name="#{sanitizeName}_max"/>
                 </p>
             </span>
             """
@@ -43,7 +43,7 @@ class MonosaccharideFilter
         rendered.find("##{sanitizeName}_max").change ->
             rule.maximum = parseInt($(@).val())
             self.changed()
-        rendered.find("##{sanitizeName}_include").prop("checked", rule.include).change ->
+        rendered.find("##{sanitizeName}_include").prop("checked", rule.include).click ->
             rule.include = $(@).prop("checked")
             self.changed()
 

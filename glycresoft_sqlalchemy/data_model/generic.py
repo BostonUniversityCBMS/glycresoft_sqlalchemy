@@ -1,4 +1,3 @@
-import uuid
 
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy import Table, Column, Integer, ForeignKey, Unicode, ForeignKeyConstraint
@@ -6,7 +5,7 @@ from sqlalchemy import Table, Column, Integer, ForeignKey, Unicode, ForeignKeyCo
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
 
-from .base import Base
+from .base import Base2 as Base
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 
 
@@ -20,7 +19,7 @@ class MutableDict(Mutable, dict):
         else:
             return value
 
-    def __delitem(self, key):
+    def __delitem__(self, key):
         dict.__delitem__(self, key)
         self.changed()
 

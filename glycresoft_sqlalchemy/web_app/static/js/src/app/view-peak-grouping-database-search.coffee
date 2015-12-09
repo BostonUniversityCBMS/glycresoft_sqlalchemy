@@ -31,8 +31,8 @@ viewPeakGroupingDatabaseSearchResults = ->
 
     updateProteinChoice = ->
         handle = $(this)
-        currentProtein = id = handle.attr('data-target')
-        console.log glycopeptideDetailsModal
+        currentProtein = id = handle.attr 'data-target'
+
         $("#chosen-protein-container").html("""<div class="progress"><div class="indeterminate"></div></div>""").fadeIn()
         $.post('/view_database_search_results/protein_composition_view/' + id, GlycReSoft.context).success((doc) ->
             $('#chosen-protein-container').hide()
@@ -48,17 +48,17 @@ viewPeakGroupingDatabaseSearchResults = ->
             $('.indicator').addClass 'indigo'
             $('ul.tabs .tab a').click ->
                 GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1)
-            glycopeptideDetailsModal = $('#peptide-detail-modal')
-            glycopeptideTable = $("#glycopeptide-table")
-            setupGlycopeptideCompositionTablePageHandlers(1)
+            glycopeptideDetailsModal = $ '#peptide-detail-modal'
+            glycopeptideTable = $ "#glycopeptide-table"
+
+            updateGlycopeptideCompositionTablePage 1
         ).error (error) ->
             console.log arguments
 
     showGlycopeptideCompositionDetailsModal = ->
         handle = $(this)
         id = handle.attr('data-target')
-        console.log(glycopeptideDetailsModal)
-        console.log(id)
+
         PartialSource.glycopeptideCompositionDetailsModal {"id": id}, (doc) ->
             glycopeptideDetailsModal.find('.modal-content').html doc
             $(".lean-overlay").remove()

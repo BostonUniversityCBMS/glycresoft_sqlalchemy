@@ -112,3 +112,59 @@ Display Table
     padding: 3px !important;
     word-break: break-all;
 }
+
+
+/*
+
+Pagination
+
+*/
+
+
+.previous-page, .next-page {
+    cursor: pointer;
+}
+
+
+
+/*
+
+Glycopeptide Match Table
+
+*/
+
+.glycopeptide-match-table th, .glycopeptide-match-table td {
+    min-width: 90px;
+    max-width: 90px;
+    padding: 3px;
+    border-left: 1px lightgrey solid;
+    font-size: 0.7em;
+    text-align: center;
+}
+
+.glycopeptide-match-table th.wide, .glycopeptide-match-table td.wide {
+    min-width: 150px;
+    max-width: 150px;
+    word-break: break-all;
+}
+
+.glycopeptide-match-table thead, .glycopeptide-match-table tbody {
+    display: block;
+    overflow-y: auto;
+}
+
+.glycopeptide-match-table th.narrow, .glycopeptide-match-table td.narrow {
+    min-width: 70px;
+    max-width: 70px;
+    word-break: break-all;
+}
+
+.glycopeptide-match-table td {
+    cursor: pointer;
+}
+
+.fragment-ion-table td, .fragment-ion-table th {
+    font-size: .7em;
+    padding: 3px !important;
+    word-break: break-all;
+}

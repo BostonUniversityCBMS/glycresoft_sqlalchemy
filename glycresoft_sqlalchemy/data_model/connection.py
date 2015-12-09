@@ -1,24 +1,18 @@
 import os
 import warnings
-
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.pool import NullPool
 
-from .base import Base, Namespace
+from .base import Base2 as Base, Namespace
 from ..utils import database_utils
 
 import logging
 
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 logger = logging.getLogger("database_manager")
-
-
-warnings.filterwarnings(
-    action='ignore',
-    message=r"(Converters and adapters are deprecated)|(Any type mapping should happen in layer above this module)",
-    module="pysqlite2.dbapi2")
+logging.getLogger("sqlalchemy.pool.NullPool").disabled = True
 
 
 class ConnectionManager(object):
@@ -64,8 +58,7 @@ class ConnectionManager(object):
         logger.info("Checking %s for database", url)
         if not database_utils.database_exists(url):
             logger.info("No database exists at %s", url)
-            engine = database_utils.create_database(url)
-            # self._configure_creation(engine)
+            database_utils.create_database(url)
 
     def _configure_creation(self, connection):
         pass
@@ -96,6 +89,9 @@ class SQLiteConnectionManager(ConnectionManager):
             pass
 
     def bridge_address(self):
+        # SQLite doesn't support multiple writing
+        # connections, so we should not allow other
+        # components to bridge through this connection
         return None
 
     def connect(self):
@@ -108,16 +104,11 @@ class SQLiteConnectionManager(ConnectionManager):
             # also stops it from emitting COMMIT before any DDL.
             iso_level = dbapi_connection.isolation_level
             dbapi_connection.isolation_level = None
-            r = dbapi_connection.execute("PRAGMA page_size = 5120;")
-            r = dbapi_connection.execute("PRAGMA cache_size = 4000;")
+            dbapi_connection.execute("PRAGMA page_size = 5120;")
+            dbapi_connection.execute("PRAGMA cache_size = 4000;")
             dbapi_connection.isolation_level = iso_level
 
         event.listens_for(connection, "connect")(do_connect)
-
-        # def do_begin(conn):
-        #     # emit our own BEGIN
-        #     conn.execute("BEGIN")
-        # event.listens_for(connection, "begin")(do_begin)
 
 
 class LocalPostgresConnectionManager(ConnectionManager):

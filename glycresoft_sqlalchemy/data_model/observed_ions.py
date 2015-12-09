@@ -8,7 +8,7 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
 
 import numpy as np
 
-from .data_model import Base
+from .base import Base2 as Base
 from .connection import DatabaseManager
 from .generic import MutableDict
 
@@ -45,12 +45,11 @@ class HasPeakChromatogramData(object):
         return time, abundance_over_time
 
 
-
 class SampleRun(Base):
     __tablename__ = "SampleRun"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(Unicode(32), index=True)
+    uuid = Column(Unicode(32), index=True, unique=True)
     name = Column(Unicode(128))
     parameters = Column(MutableDict.as_mutable(PickleType))
     ms_scans = relationship("MSScan", backref=backref("sample_run"), lazy='dynamic')
@@ -172,7 +171,7 @@ class Peak(Base):
     charge = Column(Integer)
     neutral_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
     intensity = Column(Numeric(12, 6, asdecimal=False))
-     
+
     scan_peak_index = Column(Integer, index=True)
 
     scan_id = Column(Integer, ForeignKey("ScanBase.id"), index=True)
@@ -230,7 +229,6 @@ class PeakGroupBase(object):
     centroid_scan_estimate = Column(Numeric(12, 4, asdecimal=False))
     centroid_scan_error = Column(Numeric(10, 6, asdecimal=False))
     average_signal_to_noise = Column(Numeric(10, 6, asdecimal=False))
-
 
 
 class Decon2LSPeakGroup(Base, HasPeakChromatogramData, PeakGroupBase):

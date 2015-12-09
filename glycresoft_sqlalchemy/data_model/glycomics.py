@@ -16,15 +16,15 @@ from glypy.composition import glycan_composition
 from glypy.io import glycoct
 from glypy.algorithms import subtree_search
 
-from .base import Base, Namespace
+from .base import Base2 as Base, Namespace
 from .generic import (
-    MutableDict, MutableList, HasTaxonomy, Taxon, ReferenceDatabase,
-    ReferenceAccessionNumber, HasReferenceAccessionNumber)
+    MutableDict, HasTaxonomy,
+    HasReferenceAccessionNumber)
 
 from ..utils.database_utils import get_or_create
 from ..utils.memoize import memoclone
 
-
+FrozenGlycanComposition = glycan_composition.FrozenGlycanComposition
 crossring_pattern = re.compile(r"\d,\d")
 glycoct_parser = memoclone(100)(glycoct.loads)
 
@@ -273,11 +273,7 @@ class GlycanBase(object):
 
     @declared_attr
     def hypothesis_id(self):
-        return Column(Integer, ForeignKey("Hypothesis.id"))
-
-    @hybrid_method
-    def from_hypothesis(self, hypothesis_id):
-        return self.hypothesis_id == hypothesis_id
+        return Column(Integer, ForeignKey("Hypothesis.id", ondelete="CASCADE"), index=True)
 
     def __repr__(self):
         rep = "<{self.__class__.__name__} {self.composition}>".format(self=self)
@@ -290,7 +286,6 @@ class GlycanBase(object):
     @from_hypothesis.expression
     def from_hypothesis(self, hypothesis_id):
         return (self.hypothesis_id == hypothesis_id)
-
 
 
 @with_glycan_composition("composition")
@@ -408,11 +403,12 @@ TheoreticalGlycanStructureToMotifTable = Table(
 TheoreticalGlycanCombinationTheoreticalGlycanComposition = Table(
     "TheoreticalGlycanCombinationTheoreticalGlycanComposition", Base.metadata,
     Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanComposition.id"), index=True),
+    Column("count", Integer),
     Column("combination_id", Integer, ForeignKey("TheoreticalGlycanCombination.id"), index=True)
     )
 
 
-class TheoreticalGlycanCombination(Base, GlycanBase):
+class TheoreticalGlycanCombination(Base):
     r'''
     A class for storing combinations of glycan compositions for association
     with peptides.
@@ -425,13 +421,36 @@ class TheoreticalGlycanCombination(Base, GlycanBase):
 
     id = Column(Integer, primary_key=True)
     count = Column(Integer)
+    calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+    composition = Column(Unicode(128), index=True)
 
     components = relationship(
         TheoreticalGlycanComposition,
         secondary=TheoreticalGlycanCombinationTheoreticalGlycanComposition,
         lazy='dynamic')
 
-    __mapper_args__ = {
-        'polymorphic_identity': u'TheoreticalGlycanCombination',
-        "concrete": True
-    }
+    hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id"), index=True)
+
+    def __iter__(self):
+        for composition, count in self.components.add_column(
+                TheoreticalGlycanCombinationTheoreticalGlycanComposition.c.count):
+            i = 0
+            while i < count:
+                yield composition
+                i += 1
+
+    def dehydrated_mass(self, water_mass=glypy.Composition("H2O").mass):
+        mass = self.calculated_mass
+        return mass - (water_mass * self.count)
+
+    def __repr__(self):
+        rep = "<{self.__class__.__name__} {self.count} {self.composition}>".format(self=self)
+        return rep
+
+    @hybrid_method
+    def from_hypothesis(self, hypothesis_id):
+        return self.hypothesis_id == hypothesis_id
+
+    @from_hypothesis.expression
+    def from_hypothesis(self, hypothesis_id):
+        return (self.hypothesis_id == hypothesis_id)

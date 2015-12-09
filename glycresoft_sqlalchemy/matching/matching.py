@@ -219,7 +219,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                     ppm_error=theoretical.ppm_error,
 
                     glycan_composition_str=theoretical.glycan_composition_str,
-                    glycans=theoretical.glycans,
+                    glycan_combination_id=theoretical.glycan_combination_id,
 
                     base_peptide_sequence=theoretical.base_peptide_sequence,
                     modified_peptide_sequence=theoretical.modified_peptide_sequence,
@@ -248,6 +248,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 for spectrum, peak_match_map in spectrum_matches:
                     spectrum_match_inst = GlycopeptideSpectrumMatch(
                         scan_time=spectrum.time, peak_match_map=peak_match_map,
+                        precursor_charge_state=spectrum.precursor_charge_state,
                         peaks_explained=len(peak_match_map),
                         peaks_unexplained=len(spectrum.tandem_data) - len(peak_match_map),
                         hypothesis_sample_match_id=hypothesis_sample_match_id,

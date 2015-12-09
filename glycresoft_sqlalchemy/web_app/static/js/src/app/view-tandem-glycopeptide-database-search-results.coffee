@@ -24,7 +24,16 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
         $("#save-csv-file").click downloadCSV
 
     initGlycopeptideOverviewPlot = ->
-        $('svg .glycopeptide').customTooltip glycopeptideTooltipCallback, 'protein-view-tooltip'
+        glycopeptide = $('svg .glycopeptide')
+        glycopeptide.customTooltip glycopeptideTooltipCallback, 'protein-view-tooltip'
+        glycopeptide.click (event) ->
+            handle = $ @
+            id = handle.data("record-id")
+            $.get('/view_database_search_results/view_glycopeptide_details/' + id).success (doc) ->
+                peptideDetailsModal.find('.modal-content').html doc
+                # Remove any straggler overlays from rapid re-opening of modal
+                $(".lean-overlay").remove()
+                peptideDetailsModal.openModal()
         $('svg .modification path').customTooltip modificationTooltipCallback, 'protein-view-tooltip'
 
 

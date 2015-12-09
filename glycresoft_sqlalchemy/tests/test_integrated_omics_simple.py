@@ -21,7 +21,8 @@ def test_main():
         "./datafiles/integrated_omics_simple.db", hypothesis_id=None,
         mzid_path="datafiles/AGP_Proteomics2.mzid",
         glycomics_path="datafiles/human_n_glycans.txt",
-        n_processes=1)
+        maximum_glycosylation_sites=2,
+        n_processes=4)
     job.start()
     db = job.manager.session()
     dups = db.query(

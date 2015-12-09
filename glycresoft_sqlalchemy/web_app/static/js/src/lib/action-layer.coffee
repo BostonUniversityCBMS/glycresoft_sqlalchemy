@@ -8,6 +8,7 @@ class ActionLayerManager extends EventEmitter
         @layerCounter = 0
         @on 'layer-change', (event) ->
             materialRefresh()
+        @layerStack = []
 
     incLayerCounter: ->
         @layerCounter++
@@ -34,12 +35,17 @@ class ActionLayerManager extends EventEmitter
         result
 
     setShowingLayer: (id) ->
+        console.log id
         current = @getShowingLayer()
         next = @get(id)
         try
             current.hide()
         try
             next.show()
+            i = @findLayer next
+            if i != -1
+                @layerStack.pop i
+            @layerStack.push next
         catch
             @get(ActionLayerManager.HOME_LAYER).show()
         @emit 'layer-change', 'layer': next
@@ -47,20 +53,36 @@ class ActionLayerManager extends EventEmitter
     addLayer: (options, params) ->
         if !options.closeable?
             options.closeable = true
-        new ActionLayer(this, options, params)
+        layer = new ActionLayer(this, options, params)
+        console.log layer
+        if @layerStack.length == 0
+            @layerStack.push layer
         return @
 
     removeLayer: (id) ->
         @layers[id].container.remove()
+        i = @findLayer(@layers[id])
+        if i != -1
+            @layerStack.pop i
         delete @layers[id]
         return @
 
-    removeCurrentLayer: (next=ActionLayerManager.HOME_LAYER) ->
+    removeCurrentLayer: (next=null) ->
         current = @getShowingLayer()
+        @layerStack.pop()
+        if !next?
+            next = @layerStack[@layerStack.length - 1]
         @setShowingLayer next
         current.dispose()
         return @
 
+    findLayer: (targetLayer) ->
+        index = -1
+        for layer in @layerStack
+            index += 1
+            if layer.id == targetLayer.id
+                return index
+        return -1
 
 
 class ActionLayer

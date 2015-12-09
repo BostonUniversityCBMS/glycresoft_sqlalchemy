@@ -1,0 +1,29 @@
+<div class='row'>
+    <div class='col s12'>
+        <ul class='tabs indigo-text'>
+            <li class='tab col s3'>
+                <a class='indigo-text' class="active" href="#glycome-overview">Overview</a>
+            </li>
+            <li class='tab col s3'>
+                <a class='indigo-text' href="#glycan-table">Glycan Compositions</a>
+            </li>
+        </ul>
+    </div>
+    <div id='glycome-overview' class='col s12'>
+        <div class='col s8'>
+            {{plot.abundance_bar_plot() | svg_plot(height=8, width=14, bbox_inches='tight')}}
+        </div>
+        <div class='col s3'>
+            
+        </div>
+    </div>
+    <div id='glycan-table'>
+    </div>
+</div>
+<div id="glycan-detail-modal" class="modal modal-fixed-footer wide">
+    <div class="modal-content">
+    </div>
+    <div class="modal-footer">
+        <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat">Dismiss</a>
+    </div>
+</div>

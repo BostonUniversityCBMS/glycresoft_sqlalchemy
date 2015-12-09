@@ -14,14 +14,12 @@ def test_main():
         os.remove("./datafiles/naive_glycopeptide.db")
     except:
         pass
-    constant_mods, variable_mods = (["Carbamidomethyl (C)"],
-        ["Dehydration", "Deamidated", "Acetyl", "Pyro-glu from Q", "Oxidation (M)",
-         "GG"])
+    constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated"])
     enzyme = 'trypsin'
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
         "./datafiles/naive_glycopeptide.db", "test", "./datafiles/proteins_agp_only.fasta",
         None, "./datafiles/human_n_glycans.txt", 'txt', constant_mods,
-        variable_mods, enzyme, max_missed_cleavages=1, n_processes=5)
+        variable_mods, enzyme, max_missed_cleavages=1, maximum_glycosylation_sites=1, n_processes=5)
     job.start()
 
 

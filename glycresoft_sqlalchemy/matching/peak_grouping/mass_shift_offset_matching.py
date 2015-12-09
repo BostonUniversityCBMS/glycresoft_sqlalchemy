@@ -28,7 +28,7 @@ TPeakGroupMatch = PeakGroupMatch.__table__
 query_oven = bakery()
 
 
-def yield_ids(session, theoretical_type, hypothesis_id, chunk_size=1000, filter=lambda q: q):
+def yield_ids(session, theoretical_type, hypothesis_id, chunk_size=100, filter=lambda q: q):
     base_query = filter(session.query(theoretical_type.id).filter(theoretical_type.from_hypothesis(hypothesis_id)))
     chunk = []
 
@@ -66,7 +66,7 @@ def batch_match_peak_group(search_ids, search_type, database_manager, observed_i
                 case = {
                     "hypothesis_sample_match_id": hypothesis_sample_match_id,
                     "theoretical_match_type": search_type.__name__,
-                    "theoretical_match_id": search_id,
+                    "theoretical_match_id": search_id[0],
                     "charge_state_count": mass_match.charge_state_count,
                     "scan_count": mass_match.scan_count,
                     "first_scan_id": mass_match.first_scan_id,
@@ -89,6 +89,8 @@ def batch_match_peak_group(search_ids, search_type, database_manager, observed_i
                 params.append(case)
         session.bulk_insert_mappings(PeakGroupMatch, params)
         session.commit()
+        print len(params)
+        return len(params)
     except Exception, e:
         logger.exception("An exception occurred in match_peak_group, %r", locals(), exc_info=e)
         raise e
@@ -171,7 +173,7 @@ class PeakGroupMatching(PipelineModule):
 
         hypothesis_sample_match = session.query(HypothesisSampleMatch).get(self.hypothesis_sample_match_id)
         hypothesis_sample_match.sample_run_name = sample_run.name
-        hypothesis_sample_match.parameters = {}
+        hypothesis_sample_match.parameters = hypothesis_sample_match.parameters or {}
         hypothesis_sample_match.parameters['mass_shift_map'] = mass_shift_map
         session.add(hypothesis_sample_match)
         session.commit()
@@ -260,10 +262,10 @@ class BatchPeakGroupMatching(PeakGroupMatching):
     def __init__(self, *args, **kwargs):
         super(BatchPeakGroupMatching, self).__init__(*args, **kwargs)
 
-    def stream_ids(self):
+    def stream_ids(self, chunk_size=100):
         session = self.manager.session()
         try:
-            for gids in yield_ids(session, self.theoretical_type, self.hypothesis_id):
+            for gids in yield_ids(session, self.search_type, self.hypothesis_id, chunk_size=chunk_size):
                 yield gids
         except Exception, e:
             logger.info("An exception occurred while streaming ids", exc_info=e)
@@ -286,21 +288,26 @@ class BatchPeakGroupMatching(PeakGroupMatching):
     def run(self):
         session = self.manager.session()
 
-        task_fn = self.prepare_task_fn()
         counter = 0
+        last = 0
+        step = 100
+
+        task_fn = self.prepare_task_fn()
         toggler = toggle_indices(session, PeakGroupMatch)
         toggler.drop()
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
-            for res in pool.imap_unordered(task_fn, self.stream_ids(), chunksize=500):
+            for res in pool.imap_unordered(task_fn, self.stream_ids()):
                 counter += res
-                if counter % 1000 == 0:
+                if counter > last + step == 0:
+                    last += step
                     logger.info("%d masses searched", counter)
 
         else:
             for res in itertools.imap(task_fn, self.stream_ids()):
                 counter += res
-                if counter % 1000 == 0:
+                if counter > last + step == 0:
+                    last += step
                     logger.info("%d masses searched", counter)
         toggler.create()
         session.close()

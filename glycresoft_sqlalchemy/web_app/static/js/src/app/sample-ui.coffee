@@ -3,9 +3,13 @@ Application::renderSampleListAt = (container)->
     template = 
     for sample in _.sortBy(_.values(@samples), (o) -> o.name)
         row = $("
-    <div data-name=#{sample.name}>
-        <span class='handle'>#{sample.name.replace('_', ' ')}</span> <small class='right'>#{sample.sample_type}
-            <a class='remove-sample mdi-content-clear'></a></small></div>
+    <div data-name=#{sample.name} class='list-item clearfix'>
+        <span class='handle'>#{sample.name.replace('_', ' ')}</span>
+        <small class='right' style='display:inherit'>
+            #{sample.sample_type}
+            <a class='remove-sample mdi-content-clear'></a>
+        </small>
+    </div>
     ")
         chunks.push row
         row.find(".remove-sample").click (event) -> 

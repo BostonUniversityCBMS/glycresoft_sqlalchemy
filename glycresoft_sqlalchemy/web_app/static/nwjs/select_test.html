@@ -1,0 +1,86 @@
+<!DOCTYPE html5>
+<html>
+<head>
+    <title></title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" type="text/css" href="../dist/css/bundle.css">
+    <script src="../dist/js/vendor-bundle.js"></script>
+    <script src='../dist/js/lib-bundle.js'></script>
+    <style>
+
+.project-name {
+    font-weight: 900;
+    font-size: 1.2em;
+    padding-left: 1em;
+}
+
+.project-container {
+    border-bottom: 1px solid grey;
+    border-collapse: collapse;
+    padding: 4px;
+}
+
+.project-list-view {
+    border: 1px solid grey;
+    border-radius: 4px;
+    max-height: 500px;
+    overflow-y: scroll;
+}
+
+.project-container button{
+    background-color: white !important;
+    color: grey;
+    padding-left: 5%;
+    padding-right: 5%;
+}
+
+    </style>
+    <script>
+function ExistingProjectChooserWidget(container, projects){
+    this.container = container
+    this.projects = projects
+}
+
+ExistingProjectChooserWidget.prototype.draw = function(){
+    var container = $(this.container)
+    container.addClass("project-list-view")
+    var template = "<div class='project-container'>" +
+        "<div><span class='project-name'></span></div>" +
+        "<div>" +
+            "<button class='waves-effect btn-flat open-project-button'>Open</button>" +
+            "<button class='waves-effect btn-flat remove-project-button'>Remove</button>" +
+        "</div>" +
+    "</div>"
+
+    var addProjectWidget = function(container, project){
+        var entry = $(template)
+        entry.find(".project-name").text(project.name)
+        container.append(entry)
+    }
+    for(var i=0; i<this.projects.length;i++){
+        addProjectWidget(container, this.projects[i])
+    }
+}
+
+    </script>
+    <script>
+    $(function(){
+test = new ExistingProjectChooserWidget($("#target"), [
+    {name: "Tim"}, {name: "Bob"}, {name: "Schmidt"}, {name: "Joe"}, {name: "Sam"},
+    {name: "Tim"}, {name: "Bob"}, {name: "Schmidt"}, {name: "Joe"}, {name: "Sam"}])
+test.draw()
+    })
+    </script>
+</head>
+<body>
+<div class='row'>
+
+<div class='col s4'>
+    <h4>Projects</h4>
+    <div id="target"></div>
+</div>
+
+</div>
+</body>
+</html>

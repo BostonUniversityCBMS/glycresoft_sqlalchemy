@@ -16,6 +16,7 @@ ActionLayerManager = (function(superClass) {
     this.on('layer-change', function(event) {
       return materialRefresh();
     });
+    this.layerStack = [];
   }
 
   ActionLayerManager.prototype.incLayerCounter = function() {
@@ -52,7 +53,8 @@ ActionLayerManager = (function(superClass) {
   };
 
   ActionLayerManager.prototype.setShowingLayer = function(id) {
-    var current, next;
+    var current, i, next;
+    console.log(id);
     current = this.getShowingLayer();
     next = this.get(id);
     try {
@@ -60,6 +62,11 @@ ActionLayerManager = (function(superClass) {
     } catch (_error) {}
     try {
       next.show();
+      i = this.findLayer(next);
+      if (i !== -1) {
+        this.layerStack.pop(i);
+      }
+      this.layerStack.push(next);
     } catch (_error) {
       this.get(ActionLayerManager.HOME_LAYER).show();
     }
@@ -69,15 +76,25 @@ ActionLayerManager = (function(superClass) {
   };
 
   ActionLayerManager.prototype.addLayer = function(options, params) {
+    var layer;
     if (options.closeable == null) {
       options.closeable = true;
     }
-    new ActionLayer(this, options, params);
+    layer = new ActionLayer(this, options, params);
+    console.log(layer);
+    if (this.layerStack.length === 0) {
+      this.layerStack.push(layer);
+    }
     return this;
   };
 
   ActionLayerManager.prototype.removeLayer = function(id) {
+    var i;
     this.layers[id].container.remove();
+    i = this.findLayer(this.layers[id]);
+    if (i !== -1) {
+      this.layerStack.pop(i);
+    }
     delete this.layers[id];
     return this;
   };
@@ -85,12 +102,30 @@ ActionLayerManager = (function(superClass) {
   ActionLayerManager.prototype.removeCurrentLayer = function(next) {
     var current;
     if (next == null) {
-      next = ActionLayerManager.HOME_LAYER;
+      next = null;
     }
     current = this.getShowingLayer();
+    this.layerStack.pop();
+    if (next == null) {
+      next = this.layerStack[this.layerStack.length - 1];
+    }
     this.setShowingLayer(next);
     current.dispose();
     return this;
+  };
+
+  ActionLayerManager.prototype.findLayer = function(targetLayer) {
+    var index, j, layer, len, ref;
+    index = -1;
+    ref = this.layerStack;
+    for (j = 0, len = ref.length; j < len; j++) {
+      layer = ref[j];
+      index += 1;
+      if (layer.id === targetLayer.id) {
+        return index;
+      }
+    }
+    return -1;
   };
 
   return ActionLayerManager;
