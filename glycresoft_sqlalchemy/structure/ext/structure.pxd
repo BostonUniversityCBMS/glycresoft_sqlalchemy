@@ -80,3 +80,5 @@ cdef void free_modification_array(ModificationStructArray* mod_array) nogil
 cdef void free_amino_acid_array(AminoAcidStructArray* aa_array) nogil
 cdef void free_fragment_ion_array(FragmentIonStructArray* frag_array) nogil
 cdef void free_simple_glycan(SimpleGlycanStruct* g) nogil
+
+cpdef list parse(str sequence)

@@ -1,7 +1,7 @@
 Application::renderSampleListAt = (container)->
     chunks = []
     template = 
-    for sample in _.sortBy(_.values(@samples), (o) -> o.name)
+    for sample in _.sortBy(_.values(@samples), (o) -> o.id)
         row = $("
     <div data-name=#{sample.name} class='list-item clearfix'>
         <span class='handle'>#{sample.name.replace('_', ' ')}</span>

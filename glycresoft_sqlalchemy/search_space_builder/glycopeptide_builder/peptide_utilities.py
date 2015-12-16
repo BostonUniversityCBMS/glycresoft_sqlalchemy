@@ -234,7 +234,7 @@ def unpositioned_isoforms(
 
 def generate_peptidoforms(reference_protein, constant_modifications,
                           variable_modifications, enzyme, missed_cleavages=1,
-                          max_modifications=4):
+                          max_modifications=4, peptide_class=NaivePeptide):
     modtable = modification.RestrictedModificationTable.bootstrap(
         constant_modifications,
         variable_modifications, reuse=False)
@@ -247,7 +247,7 @@ def generate_peptidoforms(reference_protein, constant_modifications,
         if missed > missed_cleavages:
             continue
 
-        ref_peptide = NaivePeptide(
+        ref_peptide = peptide_class(
             base_peptide_sequence=peptide,
             protein=reference_protein,
             protein_id=reference_protein.id,
@@ -257,7 +257,7 @@ def generate_peptidoforms(reference_protein, constant_modifications,
         for modseq, modifications, mass, sequons_occupied in unpositioned_isoforms(ref_peptide, constant_modifications,
                                                                                    variable_modifications,
                                                                                    modtable):
-            peptidoform = NaivePeptide(
+            peptidoform = peptide_class(
                 base_peptide_sequence=peptide,
                 modified_peptide_sequence=modseq,
                 protein=reference_protein,

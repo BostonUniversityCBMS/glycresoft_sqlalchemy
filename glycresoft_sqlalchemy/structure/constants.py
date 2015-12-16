@@ -5,8 +5,8 @@ constants = Namespace()
 # Tokenizer Constants
 constants.MOD_BEGIN = "("
 constants.MOD_END = ")"
-constants.GLYCAN_BEGIN = "["
-constants.GLYCAN_END = "]"
+constants.GLYCAN_BEGIN = "{"
+constants.GLYCAN_END = "}"
 constants.N_TERM_DEFAULT = "H"
 constants.C_TERM_DEFAULT = "OH"
 # N-glycan Sequon detection

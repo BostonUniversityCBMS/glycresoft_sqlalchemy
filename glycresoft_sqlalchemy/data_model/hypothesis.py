@@ -81,6 +81,12 @@ class Hypothesis(Base):
         ]
         return fields
 
+    def decoy_hypothesis_id(self):
+        try:
+            return self.parameters['decoys'][0]['hypothesis_id']
+        except:
+            return None
+
 
 class MS1GlycanHypothesis(Hypothesis):
     __tablename__ = "MS1GlycanHypothesis"

@@ -1,16 +1,25 @@
 from collections import defaultdict
-import matplotlib
+
 from matplotlib import pyplot as plt
 import numpy as np
 
-from glycresoft_sqlalchemy.data_model import (Hypothesis, Protein, GlycopeptideMatch,
-                                              Glycan, object_session)
+from .colors import (
+    NGlycanCompositionColorizer,
+    NGlycanCompositionOrderer,
+    GlycanLabelTransformer,
+    allset, _null_color_chooser)
+
+from glycresoft_sqlalchemy.data_model import (GlycopeptideMatch, object_session)
+
+from glypy.composition.glycan_composition import FrozenGlycanComposition
 
 
 class GlycoproteinMicroheterogeneitySummary(object):
-    def __init__(self, protein, filter_fn):
+    def __init__(self, protein, filter_fn, color_chooser=_null_color_chooser, order_chooser=NGlycanCompositionOrderer):
         self.protein = protein
         self.site_list = protein.glycosylation_sites
+        self.order_chooser = order_chooser
+        self.color_chooser = color_chooser
         self.site_to_glycan_map = {}
         self.filter_fn = filter_fn
         self.build_site_to_glycan_map()
@@ -38,20 +47,40 @@ class GlycoproteinMicroheterogeneitySummary(object):
         self.site_to_glycan_map = site_map
         return site_map
 
-    def glycan_site_specific_abundance_plot(self):
+    def glycan_site_specific_abundance_plot(self, legend=True, alpha=0.65):
         axes = {}
         bar_width = 0.3
         for site, abundances in self.site_to_glycan_map.items():
             if len(abundances) == 0:
                 continue
-            compositions, volumes = zip(*abundances.items())
+            compositions = sorted(abundances, cmp=self.order_chooser)
+            volumes = [abundances[c] for c in compositions]
+            colors = map(self.color_chooser, compositions)
+            xtick_labeler = GlycanLabelTransformer(compositions, self.order_chooser)
+
             fig, ax = plt.subplots(1)
             indices = np.arange(len(compositions))
-            ax.bar(indices + bar_width, volumes, bar_width, alpha=0.45)
+
+            try:
+                include_classes = set(map(self.color_chooser.classify, compositions))
+            except:
+                include_classes = allset()
+
+            ax.bar(indices + bar_width, volumes, bar_width, alpha=alpha, color=colors)
             ax.set_ylabel("Relative Intensity")
             ax.set_xticks(indices + bar_width * 1.5)
-            ax.set_xticklabels(compositions, rotation=90, ha='center')
+            ax.set_xlabel(xtick_labeler.label_key)
+            ax.set_xticklabels(tuple(xtick_labeler), rotation=90, ha='center')
+            ax.xaxis.set_ticks_position('none')
+
             ax.set_title("%s at %d" % (self.protein.name, site))
+            if legend:
+                handles = self.color_chooser.make_legend(
+                    include_classes, alpha=alpha)
+                if handles:
+                    ax.legend(
+                        handles=handles,
+                        bbox_to_anchor=(1.20, 1.0))
             axes[site] = ax
 
         return axes
@@ -82,7 +111,7 @@ class GlycoproteinMicroheterogeneitySummary(object):
             peptide, glycans = bundle
             indices = np.arange(len(glycans))
             glycans, volumes = zip(*glycans)
-            ax.bar(indices + bar_width, volumes, bar_width, alpha=0.45)
+            ax.bar(indices + bar_width, volumes, bar_width, alpha=0.5)
             ax.set_ylabel("Relative Intensity")
             ax.set_xticks(indices + bar_width * 1.5)
             ax.set_xticklabels(glycans, rotation=90, ha='center')
@@ -97,3 +126,58 @@ class GlycoproteinMicroheterogeneitySummary(object):
     def __iter__(self):
         for site, composition_volumes in self.site_to_glycan_map.items():
             yield site, composition_volumes
+
+
+class GlycoformAbundancePlot(object):
+    def __init__(self, query, color_chooser=_null_color_chooser, order_chooser=NGlycanCompositionOrderer):
+        self.query = query
+        self.abundance_map = defaultdict(float)
+        self.color_chooser = color_chooser
+        self.order_chooser = order_chooser
+        self._total_abundances()
+
+    def _total_abundances(self):
+        for item in self.query:
+            composition = item.glycan_composition
+            composition = FrozenGlycanComposition(composition).serialize()
+            abundance = item.total_volume
+            self.abundance_map[composition] += abundance
+
+    def abundance_bar_plot(self, legend=True, alpha=0.65, bar_width=0.5, log=False):
+        keys = sorted(self.abundance_map, cmp=self.order_chooser)
+        indices = np.arange(len(keys)) * 2
+        colors = map(self.color_chooser, keys)
+        volumes = [self.abundance_map[k] for k in keys]
+
+        try:
+            include_classes = set(map(self.color_chooser.classify, keys))
+        except:
+            include_classes = allset()
+
+        if log:
+            volumes = np.log(volumes)
+
+        xtick_labeler = GlycanLabelTransformer(keys, self.order_chooser)
+
+        fig, ax = plt.subplots(1)
+        bars = ax.bar(indices + bar_width, volumes, bar_width, color=colors, alpha=alpha, lw=0)
+        if log:
+            ax.set_ylabel(r"$\log(Relative Intensity)$")
+        else:
+            ax.set_ylabel("Relative Intensity")
+        ax.set_xticks(indices + bar_width * 1.5)
+
+        font_size = max((200. / (len(indices) / 2.)), 3)
+
+        ax.set_xlabel(xtick_labeler.label_key)
+        ax.set_xticklabels(tuple(xtick_labeler), rotation=90, ha='center', size=font_size)
+        ax.xaxis.set_ticks_position('none')
+        ax.set_title("Glycan Composition Total Abundances")
+        if legend:
+            handles = self.color_chooser.make_legend(
+                include_classes, alpha=alpha)
+            if handles:
+                ax.legend(
+                    handles=handles,
+                    bbox_to_anchor=(1.20, 1.0))
+        return ax

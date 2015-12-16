@@ -6,6 +6,7 @@ try:
 except:
     import pickle
 
+
 def memoize(maxsize=100):
     """Make a memoization decorator. A negative value of `maxsize` means
     no size limit."""

@@ -3,6 +3,7 @@ import logging
 import time
 import datetime
 import pprint
+from functools import partial
 
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, DateTime, func,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
@@ -10,6 +11,8 @@ from sqlalchemy.orm import relationship
 
 from .connection import DatabaseManager
 from .base import Base2 as Base
+
+from glycresoft_sqlalchemy.utils.worker_utils import profile_task
 
 logger = logging.getLogger("pipeline_module")
 

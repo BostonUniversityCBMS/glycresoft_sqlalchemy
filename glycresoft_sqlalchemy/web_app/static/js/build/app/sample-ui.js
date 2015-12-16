@@ -4,7 +4,7 @@ Application.prototype.renderSampleListAt = function(container) {
   template = (function() {
     var i, len, ref, results;
     ref = _.sortBy(_.values(this.samples), function(o) {
-      return o.name;
+      return o.id;
     });
     results = [];
     for (i = 0, len = ref.length; i < len; i++) {

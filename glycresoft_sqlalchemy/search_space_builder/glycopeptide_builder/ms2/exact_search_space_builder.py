@@ -1,38 +1,21 @@
-"""Summary
-
-Attributes
-----------
-logger : TYPE
-    Description
-Protein : TYPE
-    Description
-TheoreticalGlycopeptide : TYPE
-    Description
-TheoreticalGlycopeptideGlycanAssociation : TYPE
-    Description
-"""
-import re
 import multiprocessing
 import logging
 import functools
 
 from glycresoft_sqlalchemy.structure.sequence import Sequence, strip_modifications
-from glycresoft_sqlalchemy.structure.stub_glycopeptides import StubGlycopeptide
-from glycresoft_sqlalchemy.structure import constants
-from glycresoft_sqlalchemy.proteomics import get_enzyme
 
+from glypy import GlycanComposition
 
-from .search_space_builder import TheoreticalSearchSpaceBuilder, constructs
-from ..utils import WorkItemCollection
+from .search_space_builder import TheoreticalSearchSpaceBuilder, constructs, BatchingTheoreticalSearchSpaceBuilder
+from ..utils import WorkItemCollectionFlat as WorkItemCollection, fragments
 
-from glycresoft_sqlalchemy import data_model as model
 from glycresoft_sqlalchemy.data_model import (
-    ExactMS1GlycopeptideHypothesisSampleMatch, TheoreticalGlycopeptideGlycanAssociation)
+    TheoreticalGlycopeptide, Protein,
+    ExactMS1GlycopeptideHypothesisSampleMatch,
+    ExactMS2GlycopeptideHypothesis)
 
 from sqlalchemy import func
 
-TheoreticalGlycopeptide = model.TheoreticalGlycopeptide
-Protein = model.Protein
 
 logger = logging.getLogger("search_space_builder")
 
@@ -53,46 +36,11 @@ def generate_fragments(seq, ms1_result):
     -------
     TheoreticalGlycopeptide
     """
-    seq_mod = seq.get_sequence()
-    fragments = zip(*map(seq.break_at, range(1, len(seq))))
-    b_type = fragments[0]
-    b_ions = []
-    b_ions_hexnac = []
-    for b in b_type:
-        for fm in b:
-            key = fm.get_fragment_name()
-            if key == ("b1" or re.search(r'b1\+', key)) and constants.EXCLUDE_B1:
-                # B1 Ions aren't actually seen in reality, but are an artefact of the generation process
-                # so do not include them in the output
-                continue
-            mass = fm.get_mass()
-            golden_pairs = fm.golden_pairs
-            if "HexNAc" in key:
-                b_ions_hexnac.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-            else:
-                b_ions.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-
-    y_type = fragments[1]  # seq.get_fragments('Y')
-    y_ions = []
-    y_ions_hexnac = []
-    for y in y_type:
-        for fm in y:
-            key = fm.get_fragment_name()
-            mass = fm.get_mass()
-            golden_pairs = fm.golden_pairs
-            if "HexNAc" in key:
-                y_ions_hexnac.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-            else:
-                y_ions.append({"key": key, "mass": mass, "golden_pairs": golden_pairs})
-
-    pep_stubs = StubGlycopeptide(
-        ms1_result.base_peptide_sequence,
-        ms1_result.peptide_modifications,
-        ms1_result.count_glycosylation_sites,
-        seq.glycan)
-
-    stub_ions = pep_stubs.get_stubs()
-    oxonium_ions = pep_stubs.get_oxonium_ions()
+    seq.glycan = GlycanComposition.parse(ms1_result.glycan_composition_str)
+    seq_mod = seq.get_sequence(include_glycan=False)
+    (oxonium_ions, b_ions, y_ions,
+     b_ions_hexnac, y_ions_hexnac,
+     stub_ions) = fragments(seq)
 
     theoretical_glycopeptide = TheoreticalGlycopeptide(
         ms1_score=ms1_result.ms1_score,
@@ -118,9 +66,9 @@ def generate_fragments(seq, ms1_result):
         glycosylated_y_ions=y_ions_hexnac,
         protein_id=ms1_result.protein_name,
         base_composition_id=ms1_result.composition_id,
-        glycans=ms1_result.glycans
+        glycan_combination_id=ms1_result.glycan_combination_id
         )
-    assert theoretical_glycopeptide.glycans.count() > 0
+
     return theoretical_glycopeptide
 
 
@@ -178,8 +126,10 @@ def from_sequence(ms1_result, database_manager, protein_map, source_type):
         raise
 
 
-@constructs.references(ExactMS1GlycopeptideHypothesisSampleMatch)
+#@constructs.references(ExactMS1GlycopeptideHypothesisSampleMatch)
 class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
+    HypothesisType = ExactMS2GlycopeptideHypothesis
+
     """Summary"""
     def __init__(self, ms1_results_file, db_file_name, enzyme, site_list=None,
                  n_processes=4, **kwargs):
@@ -236,7 +186,7 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
 
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
-            for theoretical in pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=500):
+            for theoretical in pool.imap_unordered(task_fn, self.ms1_results_reader, chunksize=100):
                 if theoretical is None:
                     continue
                 accumulator.add(theoretical)
@@ -258,6 +208,117 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
                 last = cntr
 
         accumulator.commit()
+
+        logger.info("Checking integrity")
+
+        # Remove duplicates
+        ids = session.query(func.min(TheoreticalGlycopeptide.id)).filter(
+            TheoreticalGlycopeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == id).group_by(
+            TheoreticalGlycopeptide.glycopeptide_sequence,
+            TheoreticalGlycopeptide.protein_id)
+
+        q = session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == id,
+            ~TheoreticalGlycopeptide.id.in_(ids.correlate(None)))
+        conn = session.connection()
+        conn.execute(TheoreticalGlycopeptide.__table__.delete(
+            TheoreticalGlycopeptide.__table__.c.id.in_(q.selectable)))
+        session.commit()
+        final_count = session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == id).count()
+
+        logger.info("%d Theoretical Glycopeptides created", final_count)
+
+        session.close()
+        return id
+
+
+def batch_from_sequence(ms1_results, database_manager, protein_map, source_type):
+    session = database_manager.session()
+    working_set = WorkItemCollection(session)
+    i = 0
+    for ms1_result in ms1_results:
+        ms1_result = source_type.render(session, ms1_result)
+        if len(ms1_result.base_peptide_sequence) == 0:
+            return None
+        seq = Sequence(ms1_result.most_detailed_sequence)
+        seq.glycan = ''
+        product = generate_fragments(seq, ms1_result)
+        if not isinstance(product.protein_id, int):
+            product.protein_id = protein_map[product.protein_id]
+        working_set.add(product)
+        i += 1
+    working_set.commit()
+    return i
+
+
+@constructs.references(ExactMS1GlycopeptideHypothesisSampleMatch)
+class BatchingExactSearchSpaceBuilder(BatchingTheoreticalSearchSpaceBuilder):
+    HypothesisType = ExactMS2GlycopeptideHypothesis
+
+    def __init__(self, ms1_results_file, db_file_name, enzyme, site_list=None,
+                 n_processes=4, **kwargs):
+        try:
+            kwargs.pop("variable_modifications")
+            kwargs.pop("constant_modifications")
+        except:
+            pass
+
+        super(BatchingExactSearchSpaceBuilder, self).__init__(
+            ms1_results_file, db_file_name,
+            constant_modifications=[], variable_modifications=[], enzyme=enzyme,
+            site_list=site_list, n_processes=n_processes, **kwargs)
+
+    def prepare_task_fn(self):
+        """Construct the partial function to be applied to each input in this step of
+        of the pipeline. The base function used is :func:`from_sequence`
+
+        Returns
+        -------
+        function
+
+        See Also
+        --------
+        from_sequence
+        """
+        protein_map = dict(self.session.query(Protein.name, Protein.id).filter(
+            Protein.hypothesis_id == self.hypothesis.id))
+        return functools.partial(
+            batch_from_sequence, database_manager=self.manager, protein_map=protein_map, source_type=self.ms1_format)
+
+    def run(self):
+        task_fn = self.prepare_task_fn()
+        cntr = 0
+        last = 0
+        step = 1000
+
+        session = self.session
+
+        session.add(self.hypothesis)
+        session.commit()
+        id = self.hypothesis.id
+
+        if self.n_processes > 1:
+            worker_pool = multiprocessing.Pool(self.n_processes)
+            logger.debug("Building theoretical sequences concurrently")
+            for res in worker_pool.imap_unordered(task_fn, self.stream_results(), chunksize=1):
+                cntr += res
+                if (cntr > last + step):
+                    last = cntr
+                    logger.info("Committing, %d records made", cntr)
+
+            worker_pool.terminate()
+        else:
+            logger.debug("Building theoretical sequences sequentially")
+            for row in self.ms1_results_reader:
+                res = task_fn(row)
+                cntr += res
+                if (cntr > last + step):
+                    last = cntr
+                    logger.info("Committing, %d records made", cntr)
 
         logger.info("Checking integrity")
 

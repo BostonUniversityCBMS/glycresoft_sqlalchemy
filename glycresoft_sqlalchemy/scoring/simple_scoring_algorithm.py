@@ -7,6 +7,8 @@ from ..utils import collectiontools
 
 from ..structure.sequence import Sequence
 
+from .base import ScorerBase, GlycopeptideSpectrumMatchScorer
+
 imap = itertools.imap
 chain = itertools.chain
 
@@ -84,14 +86,14 @@ def merge_ion_matches(matches):
 def evaluate(matched, theoretical, **parameters):
     matched.mean_coverage = mean_coverage2(matched)
     matched.mean_hexnac_coverage = mean_hexnac_coverage(matched, theoretical)
-    calculate_score(matched, **parameters)
+    return calculate_score(matched, **parameters)
 
 
 def calculate_score(matched, backbone_weight=0.5, hexnac_weight=0.5, stub_weight=0.2):
     matched.ms2_score = (((matched.mean_coverage * backbone_weight) +
                           (matched.mean_hexnac_coverage * hexnac_weight)) * (1 - stub_weight)) +\
                          (observed_vs_enumerated_stub(matched) * stub_weight)
-    return matched
+    return matched.ms2_score
 
 
 def stream_backbone_coordinate(iterable):
@@ -206,3 +208,13 @@ def compute_percent_uncovered(matched):
         if i == 0:
             is_zero += 1
     return is_zero / float(len(matched))
+
+
+class SimpleSpectrumScorer(GlycopeptideSpectrumMatchScorer):
+    def __init__(self):
+        super(SimpleSpectrumScorer, self).__init__(evaluate, "simple_ms2_score", "ms2_score")
+
+
+class SimpleScorer(ScorerBase):
+    def __init__(self):
+        super(SimpleScorer, self).__init__(evaluate, "ms2_score")

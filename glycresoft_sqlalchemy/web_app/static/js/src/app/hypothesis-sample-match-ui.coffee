@@ -1,11 +1,11 @@
 Application::renderHypothesisSampleMatchListAt = (container)->
     chunks = []
     template = 
-    for hsm in _.sortBy(_.values(@hypothesisSampleMatches), (o) -> o.name)
+    for hsm in _.sortBy(_.values(@hypothesisSampleMatches), (o) -> o.id)
         hsm.name = if hsm.name? then hsm.name else "HypothesisSampleMatch:#{hsm.target_hypothesis.name}@#{hsm.sample_run_name}"
         row = $("
     <div data-id=#{hsm.id} class='list-item clearfix'>
-        <span class='handle'>#{hsm.name.replace('_', ' ')}</span>
+        <span class='handle'>#{hsm.id}. #{hsm.name.replace('_', ' ')}</span>
         <small class='right' style='display:inherit'>
             #{hsm.hypothesis_sample_match_type.replace('HypothesisSampleMatch', '')}
             <a class='remove-hsm mdi-content-clear'></a>

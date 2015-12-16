@@ -56,7 +56,7 @@ class PeptideFragment(object):
     def __init__(self, frag_type, pos, mod_dict, mass, golden_pairs=None, flanking_amino_acids=None):
         if golden_pairs is None:
             golden_pairs = []
-        self.type = frag_type[0].lower() + frag_type[1:]
+        self.type = frag_type
         # The mass value is the bare backbone's mass
         self.bare_mass = mass
 
@@ -95,7 +95,7 @@ class PeptideFragment(object):
     def get_fragment_name(self):
         """Connect the information into string."""
         fragment_name = []
-        fragment_name.append(self.type)
+        fragment_name.append(str(self.type))
         fragment_name.append(str(self.position))
 
         # Only concerned modifications are reported.
@@ -141,7 +141,7 @@ class SimpleFragment(object):
     def __init__(self, name, mass, kind):
         self.name = name
         self.mass = mass
-        self.kind = (kind)
+        self.kind = kind
 
     def __repr__(self):
         return "SimpleFragment(name={self.name}, mass={self.mass:.04f}, kind={self.kind})".format(self=self)
@@ -172,7 +172,7 @@ class IonSeries(object):
     def get(cls, name):
         return cls(name)
 
-    def __init__(self, name, direction=None, includes_peptide=True, mass_shift=None):
+    def __init__(self, name, direction=None, includes_peptide=True, mass_shift=None, regex=None):
         if direction is None:
             if name in fragment_direction:
                 direction = fragment_direction[name]
@@ -187,6 +187,7 @@ class IonSeries(object):
         self.direction = direction
         self.includes_peptide = includes_peptide
         self.mass_shift = mass_shift
+        self.regex = re.compile(regex) if regex is not None else regex
 
     def __hash__(self):
         return hash(self.name)
@@ -204,6 +205,14 @@ class IonSeries(object):
 
     def __str__(self):
         return str(self.name)
+
+    def is_member(self, key):
+        if self.regex is None:
+            return key.startswith(self.name)
+        else:
+            return self.regex.search(key)
+
+    __call__ = is_member
 
 
 IonSeries.b = IonSeries("b")

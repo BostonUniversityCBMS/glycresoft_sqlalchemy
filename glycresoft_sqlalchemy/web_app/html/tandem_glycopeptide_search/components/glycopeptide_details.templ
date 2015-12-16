@@ -40,6 +40,9 @@
                 {% endif %}
             {% endfor %}
         </div>
+        <div class='col s6'>
+            {{glycopeptide | glycopeptide_match_logo | svg_plot(height=1, width=5)}}
+        </div>
     </div>
     {% macro fragment_list(series) -%}
         {% with fragments=series%}

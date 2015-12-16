@@ -16,6 +16,7 @@ Application = (function(superClass) {
     this.settings = {};
     this.tasks = {};
     this.sideNav = $('.side-nav');
+    this.colors = new ColorManager();
     self = this;
     this.eventStream = new EventSource('/stream');
     this.handleMessage('update', (function(_this) {
@@ -77,14 +78,19 @@ Application = (function(superClass) {
         return _this.emit("render-hypothesis-sample-matches");
       };
     })(this));
+    this.on("layer-change", (function(_this) {
+      return function(data) {
+        return _this.colors.update();
+      };
+    })(this));
   }
 
   Application.prototype.runInitializers = function() {
-    var i, initializer, len, ref, results;
+    var initializer, j, len, ref, results;
     ref = Application.initializers;
     results = [];
-    for (i = 0, len = ref.length; i < len; i++) {
-      initializer = ref[i];
+    for (j = 0, len = ref.length; j < len; j++) {
+      initializer = ref[j];
       results.push(initializer.apply(this, null));
     }
     return results;
@@ -137,8 +143,10 @@ Application = (function(superClass) {
       })(this));
     };
     taskListContainer.html(_.map(this.tasks, renderTask).join(''));
-    contextMenu(taskListContainer.find('li'), {
-      "View Log": doubleClickTask
+    taskListContainer.find('li').map(function(i, li) {
+      return contextMenu(li, {
+        "View Log": doubleClickTask
+      });
     });
     taskListContainer.find('li').click(clickTask);
     return taskListContainer.find("li").dblclick(doubleClickTask);
@@ -179,11 +187,11 @@ Application = (function(superClass) {
     }, function() {
       return this.handleMessage("files-to-download", (function(_this) {
         return function(data) {
-          var file, i, len, ref, results;
+          var file, j, len, ref, results;
           ref = data.files;
           results = [];
-          for (i = 0, len = ref.length; i < len; i++) {
-            file = ref[i];
+          for (j = 0, len = ref.length; j < len; j++) {
+            file = ref[j];
             results.push(_this.downloadFile(file));
           }
           return results;
@@ -216,12 +224,13 @@ Application = (function(superClass) {
         return _this.emit("render-samples");
       };
     })(this));
-    return DataSource.hypothesisSampleMatches((function(_this) {
+    DataSource.hypothesisSampleMatches((function(_this) {
       return function(d) {
         _this.hypothesisSampleMatches = d;
         return _this.emit("render-hypothesis-sample-matches");
       };
     })(this));
+    return this.colors.update();
   };
 
   Application.prototype.downloadFile = function(filePath) {

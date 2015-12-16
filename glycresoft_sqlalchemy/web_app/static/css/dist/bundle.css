@@ -8570,11 +8570,9 @@ Form Elements
     height: 100px;
 }
 
-
 .help-text{
     vertical-align: bottom;
 }
-
 
 .add-sample{
     cursor: hand;
@@ -8590,8 +8588,6 @@ Sequence Highlights
     font-weight: 900;
     color: maroon;
 }
-
-
 
 /*
 
@@ -8631,15 +8627,35 @@ Mass Shift Input
 .mass-shift-row {
     margin-bottom: 4px !important;
 }
+
 .mass-shift-input-table{
     margin-top: 11px;
 }
 
 
+/*
+
+Monosaccharide Filters
+
+*/
+
+#monosaccharide-filters {
+    margin-bottom: -20px;
+}
+
+.monosaccharide-filter {
+    display: inline-block !important;
+    width: 130px !important;
+}
 
 .table-container {
     overflow-x: scroll;
     width: 100%;
+}
+
+
+.active-row {
+    font-weight: 900;
 }
 
 /*
@@ -8656,10 +8672,15 @@ Protein Match Table
 .protein-match-table thead, .protein-match-table tbody {
     display: block;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .protein-match-table tbody tr{
     cursor: hand;
+}
+
+.protein-match-table tbody tr:hover{
+    background: whitesmoke;
 }
 
 .protein-match-cell {
@@ -8686,11 +8707,17 @@ Protein List Table
 .protein-list-table thead, .protein-list-table tbody {
     display: block;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .protein-list-table tbody tr{
     cursor: hand;
 }
+
+.protein-list-table tbody tr:hover{
+    background: whitesmoke;
+}
+
 
 .protein-list-cell {
     text-align: left;
@@ -8734,12 +8761,17 @@ Display Table
 .display-table thead, .display-table tbody {
     display: block;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .display-table th.narrow, .display-table td.narrow {
     min-width: 70px;
     max-width: 70px;
     word-break: break-all;
+}
+
+.display-table tbody tr:hover{
+    background: whitesmoke;
 }
 
 .display-table td {
@@ -8765,7 +8797,6 @@ Pagination
 }
 
 
-
 /*
 
 Glycopeptide Match Table
@@ -8787,15 +8818,33 @@ Glycopeptide Match Table
     word-break: break-all;
 }
 
+
+.glycopeptide-match-table th.medium-wide, .glycopeptide-match-table td.medium-wide {
+    min-width: 225px;
+    max-width: 225px;
+    word-break: break-all;
+}
+
+.glycopeptide-match-table th.very-wide, .glycopeptide-match-table td.very-wide {
+    min-width: 350px;
+    max-width: 350px;
+    word-break: break-all;
+}
+
 .glycopeptide-match-table thead, .glycopeptide-match-table tbody {
     display: block;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .glycopeptide-match-table th.narrow, .glycopeptide-match-table td.narrow {
     min-width: 70px;
     max-width: 70px;
     word-break: break-all;
+}
+
+.glycopeptide-match-table tbody tr:hover{
+    background: whitesmoke;
 }
 
 .glycopeptide-match-table td {
@@ -8806,6 +8855,10 @@ Glycopeptide Match Table
     font-size: .7em;
     padding: 3px !important;
     word-break: break-all;
+}
+
+.fragment-ion-table tbody tr:hover{
+    background: whitesmoke;
 }
 
 /*
@@ -8836,7 +8889,6 @@ Modals
     margin-right: auto !important;
 }
 
-
 .lean-overlay {
     visibility: none !important;
 }
@@ -8848,22 +8900,29 @@ Tiny Notification
 */
 
 .notification-container {
-    position: relative;
+    position: absolute;
     display: inline-block;
     width: 200px;
-    z-index: 9999;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid grey;
+    border-radius: 4px;
+    opacity: 0.8;
+
+}
+
+.notification-container .dismiss-container {
+    height: 0.1px;
 }
 
 .notification-container .dismiss-notification{
-    float: left;
+    float: right;
+    z-index: 2000;
 }
 
-.notification-container .dismiss-notification::after{
-    clear:both;
-}
-
-.notification-container .notification-contents{
+.notification-container .notification-content{
     text-align: left;
+    margin-left: 40px;
 }
 
 /*

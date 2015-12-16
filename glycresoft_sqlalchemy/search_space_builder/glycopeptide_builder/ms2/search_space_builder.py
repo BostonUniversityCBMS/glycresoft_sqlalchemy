@@ -9,19 +9,22 @@ import functools
 from glycresoft_sqlalchemy.structure.modification import RestrictedModificationTable
 from glycresoft_sqlalchemy.structure.modification import ModificationTable
 from glycresoft_sqlalchemy.structure.sequence_space import SequenceSpace
-from glycresoft_sqlalchemy.structure.stub_glycopeptides import StubGlycopeptide
 from glycresoft_sqlalchemy.structure import constants
 from glycresoft_sqlalchemy.proteomics import get_enzyme, msdigest_xml_parser
 
 from ..peptide_utilities import SiteListFastaFileParser
-from ..utils import fragments
+from ..utils import fragments, WorkItemCollection
+
+from glycresoft_sqlalchemy.utils import collectiontools
+
+
+from glypy.composition.glycan_composition import GlycanComposition, FrozenGlycanComposition
 
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
-    HypothesisSampleMatch, PeakGroupMatchType, Protein,
-    TheoreticalGlycopeptideGlycanAssociation,
+    HypothesisSampleMatch, PeakGroupMatchType,
     MS1GlycopeptideHypothesis, Protein,
-    TheoreticalGlycopeptide, Hierarchy)
+    TheoreticalGlycopeptide, Hierarchy, MS1GlycopeptideHypothesisSampleMatch)
 
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)([^\|]+)')
@@ -107,7 +110,7 @@ class MS1GlycopeptideResult(object):
             ppm_error=pgm.ppm_error, volume=pgm.total_volume,
             start_pos=theoretical.start_position, end_pos=theoretical.end_position,
             protein_name=theoretical.protein.name, composition_id=theoretical.id,
-            glycans=theoretical.glycans)
+            glycan_combination_id=theoretical.glycan_combination_id)
 
     def __init__(self, score=None,
                  calculated_mass=None,
@@ -129,7 +132,7 @@ class MS1GlycopeptideResult(object):
                  glycopeptide_sequence=None,
                  modified_peptide_sequence=None,
                  composition_id=None,
-                 glycans=None):
+                 glycan_combination_id=None):
         self.ms1_score = score
         self.calculated_mass = calculated_mass
         self.observed_mass = observed_mass
@@ -148,8 +151,7 @@ class MS1GlycopeptideResult(object):
         self.glycopeptide_sequence = glycopeptide_sequence
         self.modified_peptide_sequence = modified_peptide_sequence
         self.composition_id = composition_id
-        self.glycans = glycans
-        assert len(self.glycans) > 0
+        self.glycan_combination_id = glycan_combination_id
 
     @property
     def most_detailed_sequence(self):
@@ -166,7 +168,8 @@ class MS1GlycopeptideResult(object):
                 return self.base_peptide_sequence
 
     def __repr__(self):
-        return "MS1GlycopeptideResult(%s)" % str((self.most_detailed_sequence, self.peptide_modifications, self.glycan_composition_str))
+        return "MS1GlycopeptideResult(%s)" % str((
+            self.most_detailed_sequence, self.peptide_modifications, self.glycan_composition_str))
 
 
 def get_monosaccharide_identities(csv_columns):
@@ -268,7 +271,8 @@ def generate_fragments(seq, ms1_result):
         Collection of theoretical ions from the given sequence,
         as well as the precursor information.
     """
-    seq_mod = seq.get_sequence()
+    seq.glycan = FrozenGlycanComposition.parse(ms1_result.glycan_composition_str)
+    seq_mod = seq.get_sequence(include_glycan=False)
     (oxonium_ions, b_ions, y_ions,
      b_ions_hexnac, y_ions_hexnac,
      stub_ions) = fragments(seq)
@@ -286,7 +290,7 @@ def generate_fragments(seq, ms1_result):
         base_peptide_sequence=ms1_result.base_peptide_sequence,
         modified_peptide_sequence=seq_mod,
         peptide_modifications=ms1_result.peptide_modifications,
-        glycopeptide_sequence=seq_mod,
+        glycopeptide_sequence=seq_mod + ms1_result.glycan_composition_str,
         sequence_length=len(seq),
         glycan_composition_str=ms1_result.glycan_composition_str,
         bare_b_ions=b_ions,
@@ -296,7 +300,7 @@ def generate_fragments(seq, ms1_result):
         glycosylated_b_ions=b_ions_hexnac,
         glycosylated_y_ions=y_ions_hexnac,
         base_composition_id=ms1_result.composition_id,
-        glycans=ms1_result.glycans
+        glycan_combination_id=ms1_result.glycan_combination_id
         )
     return theoretical_glycopeptide
 
@@ -600,3 +604,107 @@ class MS1ResultsFacade(object):
 
 
 parse_digest = msdigest_xml_parser.MSDigestParameters.parse
+
+
+@constructs.references(MS1GlycopeptideHypothesisSampleMatch)
+class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
+
+    def stream_results(self, batch_size=100):
+        for chunk in collectiontools.chunk_iterator2(
+                super(BatchingTheoreticalSearchSpaceBuilder, self).stream_results(), batch_size):
+            yield chunk
+
+    def prepare_task_fn(self):
+        task_fn = functools.partial(batch_process_predicted_ms1_ion, modification_table=self.modification_table,
+                                    site_list_map=self.glycosylation_site_map,
+                                    renderer=self.ms1_format,
+                                    database_manager=self.manager, proteins=self.hypothesis.proteins)
+        return task_fn
+
+    def run(self):
+        '''
+        Execute the algorithm on :attr:`n_processes` processes
+        '''
+        task_fn = self.prepare_task_fn()
+        cntr = 0
+        last = 0
+        step = 1000
+        if self.n_processes > 1:
+            worker_pool = multiprocessing.Pool(self.n_processes)
+            logger.debug("Building theoretical sequences concurrently")
+            for res in worker_pool.imap_unordered(task_fn, self.stream_results(), chunksize=1):
+                cntr += res
+                if (cntr > last + step):
+                    last = cntr
+                    logger.info("Committing, %d records made", cntr)
+
+            worker_pool.terminate()
+        else:
+            logger.debug("Building theoretical sequences sequentially")
+            for row in self.ms1_results_reader:
+                res = task_fn(row)
+                cntr += res
+                if (cntr > last + step):
+                    last = cntr
+                    logger.info("Committing, %d records made", cntr)
+        return self.hypothesis_id
+
+
+def batch_process_predicted_ms1_ion(rows, modification_table, site_list_map,
+                                    renderer, database_manager, proteins):
+    """Multiprocessing dispatch function to generate all theoretical sequences and their
+    respective fragments from a given MS1 result
+
+    Parameters
+    ----------
+    rows: iterable
+        Iterable of mappings from an MS1 results
+    modification_table: :class:`.modifications.RestrictedModificationTable`
+        Modification table limited to only the rules specified by the user
+    site_list: list of int
+        List of putative glycosylation sites from the parent protein
+    monosaccharide_identities: list
+        List of glycan or monosaccaride names
+
+    Returns
+    -------
+    int:
+        Count of new TheoreticalGlycopeptide items
+    """
+    session = database_manager.session()
+    working_set = WorkItemCollection(session)
+    try:
+        i = 0
+        for row in rows:
+            ms1_result = renderer.render(session, row)
+            if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
+                return 0
+
+            # Compute the set of modifications that can occur.
+            mod_list = get_peptide_modifications(
+                ms1_result.peptide_modifications, modification_table)
+
+            # Get the start and end positions of fragment relative to the
+            glycan_sites = set(site_list_map.get(ms1_result.protein_name, [])).intersection(
+                range(ms1_result.start_position, ms1_result.end_position))
+
+            # No recorded sites, skip this component.
+            if len(glycan_sites) == 0:
+                return 0
+
+            # Adjust the glycan_sites to relative position
+            glycan_sites = [x - ms1_result.start_position for x in glycan_sites]
+            ss = get_search_space(
+                ms1_result, glycan_sites, mod_list)
+            seq_list = ss.get_theoretical_sequence(ms1_result.count_glycosylation_sites)
+            fragments = [generate_fragments(seq, ms1_result)
+                         for seq in seq_list]
+            for sequence in fragments:
+                sequence.protein_id = proteins[ms1_result.protein_name].id
+                working_set.add(sequence)
+                i += 1
+        working_set.commit()
+        return i
+    except Exception, e:
+        logger.exception("An error occurred, %r", locals(), exc_info=e)
+        raise

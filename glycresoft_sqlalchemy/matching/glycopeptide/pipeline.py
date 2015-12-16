@@ -79,7 +79,7 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         session.add(hsm)
         session.commit()
 
-    def do_matching(self):
+    def do_target_matching(self):
         task = IonMatching(
             self.database_path,
             self.target_hypothesis_id,
@@ -94,6 +94,7 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
             )
         task.start()
 
+    def do_decoy_matching(self):
         task = IonMatching(
             self.database_path,
             self.decoy_hypothesis_id,
@@ -108,7 +109,11 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
             )
         task.start()
 
-    def do_spectrum_assignment(self):
+    def do_matching(self):
+        self.do_target_matching()
+        self.do_decoy_matching()
+
+    def do_target_spectrum_assignment(self):
         task = score_spectrum_matches.SimpleSpectrumAssignment(
             self.database_path,
             hypothesis_id=self.target_hypothesis_id,
@@ -116,6 +121,7 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
             n_processes=self.n_processes)
         task.start()
 
+    def do_decoy_spectrum_assignment(self):
         task = score_spectrum_matches.SimpleSpectrumAssignment(
             self.database_path,
             hypothesis_id=self.decoy_hypothesis_id,
@@ -123,7 +129,11 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
             n_processes=self.n_processes)
         task.start()
 
-    def do_target_decoy(self):
+    def do_spectrum_assignment(self):
+        self.do_target_spectrum_assignment()
+        self.do_decoy_spectrum_assignment()
+
+    def do_target_decoy_fdr_estimation(self):
         tda = target_decoy.TargetDecoyAnalyzer(
             self.database_path,
             self.target_hypothesis_id,
@@ -143,4 +153,4 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         self.prepare_hypothesis_sample_match()
         self.do_matching()
         self.do_spectrum_assignment()
-        self.do_target_decoy()
+        self.do_target_decoy_fdr_estimation()

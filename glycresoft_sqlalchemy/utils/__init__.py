@@ -3,7 +3,10 @@ try:
 except:
     import pickle
 
+import logging
+
 from glypy.utils import classproperty
+from glypy.utils.enum import Enum
 
 
 def simple_repr(self):  # pragma: no cover
@@ -24,3 +27,24 @@ class Bundle(ItemsAsAttributes):
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             self[k] = v
+
+
+def setup_logging():
+    try:
+        logging.basicConfig(level=logging.DEBUG, filename='glycresoft-log', filemode='w',
+                            format="%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
+                            datefmt="%H:%M:%S")
+        logging.captureWarnings(True)
+
+        fmt = logging.Formatter(
+            "%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s", "%H:%M:%S")
+        handler = logging.StreamHandler()
+        handler.setFormatter(fmt)
+        logging.getLogger().addHandler(handler)
+
+        warner = logging.getLogger('py.warnings')
+        warner.setLevel("CRITICAL")
+
+    except Exception, e:
+        logging.exception("Error, %r", e, exc_info=e)
+        raise e

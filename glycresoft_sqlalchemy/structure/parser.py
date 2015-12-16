@@ -3,7 +3,9 @@ from copy import deepcopy
 from . import constants as structure_constants
 from . import PeptideSequenceBase
 from ..utils.memoize import memoize
-from glypy.composition.glycan_composition import parse as glycan_parser
+from glypy.composition.glycan_composition import FrozenGlycanComposition
+
+glycan_parser = FrozenGlycanComposition.parse
 
 
 @memoize()

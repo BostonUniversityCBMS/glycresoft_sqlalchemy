@@ -1,7 +1,6 @@
 from glycresoft_sqlalchemy.utils import Bundle
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
 Base2 = declarative_base()
 
 

@@ -270,3 +270,24 @@ def test_modifications(mapping, str name):
 
 def test_sequence(obj):
     print(sequence_to_string(sequence_from_object(obj)))
+
+
+cpdef list parse(str sequence):
+    cdef:
+        list chunks = []
+        list current_chunk = []
+        str amino_acid
+        list modifications
+        str modification
+        size_t i, length
+        str c
+        str glycan
+        # start: 0
+        # aa: 1
+        # mod: 2
+        # n_term: 3
+        # c_term: 4
+        # glycan: 5
+        int state = 0
+
+    return chunks

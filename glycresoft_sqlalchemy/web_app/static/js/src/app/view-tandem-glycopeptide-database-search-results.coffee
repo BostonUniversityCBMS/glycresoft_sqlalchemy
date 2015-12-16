@@ -1,9 +1,3 @@
-doZoom = ->
-    svg = d3.select("svg g")
-    zoom = ()->
-        svg.attr("transform", "translate(#{d3.event.translate})scale(#{d3.event.scale})")
-    d3.select("svg g").call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom))
-
 
 viewTandemGlycopeptideDatabaseSearchResults = ->
     peptideDetailsModal = undefined
@@ -19,7 +13,7 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
         if handle.length != 0
             updateProteinChoice.apply handle
         else    
-            updateProteinChoice.apply $('.protein-match-table tbody tr')
+            updateProteinChoice.apply $($('.protein-match-table tbody tr')[0])
         $(".tooltipped").tooltip()
         $("#save-csv-file").click downloadCSV
 
@@ -36,15 +30,14 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
                 peptideDetailsModal.openModal()
         $('svg .modification path').customTooltip modificationTooltipCallback, 'protein-view-tooltip'
 
-
     glycopeptideTooltipCallback = (handle) ->
         template = '<div>
         <span><b>MS2 Score:</b> {ms2-score}</span><br>
         <span><b>q-value:</b> {q-value}</span><br>
-        <b>{sequence}</b>
+        <span>{sequence}</span>
         </div>'
         template.format
-            'sequence': handle.attr('data-sequence')
+            'sequence': new PeptideSequence(handle.attr('data-sequence')).format(GlycReSoft.colors)
             'ms2-score': handle.attr('data-ms2-score')
             'q-value': handle.attr('data-q-value')
 
@@ -61,6 +54,8 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
 
     updateProteinChoice = ->
         handle = $(this)
+        $('.active-row').removeClass("active-row")
+        handle.addClass("active-row")
         id = handle.attr('data-target')
         $("#chosen-protein-container").html("""<div class="progress"><div class="indeterminate"></div></div>""").fadeIn()
         $.ajax '/view_database_search_results/protein_view/' + id,
@@ -81,7 +76,10 @@ viewTandemGlycopeptideDatabaseSearchResults = ->
                     $('ul.tabs .tab a').click ->
                         GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1)
                     $('.indicator').addClass 'indigo'
-                    $('.glycopeptide-match-row').click showGlycopeptideDetailsModal
+                    $('.glycopeptide-match-row').click ->
+                        textSelection = window.getSelection()
+                        if not textSelection.toString()
+                            showGlycopeptideDetailsModal.apply @
                     peptideDetailsModal = $('#peptide-detail-modal')
                     GlycReSoft.context['protein_id'] = id
                 error: (error) ->

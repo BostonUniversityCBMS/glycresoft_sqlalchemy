@@ -539,7 +539,7 @@ Application.prototype.renderHypothesisSampleMatchListAt = function(container) {
     for (i = 0, len = ref.length; i < len; i++) {
       hsm = ref[i];
       hsm.name = hsm.name != null ? hsm.name : "HypothesisSampleMatch:" + hsm.target_hypothesis.name + "@" + hsm.sample_run_name;
-      row = $("<div data-id=" + hsm.id + " class='list-item'> <span class='handle'>" + (hsm.name.replace('_', ' ')) + "</span> <small class='right'>" + (hsm.hypothesis_sample_match_type.replace('HypothesisSampleMatch', '')) + " <a class='remove-hsm mdi-content-clear'></a> </small> </div>");
+      row = $("<div data-id=" + hsm.id + " class='list-item clearfix'> <span class='handle'>" + (hsm.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + (hsm.hypothesis_sample_match_type.replace('HypothesisSampleMatch', '')) + " <a class='remove-hsm mdi-content-clear'></a> </small> </div>");
       chunks.push(row);
       self = this;
       row.click(function(event) {
@@ -556,7 +556,8 @@ Application.prototype.renderHypothesisSampleMatchListAt = function(container) {
       });
       results.push(row.find(".remove-hsm").click(function(event) {
         var handle;
-        return handle = $(this);
+        handle = $(this);
+        return console.log("Removal of HypothesisSampleMatch is not implemented.");
       }));
     }
     return results;
@@ -587,7 +588,7 @@ Application.prototype.renderHypothesisListAt = function(container) {
     if (hypothesis.is_decoy) {
       continue;
     }
-    row = $("<div data-id=" + hypothesis.id + " class=''> <span class='handle'>" + (hypothesis.name.replace('_', ' ')) + "</span> <small class='right'>" + (hypothesis.hypothesis_type != null ? hypothesis.hypothesis_type : '-') + " <a class='remove-hypothesis mdi-content-clear'></a></small></div>");
+    row = $("<div data-id=" + hypothesis.id + " class='list-item clearfix'> <span class='handle'>" + (hypothesis.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + (hypothesis.hypothesis_type != null ? hypothesis.hypothesis_type : '-') + " <a class='remove-hypothesis mdi-content-clear'></a> </small> </div>");
     chunks.push(row);
     row.click(function(event) {
       var handle, hypothesisId, layer;
@@ -690,7 +691,7 @@ MonosaccharideFilter = (function() {
       rule.maximum = parseInt($(this).val());
       return self.changed();
     });
-    rendered.find("#" + sanitizeName + "_include").prop("checked", rule.include).change(function() {
+    rendered.find("#" + sanitizeName + "_include").prop("checked", rule.include).click(function() {
       rule.include = $(this).prop("checked");
       return self.changed();
     });
@@ -730,7 +731,7 @@ Application.prototype.renderSampleListAt = function(container) {
     results = [];
     for (i = 0, len = ref.length; i < len; i++) {
       sample = ref[i];
-      row = $("<div data-name=" + sample.name + "> <span class='handle'>" + (sample.name.replace('_', ' ')) + "</span> <small class='right'>" + sample.sample_type + " <a class='remove-sample mdi-content-clear'></a></small></div>");
+      row = $("<div data-name=" + sample.name + " class='list-item clearfix'> <span class='handle'>" + (sample.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + sample.sample_type + " <a class='remove-sample mdi-content-clear'></a> </small> </div>");
       chunks.push(row);
       results.push(row.find(".remove-sample").click(function(event) {
         var handle;
@@ -992,7 +993,6 @@ viewPeakGroupingDatabaseSearchResults = function() {
     var handle, id;
     handle = $(this);
     currentProtein = id = handle.attr('data-target');
-    console.log(glycopeptideDetailsModal);
     $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
     return $.post('/view_database_search_results/protein_composition_view/' + id, GlycReSoft.context).success(function(doc) {
       var tabs;
@@ -1013,7 +1013,7 @@ viewPeakGroupingDatabaseSearchResults = function() {
       });
       glycopeptideDetailsModal = $('#peptide-detail-modal');
       glycopeptideTable = $("#glycopeptide-table");
-      return setupGlycopeptideCompositionTablePageHandlers(1);
+      return updateGlycopeptideCompositionTablePage(1);
     }).error(function(error) {
       return console.log(arguments);
     });
@@ -1022,8 +1022,6 @@ viewPeakGroupingDatabaseSearchResults = function() {
     var handle, id;
     handle = $(this);
     id = handle.attr('data-target');
-    console.log(glycopeptideDetailsModal);
-    console.log(id);
     return PartialSource.glycopeptideCompositionDetailsModal({
       "id": id
     }, function(doc) {
@@ -1065,11 +1063,21 @@ doZoom = function() {
 };
 
 viewTandemGlycopeptideDatabaseSearchResults = function() {
-  var downloadCSV, getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, unload, updateProteinChoice;
+  var downloadCSV, getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, updateProteinChoice;
   peptideDetailsModal = void 0;
   setup = function() {
+    var handle, last_id, last_selector;
     $('.protein-match-table tbody tr').click(updateProteinChoice);
-    updateProteinChoice.apply($('.protein-match-table tbody tr'));
+    last_id = GlycReSoft.context['protein_id'];
+    last_selector = '.protein-match-table tbody tr[data-target="' + last_id + '"]';
+    console.log(last_selector);
+    handle = $(last_selector);
+    console.log(handle);
+    if (handle.length !== 0) {
+      updateProteinChoice.apply(handle);
+    } else {
+      updateProteinChoice.apply($('.protein-match-table tbody tr'));
+    }
     $(".tooltipped").tooltip();
     return $("#save-csv-file").click(downloadCSV);
   };
@@ -1128,7 +1136,8 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
         });
         $('.indicator').addClass('indigo');
         $('.glycopeptide-match-row').click(showGlycopeptideDetailsModal);
-        return peptideDetailsModal = $('#peptide-detail-modal');
+        peptideDetailsModal = $('#peptide-detail-modal');
+        return GlycReSoft.context['protein_id'] = id;
       },
       error: function(error) {
         return console.log(arguments);
@@ -1160,9 +1169,6 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
       contentType: "application/json",
       type: 'POST'
     });
-  };
-  unload = function() {
-    return GlycReSoft.removeCurrentLayer();
   };
   return setup();
 };

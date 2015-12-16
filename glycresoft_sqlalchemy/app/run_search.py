@@ -5,19 +5,20 @@ try:
 except:
     pass
 from glycresoft_sqlalchemy.matching import matching, peak_grouping
-from glycresoft_sqlalchemy.scoring import target_decoy, score_spectrum_matches
+from glycresoft_sqlalchemy.matching.glycopeptide.pipeline import GlycopeptideFragmentMatchingPipeline
+
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser, process_data_file
 from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2.search_space_builder import (
     TheoreticalSearchSpaceBuilder)
-from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2.pooling_make_decoys import (
-    PoolingDecoySearchSpaceBuilder)
+from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2.make_decoys import (
+    BatchingDecoySearchSpaceBuilder)
 from glycresoft_sqlalchemy.spectra.decon2ls_sa import Decon2LSIsosParser
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, MS2GlycopeptideHypothesisSampleMatch, SampleRun, Hypothesis,
     MassShift, HypothesisSampleMatch)
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 
-from glycresoft_sqlalchemy.app import let
+from glycresoft_sqlalchemy.app import let, fail
 
 
 ms1_tolerance_default = matching.ms1_tolerance_default
@@ -32,7 +33,6 @@ class ParseMassShiftAction(argparse.Action):
         super(ParseMassShiftAction, self).__init__(option_strings, dest, **kwargs)
 
     def parse(self, shift):
-        print(repr(shift))
         return shift[0].replace("\-", '-'), float(shift[1].replace("\-", '-')), int(shift[2])
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -74,70 +74,25 @@ def run_ms2_glycoproteomics_search(
         builder = TheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
             database_path, source_hsm, n_processes=n_processes)
         target_hypothesis_id = builder.start()
-        decoy_builder = PoolingDecoySearchSpaceBuilder(
+        decoy_builder = BatchingDecoySearchSpaceBuilder(
             database_path, hypothesis_ids=[target_hypothesis_id], n_processes=n_processes)
         decoy_hypothesis_id = decoy_builder.start()
         decoy_hypothesis_id = decoy_hypothesis_id[0]
     elif target_hypothesis_id is None:
-        raise Exception("A Hypothesis must be provided")
+        fail("A Hypothesis must be provided if an MS1 HypothesisSampleMatch is not specified")
     if observed_ions_type == 'bupid_yaml' and observed_ions_path[-3:] != '.db':
         parser = BUPIDMSMSYamlParser(observed_ions_path, manager.bridge_address())
         observed_ions_path = parser.manager.path
         observed_ions_type = 'db'
-        sample_name = parser.sample_run_name
-    else:
-        sample_name = ','.join(x[0] for x in DatabaseManager(observed_ions_path).session().query(SampleRun.name).all())
-    if decoy_hypothesis_id is not None:
-        hsm = MS2GlycopeptideHypothesisSampleMatch(
-            target_hypothesis_id=target_hypothesis_id,
-            decoy_hypothesis_id=decoy_hypothesis_id,
-            sample_run_name=sample_name,
-            name="{hypothesis.name}_on_{sample_name}".format(hypothesis=session.query(
-                Hypothesis).get(target_hypothesis_id), sample_name=sample_name)
-        )
-        session.add(hsm)
-        session.commit()
-        hsm_id = hsm.id
-    else:
-        hsm_id = None
+    #     sample_name = parser.sample_run_name
+    # else:
+    #     sample_name = ','.join(x[0] for x in DatabaseManager(
+    #     observed_ions_path).session().query(SampleRun.name).all())
 
-    job = matching.IonMatching(
-        database_path,
-        hypothesis_id=target_hypothesis_id,
-        observed_ions_path=observed_ions_path,
-        observed_ions_type=observed_ions_type,
-        hypothesis_sample_match_id=hsm_id,
-        ms1_tolerance=ms1_tolerance,
-        ms2_tolerance=ms2_tolerance,
-        n_processes=n_processes)
-    job.start()
-
-    if decoy_hypothesis_id is None:
-        job = score_spectrum_matches.SimpleSpectrumAssignment(
-            database_path, target_hypothesis_id, hsm_id, n_processes=n_processes)
-        job.start()
-        return
-
-    job = matching.IonMatching(
-        database_path,
-        hypothesis_id=decoy_hypothesis_id,
-        observed_ions_path=observed_ions_path,
-        observed_ions_type=observed_ions_type,
-        hypothesis_sample_match_id=hsm_id,
-        ms1_tolerance=ms1_tolerance,
-        ms2_tolerance=ms2_tolerance,
-        n_processes=n_processes)
-    job.start()
-
-    job = score_spectrum_matches.SimpleSpectrumAssignment(
-        database_path, target_hypothesis_id, hsm_id, n_processes=n_processes)
-    job.start()
-
-    job = score_spectrum_matches.SimpleSpectrumAssignment(
-        database_path, decoy_hypothesis_id, hsm_id, n_processes=n_processes)
-    job.start()
-
-    job = target_decoy.TargetDecoyAnalyzer(database_path, target_hypothesis_id, decoy_hypothesis_id, hsm_id)
+    job = GlycopeptideFragmentMatchingPipeline(
+        database_path, observed_ions_path, target_hypothesis_id=target_hypothesis_id,
+        decoy_hypothesis_id=decoy_hypothesis_id, ms1_tolerance=ms1_tolerance,
+        ms2_tolerance=ms2_tolerance, n_processes=n_processes)
     job.start()
 
 
@@ -145,7 +100,9 @@ def run_ms1_search(
         database_path, observed_ions_path, hypothesis_id=None,
         observed_ions_type='isos', sample_run_id=None,
         grouping_tolerance=8e-5, search_type=None,
-        match_tolerance=1e-5, mass_shift=None, n_processes=4, **kwargs):
+        match_tolerance=1e-5, mass_shift=None, n_processes=4,
+        minimum_mass=1200, maximum_mass=15000,
+        **kwargs):
     search_type = {
         "glycopeptide": "TheoreticalGlycopeptideComposition",
         "glycan": "TheoreticalGlycanComposition"
@@ -169,7 +126,8 @@ def run_ms1_search(
         database_path, observed_ions_path, hypothesis_id, sample_run_id=1,
         grouping_error_tolerance=grouping_tolerance,
         search_type=search_type, match_tolerance=match_tolerance,
-        mass_shift_map=mass_shift_map,
+        mass_shift_map=mass_shift_map, minimum_mass=minimum_mass,
+        maximum_mass=maximum_mass,
         n_processes=n_processes, **kwargs)
     pipeline.start()
 
@@ -212,6 +170,8 @@ with let(ms1_app) as c:
     c.add_argument('--skip-grouping', action='store_true', required=False)
     c.add_argument('--skip-matching', action='store_true', required=False)
     c.add_argument('--hypothesis-sample-match-id', action='store', default=None, required=False)
+    c.add_argument('-l', '--minimum-mass', type=float, required=False, default=None)
+    c.add_argument("-u", "--maximum-mass", type=float, required=False, default=None)
     c.set_defaults(task=run_ms1_search)
 
 

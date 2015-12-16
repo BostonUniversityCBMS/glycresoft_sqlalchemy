@@ -1,3 +1,7 @@
+'''
+THIS MODULE IS DEPRECATED. SEE `sequence.PeptideSequence.stub_fragments`
+'''
+
 from .modification import Modification
 from .composition import Composition
 from .sequence import Sequence

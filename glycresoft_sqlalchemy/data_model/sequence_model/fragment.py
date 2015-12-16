@@ -50,7 +50,7 @@ class TheoreticalPeptideProductIon(IonDictFacade, Base):
             n_term=frag.flanking_amino_acids[0].name,
             c_term=frag.flanking_amino_acids[1].name,
             glycosylated=('HexNAc' in frag.mod_dict),
-            sequence_index=frag.pos,
+            sequence_index=frag.position,
             ion_series=frag.name[0]
             )
         return inst
@@ -87,7 +87,7 @@ class TheoreticalGlycopeptideStubIon(IonDictFacade, Base):
         return inst
 
 
-class HasGlycopeptideProductIons(object):
+class HasTheoreticalGlycopeptideProductIons(object):
 
     @declared_attr
     def theoretical_glycopeptide_stub_ions(cls):
@@ -145,9 +145,19 @@ class HasGlycopeptideProductIons(object):
     def glycosylated_b_ions(cls):
         return and_((cls.id == TheoreticalPeptideProductIon.theoretical_glycopeptide_id),
                     (TheoreticalPeptideProductIon.ion_series == "b"),
-                    (~TheoreticalPeptideProductIon.glycosylated))
+                    (TheoreticalPeptideProductIon.glycosylated))
+
+    @hybrid_property
+    def glycosylated_y_ions(self):
+        return self.theoretical_peptide_product_ions.filter_by(ion_series="b", glycosylated=True)
+
+    @glycosylated_y_ions.expression
+    def glycosylated_y_ions(cls):
+        return and_((cls.id == TheoreticalPeptideProductIon.theoretical_glycopeptide_id),
+                    (TheoreticalPeptideProductIon.ion_series == "y"),
+                    (TheoreticalPeptideProductIon.glycosylated))
 
 
-class Example(HasGlycopeptideProductIons, Base):
+class Example(HasTheoreticalGlycopeptideProductIons, Base):
     __tablename__ = "Example"
     id = Column(Integer, primary_key=True)

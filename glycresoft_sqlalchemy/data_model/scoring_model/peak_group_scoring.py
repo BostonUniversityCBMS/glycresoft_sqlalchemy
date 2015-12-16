@@ -1,11 +1,15 @@
+from collections import OrderedDict
 from sqlalchemy.orm import relationship
 from sqlalchemy import (
-    Numeric, Unicode, Column, Integer, ForeignKey)
+    Numeric, Unicode, Column, Integer, ForeignKey, PickleType)
 
 import numpy as np
 
 from ..base import Namespace, Base2 as Base
 from ..hypothesis_sample_match import HypothesisSampleMatch
+
+
+GENERIC_MODEL_NAME = "Generic Scoring Model"
 
 
 class PeakGroupScoringModel(Base):
@@ -16,6 +20,7 @@ class PeakGroupScoringModel(Base):
     source_hypothesis_sample_match_id = Column(Integer, ForeignKey(HypothesisSampleMatch.id), index=True)
     source = relationship(HypothesisSampleMatch)
 
+    intercept = Column(Numeric(8, asdecimal=False))
     modification_state_count = Column(Numeric(8, asdecimal=False))
     charge_state_count = Column(Numeric(8, asdecimal=False))
     total_volume = Column(Numeric(8, asdecimal=False))
@@ -64,17 +69,7 @@ class PeakGroupScoringModel(Base):
             "scan_count",
             "average_signal_to_noise"
         ]
-        return dict(zip(names, self.to_parameter_vector()[0]))
-
-    def logit(self):
-        X = self.to_parameter_vector()
-        vec = np.log(X) - np.log(1 - X)
-        return self.__class__.from_parameter_vector(vec)
-
-    def inverse_logit(self):
-        X = self.to_parameter_vector()
-        vec = np.exp(X) / (np.exp(X) + 1)
-        return self.__class__.from_parameter_vector(vec)
+        return OrderedDict(zip(names, self.to_parameter_vector()[0]))
 
     def __repr__(self):
         return "PeakGroupScoringModel(%r)" % self.to_parameter_dict()
@@ -88,10 +83,14 @@ class PeakGroupScoringModel(Base):
                 -0.000947516, 0.011453828
             ]
         ]
+        intercept = -3.69288417
         inst = cls.from_parameter_vector(legacy_model_coefficients)
-        inst.name = "Generic Scoring Model"
+        inst.intercept = intercept
+        inst.name = GENERIC_MODEL_NAME
         session.add(inst)
 
         session.commit()
+
+    GENERIC_MODEL_NAME = GENERIC_MODEL_NAME
 
 Namespace.initializer(PeakGroupScoringModel.initialize)

@@ -5,6 +5,7 @@ from pyteomics import mzid
 from sqlalchemy import func
 from glycresoft_sqlalchemy.data_model import DatabaseManager, Protein, InformedPeptide, Hypothesis, ExactMS1GlycopeptideHypothesis
 from glycresoft_sqlalchemy.structure import sequence, modification, residue
+from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder import peptide_utilities
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 logger = logging.getLogger("mzid")
 
@@ -150,12 +151,13 @@ class Parser(MzIdentML):
         return out
 
 
-def convert_dict_to_sequence(sequence_dict, session):
+def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None, **kwargs):
     # logger.debug("Input: %r, Parent: %r", sequence_dict, parent_protein)
     base_sequence = sequence_dict["PeptideSequence"]
     peptide_sequence = Sequence(sequence_dict["PeptideSequence"])
     insert_sites = []
     counter = 0
+
     if "SubstitutionModification" in sequence_dict:
         subs = sequence_dict["SubstitutionModification"]
         for sub in subs:
@@ -200,7 +202,9 @@ def convert_dict_to_sequence(sequence_dict, session):
     for evidence in evidence_list:
         if "skip" in evidence:
             continue
-        parent_protein = session.query(Protein).filter(Protein.name == evidence['accession']).first()
+        parent_protein = session.query(Protein).filter(
+            Protein.name == evidence['accession'],
+            Protein.hypothesis_id == hypothesis_id).first()
         start = evidence["start"] - 1
         end = evidence["end"]
         sequence_copy = list(base_sequence)
@@ -214,11 +218,16 @@ def convert_dict_to_sequence(sequence_dict, session):
             start = found
             end = start + len(base_sequence)
         try:
+            if enzyme is not None:
+                missed_cleavages = len(enzyme.findall(base_sequence))
+            else:
+                missed_cleavages = None
             match = InformedPeptide(
                 calculated_mass=peptide_sequence.mass,
                 base_peptide_sequence=base_sequence,
                 modified_peptide_sequence=str(peptide_sequence),
                 count_glycosylation_sites=None,
+                count_missed_cleavages=missed_cleavages,
                 start_position=start,
                 end_position=end,
                 peptide_score=score,
@@ -251,10 +260,14 @@ class Proteome(object):
         self.hypothesis_id = hypothesis_id
         self.parser = Parser(mzid_path, retrieve_refs=True, iterative=False, build_id_cache=True)
         self.hypothesis_type = hypothesis_type
+        self.enzymes = []
+        self.constant_modifications = []
 
         self._load()
 
     def _load(self):
+        self._load_enzyme()
+        self._load_modifications()
         self._load_proteins()
         self._load_spectrum_matches()
 
@@ -266,12 +279,12 @@ class Proteome(object):
         self.hypothesis_id = hypothesis.id
         for protein in self.parser.iterfind(
                 "ProteinDetectionHypothesis", retrieve_refs=True, recursive=False, iterative=True):
-            session.add(
-                Protein(
-                    name=protein['accession'],
-                    protein_sequence=protein['Seq'],
-                    glycosylation_sites=sequence.find_n_glycosylation_sequons(protein['Seq']),
-                    hypothesis_id=self.hypothesis_id))
+            p = Protein(
+                name=protein['accession'],
+                protein_sequence=protein['Seq'],
+                glycosylation_sites=sequence.find_n_glycosylation_sequons(protein['Seq']),
+                hypothesis_id=self.hypothesis_id)
+            session.add(p)
         session.commit()
 
     def _load_spectrum_matches(self):
@@ -279,9 +292,15 @@ class Proteome(object):
         counter = 0
         last = 0
         i = 0
+        try:
+            enzyme = re.compile(peptide_utilities.expasy_rules.get(self.enzymes[0]))
+        except Exception, e:
+            logger.exception("Enzyme not found.", exc_info=e)
+            enzyme = None
+
         for spectrum_identification in self.parser.iterfind(
                 "SpectrumIdentificationItem", retrieve_refs=True, iterative=True):
-            counter += convert_dict_to_sequence(spectrum_identification, session)
+            counter += convert_dict_to_sequence(spectrum_identification, session, self.hypothesis_id, enzyme=enzyme)
             i += 1
             if i % 1000 == 0:
                 logger.info("%d spectrum matches processed.", i)
@@ -304,6 +323,24 @@ class Proteome(object):
             InformedPeptide.protein_id == Protein.id,
             Protein.hypothesis_id == self.hypothesis_id).group_by(InformedPeptide.modified_peptide_sequence)
         return query
+
+    def _load_enzyme(self):
+        self.enzymes = list({e['name'].lower() for e in self.parser.iterfind(
+            "EnzymeName", retrieve_refs=True, iterative=True)})
+
+    def _load_modifications(self):
+        search_param_modifications = list(self.parser.iterfind(
+            "ModificationParams", retrieve_refs=True, iterative=True))
+        constant_modifications = []
+
+        for param in search_param_modifications:
+            for mod in param['SearchModification']:
+                name = mod['name']
+                residues = mod['residues']
+                if mod.get('fixedMod', False):
+                    identifier = "%s (%s)" % (name, ''.join(residues).replace(" ", ""))
+                    constant_modifications.append(identifier)
+        self.constant_modifications = constant_modifications
 
 
 def protein_names_taskmain():

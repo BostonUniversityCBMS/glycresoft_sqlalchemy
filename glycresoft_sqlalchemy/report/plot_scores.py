@@ -70,6 +70,7 @@ app.add_argument("database_path", help="path to the database file to analyze")
 app.add_argument("-e", "--hypothesis-id", default=None, help="The hypothesis to analyze.")
 app.add_argument("-o", "--out", default=None, help="Where to save the result")
 
+
 def taskmain():
     args = app.parse_args()
     session = DatabaseManager(args.database_path).session()

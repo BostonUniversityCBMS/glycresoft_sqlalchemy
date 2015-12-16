@@ -11,13 +11,14 @@ class Application extends ActionLayerManager
         @settings = {}
         @tasks = {}
         @sideNav = $('.side-nav')
-
+        @colors = new ColorManager()
         self = this
         @eventStream = new EventSource('/stream')
         
         @handleMessage 'update', (data) =>
             Materialize.toast data.replace(/"/g, ''), 4000
             return
+
         @handleMessage 'task-queued', (data) =>
             self.tasks[data.id] =
                 'id': data.id
@@ -45,12 +46,16 @@ class Application extends ActionLayerManager
         @handleMessage 'new-sample', (data) =>
             @samples[data.id] = data
             @emit "render-samples"
-        @handleMessage  'new-hypothesis', (data) =>
+        @handleMessage 'new-hypothesis', (data) =>
             @hypotheses[data.id] = data
             @emit "render-hypotheses"
         @handleMessage 'new-hypothesis-sample-match', (data) =>
             @hypothesisSampleMatches[data.id] = data
             @emit "render-hypothesis-sample-matches"
+
+        @on "layer-change", (data) =>
+            @colors.update()
+
 
     runInitializers: ->
         for initializer in Application.initializers
@@ -86,10 +91,9 @@ class Application extends ActionLayerManager
             $.get "/internal/log/" + id, (message) => self.displayMessageModal(message)
 
         taskListContainer.html _.map(@tasks, renderTask).join('')
-        contextMenu(taskListContainer.find('li'), {"View Log": doubleClickTask})
+        taskListContainer.find('li').map (i, li) -> contextMenu li, {"View Log": doubleClickTask}
         taskListContainer.find('li').click clickTask
         taskListContainer.find("li").dblclick doubleClickTask
-
 
     handleMessage: (messageType, handler) ->
         @eventStream.addEventListener messageType, (event) ->
@@ -139,6 +143,7 @@ class Application extends ActionLayerManager
         DataSource.hypothesisSampleMatches (d) =>
             @hypothesisSampleMatches = d
             @emit "render-hypothesis-sample-matches"
+        @colors.update()
 
     downloadFile: (filePath) ->
         window.location = "/internal/file_download/" + btoa(filePath)

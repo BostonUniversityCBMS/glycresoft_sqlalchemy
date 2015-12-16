@@ -1,4 +1,13 @@
-var viewGlycanCompositionPeakGroupingDatabaseSearchResults;
+var doZoom, viewGlycanCompositionPeakGroupingDatabaseSearchResults;
+
+doZoom = function(selector) {
+  var svg, zoom;
+  svg = d3.select(selector);
+  zoom = function() {
+    return svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+  };
+  return d3.select(selector).call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom));
+};
 
 viewGlycanCompositionPeakGroupingDatabaseSearchResults = function() {
   var currentPage, downloadCSV, glycanDetailsModal, glycanTable, setup, setupGlycanCompositionTablePageHandlers, showGlycanCompositionDetailsModal, unload, updateGlycanCompositionTablePage, updateView;

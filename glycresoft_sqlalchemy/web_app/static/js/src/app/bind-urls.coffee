@@ -27,12 +27,14 @@ ActionBook =
         method: "post"
 
 makeAPIGet = (url) -> (callback) -> $.get(url).success(callback)
+makeParameterizedAPIGet = (url) -> (params, callback) -> $.get(url.format(params)).success(callback)
 
 DataSource =
     hypotheses: makeAPIGet "/api/hypotheses"
     samples: makeAPIGet "/api/samples"
     hypothesisSampleMatches: makeAPIGet "/api/hypothesis_sample_matches"
     tasks: makeAPIGet "/api/tasks"
+    glycopeptideMatches: makeAPIGet "/api/glycopeptide_matches"
 
 makePartialGet = (url, method) -> (parameters, callback) -> $[method](url.format(parameters)).success(callback)
 

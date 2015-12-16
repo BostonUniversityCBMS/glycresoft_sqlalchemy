@@ -1,5 +1,4 @@
 
-
 viewPeakGroupingDatabaseSearchResults = ->
     glycopeptideDetailsModal = undefined
     glycopeptideTable = undefined
@@ -12,7 +11,10 @@ viewPeakGroupingDatabaseSearchResults = ->
         $("#save-csv-file").click downloadCSV
 
     setupGlycopeptideCompositionTablePageHandlers = (page=1) ->
-        $('.glycopeptide-match-row').click(showGlycopeptideCompositionDetailsModal)
+        $('.glycopeptide-match-row').click ->
+            textSelection = window.getSelection()
+            if not textSelection.toString()
+                showGlycopeptideCompositionDetailsModal.apply @
         $(':not(.disabled) .next-page').click(-> updateGlycopeptideCompositionTablePage(page + 1))
         $(':not(.disabled) .previous-page').click(-> updateGlycopeptideCompositionTablePage(page - 1))
         $('.pagination li :not(.active)').click ->
@@ -58,10 +60,11 @@ viewPeakGroupingDatabaseSearchResults = ->
     showGlycopeptideCompositionDetailsModal = ->
         handle = $(this)
         id = handle.attr('data-target')
-
+        console.log "ID #{id}, Open Modal"
         PartialSource.glycopeptideCompositionDetailsModal {"id": id}, (doc) ->
             glycopeptideDetailsModal.find('.modal-content').html doc
             $(".lean-overlay").remove()
+            console.log "Opening Modal"
             glycopeptideDetailsModal.openModal()
 
     unload = ->

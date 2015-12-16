@@ -123,6 +123,19 @@ class JointPeakGroupMatch(Base, HasPeakChromatogramData, PeakGroupBase, PeakGrou
             states.append((group.mass_shift, group.mass_shift_count))
         return states
 
+    def as_feature_vector(self):
+        names = [
+            "charge_state_count",
+            "scan_density",
+            "modification_state_count",
+            "total_volume",
+            "a_peak_intensity_error",
+            "centroid_scan_error",
+            "scan_count",
+            "average_signal_to_noise"
+        ]
+        return [getattr(self, n) for n in names]
+
     def __repr__(self):
         if self.ms1_score is None:
             ms1_score = ""

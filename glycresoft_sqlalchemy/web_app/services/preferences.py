@@ -5,7 +5,9 @@ app_config = Blueprint("preferences", __name__)
 
 
 default_preferences = {
-    "minimum_ms2_score": 0.4
+    "minimum_ms2_score": 0.4,
+    "minimum_ms1_score": 0.4,
+    "color_palette": "NGlycanCompositionColorizer"
 }
 
 

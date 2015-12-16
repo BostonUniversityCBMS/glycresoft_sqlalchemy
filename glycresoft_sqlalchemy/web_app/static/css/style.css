@@ -43,11 +43,9 @@ Form Elements
     height: 100px;
 }
 
-
 .help-text{
     vertical-align: bottom;
 }
-
 
 .add-sample{
     cursor: hand;
@@ -63,8 +61,6 @@ Sequence Highlights
     font-weight: 900;
     color: maroon;
 }
-
-
 
 /*
 
@@ -104,8 +100,23 @@ Mass Shift Input
 .mass-shift-row {
     margin-bottom: 4px !important;
 }
+
 .mass-shift-input-table{
     margin-top: 11px;
 }
 
 
+/*
+
+Monosaccharide Filters
+
+*/
+
+#monosaccharide-filters {
+    margin-bottom: -20px;
+}
+
+.monosaccharide-filter {
+    display: inline-block !important;
+    width: 130px !important;
+}

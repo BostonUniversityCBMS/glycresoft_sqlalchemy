@@ -52,7 +52,7 @@ modifications:{modifications}""".format(seq2=self.seq.get_sequence(), **self.__d
             glycosylation_sites = set(self.candidate_sites).difference(common_sites)
 
             if(len(common_sites) != sum(map(len, mod_sites)) or
-              (required_glycosylation_sites > len(glycosylation_sites))):
+               (required_glycosylation_sites > len(glycosylation_sites))):
                 # Invalid Configuration, can't place all Glycans
                 continue
 

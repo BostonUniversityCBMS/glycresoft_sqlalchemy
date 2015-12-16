@@ -29,14 +29,17 @@ query_oven = bakery()
 
 
 def yield_ids(session, theoretical_type, hypothesis_id, chunk_size=100, filter=lambda q: q):
-    base_query = filter(session.query(theoretical_type.id).filter(theoretical_type.from_hypothesis(hypothesis_id)))
-    chunk = []
-
-    for item in base_query:
-        chunk.append(item)
-        if len(chunk) == chunk_size:
-            yield chunk
-    yield chunk
+    base_query = filter(session.query(theoretical_type.id).filter(
+        theoretical_type.from_hypothesis(hypothesis_id))).all()
+    last = 0
+    final = len(base_query)
+    while 1:
+        next_chunk = base_query[last:(last + chunk_size)]
+        if last <= final:
+            yield next_chunk
+            last += chunk_size
+        else:
+            break
 
 
 def batch_match_peak_group(search_ids, search_type, database_manager, observed_ions_manager,
@@ -47,7 +50,6 @@ def batch_match_peak_group(search_ids, search_type, database_manager, observed_i
     try:
         for search_id in search_ids:
             search_target = session.query(search_type).get(search_id)
-
             base_mass = search_target.calculated_mass
             matches = []
             for mass_shift, count_range in mass_shift_map.items():
@@ -89,14 +91,12 @@ def batch_match_peak_group(search_ids, search_type, database_manager, observed_i
                 params.append(case)
         session.bulk_insert_mappings(PeakGroupMatch, params)
         session.commit()
-        print len(params)
-        return len(params)
     except Exception, e:
         logger.exception("An exception occurred in match_peak_group, %r", locals(), exc_info=e)
         raise e
     finally:
         session.close()
-        return len(params)
+        return len(search_ids)
 
 
 def match_peak_group(search_id, search_type, database_manager, observed_ions_manager,
@@ -253,6 +253,7 @@ class PeakGroupMatching(PipelineModule):
 
         session.bulk_insert_mappings(PeakGroupMatch, accumulator)
         session.commit()
+        logger.info("Search Complete.")
         toggler.create()
         session.close()
 
@@ -262,7 +263,7 @@ class BatchPeakGroupMatching(PeakGroupMatching):
     def __init__(self, *args, **kwargs):
         super(BatchPeakGroupMatching, self).__init__(*args, **kwargs)
 
-    def stream_ids(self, chunk_size=100):
+    def stream_ids(self, chunk_size=200):
         session = self.manager.session()
         try:
             for gids in yield_ids(session, self.search_type, self.hypothesis_id, chunk_size=chunk_size):
@@ -299,15 +300,16 @@ class BatchPeakGroupMatching(PeakGroupMatching):
             pool = multiprocessing.Pool(self.n_processes)
             for res in pool.imap_unordered(task_fn, self.stream_ids()):
                 counter += res
-                if counter > last + step == 0:
+                if counter > (last + step):
                     last += step
                     logger.info("%d masses searched", counter)
 
         else:
             for res in itertools.imap(task_fn, self.stream_ids()):
                 counter += res
-                if counter > last + step == 0:
+                if counter > (last + step):
                     last += step
                     logger.info("%d masses searched", counter)
+        logger.info("Search Complete.")
         toggler.create()
         session.close()

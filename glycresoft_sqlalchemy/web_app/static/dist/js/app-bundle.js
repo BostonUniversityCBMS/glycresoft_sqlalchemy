@@ -81,6 +81,7 @@ Application = (function(superClass) {
     this.settings = {};
     this.tasks = {};
     this.sideNav = $('.side-nav');
+    this.colors = new ColorManager();
     self = this;
     this.eventStream = new EventSource('/stream');
     this.handleMessage('update', (function(_this) {
@@ -142,14 +143,19 @@ Application = (function(superClass) {
         return _this.emit("render-hypothesis-sample-matches");
       };
     })(this));
+    this.on("layer-change", (function(_this) {
+      return function(data) {
+        return _this.colors.update();
+      };
+    })(this));
   }
 
   Application.prototype.runInitializers = function() {
-    var i, initializer, len, ref, results;
+    var initializer, j, len, ref, results;
     ref = Application.initializers;
     results = [];
-    for (i = 0, len = ref.length; i < len; i++) {
-      initializer = ref[i];
+    for (j = 0, len = ref.length; j < len; j++) {
+      initializer = ref[j];
       results.push(initializer.apply(this, null));
     }
     return results;
@@ -202,8 +208,10 @@ Application = (function(superClass) {
       })(this));
     };
     taskListContainer.html(_.map(this.tasks, renderTask).join(''));
-    contextMenu(taskListContainer.find('li'), {
-      "View Log": doubleClickTask
+    taskListContainer.find('li').map(function(i, li) {
+      return contextMenu(li, {
+        "View Log": doubleClickTask
+      });
     });
     taskListContainer.find('li').click(clickTask);
     return taskListContainer.find("li").dblclick(doubleClickTask);
@@ -244,11 +252,11 @@ Application = (function(superClass) {
     }, function() {
       return this.handleMessage("files-to-download", (function(_this) {
         return function(data) {
-          var file, i, len, ref, results;
+          var file, j, len, ref, results;
           ref = data.files;
           results = [];
-          for (i = 0, len = ref.length; i < len; i++) {
-            file = ref[i];
+          for (j = 0, len = ref.length; j < len; j++) {
+            file = ref[j];
             results.push(_this.downloadFile(file));
           }
           return results;
@@ -281,12 +289,13 @@ Application = (function(superClass) {
         return _this.emit("render-samples");
       };
     })(this));
-    return DataSource.hypothesisSampleMatches((function(_this) {
+    DataSource.hypothesisSampleMatches((function(_this) {
       return function(d) {
         _this.hypothesisSampleMatches = d;
         return _this.emit("render-hypothesis-sample-matches");
       };
     })(this));
+    return this.colors.update();
   };
 
   Application.prototype.downloadFile = function(filePath) {
@@ -534,13 +543,13 @@ Application.prototype.renderHypothesisSampleMatchListAt = function(container) {
   template = (function() {
     var i, len, ref, results;
     ref = _.sortBy(_.values(this.hypothesisSampleMatches), function(o) {
-      return o.name;
+      return o.id;
     });
     results = [];
     for (i = 0, len = ref.length; i < len; i++) {
       hsm = ref[i];
       hsm.name = hsm.name != null ? hsm.name : "HypothesisSampleMatch:" + hsm.target_hypothesis.name + "@" + hsm.sample_run_name;
-      row = $("<div data-id=" + hsm.id + " class='list-item clearfix'> <span class='handle'>" + (hsm.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + (hsm.hypothesis_sample_match_type.replace('HypothesisSampleMatch', '')) + " <a class='remove-hsm mdi-content-clear'></a> </small> </div>");
+      row = $("<div data-id=" + hsm.id + " class='list-item clearfix'> <span class='handle'>" + hsm.id + ". " + (hsm.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + (hsm.hypothesis_sample_match_type.replace('HypothesisSampleMatch', '')) + " <a class='remove-hsm mdi-content-clear'></a> </small> </div>");
       chunks.push(row);
       self = this;
       row.click(function(event) {
@@ -582,14 +591,14 @@ Application.prototype.renderHypothesisListAt = function(container) {
   template = '';
   self = this;
   ref = _.sortBy(_.values(this.hypotheses), function(o) {
-    return o.name;
+    return o.id;
   });
   for (i = 0, len = ref.length; i < len; i++) {
     hypothesis = ref[i];
     if (hypothesis.is_decoy) {
       continue;
     }
-    row = $("<div data-id=" + hypothesis.id + " class='list-item clearfix'> <span class='handle'>" + (hypothesis.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + (hypothesis.hypothesis_type != null ? hypothesis.hypothesis_type : '-') + " <a class='remove-hypothesis mdi-content-clear'></a> </small> </div>");
+    row = $("<div data-id=" + hypothesis.id + " class='list-item clearfix'> <span class='handle'>" + hypothesis.id + ". " + (hypothesis.name.replace('_', ' ')) + "</span> <small class='right' style='display:inherit'> " + (hypothesis.hypothesis_type != null ? hypothesis.hypothesis_type : '-') + " <a class='remove-hypothesis mdi-content-clear'></a> </small> </div>");
     chunks.push(row);
     row.click(function(event) {
       var handle, hypothesisId, layer;
@@ -681,7 +690,7 @@ MonosaccharideFilter = (function() {
     }
     residue.name = residue;
     residue.sanitizeName = sanitizeName = residue.replace(/[\(\),]/g, "_");
-    template = "<span class=\"col s2\" style='display:inline-block; width: 130px;' data-name='" + residue + "'>\n    <p style='margin: 0px; margin-bottom: -10px;'>\n        <input type=\"checkbox\" id=\"" + sanitizeName + "_include\" name=\"" + sanitizeName + "_include\"/>\n        <label for=\"" + sanitizeName + "_include\"><b>" + residue + "</b></label>\n    </p>\n    <p>\n        <input id=\"" + sanitizeName + "_min\" type=\"number\" placeholder=\"Minimum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.minimum + "\" max=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_min\"/> : \n        <input id=\"" + sanitizeName + "_max\" type=\"number\" placeholder=\"Maximum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_max\"/>\n    </p>\n</span>";
+    template = "<span class=\"col s2 monosaccharide-filter\" data-name='" + residue + "'>\n    <p style='margin: 0px; margin-bottom: -10px;'>\n        <input type=\"checkbox\" id=\"" + sanitizeName + "_include\" name=\"" + sanitizeName + "_include\"/>\n        <label for=\"" + sanitizeName + "_include\"><b>" + residue + "</b></label>\n    </p>\n    <p>\n        <input id=\"" + sanitizeName + "_min\" type=\"number\" placeholder=\"Minimum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.minimum + "\" max=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_min\"/> : \n        <input id=\"" + sanitizeName + "_max\" type=\"number\" placeholder=\"Maximum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_max\"/>\n    </p>\n</span>";
     self = this;
     rendered = $(template);
     rendered.find("#" + sanitizeName + "_min").change(function() {
@@ -727,7 +736,7 @@ Application.prototype.renderSampleListAt = function(container) {
   template = (function() {
     var i, len, ref, results;
     ref = _.sortBy(_.values(this.samples), function(o) {
-      return o.name;
+      return o.id;
     });
     results = [];
     for (i = 0, len = ref.length; i < len; i++) {
@@ -804,7 +813,16 @@ viewGlycanCompositionHypothesis = function(hypothesisId) {
 
 //# sourceMappingURL=view-glycan-composition-hypothesis.js.map
 
-var viewGlycanCompositionPeakGroupingDatabaseSearchResults;
+var doZoom, viewGlycanCompositionPeakGroupingDatabaseSearchResults;
+
+doZoom = function(selector) {
+  var svg, zoom;
+  svg = d3.select(selector);
+  zoom = function() {
+    return svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+  };
+  return d3.select(selector).call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom));
+};
 
 viewGlycanCompositionPeakGroupingDatabaseSearchResults = function() {
   var currentPage, downloadCSV, glycanDetailsModal, glycanTable, setup, setupGlycanCompositionTablePageHandlers, showGlycanCompositionDetailsModal, unload, updateGlycanCompositionTablePage, updateView;
@@ -1066,7 +1084,13 @@ viewPeakGroupingDatabaseSearchResults = function() {
     if (page == null) {
       page = 1;
     }
-    $('.glycopeptide-match-row').click(showGlycopeptideCompositionDetailsModal);
+    $('.glycopeptide-match-row').click(function() {
+      var textSelection;
+      textSelection = window.getSelection();
+      if (!textSelection.toString()) {
+        return showGlycopeptideCompositionDetailsModal.apply(this);
+      }
+    });
     $(':not(.disabled) .next-page').click(function() {
       return updateGlycopeptideCompositionTablePage(page + 1);
     });
@@ -1128,11 +1152,13 @@ viewPeakGroupingDatabaseSearchResults = function() {
     var handle, id;
     handle = $(this);
     id = handle.attr('data-target');
+    console.log("ID " + id + ", Open Modal");
     return PartialSource.glycopeptideCompositionDetailsModal({
       "id": id
     }, function(doc) {
       glycopeptideDetailsModal.find('.modal-content').html(doc);
       $(".lean-overlay").remove();
+      console.log("Opening Modal");
       return glycopeptideDetailsModal.openModal();
     });
   };
@@ -1157,16 +1183,7 @@ viewPeakGroupingDatabaseSearchResults = function() {
 
 //# sourceMappingURL=view-peak-grouping-database-search.js.map
 
-var doZoom, viewTandemGlycopeptideDatabaseSearchResults;
-
-doZoom = function() {
-  var svg, zoom;
-  svg = d3.select("svg g");
-  zoom = function() {
-    return svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-  };
-  return d3.select("svg g").call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom));
-};
+var viewTandemGlycopeptideDatabaseSearchResults;
 
 viewTandemGlycopeptideDatabaseSearchResults = function() {
   var downloadCSV, getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, updateProteinChoice;
@@ -1182,7 +1199,7 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
     if (handle.length !== 0) {
       updateProteinChoice.apply(handle);
     } else {
-      updateProteinChoice.apply($('.protein-match-table tbody tr'));
+      updateProteinChoice.apply($($('.protein-match-table tbody tr')[0]));
     }
     $(".tooltipped").tooltip();
     return $("#save-csv-file").click(downloadCSV);
@@ -1205,9 +1222,9 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
   };
   glycopeptideTooltipCallback = function(handle) {
     var template;
-    template = '<div> <span><b>MS2 Score:</b> {ms2-score}</span><br> <span><b>q-value:</b> {q-value}</span><br> <b>{sequence}</b> </div>';
+    template = '<div> <span><b>MS2 Score:</b> {ms2-score}</span><br> <span><b>q-value:</b> {q-value}</span><br> <span>{sequence}</span> </div>';
     return template.format({
-      'sequence': handle.attr('data-sequence'),
+      'sequence': new PeptideSequence(handle.attr('data-sequence')).format(GlycReSoft.colors),
       'ms2-score': handle.attr('data-ms2-score'),
       'q-value': handle.attr('data-q-value')
     });
@@ -1227,6 +1244,8 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
   updateProteinChoice = function() {
     var handle, id;
     handle = $(this);
+    $('.active-row').removeClass("active-row");
+    handle.addClass("active-row");
     id = handle.attr('data-target');
     $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
     return $.ajax('/view_database_search_results/protein_view/' + id, {
@@ -1253,7 +1272,13 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
           return GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1);
         });
         $('.indicator').addClass('indigo');
-        $('.glycopeptide-match-row').click(showGlycopeptideDetailsModal);
+        $('.glycopeptide-match-row').click(function() {
+          var textSelection;
+          textSelection = window.getSelection();
+          if (!textSelection.toString()) {
+            return showGlycopeptideDetailsModal.apply(this);
+          }
+        });
         peptideDetailsModal = $('#peptide-detail-modal');
         return GlycReSoft.context['protein_id'] = id;
       },

@@ -1,4 +1,4 @@
-<div style='overflow-x: scroll;width: 100%;'>
+<div class='table-container'>
 <table class='bordered display-table' style='width: 100%;'>
     <thead>
         <tr>
@@ -25,7 +25,7 @@
         {% set theoretical = gpm.theoretical_match %}  
         <tr class='glycan-match-row' data-target="{{gpm.id}}">
             <td>{{"%0.4f"|format(gpm.weighted_monoisotopic_mass)}}</td>
-            <td class='very-wide'>{{theoretical.composition}}</td>
+            <td class='very-wide'>{{theoretical.composition|glycan_composition_string}}</td>
             <td class='wide'>
             {% for modification, count in gpm.modification_states() %}
                 {% if modification is none %}

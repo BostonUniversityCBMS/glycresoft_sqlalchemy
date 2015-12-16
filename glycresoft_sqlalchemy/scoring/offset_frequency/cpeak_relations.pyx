@@ -196,6 +196,27 @@ cdef class FittedFeature(object):
     def __call__(self, *args, **kwargs):
         return self.feature(*args, **kwargs)
 
+    def as_records(self):
+        for key in self.distribution:
+            if self.feature.ion_type_totals[key] == 0:
+                continue
+            yield {
+                "feature": self.feature.name,
+                "kind": key,
+                "probability": self.probability(key),
+                "posterior": self.posterior(key),
+                "intensity_ratio": self.feature.intensity_ratio,
+                "from_charge": self.feature.from_charge,
+                "to_charge": self.feature.to_charge,
+                "min_peak_rank": self.feature.min_peak_rank,
+                "max_peak_rank": self.feature.max_peak_rank,
+                "glycan_peptide_ratio": self.feature.glycan_peptide_ratio,
+                "peptide_mass_rank": self.feature.peptide_mass_rank,
+                "match_count": self.feature.ion_type_matches[key],
+                "total_count": self.feature.ion_type_totals[key]
+            }
+
+
 
 cdef object PeakRelation__new__ = PeakRelation.__new__
 

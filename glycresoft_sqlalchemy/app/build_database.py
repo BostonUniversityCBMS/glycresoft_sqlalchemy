@@ -4,8 +4,8 @@ from os import path
 
 from glycresoft_sqlalchemy.proteomics import mzid_sa
 from glycresoft_sqlalchemy.search_space_builder import (
-    pooling_search_space_builder,
-    pooling_make_decoys,
+    search_space_builder,
+    make_decoys,
     exact_search_space_builder,
     naive_glycopeptide_hypothesis,
     integrated_omics)
@@ -53,20 +53,18 @@ def build_informed_ms1_glycopeptide(mzid_path, database_path, site_list_file, gl
     job.start()
 
 
-
 def build_naive_ms2_glycopeptide(database_path, hypothesis_sample_match_id, **kwargs):
     kwargs.setdefault("n_processes", 4)
-    job = pooling_search_space_builder.PoolingTheoreticalSearchSpaceBuilder.from_hypothesis(
+    job = search_space_builder.BatchingTheoreticalSearchSpaceBuilder.from_hypothesis(
         database_path, hypothesis_sample_match_id, **kwargs)
     target_hypothesis_id = job.start()
-    decoy_job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(
+    decoy_job = make_decoys.BatchingDecoySearchSpaceBuilder(
         database_path,
         hypothesis_ids=[target_hypothesis_id],
         prefix_len=kwargs.get("prefix_len", 0),
         suffix_len=kwargs.get("suffix_len", 1),
         decoy_type=kwargs.get("decoy_type", 0),
-        n_processes=kwargs.get('n_processes', 4),
-        commit_checkpoint=commit_checkpoint)
+        n_processes=kwargs.get('n_processes', 4))
     decoy_hypothesis_id, = decoy_job.start()
     print target_hypothesis_id, decoy_hypothesis_id
 
@@ -76,14 +74,13 @@ def build_informed_ms2_glycopeptide(database_path, hypothesis_sample_match_id, *
     job = exact_search_space_builder.ExactSearchSpaceBuilder.from_hypothesis(
         database_path, hypothesis_sample_match_id, **kwargs)
     target_hypothesis_id = job.start()
-    decoy_job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(
+    decoy_job = make_decoys.BatchingDecoySearchSpaceBuilder(
         database_path,
         hypothesis_ids=[target_hypothesis_id],
         prefix_len=kwargs.get("prefix_len", 0),
         suffix_len=kwargs.get("suffix_len", 1),
         decoy_type=kwargs.get("decoy_type", 0),
-        n_processes=kwargs.get('n_processes', 4),
-        commit_checkpoint=commit_checkpoint)
+        n_processes=kwargs.get('n_processes', 4))
     decoy_hypothesis_id, = decoy_job.start()
     print target_hypothesis_id, decoy_hypothesis_id
 

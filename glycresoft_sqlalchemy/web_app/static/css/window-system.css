@@ -1,0 +1,93 @@
+/*
+
+Layer System
+
+*/
+
+.dismiss-layer {
+    float: right;
+    cursor: hand;
+    margin-top: 10px;
+}
+
+/*
+
+Modals
+
+*/
+
+.modal.wide {
+    width: 85% !important;
+    height: 80% !important;
+}
+
+.modal .row{
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.lean-overlay {
+    visibility: none !important;
+}
+
+/*
+
+Tiny Notification
+
+*/
+
+.notification-container {
+    position: absolute;
+    display: inline-block;
+    width: 200px;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid grey;
+    border-radius: 4px;
+    opacity: 0.8;
+
+}
+
+.notification-container .dismiss-container {
+    height: 0.1px;
+}
+
+.notification-container .dismiss-notification{
+    float: right;
+    z-index: 2000;
+}
+
+.notification-container .notification-content{
+    text-align: left;
+    margin-left: 40px;
+}
+
+/*
+
+Context Menu
+
+*/
+.context-menu {
+    display: none;
+    z-index: 1000;
+    position: absolute;
+    overflow: hidden;
+    border: 1px solid #CCC;
+    white-space: nowrap;
+    font-family: sans-serif;
+    background: #FFF;
+    color: #333;
+    border-radius: 2px;
+    padding: 0;
+}
+
+
+.context-menu li {
+    padding: 8px 12px;
+    cursor: pointer;
+    list-style-type: none;
+}
+
+.context-menu li:hover {
+    background-color: #DEF;
+}

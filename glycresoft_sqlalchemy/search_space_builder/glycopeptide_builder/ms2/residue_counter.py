@@ -8,7 +8,6 @@ from glycresoft_sqlalchemy.structure import sequence_composition
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
     HypothesisSampleMatch, PeakGroupMatch, Protein,
-    TheoreticalGlycopeptideGlycanAssociation,
     TheoreticalGlycopeptide, GlycopeptideMatch)
 
 Sequence = sequence.Sequence

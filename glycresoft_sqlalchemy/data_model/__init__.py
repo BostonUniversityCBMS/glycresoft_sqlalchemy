@@ -39,6 +39,12 @@ from .sequence_model.peptide import(
     TheoreticalGlycopeptideComposition, InformedTheoreticalGlycopeptideComposition,
     TheoreticalGlycopeptide, HasMS1Information, HasTheoreticalFragments, Protein)
 
+
+from .sequence_model.fragment import(
+    TheoreticalPeptideProductIon, TheoreticalGlycopeptideStubIon,
+    HasTheoreticalGlycopeptideProductIons)
+
+
 from .search_result_model.sequence_identification import (
     GlycopeptideMatch, GlycopeptideSpectrumMatch, GlycopeptideSpectrumMatchScore,
     GlycanStructureMatch, GlycanSpectrumMatch, SpectrumMatchBase)
@@ -56,7 +62,7 @@ from .observed_ions import (
 from .glycomics import (
     GlycanBase, with_glycan_composition, has_glycan_composition, has_glycan_composition_listener,
     TheoreticalGlycanComposition, TheoreticalGlycanCombination, TheoreticalGlycanStructure,
-    StructureMotif, TheoreticalGlycanStructureToPeakGroupMatch, TheoreticalGlycanStructureToMotifTable,
+    StructureMotif, TheoreticalGlycanStructureToMotifTable,
     TheoreticalGlycanCombinationTheoreticalGlycanComposition, MassShift, glycoct_parser, FrozenGlycanComposition)
 
 from .json_type import (

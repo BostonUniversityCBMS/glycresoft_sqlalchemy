@@ -20,6 +20,7 @@ contextMenu = function(target, options, callback) {
     }
     $(".context-menu li").click(function(e) {
       handle = $(this);
+      console.log(this, target);
       action = options[handle.attr("data-action")];
       return action.apply(target);
     });

@@ -9,7 +9,7 @@ except:
 
 from glycresoft_sqlalchemy import data_model
 from glycresoft_sqlalchemy.search_space_builder import naive_glycopeptide_hypothesis
-from glycresoft_sqlalchemy.search_space_builder import pooling_search_space_builder, pooling_make_decoys
+from glycresoft_sqlalchemy.search_space_builder import search_space_builder, pooling_make_decoys
 from glycresoft_sqlalchemy.matching import matching
 from glycresoft_sqlalchemy.matching.glycopeptide.pipeline import GlycopeptideFragmentMatchingPipeline
 from glycresoft_sqlalchemy.scoring import target_decoy, score_spectrum_matches
@@ -33,7 +33,7 @@ def test_main():
     r"glycresoft-database-search ms1 -n 6 -i datafiles\20140918_01_isos.db datafiles\naive_glycopeptide.db 1"
     r" -p db -g 2e-5 --skip-grouping")
     assert ec == 0
-    job = pooling_search_space_builder.PoolingTheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
+    job = search_space_builder.BatchingTheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
         "datafiles/naive_glycopeptide.db", 1, 6)
     hypothesis_id = job.start()
     job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id])

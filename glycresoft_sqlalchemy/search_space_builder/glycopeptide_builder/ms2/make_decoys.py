@@ -10,7 +10,7 @@ from glycresoft_sqlalchemy.structure.parser import sequence_tokenizer_respect_se
 from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide, Hypothesis, MS2GlycopeptideHypothesis, Protein
 from glycresoft_sqlalchemy.data_model import PipelineModule
 
-from ..utils import fragments
+from ..utils import fragments, WorkItemCollectionFlat
 
 from glypy.utils.enum import Enum
 
@@ -158,7 +158,7 @@ class DecoyType(Enum):
 
 class DecoySearchSpaceBuilder(PipelineModule):
     '''
-    A pipeline step that builds 
+    A pipeline step that builds
     '''
 
     HypothesisType = MS2GlycopeptideHypothesis
@@ -242,4 +242,106 @@ class DecoySearchSpaceBuilder(PipelineModule):
                 cntr += res
                 if cntr % 1000 == 0:
                     logger.info("%d Decoys Complete." % cntr)
+        return self.decoy_hypothesis_ids
+
+
+def batch_make_decoys(theoretical_ids, database_manager, prefix_len=0, suffix_len=1,
+                      protein_decoy_map=None, permute_fn=reverse_preserve_sequon):
+    session = database_manager()
+    working_set = WorkItemCollectionFlat(session)
+    try:
+        for theoretical_id in theoretical_ids:
+            theoretical_sequence = session.query(TheoreticalGlycopeptide).get(theoretical_id)
+
+            if protein_decoy_map is None:
+                protein_decoy_map = {}
+
+            permuted_sequence = permute_fn(theoretical_sequence.glycopeptide_sequence,
+                                           prefix_len=prefix_len, suffix_len=suffix_len)
+
+            (oxonium_ions, bare_b_ions, bare_y_ions, glycosylated_b_ions,
+                glycosylated_y_ions, stub_ions) = fragments(permuted_sequence)
+
+            decoy = TheoreticalGlycopeptide(
+                ms1_score=theoretical_sequence.ms1_score,
+                observed_mass=theoretical_sequence.observed_mass,
+                calculated_mass=theoretical_sequence.calculated_mass,
+                ppm_error=theoretical_sequence.ppm_error,
+                volume=theoretical_sequence.volume,
+
+                count_glycosylation_sites=theoretical_sequence.count_glycosylation_sites,
+                count_missed_cleavages=theoretical_sequence.count_missed_cleavages,
+                start_position=theoretical_sequence.start_position,
+                end_position=theoretical_sequence.end_position,
+
+                base_peptide_sequence=strip_modifications(str(permuted_sequence)),
+                modified_peptide_sequence=str(permuted_sequence),
+                glycopeptide_sequence=str(permuted_sequence),
+                peptide_modifications=theoretical_sequence.peptide_modifications,
+                sequence_length=len(permuted_sequence),
+
+                glycan_mass=theoretical_sequence.glycan_mass,
+                glycan_composition_str=theoretical_sequence.glycan_composition_str,
+
+                bare_b_ions=bare_b_ions,
+                bare_y_ions=bare_y_ions,
+                oxonium_ions=oxonium_ions,
+                stub_ions=stub_ions,
+                glycosylated_b_ions=glycosylated_b_ions,
+                glycosylated_y_ions=glycosylated_y_ions,
+
+                protein_id=protein_decoy_map[theoretical_sequence.protein_id]
+            )
+            working_set.add(decoy)
+        return working_set.commit()
+    except Exception, e:
+        logger.exception("%r", locals(), exc_info=e)
+        raise e
+    finally:
+        session.close()
+
+
+class BatchingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
+    def stream_theoretical_glycopeptides(self, chunk_size=100):
+        session = self.manager.session()
+        i = 0
+        batch = []
+        for hypothesis_id in self.hypothesis_ids:
+            for name, protein_id in session.query(
+                    Protein.name, Protein.id).filter(Protein.hypothesis_id == hypothesis_id):
+                logger.info("Streaming %s (%d)", name, protein_id)
+                theoretical_glycopeptide_ids = (session.query(
+                       TheoreticalGlycopeptide.id).filter(TheoreticalGlycopeptide.protein_id == protein_id))
+                for theoretical_id in itertools.chain.from_iterable(theoretical_glycopeptide_ids):
+                    batch.append(theoretical_id)
+                    i += 1
+                    if len(batch) > chunk_size:
+                        yield batch
+                        batch = []
+            yield batch
+            batch = []
+        session.close()
+
+    def prepare_task_fn(self):
+        return functools.partial(batch_make_decoys, prefix_len=self.prefix_len, suffix_len=self.suffix_len,
+                                 protein_decoy_map=self.protein_decoy_map, database_manager=self.manager,
+                                 permute_fn=decoy_type_map[self.decoy_type])
+
+    def run(self):
+        task_fn = self.prepare_task_fn()
+        cntr = 0
+        last = 0
+        if self.n_processes > 1:
+            pool = multiprocessing.Pool(self.n_processes)
+            for res in pool.imap_unordered(task_fn, self.stream_theoretical_glycopeptides(), chunksize=1):
+                cntr += res
+                if (cntr - last) > 1000:
+                    logger.info("%d Decoys Complete." % cntr)
+                    last = cntr
+        else:
+            for res in itertools.imap(task_fn, self.stream_theoretical_glycopeptides()):
+                cntr += res
+                if (cntr - last) > 1000:
+                    logger.info("%d Decoys Complete." % cntr)
+                    last = cntr
         return self.decoy_hypothesis_ids

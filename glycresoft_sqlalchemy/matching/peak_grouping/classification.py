@@ -12,12 +12,12 @@ from sqlalchemy import func, bindparam, select
 
 import numpy as np
 
-from sklearn.linear_model import LogisticRegression
-
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, HypothesisSampleMatch, Decon2LSPeakGroup,
     PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch, JointPeakGroupMatch,
     PeakGroupMatchToJointPeakGroupMatch, PeakGroupScoringModel)
+
+from glycresoft_sqlalchemy.scoring import logistic_scoring
 
 from glycresoft_sqlalchemy.utils.collectiontools import flatten
 
@@ -34,17 +34,7 @@ T_JointPeakGroupMatch = JointPeakGroupMatch.__table__
 query_oven = bakery()
 
 
-ClassifierType = LogisticRegression
-
-
-def _sklearn_classifier_to_scoring_model(classifier):
-    return PeakGroupScoringModel.from_parameter_vector(classifier.coef_)
-
-
-def _sklearn_classifier_from_scoring_model(model, *args, **kwargs):
-    classifier = ClassifierType(*args, **kwargs)
-    classifier.coef_ = model.to_parameter_vector()
-    return classifier
+ClassifierType = logistic_scoring.LogisticModelScorer
 
 
 def _group_unmatched_peak_groups_by_shifts(groups, mass_shift_map, grouping_error_tolerance=2e-5):
@@ -397,12 +387,15 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
         conn.execute(step)
         session.commit()
 
-    def construct_model_matrix(self):
+    def construct_model_matrix(self, session=None):
         features = self.features
         ids = self.ids
         label = self.label
 
-        data_model_session = self.manager.session()
+        if session is None:
+            data_model_session = self.manager.session()
+        else:
+            data_model_session = session
         conn = data_model_session.connection()
 
         id_vec = flatten(conn.execute(select(ids).where(
@@ -415,29 +408,19 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
 
         return [label_vector, id_vec, feature_matrix]
 
-    def patch_coefficient_sign(self):
-        betas = self.classifier.coef_
-        i_total_volume = [i for i, col in enumerate(self.features) if col.name == 'total_volume'][0]
-        if betas[0][i_total_volume] < 0:
-            betas[0][i_total_volume] *= -1.5
-        self.classifier.coef_ = betas
-
-    def legacy_model_coefficient(self):
-        betas = [[0.65784006, 1.345376317, 0.219899787,
-                  0.0000383503, -0.000349839, -0.001610525,
-                  -0.000947516, 0.011453828]]
-        betas = np.array(betas)
-        self.classifier.coef_ = betas
-
     def fit_and_score(self):
-        classifier = ClassifierType()
-        label_vector, id_vec, feature_matrix = self.construct_model_matrix()
-        classifier.fit(feature_matrix, label_vector.ravel())
-        self.classifier = classifier
+        session = self.manager.session()
+        label_vector, id_vec, feature_matrix = self.construct_model_matrix(session)
         if self.use_legacy_coefficients:
-            self.legacy_model_coefficient()
+            model = session.query(PeakGroupScoringModel).filter_by(
+                name=PeakGroupScoringModel.GENERIC_MODEL_NAME).first()
+            if model is None:
+                raise Exception("Generic PeakGroupScoringModel Not Found")
+            classifier = logistic_scoring.from_peak_group_scoring_model(model)
         else:
-            self.patch_coefficient_sign()
+            classifier = ClassifierType()
+            classifier.fit(feature_matrix, label_vector.ravel())
+        self.classifier = classifier
         scores = classifier.predict_proba(feature_matrix)[:, 1]
         update_data = [{"b_id": id_key, "ms1_score": float(score)} for id_key, score in itertools.izip(id_vec, scores)]
         stmt = T_JointPeakGroupMatch.update().where(

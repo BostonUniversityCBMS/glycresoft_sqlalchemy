@@ -1,15 +1,15 @@
-<div style='overflow-x: scroll;width: 100%;'>
+<div class='table-container'>
 <table class='bordered glycopeptide-match-table' style='width: 100%;'>
     <thead class='glycopeptide-match-header' >
         <tr>
             <th>Observed Mass</th>
             <th class='wide'>Putative Sequence</th>
-            <th class='wide'>Glycan Composition</th>
-            <th class='wide'>Peptide Modifications
+            <th class='medium-wide'>Glycan Composition</th>
+            <th>Peptide Modifications
             <br/>and Mass Shifts</th>
             <th>Profile Score</th>
-            <th>A:A+2 Peak Ratio</th>
-            <th>A:A+2 Estimate Error</th>
+            <th class='narrow'>A:A+2 Peak<br>Ratio</th>
+            <th class='narrow'>A:A+2<br>Estimate<br>Error</th>
             {#<th>Centroid Scan</th>
             <th>Centroid Scan<br/>
                 Estimate Error</th>#}
@@ -29,14 +29,14 @@
         <tr class='glycopeptide-match-row' data-target="{{gpm.id}}">
             <td>{{"%0.4f"|format(gpm.weighted_monoisotopic_mass)}}</td>
             <td class='wide'><span>{{theoretical.glycopeptide_sequence|glycopeptide_string(False, False)}}</span></td>
-            <td class='wide'>{{theoretical.glycan_composition_str}}</td>
-            <td class='wide'>{{theoretical.peptide_modifications}}
+            <td class='medium-wide'>{{theoretical.glycan_composition_str|glycan_composition_string}}</td>
+            <td>{{theoretical.peptide_modifications}}
             {% if gpm.mass_shift_type %}<br/>
                 {{"%d %s"|format(gpm.mass_shift_count, gpm.mass_shift_type)}}
             {% endif %}</td>
             <td>{{"%0.4f"|format(gpm.ms1_score)}}</td>
-            <td>{{"%0.4f"|format(gpm.average_a_to_a_plus_2_ratio)}}</td>
-            <td>{{"%0.4f"|format(gpm.a_peak_intensity_error)}}</td>
+            <td class='narrow'>{{"%0.4f"|format(gpm.average_a_to_a_plus_2_ratio)}}</td>
+            <td class='narrow'>{{"%0.4f"|format(gpm.a_peak_intensity_error)}}</td>
             {#<td>{{"%0.4f"|format(gpm.centroid_scan_estimate)}}</td>
             <td>{{"%0.4f"|format(gpm.centroid_scan_error)}}</td>#}
             <td class='narrow'>{{"%0.4f"|format(gpm.average_signal_to_noise)}}</td>

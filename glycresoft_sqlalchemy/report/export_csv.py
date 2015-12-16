@@ -91,8 +91,12 @@ def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identiti
             "A:A+2 Ratio", "Total Volume", "Signal to Noise Ratio", "Centroid Scan Error",
             "Centroid Scan", "MinScanNumber", "MaxScanNumber", "Hypothesis MW"
         ] + monosaccharide_identities + ["Adduct/Replacement", "ID"]
-
         writer.writerow(headers)
+
+        def adduct_label(x):
+            if x.mass_shift_type:
+                return "%s:%d" % (x.mass_shift.name, x.mass_shift_count)
+            return 'No Shift'
 
         for pgm in peak_group_matches.yield_per(1000):
             theoretical_match = pgm.theoretical_match
@@ -104,12 +108,12 @@ def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identiti
                 pgm.ms1_score, pgm.weighted_monoisotopic_mass,
                 theoretical_match.composition if pgm.matched else "",
                 pgm.ppm_error if pgm.matched else "",
-                pgm.mass_shift_count if (pgm.mass_shift is not None and pgm.mass_shift.mass != 0) else 0, pgm.charge_state_count, pgm.scan_count, pgm.scan_density,
+                pgm.modification_state_count, pgm.charge_state_count, pgm.scan_count, pgm.scan_density,
                 pgm.a_peak_intensity_error, pgm.average_a_to_a_plus_2_ratio,
                 pgm.total_volume, pgm.average_signal_to_noise, pgm.centroid_scan_error,
                 pgm.centroid_scan_error, pgm.first_scan_id, pgm.last_scan_id,
                 theoretical_match.calculated_mass if pgm.matched else ""
-            ] + glycan_composition + ['/' if pgm.mass_shift_type == None else "%s/%s" % (pgm.mass_shift.name, pgm.mass_shift.mass), pgm.id]
+            ] + glycan_composition + [",".join(adduct_label(g) for g in pgm.subgroups), pgm.id]
             writer.writerow(row)
         return output_path
 
@@ -148,7 +152,6 @@ class CSVExportDriver(PipelineModule):
             except:
                 return str(hsm.target_hypothesis.name) + "_on_" + str(hsm.sample_run_name)
         for res_type, query in hsm.results():
-            print res_type
             if res_type == GlycopeptideMatch:
                 output_path = self.output_path + '.{}.glycopeptide_matches.csv'.format(getname(hsm))
                 outputs.append(output_path)

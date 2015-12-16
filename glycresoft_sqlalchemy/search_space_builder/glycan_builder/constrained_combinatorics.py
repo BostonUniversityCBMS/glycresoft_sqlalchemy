@@ -1,3 +1,4 @@
+import datetime
 from glycresoft_sqlalchemy.data_model import MS1GlycanHypothesis, TheoreticalGlycanComposition, PipelineModule
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 from glypy import GlycanComposition, MonosaccharideResidue, monosaccharides
@@ -23,6 +24,7 @@ class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
         self.hypothesis_id = hypothesis_id
         self.derivatization = derivatization
         self.reduction = reduction
+        self.options = kwargs
 
     def run(self):
         if self.rules_table is None:
@@ -34,6 +36,10 @@ class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
         session = self.manager.session()
 
         hypothesis, _ = get_or_create(session, self.HypothesisType, id=self.hypothesis_id)
+        hypothesis.name = self.options.get(
+                "hypothesis_name",
+                "glycan-hypothesis-%s" % datetime.datetime.strftime(
+                    datetime.datetime.now(), "%Y%m%d-%H%M%S"))
         hypothesis.parameters = hypothesis.parameters or {}
         hypothesis.parameters['rules_table'] = self.rules_table
         hypothesis.parameters['constraints'] = self.constraints_list

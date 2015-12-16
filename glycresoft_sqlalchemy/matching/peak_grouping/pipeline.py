@@ -33,7 +33,8 @@ class LCMSPeakClusterSearch(PipelineModule):
                  minimum_scan_count=1, hypothesis_sample_match_id=None,
                  search_type="TheoreticalGlycanComposition",
                  match_tolerance=2e-5, mass_shift_map=None,
-                 regression_parameters=None,
+                 regression_parameters=None, minimum_mass=None,
+                 maximum_mass=None,
                  n_processes=4, **kwargs):
         self.manager = self.manager_type(database_path)
         self.observed_ions_path = observed_ions_path
@@ -47,6 +48,8 @@ class LCMSPeakClusterSearch(PipelineModule):
         self.mass_shift_map = mass_shift_map
         self.n_processes = n_processes
         self.regression_parameters = regression_parameters
+        self.minimum_mass = minimum_mass
+        self.maximum_mass = maximum_mass
         self.options = kwargs
         session = self.manager.session()
         hypothesis = session.query(Hypothesis).get(self.hypothesis_id)
@@ -54,7 +57,7 @@ class LCMSPeakClusterSearch(PipelineModule):
         session.close()
 
     def do_matching(self):
-        matcher = PeakGroupMatching(
+        matcher = BatchPeakGroupMatching(
             self.database_path, self.observed_ions_path, self.hypothesis_id,
             self.sample_run_id, self.hypothesis_sample_match_id,
             self.search_type, self.match_tolerance, self.mass_shift_map,
@@ -66,7 +69,8 @@ class LCMSPeakClusterSearch(PipelineModule):
     def do_grouping(self):
         grouper = Decon2LSPeakGrouper(
             self.observed_ions_path, self.sample_run_id, self.grouping_error_tolerance,
-            self.minimum_scan_count, self.n_processes)
+            minimum_mass=self.minimum_mass, maximum_mass=self.maximum_mass,
+            minimum_scan_count=self.minimum_scan_count, n_processes=self.n_processes)
         if not self.options.get("skip_grouping", False):
             grouper.start()
         return grouper
@@ -103,6 +107,8 @@ class LCMSPeakClusterSearch(PipelineModule):
             match_tolerance=self.match_tolerance,
             mass_shift_map=self.mass_shift_map,
             n_processes=self.n_processes,
+            minimum_mass=self.minimum_mass,
+            maximum_mass=self.maximum_mass
         )
         session.add(hypothesis_sample_match)
         session.commit()
@@ -133,3 +139,5 @@ class LCMSPeakClusterSearch(PipelineModule):
 
         classifier = self.do_classification()
         hypothesis_sample_match.parameters['classifier'] = pickle.dumps(classifier.classifier)
+        session.add(hypothesis_sample_match)
+        session.commit()

@@ -23,7 +23,7 @@ def get_or_create(session, model, defaults=None, **kwargs):
         return instance, True
 
 
-#: Adopted from sqlalchemy-utils
+#: Adapted from sqlalchemy-utils
 
 def get_bind(obj):
     if hasattr(obj, 'bind'):

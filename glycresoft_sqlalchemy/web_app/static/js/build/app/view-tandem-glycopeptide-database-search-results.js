@@ -1,13 +1,4 @@
-var doZoom, viewTandemGlycopeptideDatabaseSearchResults;
-
-doZoom = function() {
-  var svg, zoom;
-  svg = d3.select("svg g");
-  zoom = function() {
-    return svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-  };
-  return d3.select("svg g").call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom));
-};
+var viewTandemGlycopeptideDatabaseSearchResults;
 
 viewTandemGlycopeptideDatabaseSearchResults = function() {
   var downloadCSV, getGlycopeptideMatchDetails, glycopeptideTooltipCallback, initGlycopeptideOverviewPlot, modificationTooltipCallback, peptideDetailsModal, setup, showGlycopeptideDetailsModal, updateProteinChoice;
@@ -23,7 +14,7 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
     if (handle.length !== 0) {
       updateProteinChoice.apply(handle);
     } else {
-      updateProteinChoice.apply($('.protein-match-table tbody tr'));
+      updateProteinChoice.apply($($('.protein-match-table tbody tr')[0]));
     }
     $(".tooltipped").tooltip();
     return $("#save-csv-file").click(downloadCSV);
@@ -46,9 +37,9 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
   };
   glycopeptideTooltipCallback = function(handle) {
     var template;
-    template = '<div> <span><b>MS2 Score:</b> {ms2-score}</span><br> <span><b>q-value:</b> {q-value}</span><br> <b>{sequence}</b> </div>';
+    template = '<div> <span><b>MS2 Score:</b> {ms2-score}</span><br> <span><b>q-value:</b> {q-value}</span><br> <span>{sequence}</span> </div>';
     return template.format({
-      'sequence': handle.attr('data-sequence'),
+      'sequence': new PeptideSequence(handle.attr('data-sequence')).format(GlycReSoft.colors),
       'ms2-score': handle.attr('data-ms2-score'),
       'q-value': handle.attr('data-q-value')
     });
@@ -68,6 +59,8 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
   updateProteinChoice = function() {
     var handle, id;
     handle = $(this);
+    $('.active-row').removeClass("active-row");
+    handle.addClass("active-row");
     id = handle.attr('data-target');
     $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
     return $.ajax('/view_database_search_results/protein_view/' + id, {
@@ -94,7 +87,13 @@ viewTandemGlycopeptideDatabaseSearchResults = function() {
           return GlycReSoft.context['protein-view-active-tab'] = $(this).attr('href').slice(1);
         });
         $('.indicator').addClass('indigo');
-        $('.glycopeptide-match-row').click(showGlycopeptideDetailsModal);
+        $('.glycopeptide-match-row').click(function() {
+          var textSelection;
+          textSelection = window.getSelection();
+          if (!textSelection.toString()) {
+            return showGlycopeptideDetailsModal.apply(this);
+          }
+        });
         peptideDetailsModal = $('#peptide-detail-modal');
         return GlycReSoft.context['protein_id'] = id;
       },

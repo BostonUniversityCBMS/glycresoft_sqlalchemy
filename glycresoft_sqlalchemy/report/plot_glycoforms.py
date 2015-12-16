@@ -17,17 +17,18 @@ except ImportError:  # pragma: no cover
     except:
         from xml.etree import ElementTree as ET
 
-from itertools import cycle
 import matplotlib
+from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from matplotlib import patches as mpatches
-from matplotlib.path import Path
 from matplotlib.textpath import TextPath
-from matplotlib.colors import cnames, hex2color
 
-from ..data_model import DatabaseManager, GlycopeptideMatch, Protein, Hypothesis
+from ..data_model import DatabaseManager, GlycopeptideMatch, Protein
 from ..structure import sequence
 from .colors import lighten, darken, get_color
+
+
+font_options = font_manager.FontProperties(family='monospace')
 
 
 def clean_file_name(file_name):
@@ -35,19 +36,16 @@ def clean_file_name(file_name):
     return name
 
 
-colors = cycle([hex2color(cnames[name]) for name in ("red", "blue", "yellow", "purple", "navy", "grey")])
-
-
-color_name_map = {
-    "HexNAc": hex2color(cnames["steelblue"])
-}
-
 def span_overlap(a, b):
     return a.spans(b.start_position) or a.spans(b.end_position - 1) or\
            b.spans(a.start_position) or b.spans(a.end_position - 1)
 
 
 def layout_layers(gpms):
+    '''
+    Produce a non-overlapping stacked layout of individual peptide-like
+    identifications across a protein sequence.
+    '''
     layers = [[]]
     gpms.sort(key=lambda x: x.ms2_score, reverse=True)
     for gpm in gpms:
@@ -68,6 +66,19 @@ def layout_layers(gpms):
 
 
 class IDMapper(dict):
+    '''
+    A dictionary-like container which uses a format-string
+    key pattern to generate unique identifiers for each entry
+
+    Key Pattern: '<type-name>-%d'
+
+    Associates each generated id with a dictionary of metadata and
+    sets the `gid` of the passed `matplotlib.Artist` to the generated
+    id. Only the id and metadata are stored.
+
+    Used to preserve a mapping of metadata to artists for later SVG
+    serialization.
+    '''
     def __init__(self):
         dict.__init__(self)
         self.counter = 0
@@ -81,17 +92,21 @@ class IDMapper(dict):
 
 
 def draw_layers(layers, protein, scale_factor=1.0, **kwargs):
+    '''
+    Render fixed-width stacked peptide identifications across
+    a protein. Each shape is rendered with a unique identifier.
+    '''
     figure, ax = plt.subplots(1, 1)
     id_mapper = IDMapper()
     i = 0
-    row_width = 80
+    row_width = 70
     layer_height = 0.56 * scale_factor
     y_step = (layer_height + 0.15) * -scale_factor
     cur_y = -3
 
     cur_position = 0
 
-    mod_text_x_offset = 0.20 * scale_factor
+    mod_text_x_offset = 0.15 * scale_factor
     sequence_font_size = 6. * scale_factor
     mod_font_size = 2.08 * scale_factor
     mod_text_y_offset = 0.1 * scale_factor
@@ -107,13 +122,29 @@ def draw_layers(layers, protein, scale_factor=1.0, **kwargs):
 
     while cur_position < total_length:
         next_row = cur_position + row_width
+        i = -2
+        text_path = TextPath(
+            (protein_pad + i, layer_height + .2 + cur_y),
+            str(cur_position + 1), size=sequence_font_size/7.5, prop=font_options, stretch=1000)
+        patch = mpatches.PathPatch(text_path, facecolor='grey', lw=0.04)
+        ax.add_patch(patch)
+
+        i = row_width + 2
+        text_path = TextPath(
+            (protein_pad + i, layer_height + .2 + cur_y),
+            str(next_row), size=sequence_font_size/7.5, prop=font_options, stretch=1000)
+        patch = mpatches.PathPatch(text_path, facecolor='grey', lw=0.04)
+        ax.add_patch(patch)
+
         for i, aa in enumerate(protein.protein_sequence[cur_position:next_row]):
             text_path = TextPath(
                 (protein_pad + i, layer_height + .2 + cur_y),
-                aa, size=sequence_font_size/7.5, family='monospace', stretch=1000)
-            color = 'red' if any((((i + cur_position) in glycosites),
-                    ((i + cur_position - 1) in glycosites),
-                    ((i + cur_position - 2) in glycosites))) else 'black'
+                aa, size=sequence_font_size/7.5, prop=font_options, stretch=1000)
+            color = 'red' if any(
+                (((i + cur_position) in glycosites),
+                 ((i + cur_position - 1) in glycosites),
+                 ((i + cur_position - 2) in glycosites))
+                ) else 'black'
             patch = mpatches.PathPatch(text_path, facecolor=color, lw=0.04)
             ax.add_patch(patch)
             # ax.text(
@@ -122,12 +153,12 @@ def draw_layers(layers, protein, scale_factor=1.0, **kwargs):
             #     color='red' if any((((i + cur_position) in glycosites),
             #                         ((i + cur_position - 1) in glycosites),
             #                         ((i + cur_position - 2) in glycosites))) else 'black')
-        rect = mpatches.Rectangle((protein_pad, cur_y), (i + 0.5), layer_height,
-                                  facecolor='red', edgecolor="maroon", alpha=0.5)
-        id_mapper.add("main-sequence-%d", rect, {'main-sequence': True})
-        ax.add_patch(rect)
+        # rect = mpatches.Rectangle((protein_pad, cur_y), (i + 0.5), layer_height,
+        #                           facecolor='red', edgecolor="maroon", alpha=0.5)
+        # id_mapper.add("main-sequence-%d", rect, {'main-sequence': True})
+        # ax.add_patch(rect)
 
-        cur_y += y_step
+        # cur_y += y_step
 
         for layer in layers:
             c = 0
@@ -147,7 +178,8 @@ def draw_layers(layers, protein, scale_factor=1.0, **kwargs):
                     "start-position": gpm.start_position,
                     "end-position": gpm.end_position,
                     "ms2-score": gpm.ms2_score,
-                    "q-value": gpm.q_value
+                    "q-value": gpm.q_value,
+                    "record-id": gpm.id
                 })
                 ax.add_patch(rect)
                 seq = sequence.Sequence(gpm.glycopeptide_sequence)
@@ -167,7 +199,7 @@ def draw_layers(layers, protein, scale_factor=1.0, **kwargs):
                         ax.add_patch(mod_patch)
                         text_path = TextPath(
                             (gpm.start_position - cur_position + i - mod_text_x_offset, cur_y + mod_text_y_offset),
-                            str(pos[1][0])[0], size=mod_font_size/4.5, family='monospace')
+                            str(pos[1][0])[0], size=mod_font_size/4.5, prop=font_options)
                         patch = mpatches.PathPatch(text_path, facecolor='black', lw=0.04)
                         ax.add_patch(patch)
                         # ax.text(gpm.start_position - cur_position + i - text_shift, cur_y + 0.1,

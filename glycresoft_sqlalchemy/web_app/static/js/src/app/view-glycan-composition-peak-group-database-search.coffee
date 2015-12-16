@@ -1,3 +1,9 @@
+doZoom = (selector) ->
+        svg = d3.select(selector)
+        zoom = ()->
+            svg.attr("transform", "translate(#{d3.event.translate})scale(#{d3.event.scale})")
+        d3.select(selector).call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom))
+
 viewGlycanCompositionPeakGroupingDatabaseSearchResults = ->
     glycanDetailsModal = undefined
     glycanTable = undefined
@@ -44,7 +50,7 @@ viewGlycanCompositionPeakGroupingDatabaseSearchResults = ->
                 GlycReSoft.context['view-active-tab'] = $(this).attr('href').slice(1)
             glycanDetailsModal = $ '#glycan-detail-modal'
             glycanTable = $ "#glycan-table"
-
+            # doZoom("#glycome-overview svg g")
             updateGlycanCompositionTablePage 1
         ).error (error) ->
             console.log arguments

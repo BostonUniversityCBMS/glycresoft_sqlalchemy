@@ -15,7 +15,13 @@ viewPeakGroupingDatabaseSearchResults = function() {
     if (page == null) {
       page = 1;
     }
-    $('.glycopeptide-match-row').click(showGlycopeptideCompositionDetailsModal);
+    $('.glycopeptide-match-row').click(function() {
+      var textSelection;
+      textSelection = window.getSelection();
+      if (!textSelection.toString()) {
+        return showGlycopeptideCompositionDetailsModal.apply(this);
+      }
+    });
     $(':not(.disabled) .next-page').click(function() {
       return updateGlycopeptideCompositionTablePage(page + 1);
     });
@@ -77,11 +83,13 @@ viewPeakGroupingDatabaseSearchResults = function() {
     var handle, id;
     handle = $(this);
     id = handle.attr('data-target');
+    console.log("ID " + id + ", Open Modal");
     return PartialSource.glycopeptideCompositionDetailsModal({
       "id": id
     }, function(doc) {
       glycopeptideDetailsModal.find('.modal-content').html(doc);
       $(".lean-overlay").remove();
+      console.log("Opening Modal");
       return glycopeptideDetailsModal.openModal();
     });
   };

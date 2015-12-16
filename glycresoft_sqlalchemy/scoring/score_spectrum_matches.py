@@ -16,10 +16,12 @@ def score(matched, theoretical, **parameters):
 
 
 class MatchScorer(PipelineModule):
-    def __init__(self, database_path, score=score, score_parameters=None):
+    def __init__(self, database_path, scorer=None, score_parameters=None):
+        if scorer is None:
+            scorer = score
         self.manager = self.manager_type(database_path)
         self.score_parameters = score_parameters or {}
-        self.scorer = score
+        self.scorer = scorer
 
     def run(self):
         session = self.manager.session()
@@ -36,7 +38,9 @@ class MatchScorer(PipelineModule):
 
 class SimpleSpectrumAssignment(PipelineModule):
     def __init__(self, database_path, hypothesis_id, hypothesis_sample_match_id,
-                 scorer=score, score_parameters=None, n_processes=4):
+                 scorer=None, score_parameters=None, n_processes=4):
+        if scorer is None:
+            scorer = score
         self.manager = self.manager_type(database_path)
         self.hypothesis_id = hypothesis_id
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
@@ -142,6 +146,21 @@ def score_on_limited_peak_matches(glycopeptide_match, database_manager, scorer, 
             return glycopeptide_match
     except Exception, e:
         logger.exception("An error occurred processing %r", glycopeptide_match, exc_info=e)
+        raise e
+    finally:
+        session.close()
+
+
+def score_spectrum_match(glycopeptide_spectrum_match_id, database_manager, scorer, score_parameters):
+    try:
+        session = database_manager()
+        glycopeptide_spectrum_match = session.query(glycopeptide_spectrum_match_id)
+        match_like = glycopeptide_spectrum_match.as_match_like()
+        theoretical_sequence = glycopeptide_spectrum_match.glycopeptide_match.theoretical_reference
+        scorer(match_like, theoretical_sequence, **score_parameters)
+
+    except Exception, e:
+        logger.exception("An error occurred processing %r", glycopeptide_spectrum_match, exc_info=e)
         raise e
     finally:
         session.close()

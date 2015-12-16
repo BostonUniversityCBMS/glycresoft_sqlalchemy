@@ -10,7 +10,7 @@ from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
 from glycresoft_sqlalchemy.web_app import report
 
 from glycresoft_sqlalchemy.data_model import (
-    Hypothesis, Protein, TheoreticalGlycopeptide, PeakGroupMatch, TheoreticalGlycopeptideComposition,
+    Hypothesis, Protein, TheoreticalGlycopeptide, PeakGroupMatchType, TheoreticalGlycopeptideComposition,
     GlycopeptideMatch, HypothesisSampleMatch, MassShift, json_type, make_transient, MS1GlycanHypothesisSampleMatch,
     MS2GlycanHypothesisSampleMatch, MS1GlycopeptideHypothesisSampleMatch, MS2GlycopeptideHypothesisSampleMatch)
 
@@ -36,6 +36,13 @@ from glycresoft_sqlalchemy.web_app.services.view_hypothesis import view_hypothes
 
 from glycresoft_sqlalchemy.web_app.utils.pagination import paginate
 
+no_gevent = False
+
+try:
+    from gevent.pywsgi import WSGIServer
+except:
+    no_gevent = True
+
 
 app = Flask(__name__)
 app.config['PROPAGATE_EXCEPTIONS'] = True
@@ -44,6 +51,7 @@ report.prepare_environment(app.jinja_env)
 DATABASE = None
 DEBUG = True
 SECRETKEY = 'TG9yZW0gaXBzdW0gZG90dW0'
+SERVER = None
 
 
 manager = None
@@ -78,10 +86,14 @@ def branch_ms1_ms2():
 # ----------------------------------------
 
 def shutdown_server():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
+    if no_gevent:
+        func = request.environ.get('werkzeug.server.shutdown')
+        if func is None:
+            raise RuntimeError('Not running with the Werkzeug Server')
+
+        func()
+    else:
+        SERVER.stop()
 
 
 @app.route('/internal/shutdown', methods=['POST'])
@@ -126,7 +138,7 @@ def inject_model():
         "TheoreticalGlycopeptide": TheoreticalGlycopeptide,
         "GlycopeptideMatch": GlycopeptideMatch,
         "Manager": manager,
-        "PeakGroupMatch": PeakGroupMatch,
+        "PeakGroupMatchType": PeakGroupMatchType,
         "TheoreticalGlycopeptideComposition": TheoreticalGlycopeptideComposition,
     }
 
@@ -168,7 +180,7 @@ def setup_logging():
 
 
 def run(store_path, external, no_execute_tasks, port, **kwargs):
-    global DATABASE, manager, CAN_EXECUTE
+    global DATABASE, manager, CAN_EXECUTE, SERVER
     host = None
     if external:
         host = "0.0.0.0"
@@ -178,7 +190,13 @@ def run(store_path, external, no_execute_tasks, port, **kwargs):
     app.debug = DEBUG
     app.secret_key = SECRETKEY
     setup_logging()
-    app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=port, passthrough_errors=True)
+    if no_gevent:
+        print "No gevent"
+        app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=port, passthrough_errors=True)
+    else:
+        print "gevent"
+        SERVER = WSGIServer(("", port), app)
+        SERVER.serve_forever()
 
 
 def main():

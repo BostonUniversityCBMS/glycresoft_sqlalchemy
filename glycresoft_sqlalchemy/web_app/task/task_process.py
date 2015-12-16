@@ -4,8 +4,11 @@ import traceback
 from uuid import uuid4
 from multiprocessing import Process, Pipe, current_process
 from threading import Event, Thread, RLock
-from collections import deque
 from Queue import Queue, Empty as QueueEmptyException
+try:
+    from gevent.queue import Queue
+except:
+    print "No gevent"
 try:
     import cPickle as pickle
 except:
@@ -35,6 +38,10 @@ def configure_log(log_file_path, callable, args):
         "%(asctime)s - %(processName)s:%(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
         "%H:%M:%S")
     handler.setFormatter(formatter)
+    logging.captureWarnings(True)
+    warner = logging.getLogger('py.warnings')
+    warner.setLevel("CRITICAL")
+
     logger.handlers = []
     logger.addHandler(handler)
     logger.setLevel("DEBUG")
@@ -210,8 +217,8 @@ class TaskManager(object):
         The maximum number of tasks allowed to run at once
     timer: CallInterval
         A `CallInterval` object who schedules :meth:`TaskManager.tick`
-    messages: collections.deque
-        A `deque` for holding task messages to be read by clients
+    messages: Queue
+        A `Queue` for holding task messages to be read by clients
     """
     interval = 5
 
@@ -328,6 +335,8 @@ class TaskManager(object):
         while((self.n_running < self.max_running) and (self.task_queue.qsize() > 0)):
             try:
                 task = self.task_queue.get(False)
+                if task.state != NEW:
+                    continue
                 self.run_task(task)
             except QueueEmptyException:
                 break

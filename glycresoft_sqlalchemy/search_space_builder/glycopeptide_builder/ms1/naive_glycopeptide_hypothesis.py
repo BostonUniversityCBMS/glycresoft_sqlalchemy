@@ -8,7 +8,7 @@ import multiprocessing
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, MS1GlycopeptideHypothesis, Protein, NaivePeptide, make_transient,
     TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func,
-    TheoreticalGlycopeptideCompositionGlycanAssociation)
+    TheoreticalGlycanCombination)
 
 from .include_glycomics import MS1GlycanImporter
 
@@ -42,9 +42,9 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
 
         for glycan_set in get_glycan_combinations(
                 database_manager.session(), min(peptide.count_glycosylation_sites, max_sites), hypothesis_id):
-            glycan_set = list(glycan_set)
-            glycan_composition_str = merge_compositions(g.glycan_composition for g in glycan_set)
-            glycan_mass = sum([(g.calculated_mass - water) for g in glycan_set])
+
+            glycan_composition_str = glycan_set.composition
+            glycan_mass = glycan_set.dehydrated_mass()
             glycoform = TheoreticalGlycopeptideComposition(
                 base_peptide_sequence=peptide.base_peptide_sequence,
                 modified_peptide_sequence=peptide.modified_peptide_sequence,
@@ -54,37 +54,30 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
                 end_position=peptide.end_position,
                 peptide_modifications=peptide.peptide_modifications,
                 count_missed_cleavages=peptide.count_missed_cleavages,
-                count_glycosylation_sites=len(glycan_set),
+                count_glycosylation_sites=(glycan_set.count),
                 glycosylation_sites=peptide.glycosylation_sites,
                 sequence_length=peptide.sequence_length,
                 calculated_mass=peptide.calculated_mass + glycan_mass,
                 glycan_composition_str=glycan_composition_str,
                 glycan_mass=glycan_mass,
+                glycan_combination_id=glycan_set.id
             )
 
             glycopeptide_acc.append(glycoform)
-            glycan_assoc_acc.extend((glycoform, glycan_id) for glycan_id in [g.id for g in glycan_set])
 
             session.add(glycoform)
 
             i += 1
             if i % 5000 == 0:
                 logger.info("Flushing %d for %r-%r", i, peptide, peptide.protein)
-                session.add_all(glycopeptide_acc)
+                session.bulk_save_objects(glycopeptide_acc)
                 session.flush()
-                session.execute(
-                    TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
-                    [{'peptide_id': ig.id, 'glycan_id': gid} for ig, gid in glycan_assoc_acc])
                 session.commit()
                 glycopeptide_acc = []
                 glycan_assoc_acc = []
 
-        logger.info("Flushing %d", i)
-        session.add_all(glycopeptide_acc)
+        session.bulk_save_objects(glycopeptide_acc)
         session.flush()
-        session.execute(
-            TheoreticalGlycopeptideCompositionGlycanAssociation.insert(),
-            [{'peptide_id': ig.id, 'glycan_id': gid} for ig, gid in glycan_assoc_acc])
         session.commit()
         session.close()
         return i
@@ -129,7 +122,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
 
     def __init__(self, database_path, hypothesis_name, protein_file, site_list_file,
                  glycan_file, glycan_file_type, constant_modifications, variable_modifications,
-                 enzyme, max_missed_cleavages=1, n_processes=4, **kwargs):
+                 enzyme, max_missed_cleavages=1, maximum_glycosylation_sites=2, n_processes=4, **kwargs):
         self.manager = self.manager_type(database_path)
         self.manager.initialize()
         self.protein_file = protein_file
@@ -142,6 +135,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
         self.variable_modifications = variable_modifications
         self.enzyme = enzyme
         self.max_missed_cleavages = max_missed_cleavages
+        self.maximum_glycosylation_sites = maximum_glycosylation_sites
         self.hypothesis.parameters = ({
             "protein_file": protein_file,
             "site_list_file": site_list_file,
@@ -159,7 +153,8 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
     def prepare_task_fn(self):
         return functools.partial(generate_glycopeptide_compositions,
                                  database_manager=self.manager,
-                                 hypothesis_id=self.hypothesis.id)
+                                 hypothesis_id=self.hypothesis.id,
+                                 max_sites=self.maximum_glycosylation_sites)
 
     def stream_proteins(self):
         return self.manager.session().query(Protein).filter(Protein.hypothesis_id == self.hypothesis.id)
@@ -173,7 +168,9 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
     def run(self):
         session = self.session
         if self.glycan_file_type == "txt":
-            importer = MS1GlycanImporter(self.database_path, self.glycan_file, self.hypothesis.id, 'txt')
+            importer = MS1GlycanImporter(
+                self.database_path, self.glycan_file, self.hypothesis.id, 'txt',
+                combination_size=self.maximum_glycosylation_sites)
             importer.run()
         else:
             raise NotImplementedError()

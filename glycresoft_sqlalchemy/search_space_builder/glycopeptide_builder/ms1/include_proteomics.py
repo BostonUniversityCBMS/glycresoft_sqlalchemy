@@ -7,11 +7,12 @@ except:
     pass
 
 
-from ..peptide_utilities import SiteListFastaFileParser
+from ..peptide_utilities import SiteListFastaFileParser, generate_peptidoforms
 from glycresoft_sqlalchemy.structure import sequence, modification
 
-from glycresoft_sqlalchemy.data_model import MS1GlycopeptideHypothesis, Protein
-from glycresoft_sqlalchemy.data_model import PipelineModule, make_transient, InformedPeptide, ExactMS1GlycopeptideHypothesis
+from glycresoft_sqlalchemy.data_model import (
+    PipelineModule, Protein, make_transient, InformedPeptide,
+    ExactMS1GlycopeptideHypothesis, func)
 
 from glycresoft_sqlalchemy.proteomics.mzid_sa import Proteome as MzIdentMLProteome
 
@@ -36,13 +37,36 @@ class ProteomeImporter(PipelineModule):
 
     def __init__(self, database_path, mzid_path, glycosylation_sites_file=None,
                  hypothesis_id=None, constant_modifications=("Carbamidomethyl (C)",),
-                 hypothesis_type=ExactMS1GlycopeptideHypothesis):
+                 hypothesis_type=ExactMS1GlycopeptideHypothesis, peptide_type=InformedPeptide,
+                 baseline_missed_cleavages=1, include_all_baseline=False):
         self.manager = self.manager_type(database_path)
         self.mzid_path = mzid_path
         self.hypothesis_id = hypothesis_id
         self.glycosylation_sites_file = glycosylation_sites_file
         self.constant_modifications = constant_modifications
         self.hypothesis_type = hypothesis_type
+        self.peptide_type = peptide_type
+        self.baseline_missed_cleavages = baseline_missed_cleavages
+        self.include_all_baseline = include_all_baseline
+
+    def build_baseline_peptides(self, session, protein):
+        if len(self.enzymes):
+            logger.info("Building All Baseline Peptides For %r", protein)
+            for peptidoform in generate_peptidoforms(
+                    protein, self.constant_modifications, [],
+                    self.enzymes[0], missed_cleavages=self.baseline_missed_cleavages,
+                    peptide_class=self.peptide_type):
+                session.add(peptidoform)
+            protein.informed_peptides.filter(
+                self.peptide_type.count_glycosylation_sites == None).delete("fetch")
+            session.commit()
+
+    def _display_protein_peptide_counts(self, session):
+        peptide_counts = session.query(Protein.name, func.count(InformedPeptide.id)).filter(
+            Protein.hypothesis_id == self.hypothesis_id).join(InformedPeptide).group_by(
+            InformedPeptide.protein_id).all()
+
+        logger.info("Peptide Counts: %r", peptide_counts)
 
     def run(self):
         try:
@@ -61,14 +85,23 @@ class ProteomeImporter(PipelineModule):
                 self.hypothesis_id = hypothesis.id
             else:
                 hypothesis = session.query(self.hypothesis_type).get(self.hypothesis_id)
-            session.close()
-            MzIdentMLProteome(self.manager.path, self.mzid_path, self.hypothesis_id)
 
-            session = self.manager.session()
+            mzident_parser = MzIdentMLProteome(self.manager.path, self.mzid_path, self.hypothesis_id)
+            self._display_protein_peptide_counts(session)
+            self.constant_modifications = mzident_parser.constant_modifications
+            self.enzymes = mzident_parser.enzymes
+
+            logger.info("Constant Modifications: %r", self.constant_modifications)
+            logger.info("Enzyme: %r", self.enzymes)
+
             if self.glycosylation_sites_file is None:
                 for protein in session.query(Protein):
                     protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
                     session.add(protein)
+                    session.flush()
+                    if self.include_all_baseline:
+                        self.build_baseline_peptides(session, protein)
+
             else:
                 site_list_gen = SiteListFastaFileParser(self.glycosylation_sites_file)
                 site_list_map = {d['name']: d["glycosylation_sites"] for d in site_list_gen}
@@ -78,15 +111,20 @@ class ProteomeImporter(PipelineModule):
                     except KeyError:
                         protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
                     session.add(protein)
+                    session.flush()
+                    if self.include_all_baseline:
+                        self.build_baseline_peptides(session, protein)
 
             session.add(hypothesis)
             session.commit()
 
-            modification_table = modification.RestrictedModificationTable.bootstrap(list(self.constant_modifications), [])
+            logger.info("Building Unmodified Reference Peptides")
+            modification_table = modification.RestrictedModificationTable.bootstrap(
+                list(self.constant_modifications), [])
             basic_peptides = []
-            for peptide in session.query(InformedPeptide).filter(
-                    InformedPeptide.protein_id == Protein.id, Protein.hypothesis_id == self.hypothesis_id).group_by(
-                    InformedPeptide.base_peptide_sequence):
+            for peptide in session.query(self.peptide_type).filter(
+                    self.peptide_type.protein_id == Protein.id, Protein.hypothesis_id == self.hypothesis_id).group_by(
+                    self.peptide_type.base_peptide_sequence):
                 peptide = make_base_sequence(peptide, self.constant_modifications, modification_table)
                 basic_peptides.append(peptide)
                 if len(basic_peptides) > 1000:
@@ -96,6 +134,8 @@ class ProteomeImporter(PipelineModule):
 
             session.add_all(basic_peptides)
             session.commit()
+
+            self._display_protein_peptide_counts(session)
 
             session.close()
         except Exception, e:

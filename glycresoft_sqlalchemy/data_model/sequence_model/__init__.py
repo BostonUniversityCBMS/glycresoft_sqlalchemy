@@ -3,5 +3,5 @@ from peptide import (
     InformedTheoreticalGlycopeptideComposition, TheoreticalGlycopeptide)
 
 from fragment import(
-    HasGlycopeptideProductIons, TheoreticalPeptideProductIon,
+    HasTheoreticalGlycopeptideProductIons, TheoreticalPeptideProductIon,
     TheoreticalGlycopeptideStubIon)

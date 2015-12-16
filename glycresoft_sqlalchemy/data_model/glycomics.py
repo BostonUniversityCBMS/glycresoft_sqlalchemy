@@ -358,8 +358,8 @@ class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionN
     ms1_score = Column(Numeric(7, 6, asdecimal=False), index=True)
     volume = Column(Numeric(12, 6, asdecimal=False))
 
-    peak_group_matches = relationship(
-        "PeakGroupMatch", secondary=lambda: TheoreticalGlycanStructureToPeakGroupMatch, lazy="dynamic")
+    # peak_group_matches = relationship(
+    #     "PeakGroupMatch", secondary=lambda: TheoreticalGlycanStructureToPeakGroupMatch, lazy="dynamic")
 
     def fragments(self, kind='BY'):
         if self._fragments is None:
@@ -387,12 +387,6 @@ class TheoreticalGlycanStructure(GlycanBase, HasTaxonomy, HasReferenceAccessionN
         rep = "<{self.__class__.__name__}\n{self.glycoct}>".format(self=self)
         return rep
 
-
-TheoreticalGlycanStructureToPeakGroupMatch = Table(
-    "TheoreticalGlycanStructureToPeakGroupMatch", Base.metadata,
-    Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanStructure.id"), index=True),
-    Column("peak_group_match_id", Integer, ForeignKey("PeakGroupMatch.id"), index=True)
-    )
 
 TheoreticalGlycanStructureToMotifTable = Table(
     "TheoreticalGlycanStructureToMotifTable", Base.metadata,
@@ -454,3 +448,12 @@ class TheoreticalGlycanCombination(Base):
     @from_hypothesis.expression
     def from_hypothesis(self, hypothesis_id):
         return (self.hypothesis_id == hypothesis_id)
+
+
+def make_composition_table(monosaccharide_names):
+    import time
+    cols = [Column(name, Integer(), default=0) for name in monosaccharide_names]
+    pk = Column("id", Integer(), primary_key=True)
+    cols.append(pk)
+    t = Table("GlycanCompositionWide_" + str(time.time()), Base.metadata, *cols)
+    return t

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from collections import defaultdict
 
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, backref
@@ -12,8 +11,8 @@ from .hypothesis import (
     ExactMS1GlycopeptideHypothesis, MS2GlycanHypothesis, MS2GlycopeptideHypothesis,
     ExactMS2GlycopeptideHypothesis)
 
-from .base import Hierarchy, Namespace, Base2 as Base
-from .generic import MutableDict, MutableList
+from .base import Hierarchy, Base2 as Base
+from .generic import MutableDict
 from .json_type import tryjson, clean_dict
 from .observed_ions import SampleRun, TandemScan, ScanBase, Peak
 

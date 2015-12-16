@@ -17,6 +17,7 @@ class CommunicativeLCMSPeakClusterSearch(LCMSPeakClusterSearch):
                  minimum_scan_count=1, hypothesis_sample_match_id=None,
                  search_type="TheoreticalGlycanComposition",
                  match_tolerance=2e-5, mass_shift_map=None, regression_parameters=None,
+                 minimum_mass=1200, maximum_mass=15000,
                  comm=NullPipe(), **kwargs):
         kwargs.setdefault("n_processes", 4)
         dbm = self.manager_type(database_path)
@@ -29,9 +30,13 @@ class CommunicativeLCMSPeakClusterSearch(LCMSPeakClusterSearch):
         session.close()
 
         super(CommunicativeLCMSPeakClusterSearch, self).__init__(
-            database_path, observed_ions_path, hypothesis_id, sample_run_id,
-            grouping_error_tolerance, minimum_scan_count, hypothesis_sample_match_id,
-            search_type, match_tolerance, mass_shift_map, regression_parameters, **kwargs)
+            database_path=database_path, observed_ions_path=observed_ions_path,
+            hypothesis_id=hypothesis_id, sample_run_id=sample_run_id,
+            grouping_error_tolerance=grouping_error_tolerance, minimum_scan_count=minimum_scan_count,
+            hypothesis_sample_match_id=hypothesis_sample_match_id,
+            search_type=search_type, match_tolerance=match_tolerance, mass_shift_map=mass_shift_map,
+            regression_parameters=regression_parameters, minimum_mass=minimum_mass,
+            maximum_mass=maximum_mass, **kwargs)
         self.comm = comm
 
     def run(self):
@@ -50,6 +55,8 @@ class CommunicativeLCMSPeakClusterSearch(LCMSPeakClusterSearch):
         self.comm.send(Message("Begin peak group scoring", "update"))
         classifier = self.do_classification()
         hypothesis_sample_match.parameters['classifier'] = pickle.dumps(classifier.classifier)
+        session.add(hypothesis_sample_match)
+        session.commit()
 
         self.comm.send(Message("Peak Cluster Search Complete", "update"))
 
@@ -67,12 +74,14 @@ class LCMSSearchTask(Task):
                  minimum_scan_count=1,
                  search_type="TheoreticalGlycanComposition",
                  match_tolerance=2e-5, mass_shift_map=None, regression_parameters=None,
+                 minimum_mass=1200, maximum_mass=15000,
                  callback=lambda: 0, **kwargs):
         args = (
             database_path, observed_ions_path, hypothesis_id,
             sample_run_id, grouping_error_tolerance,
             minimum_scan_count, None,
-            search_type, match_tolerance, mass_shift_map, regression_parameters)
+            search_type, match_tolerance, mass_shift_map, regression_parameters,
+            minimum_mass, maximum_mass)
         name = "LC-MS Search {} @ {}".format(hypothesis_id, os.path.basename(observed_ions_path))
         kwargs.setdefault('name', name)
         super(LCMSSearchTask, self).__init__(taskmain, args, callback, **kwargs)

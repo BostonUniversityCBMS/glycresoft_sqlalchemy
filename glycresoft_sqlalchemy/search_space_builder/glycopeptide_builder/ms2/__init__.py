@@ -1,3 +1,2 @@
-from .search_space_builder import TheoreticalSearchSpaceBuilder
-from .pooling_search_space_builder import PoolingTheoreticalSearchSpaceBuilder
+from .search_space_builder import TheoreticalSearchSpaceBuilder, BatchingTheoreticalSearchSpaceBuilder
 from .exact_search_space_builder import ExactSearchSpaceBuilder

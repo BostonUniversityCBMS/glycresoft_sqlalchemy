@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 
+from sqlalchemy import and_
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import (PickleType, Numeric, Unicode, Table,
-                        Column, Integer, ForeignKey, UnicodeText, Boolean)
+from sqlalchemy import (PickleType, Numeric, Unicode,
+                        Column, Integer, ForeignKey, Boolean)
 from sqlalchemy.orm.session import object_session
 
 
@@ -18,6 +22,9 @@ from ..glycomics import with_glycan_composition
 from ..sequence_model.peptide import (
     GlycopeptideBase, HasMS1Information, TheoreticalGlycopeptide,
     Protein)
+
+from ..sequence_model.fragment import (
+    TheoreticalPeptideProductIon, TheoreticalGlycopeptideStubIon)
 
 from ..observed_ions import TandemScan, SampleRun
 
@@ -96,18 +103,25 @@ class SpectrumMatchBase(object):
                     break
         return series
 
+    def comatches(self):
+        session = object_session(self)
+        TYPE = self.__class__
+        comatches = session.query(TYPE).filter(
+            TYPE.id != self.id,
+            TYPE.hypothesis_sample_match_id == self.hypothesis_sample_match_id).all()
+        return comatches
+
 
 class GlycopeptideSpectrumMatch(Base, SpectrumMatchBase):
     __tablename__ = "GlycopeptideSpectrumMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    glycopeptide_match_id = Column(Integer, ForeignKey("GlycopeptideMatch.id"), index=True)
+    glycopeptide_match_id = Column(Integer, ForeignKey("GlycopeptideMatch.id", ondelete='CASCADE'), index=True)
 
     def __repr__(self):
         try:
             return "<GlycopeptideSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
-                self.glycopeptide_match.glycopeptide_sequence,
-                self.scan_time, len(self.peak_match_map))
+                self.glycopeptide_sequence, self.scan_time, len(self.peak_match_map))
         except:
             return "<GlycopeptideSpectrumMatch (No Sequence Error) {}>".format(self.id)
 
@@ -115,6 +129,7 @@ class GlycopeptideSpectrumMatch(Base, SpectrumMatchBase):
         from glycresoft_sqlalchemy.scoring import simple_scoring_algorithm
         b = Bundle(**simple_scoring_algorithm.split_ion_list(self.ion_matches()))
         b.glycopeptide_sequence = self.glycopeptide_sequence
+        b.id = self.id
         return b
 
     @property
@@ -123,6 +138,21 @@ class GlycopeptideSpectrumMatch(Base, SpectrumMatchBase):
             return self.glycopeptide_match.glycopeptide_sequence
         except:
             return "(No Sequence Error)"
+
+    @classmethod
+    def is_not_decoy(cls):
+        return ((cls.glycopeptide_match_id == GlycopeptideMatch.id) &
+                (GlycopeptideMatch.protein_id == Protein.id) &
+                (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy))
+
+    @classmethod
+    def is_decoy(cls):
+        return ((cls.glycopeptide_match_id == GlycopeptideMatch.id) &
+                (GlycopeptideMatch.protein_id == Protein.id) &
+                (Protein.hypothesis_id == Hypothesis.id) & (Hypothesis.is_decoy))
+
+    scores = association_proxy(
+        "_scores", "value", creator=lambda k, v: GlycopeptideSpectrumMatchScore(name=k, value=v))
 
 
 class GlycopeptideSpectrumMatchScore(Base):
@@ -135,7 +165,12 @@ class GlycopeptideSpectrumMatchScore(Base):
     spectrum_match_id = Column(Integer, ForeignKey(
         "GlycopeptideSpectrumMatch.id", ondelete="CASCADE"), index=True)
 
-    spectrum_match = relationship(GlycopeptideSpectrumMatch, backref=backref("scores"))
+    spectrum_match = relationship(GlycopeptideSpectrumMatch, backref=backref(
+        "_scores", collection_class=attribute_mapped_collection("name"),
+        cascade="all, delete-orphan"))
+
+    def __repr__(self):
+        return "GlycopeptideSpectrumMatchScore(%s=%r)" % (self.name, self.value)
 
 
 @with_glycan_composition("glycan_composition_str")
@@ -144,9 +179,9 @@ class GlycopeptideMatch(GlycopeptideBase, Base, HasMS1Information):
     __collection_name__ = "glycopeptide_matches"
 
     id = Column(Integer, primary_key=True)
-    theoretical_glycopeptide_id = Column(Integer, ForeignKey(TheoreticalGlycopeptide.id), index=True)
+    theoretical_glycopeptide_id = Column(Integer, ForeignKey(TheoreticalGlycopeptide.id, ondelete='CASCADE'), index=True)
     theoretical_reference = relationship(TheoreticalGlycopeptide)
-    hypothesis_sample_match_id = Column(Integer, ForeignKey("HypothesisSampleMatch.id"), index=True)
+    hypothesis_sample_match_id = Column(Integer, ForeignKey("HypothesisSampleMatch.id", ondelete='CASCADE'), index=True)
     hypothesis_sample_match = relationship(
         "HypothesisSampleMatch", backref=backref("glycopeptide_matches", lazy='dynamic'))
 
@@ -259,3 +294,141 @@ class GlycanSpectrumMatch(Base, SpectrumMatchBase):
         return "<GlycanSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
             self.glycan_structure_match.name or self.glycan_structure_match.id,
             self.scan_time, len(self.peak_match_map))
+
+
+class GlycopeptideIonMatchBase(object):
+
+    id = Column(Integer, primary_key=True)
+
+    @declared_attr
+    def glycopeptide_match_id(self):
+        return Column(Integer, ForeignKey(
+            GlycopeptideSpectrumMatch.id, ondelete="CASCADE"), index=True)
+
+    peak_index = Column(Integer)
+    charge = Column(Integer)
+
+    intensity = Column(Numeric(12, 4, asdecimal=False))
+    ppm_error = Column(Numeric(10, 8, asdecimal=False))
+
+    @declared_attr
+    def spectrum_match(self):
+        return relationship(GlycopeptideSpectrumMatch)
+
+
+class PeptideProductIonMatch(GlycopeptideIonMatchBase, Base):
+    __tablename__ = "PeptideProductIonMatch"
+
+    matched_ion_id = Column(Integer, ForeignKey(
+        TheoreticalPeptideProductIon.id, ondelete="CASCADE"), index=True)
+    matched_ion = relationship(TheoreticalPeptideProductIon)
+
+    @property
+    def name(self):
+        return self.matched_ion.name
+
+
+class GlycopeptideStubIonMatch(GlycopeptideIonMatchBase, Base):
+    __tablename__ = "GlycopeptideStubIonMatch"
+
+    matched_ion_id = Column(Integer, ForeignKey(
+        TheoreticalGlycopeptideStubIon.id, ondelete="CASCADE"), index=True)
+    matched_ion = relationship(TheoreticalGlycopeptideStubIon)
+
+    @property
+    def name(self):
+        return self.matched_ion.name
+
+
+class HasTheoreticalGlycopeptideProductIonMatches(object):
+
+    @declared_attr
+    def matched_glycopeptide_stub_ions(cls):
+        return relationship(GlycopeptideStubIonMatch, lazy="dynamic")
+
+    @declared_attr
+    def matched_peptide_product_ions(cls):
+        return relationship(TheoreticalPeptideProductIon, lazy="dynamic")
+
+    # Specialized Series Queries For Stub Glycopeptides / Oxonium Ions
+
+    @hybrid_property
+    def oxonium_ions(self):
+        return self.matched_glycopeptide_stub_ions.join(
+            TheoreticalGlycopeptideStubIon).filter(
+            TheoreticalGlycopeptideStubIon.ion_series == "oxonium_ion")
+
+    @oxonium_ions.expression
+    def oxonium_ions(cls):
+        return and_((cls.id == GlycopeptideStubIonMatch.glycopeptide_match_id),
+                    (GlycopeptideStubIonMatch.matched_ion_id == TheoreticalGlycopeptideStubIon.id),
+                    (TheoreticalGlycopeptideStubIon.ion_series == "oxonium_ion"))
+
+    @hybrid_property
+    def stub_glycopeptides(self):
+        return self.matched_glycopeptide_stub_ions.join(
+            TheoreticalGlycopeptideStubIon).filter(
+            TheoreticalGlycopeptideStubIon.ion_series == "stub_glycopeptide")
+
+    @stub_glycopeptides.expression
+    def stub_glycopeptides(cls):
+        return and_((cls.id == GlycopeptideStubIonMatch.glycopeptide_match_id),
+                    (GlycopeptideStubIonMatch.matched_ion_id == TheoreticalGlycopeptideStubIon.id),
+                    (TheoreticalGlycopeptideStubIon.ion_series == "stub_glycopeptide"))
+
+    # Specialized Series Queries For b/y ions
+    @hybrid_property
+    def bare_b_ions(self):
+        return self.matched_peptide_product_ions.join(
+            TheoreticalPeptideProductIon).filter(
+            TheoreticalPeptideProductIon.ion_series == "b",
+            ~TheoreticalPeptideProductIon.glycosylated)
+
+    @bare_b_ions.expression
+    def bare_b_ions(cls):
+        return and_((cls.id == PeptideProductIonMatch.glycopeptide_match_id),
+                    (PeptideProductIonMatch.matched_ion_id == TheoreticalPeptideProductIon.id),
+                    (TheoreticalPeptideProductIon.ion_series == "b"),
+                    (~TheoreticalPeptideProductIon.glycosylated))
+
+    @hybrid_property
+    def bare_y_ions(self):
+        return self.matched_peptide_product_ions.join(
+            TheoreticalPeptideProductIon).filter(
+            TheoreticalPeptideProductIon.ion_series == "y",
+            ~TheoreticalPeptideProductIon.glycosylated)
+
+    @bare_y_ions.expression
+    def bare_y_ions(cls):
+        return and_((cls.id == PeptideProductIonMatch.glycopeptide_match_id),
+                    (PeptideProductIonMatch.matched_ion_id == TheoreticalPeptideProductIon.id),
+                    (TheoreticalPeptideProductIon.ion_series == "y"),
+                    (~TheoreticalPeptideProductIon.glycosylated))
+
+    @hybrid_property
+    def glycosylated_b_ions(self):
+        return self.matched_peptide_product_ions.join(
+            TheoreticalPeptideProductIon).filter(
+            TheoreticalPeptideProductIon.ion_series == "b",
+            TheoreticalPeptideProductIon.glycosylated)
+
+    @glycosylated_b_ions.expression
+    def glycosylated_b_ions(cls):
+        return and_((cls.id == PeptideProductIonMatch.glycopeptide_match_id),
+                    (PeptideProductIonMatch.matched_ion_id == TheoreticalPeptideProductIon.id),
+                    (TheoreticalPeptideProductIon.ion_series == "b"),
+                    (TheoreticalPeptideProductIon.glycosylated))
+
+    @hybrid_property
+    def glycosylated_y_ions(self):
+        return self.matched_peptide_product_ions.join(
+            TheoreticalPeptideProductIon).filter(
+            TheoreticalPeptideProductIon.ion_series == "y",
+            TheoreticalPeptideProductIon.glycosylated)
+
+    @glycosylated_y_ions.expression
+    def glycosylated_y_ions(cls):
+        return and_((cls.id == PeptideProductIonMatch.glycopeptide_match_id),
+                    (PeptideProductIonMatch.matched_ion_id == TheoreticalPeptideProductIon.id),
+                    (TheoreticalPeptideProductIon.ion_series == "y"),
+                    (TheoreticalPeptideProductIon.glycosylated))

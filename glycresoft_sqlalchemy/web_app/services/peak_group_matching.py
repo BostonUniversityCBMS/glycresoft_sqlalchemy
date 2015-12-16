@@ -68,6 +68,11 @@ def peak_grouping_match_samples_post():
     job_parameters["mass_shift_map"] = mass_shift_map
     # --
 
+    minimum_mass = float(user_parameters['minimum-mass'])
+    maximum_mass = float(user_parameters['maximum-mass'])
+    job_parameters['minimum_mass'] = minimum_mass
+    job_parameters['maximum_mass'] = maximum_mass
+
     for sample_name in request.values.getlist('samples'):
         instance_parameters = job_parameters.copy()
         sample_run, sample_manager = g.manager.find_sample(sample_name)

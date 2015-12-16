@@ -312,6 +312,45 @@ setupAjaxForm = function(sourceUrl, container) {
 
 //# sourceMappingURL=ajax-form.js.map
 
+var ColorManager;
+
+ColorManager = (function() {
+  function ColorManager(obj) {
+    this.store = obj;
+  }
+
+  ColorManager.prototype.get = function(name) {
+    var b, g, r, rgb, string;
+    try {
+      rgb = this.store[name];
+      r = rgb[0], g = rgb[1], b = rgb[2];
+      string = "rgba(" + (r * 255) + "," + (g * 255) + "," + (b * 255) + ",0.5)";
+      return string;
+    } catch (_error) {
+      return this.update;
+    }
+  };
+
+  ColorManager.prototype.update = function(callback) {
+    if (callback == null) {
+      callback = function() {
+        return {};
+      };
+    }
+    return $.getJSON("/api/colors").success((function(_this) {
+      return function(data) {
+        _this.store = data;
+        return callback(_this);
+      };
+    })(this));
+  };
+
+  return ColorManager;
+
+})();
+
+//# sourceMappingURL=color.js.map
+
 var contextMenu;
 
 contextMenu = function(target, options, callback) {
@@ -334,6 +373,7 @@ contextMenu = function(target, options, callback) {
     }
     $(".context-menu li").click(function(e) {
       handle = $(this);
+      console.log(this, target);
       action = options[handle.attr("data-action")];
       return action.apply(target);
     });
@@ -429,6 +469,95 @@ $(function() {
 })();
 
 //# sourceMappingURL=formatstring.js.map
+
+var GlycanComposition;
+
+GlycanComposition = (function() {
+  function GlycanComposition(string) {
+    this.__order = [];
+    this.map = {};
+    this.parse(string);
+  }
+
+  GlycanComposition.prototype.parse = function(string) {
+    var i, len, name, number, part, parts, ref, results;
+    parts = string.slice(1, -1).split("; ");
+    results = [];
+    for (i = 0, len = parts.length; i < len; i++) {
+      part = parts[i];
+      ref = part.split(":"), name = ref[0], number = ref[1];
+      this.__order.push(name);
+      results.push(this.map[name] = parseInt(number));
+    }
+    return results;
+  };
+
+  GlycanComposition.prototype.format = function(colorSource) {
+    var color, name, number, parts, ref, template;
+    parts = [];
+    ref = this.map;
+    for (name in ref) {
+      number = ref[name];
+      console.log(name, number);
+      if (name === '__order') {
+        continue;
+      }
+      color = colorSource.get(name);
+      template = "<span class='monosaccharide-name' style='background-color:" + color + "; padding: 2px;border-radius:2px;'>" + name + " " + number + "</span>";
+      parts.push(template);
+    }
+    return parts.join(' ');
+  };
+
+  return GlycanComposition;
+
+})();
+
+//# sourceMappingURL=glycan-composition-parser.js.map
+
+var GlycanComposition;
+
+GlycanComposition = (function() {
+  function GlycanComposition(string) {
+    this.__order = [];
+    this.map = {};
+    this.parse(string);
+  }
+
+  GlycanComposition.prototype.parse = function(string) {
+    var i, len, name, number, part, parts, ref, results;
+    parts = string.slice(1, -1).split("; ");
+    results = [];
+    for (i = 0, len = parts.length; i < len; i++) {
+      part = parts[i];
+      ref = part.split(":"), name = ref[0], number = ref[1];
+      this.__order.push(name);
+      results.push(this.map[name] = parseInt(number));
+    }
+    return results;
+  };
+
+  GlycanComposition.prototype.format = function(colorSource) {
+    var color, name, number, parts, ref, template;
+    parts = [];
+    ref = this.map;
+    for (name in ref) {
+      number = ref[name];
+      if (name === '__order') {
+        continue;
+      }
+      color = colorSource.get(name);
+      template = "<span class='monosaccharide-name' style='background-color:" + color + "; padding: 2px;border-radius:2px;'>" + name + " " + number + "</span>";
+      parts.push(template);
+    }
+    return parts.join(' ');
+  };
+
+  return GlycanComposition;
+
+})();
+
+//# sourceMappingURL=glycan-composition.js.map
 
 var getProteinName, getProteinNamesFromMzIdentML, identifyProteomicsFormat;
 
@@ -537,10 +666,223 @@ materialFileInput = function() {
 
 //# sourceMappingURL=material-shim.js.map
 
+var PeptideSequence, PeptideSequencePosition;
+
+PeptideSequencePosition = (function() {
+  var formatModification;
+
+  formatModification = function(modification, colorSource, long) {
+    var color, content;
+    if (long == null) {
+      long = false;
+    }
+    color = colorSource.get(modification);
+    content = long ? modification : modification[0];
+    return "(<span class='modification-chip' style='background-color:" + color + ";padding-left:1px;padding-right:2px;border-radius:2px;' title='" + modification + "' data-modification=" + modification + ">" + content + "</span>)";
+  };
+
+  function PeptideSequencePosition(residue, modifications) {
+    if (modifications == null) {
+      modifications = [];
+    }
+    this.residue = residue;
+    this.modifications = modifications;
+  }
+
+  PeptideSequencePosition.prototype.format = function(colorSource) {
+    var modifications;
+    modifications = this.modifications.map(function(modification) {
+      return formatModification(modification, colorSource);
+    }).join('');
+    return this.residue + modifications;
+  };
+
+  return PeptideSequencePosition;
+
+})();
+
+PeptideSequence = (function() {
+  var parser;
+
+  parser = function(sequence) {
+    var cTerm, chunks, currentAA, currentMod, currentMods, glycan, i, m, mods, nTerm, nextChr, p, parenLevel, state;
+    state = "start";
+    nTerm = nTerm || "H";
+    cTerm = cTerm || "OH";
+    mods = [];
+    chunks = [];
+    glycan = "";
+    currentAA = "";
+    currentMod = "";
+    currentMods = [];
+    parenLevel = 0;
+    i = 0;
+    while (i < sequence.length) {
+      nextChr = sequence[i];
+      if (nextChr === "(") {
+        if (state === "aa") {
+          state = "mod";
+          parenLevel += 1;
+        } else if (state === "start") {
+          state = "nTerm";
+          parenLevel += 1;
+        } else {
+          parenLevel += 1;
+          if (!((state === "nTerm" || state === "cTerm") && parenLevel === 1)) {
+            currentMod += nextChr;
+          }
+        }
+      } else if (nextChr === ")") {
+        if (state === "aa") {
+          throw new Exception("Invalid Sequence. ) found outside of modification, Position {0}. {1}".format(i, sequence));
+        } else {
+          parenLevel -= 1;
+          if (parenLevel === 0) {
+            mods.push(currentMod);
+            currentMods.push(currentMod);
+            if (state === "mod") {
+              state = 'aa';
+              if (currentAA === "") {
+                chunks.slice(-1)[1] = chunks.slice(-1)[1].concat(currentMods);
+              } else {
+                chunks.push([currentAA, currentMods]);
+              }
+            } else if (state === "nTerm") {
+              if (sequence[i + 1] !== "-") {
+                throw new Exception("Malformed N-terminus for " + sequence);
+              }
+              nTerm = currentMod;
+              state = "aa";
+              i += 1;
+            } else if (state === "cTerm") {
+              cTerm = currentMod;
+            }
+            currentMods = [];
+            currentMod = "";
+            currentAA = "";
+          } else {
+            currentMod += nextChr;
+          }
+        }
+      } else if (nextChr === "|") {
+        if (state === "aa") {
+          throw new Exception("Invalid Sequence. | found outside of modification");
+        } else {
+          currentMods.push(currentMod);
+          mods.push(currentMod);
+          currentMod = "";
+        }
+      } else if (nextChr === "{") {
+        if (state === 'aa' || (state === "cTerm" && parenLevel === 0)) {
+          glycan = sequence.slice(i);
+          break;
+        } else {
+          currentMod += nextChr;
+        }
+      } else if (nextChr === "-") {
+        if (state === "aa") {
+          state = "cTerm";
+          if (currentAA !== "") {
+            currentMods.push(currentMod);
+            chunks.push([currentAA, currentMods]);
+            currentMod = "";
+            currentMods = [];
+            currentAA = "";
+          }
+        } else {
+          currentMod += nextChr;
+        }
+      } else if (state === "start") {
+        state = "aa";
+        currentAA = nextChr;
+      } else if (state === "aa") {
+        if (currentAA !== "") {
+          currentMods.push(currentMod);
+          chunks.push([currentAA, currentMods]);
+          currentMod = "";
+          currentMods = [];
+          currentAA = "";
+        }
+        currentAA = nextChr;
+      } else if (state === "nTerm" || state === "mod" || state === "cTerm") {
+        currentMod += nextChr;
+      } else {
+        throw new Exception("Unknown Tokenizer State", currentAA, currentMod, i, nextChr);
+      }
+      i += 1;
+    }
+    if (currentAA !== "") {
+      chunks.push([currentAA, currentMod]);
+    }
+    if (currentMod !== "") {
+      mods.push(currentMod);
+    }
+    if (glycan !== "") {
+      glycan = new GlycanComposition(glycan);
+    } else {
+      glycan = null;
+    }
+    chunks = (function() {
+      var j, len, results;
+      results = [];
+      for (j = 0, len = chunks.length; j < len; j++) {
+        p = chunks[j];
+        results.push(new PeptideSequencePosition(p[0], (function() {
+          var k, len1, ref, results1;
+          ref = p[1];
+          results1 = [];
+          for (k = 0, len1 = ref.length; k < len1; k++) {
+            m = ref[k];
+            if (m !== "") {
+              results1.push(m);
+            }
+          }
+          return results1;
+        })()));
+      }
+      return results;
+    })();
+    return [chunks, mods, glycan, nTerm, cTerm];
+  };
+
+  function PeptideSequence(string) {
+    var mods, ref;
+    ref = parser(string), this.sequence = ref[0], mods = ref[1], this.glycan = ref[2], this.nTerm = ref[3], this.cTerm = ref[4];
+  }
+
+  PeptideSequence.prototype.format = function(colorSource, includeGlycan) {
+    var glycan, position, positions, sequence;
+    if (includeGlycan == null) {
+      includeGlycan = true;
+    }
+    positions = (function() {
+      var j, len, ref, results;
+      ref = this.sequence;
+      results = [];
+      for (j = 0, len = ref.length; j < len; j++) {
+        position = ref[j];
+        results.push(position.format(colorSource));
+      }
+      return results;
+    }).call(this);
+    sequence = positions.join("");
+    if (includeGlycan) {
+      glycan = this.glycan.format(colorSource);
+      sequence += glycan;
+    }
+    return sequence;
+  };
+
+  return PeptideSequence;
+
+})();
+
+//# sourceMappingURL=peptide-sequence.js.map
+
 var TinyNotification;
 
 TinyNotification = (function() {
-  TinyNotification.prototype.template = "<div class='notification-container'>\n    <a class='dismiss-notification mdi-content-clear'></a>\n    <div class='notification-content'>\n    </div>\n</div>";
+  TinyNotification.prototype.template = "<div class='notification-container'>\n    <div class='clearfix dismiss-container'>\n        <a class='dismiss-notification mdi-content-clear'></a>\n    </div>\n    <div class='notification-content'>\n    </div>\n</div>";
 
   function TinyNotification(top, left, message, parent, css) {
     if (parent == null) {

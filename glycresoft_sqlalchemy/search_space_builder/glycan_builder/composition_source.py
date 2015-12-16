@@ -137,7 +137,7 @@ class OtherGlycanHypothesisGlycanHypothesisBuilder(PipelineModule):
             TheoreticalGlycanComposition.hypothesis_id == self.source_hypothesis_id).all()
         monosaccharide_identities = set()
         for composition in selection:
-            composition = glycan_composition.parse(selection.composition)
+            composition = glycan_composition.parse(composition.composition)
             reduction(composition)
             derivatization(composition)
 

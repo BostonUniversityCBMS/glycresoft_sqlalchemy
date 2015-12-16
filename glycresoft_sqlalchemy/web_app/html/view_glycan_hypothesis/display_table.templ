@@ -17,7 +17,7 @@
                             {{loop.index + base_index}}
                         </td>
                         <td class='very-wide'>
-                            {{element.composition}}
+                            {{element.composition|glycan_composition_string}}
                         </td>
                         <td>
                             {{element.calculated_mass}}

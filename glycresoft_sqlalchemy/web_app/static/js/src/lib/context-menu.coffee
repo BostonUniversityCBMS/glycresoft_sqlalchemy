@@ -23,6 +23,7 @@ contextMenu = (target, options, callback=null) ->
         # the menu
         $(".context-menu li").click (e) ->
             handle = $(this)
+            console.log this, target
             action = options[handle.attr("data-action")]
             action.apply target
 
