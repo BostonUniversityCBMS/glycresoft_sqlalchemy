@@ -5,7 +5,7 @@ from pyteomics import mzid
 from sqlalchemy import func
 from glycresoft_sqlalchemy.data_model import DatabaseManager, Protein, InformedPeptide, Hypothesis, ExactMS1GlycopeptideHypothesis
 from glycresoft_sqlalchemy.structure import sequence, modification, residue
-from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder import peptide_utilities
+from .enzyme import expasy_rules
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 logger = logging.getLogger("mzid")
 
@@ -293,7 +293,7 @@ class Proteome(object):
         last = 0
         i = 0
         try:
-            enzyme = re.compile(peptide_utilities.expasy_rules.get(self.enzymes[0]))
+            enzyme = re.compile(expasy_rules.get(self.enzymes[0]))
         except Exception, e:
             logger.exception("Enzyme not found.", exc_info=e)
             enzyme = None

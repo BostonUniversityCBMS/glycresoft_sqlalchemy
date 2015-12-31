@@ -1,16 +1,15 @@
 import re
 import itertools
 import logging
-try:
-    logger = logging.getLogger("peptide_utilities")
-except:
-    logger = logging
 from collections import Counter
 
 from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide
 from glycresoft_sqlalchemy.structure import sequence, modification
+from glycresoft_sqlalchemy.proteomics.enzyme import expasy_rules, merge_enzyme_rules
 
 from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet, descending_combination_counter
+
+logger = logging.getLogger("peptide_utilities")
 
 Sequence = sequence.Sequence
 RestrictedModificationTable = modification.RestrictedModificationTable
@@ -19,45 +18,45 @@ product = itertools.product
 chain_iterable = itertools.chain.from_iterable
 
 
-expasy_rules = {'arg-c': 'R',
-                'asp-n': '\\w(?=D)',
-                'bnps-skatole': 'W',
-                'caspase 1': '(?<=[FWYL]\\w[HAT])D(?=[^PEDQKR])',
-                'caspase 10': '(?<=IEA)D',
-                'caspase 2': '(?<=DVA)D(?=[^PEDQKR])',
-                'caspase 3': '(?<=DMQ)D(?=[^PEDQKR])',
-                'caspase 4': '(?<=LEV)D(?=[^PEDQKR])',
-                'caspase 5': '(?<=[LW]EH)D',
-                'caspase 6': '(?<=VE[HI])D(?=[^PEDQKR])',
-                'caspase 7': '(?<=DEV)D(?=[^PEDQKR])',
-                'caspase 8': '(?<=[IL]ET)D(?=[^PEDQKR])',
-                'caspase 9': '(?<=LEH)D',
-                'chymotrypsin high specificity': '([FY](?=[^P]))|(W(?=[^MP]))',
-                'chymotrypsin low specificity': '([FLY](?=[^P]))|(W(?=[^MP]))|(M(?=[^PY]))|(H(?=[^DMPW]))',
-                'clostripain': 'R',
-                'cnbr': 'M',
-                'enterokinase': '(?<=[DE]{3})K',
-                'factor xa': '(?<=[AFGILTVM][DE]G)R',
-                'formic acid': 'D',
-                'glutamyl endopeptidase': 'E',
-                'granzyme b': '(?<=IEP)D',
-                'hydroxylamine': 'N(?=G)',
-                'iodosobenzoic acid': 'W',
-                'lysc': 'K',
-                'ntcb': '\\w(?=C)',
-                'pepsin ph1.3': '((?<=[^HKR][^P])[^R](?=[FLWY][^P]))|((?<=[^HKR][^P])[FLWY](?=\\w[^P]))',
-                'pepsin ph2.0': '((?<=[^HKR][^P])[^R](?=[FL][^P]))|((?<=[^HKR][^P])[FL](?=\\w[^P]))',
-                'proline endopeptidase': '(?<=[HKR])P(?=[^P])',
-                'proteinase k': '[AEFILTVWY]',
-                'staphylococcal peptidase i': '(?<=[^E])E',
-                'thermolysin': '[^DE](?=[AFILMV])',
-                'thrombin': '((?<=G)R(?=G))|((?<=[AFGILTVM][AFGILTVWA]P)R(?=[^DE][^DE]))',
-                'trypsin': '([KR](?=[^P]))|((?<=W)K(?=P))|((?<=M)R(?=P))'}
+# expasy_rules = {'arg-c': 'R',
+#                 'asp-n': '\\w(?=D)',
+#                 'bnps-skatole': 'W',
+#                 'caspase 1': '(?<=[FWYL]\\w[HAT])D(?=[^PEDQKR])',
+#                 'caspase 10': '(?<=IEA)D',
+#                 'caspase 2': '(?<=DVA)D(?=[^PEDQKR])',
+#                 'caspase 3': '(?<=DMQ)D(?=[^PEDQKR])',
+#                 'caspase 4': '(?<=LEV)D(?=[^PEDQKR])',
+#                 'caspase 5': '(?<=[LW]EH)D',
+#                 'caspase 6': '(?<=VE[HI])D(?=[^PEDQKR])',
+#                 'caspase 7': '(?<=DEV)D(?=[^PEDQKR])',
+#                 'caspase 8': '(?<=[IL]ET)D(?=[^PEDQKR])',
+#                 'caspase 9': '(?<=LEH)D',
+#                 'chymotrypsin high specificity': '([FY](?=[^P]))|(W(?=[^MP]))',
+#                 'chymotrypsin low specificity': '([FLY](?=[^P]))|(W(?=[^MP]))|(M(?=[^PY]))|(H(?=[^DMPW]))',
+#                 'clostripain': 'R',
+#                 'cnbr': 'M',
+#                 'enterokinase': '(?<=[DE]{3})K',
+#                 'factor xa': '(?<=[AFGILTVM][DE]G)R',
+#                 'formic acid': 'D',
+#                 'glutamyl endopeptidase': 'E',
+#                 'granzyme b': '(?<=IEP)D',
+#                 'hydroxylamine': 'N(?=G)',
+#                 'iodosobenzoic acid': 'W',
+#                 'lysc': 'K',
+#                 'ntcb': '\\w(?=C)',
+#                 'pepsin ph1.3': '((?<=[^HKR][^P])[^R](?=[FLWY][^P]))|((?<=[^HKR][^P])[FLWY](?=\\w[^P]))',
+#                 'pepsin ph2.0': '((?<=[^HKR][^P])[^R](?=[FL][^P]))|((?<=[^HKR][^P])[FL](?=\\w[^P]))',
+#                 'proline endopeptidase': '(?<=[HKR])P(?=[^P])',
+#                 'proteinase k': '[AEFILTVWY]',
+#                 'staphylococcal peptidase i': '(?<=[^E])E',
+#                 'thermolysin': '[^DE](?=[AFILMV])',
+#                 'thrombin': '((?<=G)R(?=G))|((?<=[AFGILTVM][AFGILTVWA]P)R(?=[^DE][^DE]))',
+#                 'trypsin': '([KR](?=[^P]))|((?<=W)K(?=P))|((?<=M)R(?=P))'}
 
 
-def merge_enzyme_rules(enzyme_names):
-    rules = ["(" + expasy_rules[name] + ")" for name in enzyme_names]
-    return "|".join(rules)
+# def merge_enzyme_rules(enzyme_names):
+#     rules = ["(" + expasy_rules[name] + ")" for name in enzyme_names]
+#     return "|".join(rules)
 
 
 def n_glycan_sequon_sites(peptide):
