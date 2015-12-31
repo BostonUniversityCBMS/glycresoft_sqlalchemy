@@ -26,6 +26,7 @@ requirements:
         - pyteomics
         - requests
         - glypy
+        - gevent
 
     run:
         - python 2.7.*
@@ -41,6 +42,7 @@ requirements:
         - scikit-learn
         - pyteomics
         - glypy
+        - gevent
 test:
     imports:
         - glycresoft_sqlalchemy

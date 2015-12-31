@@ -16,8 +16,6 @@ from glycresoft_sqlalchemy.search_space_builder.glycan_builder import (
 
 from glycresoft_sqlalchemy.app import let
 
-commit_checkpoint = os.environ.get("GLYCRESOFT_COMMIT_INTERVAL", 1000)
-
 
 def build_naive_ms1_glycopeptide(database_path, protein_file, site_list_file, glycan_file,
                                  glycan_file_type, constant_modifications, variable_modifications,
@@ -30,9 +28,12 @@ def build_naive_ms1_glycopeptide(database_path, protein_file, site_list_file, gl
 
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
                  database_path, hypothesis_name, protein_file, site_list_file,
-                 glycan_file, glycan_file_type, constant_modifications,
-                 variable_modifications, enzyme, max_missed_cleavages, **kwargs)
+                 glycomics_path=glycan_file, glycomics_format=glycan_file_type,
+                 constant_modifications=constant_modifications,
+                 variable_modifications=variable_modifications, enzyme=enzyme,
+                 max_missed_cleavages=max_missed_cleavages, **kwargs)
     job.start()
+    print job.hypothesis_id
 
 
 def build_informed_ms1_glycopeptide(mzid_path, database_path, site_list_file, glycan_file,
@@ -51,6 +52,7 @@ def build_informed_ms1_glycopeptide(mzid_path, database_path, site_list_file, gl
         glycomics_path=glycan_file, glycomics_format=glycan_file_type,
         n_processes=n_processes)
     job.start()
+    print job.hypothesis_id
 
 
 def build_naive_ms2_glycopeptide(database_path, hypothesis_sample_match_id, **kwargs):
@@ -96,6 +98,7 @@ def build_glycan_glycome_db(
         include_structures=include_structures,
         motif_family=motif_family, reduction=reduction, derivatization=derivatization)
     job.start()
+    print job.hypothesis_id
 
 
 def build_glycan_text(database_path, text_file_path, reduction=None, derivatization=None, *args, **kwargs):
@@ -104,6 +107,7 @@ def build_glycan_text(database_path, text_file_path, reduction=None, derivatizat
         database_path=database_path, text_file_path=text_file_path, reduction=reduction,
         derivatization=derivatization, hypothesis_id=None)
     job.start()
+    print job.hypothesis_id
 
 
 def build_glycan_other_hypothesis(database_path, source_hypothesis_id=None, reduction=None,
@@ -113,6 +117,7 @@ def build_glycan_other_hypothesis(database_path, source_hypothesis_id=None, redu
         database_path, source_hypothesis_id=source_hypothesis_id, reduction=reduction,
         derivatization=derivatization, *args, **kwargs)
     job.start()
+    print job.hypothesis_id
 
 
 def build_glycan_rules(database_path, rules_file_path, reduction=None, derivatization=None, *args, **kwargs):
@@ -120,13 +125,18 @@ def build_glycan_rules(database_path, rules_file_path, reduction=None, derivatiz
     job = constrained_combinatorics.ConstrainedCombinatoricsGlycanHypothesisBuilder(
         database_path, rules_file_path, reduction=reduction, derivatization=derivatization)
     job.start()
+    print job.hypothesis_id
 
 
 def dispatch_glycomics(database_path, glycan_file, glycan_file_type, derivatization, reduction, *args, **kwargs):
     if glycan_file_type == "text":
-        build_glycan_text(database_path, glycan_file, derivatization=derivatization, reduction=reduction, *args, **kwargs)
+        build_glycan_text(
+            database_path, glycan_file, derivatization=derivatization,
+            reduction=reduction, *args, **kwargs)
     elif glycan_file_type == "rules":
-        build_glycan_rules(database_path, glycan_file, derivatization=derivatization, reduction=reduction, *args, **kwargs)
+        build_glycan_rules(
+            database_path, glycan_file, derivatization=derivatization,
+            reduction=reduction, *args, **kwargs)
     else:
         raise Exception("Glycan File Type Not Supported")
 
@@ -135,8 +145,7 @@ app.add_argument("-n", "--n-processes", default=4, type=int, help='Number of pro
 subparsers = app.add_subparsers()
 
 
-build_naive_ms1_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms1")
-with let(build_naive_ms1_glycopeptide_app) as c:
+with let(subparsers.add_parser("naive-glycopeptide-ms1")) as c:
     c.add_argument(
         "-d", "--database-path", default=None, required=True,
         help="Path to project database.")
@@ -159,8 +168,8 @@ with let(build_naive_ms1_glycopeptide_app) as c:
 
     c.add_argument(
         "-v", "--variable-modifications", action='append', help='A text formatted modification specifier'
-        ' to be applied at every possible site. Modification specifier of the form "ModificationName (ResiduesAllowed)".'
-        " May be specied more than once.")
+        ' to be applied at every possible site. Modification specifier of the form '
+        '"ModificationName (ResiduesAllowed). May be specied more than once.')
     c.add_argument(
         "-e", "--enzyme", required=False, default='trypsin', help="Protease to use for in-silico"
         " digestion of proteins. Defaults to trypsin.")
@@ -170,17 +179,14 @@ with let(build_naive_ms1_glycopeptide_app) as c:
     c.add_argument("--hypothesis-name", default=None, required=False, help="Name of the hypothesis")
     c.set_defaults(task=build_naive_ms1_glycopeptide)
 
-
-build_naive_ms2_glycopeptide_app = subparsers.add_parser("naive-glycopeptide-ms2")
-with let(build_naive_ms2_glycopeptide_app) as c:
+with let(subparsers.add_parser("naive-glycopeptide-ms2")) as c:
     c.add_argument(
         "-d", "--database-path", default=None, required=True,
         help="Path to project database.")
     c.add_argument("-i", "--hypothesis-sample-match-id", help="The id number of the hypothesis sample match to build from")
     c.set_defaults(task=build_naive_ms2_glycopeptide)
 
-build_informed_ms2_glycopeptide_app = subparsers.add_parser("informed-glycopeptide-ms2")
-with let(build_informed_ms2_glycopeptide_app) as c:
+with let(subparsers.add_parser("informed-glycopeptide-ms2")) as c:
     c.add_argument(
         "-d", "--database-path", default=None, required=True,
         help="Path to project database.")

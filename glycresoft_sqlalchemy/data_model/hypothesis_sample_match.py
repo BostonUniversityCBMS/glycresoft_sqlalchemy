@@ -11,7 +11,7 @@ from .hypothesis import (
     ExactMS1GlycopeptideHypothesis, MS2GlycanHypothesis, MS2GlycopeptideHypothesis,
     ExactMS2GlycopeptideHypothesis)
 
-from .base import Hierarchy, Base2 as Base
+from .base import Hierarchy, Base
 from .generic import MutableDict
 from .json_type import tryjson, clean_dict
 from .observed_ions import SampleRun, TandemScan, ScanBase, Peak

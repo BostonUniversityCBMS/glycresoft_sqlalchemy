@@ -8601,7 +8601,7 @@ Protein Overview Graphic
     margin-left: 40px;
     border: 1px solid grey;
     border-radius: 4px;
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 
@@ -8861,6 +8861,24 @@ Glycopeptide Match Table
     background: whitesmoke;
 }
 
+
+.oxonium-ion-table td, .oxonium-ion-table th {
+    font-size: .7em;
+    padding: 3px !important;
+    word-break: break-all;
+}
+
+.oxonium-ion-table tbody tr:hover{
+    background: whitesmoke;
+}
+
+.glycosite-summary-table tbody td{
+    padding:5px !important;
+}
+
+.glycosite-summary-table tbody tr:hover{
+    background: whitesmoke;
+}
 /*
 
 Layer System
@@ -8907,7 +8925,7 @@ Tiny Notification
     background-color: white;
     border: 1px solid grey;
     border-radius: 4px;
-    opacity: 0.8;
+    opacity: 0.9;
 
 }
 

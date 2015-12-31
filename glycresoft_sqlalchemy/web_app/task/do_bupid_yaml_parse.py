@@ -4,7 +4,7 @@ from .task_process import NullPipe, Message, Task
 
 
 def taskmain(database_path, yaml_path, results_path, comm=None):
-    # manager = DatabaseManager(database_path)
+
     if comm is None:
         comm = NullPipe()
     comm.send(Message("Begin conversion for %s." % yaml_path))

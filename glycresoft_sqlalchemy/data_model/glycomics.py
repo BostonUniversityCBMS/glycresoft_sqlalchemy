@@ -16,7 +16,7 @@ from glypy.composition import glycan_composition
 from glypy.io import glycoct
 from glypy.algorithms import subtree_search
 
-from .base import Base2 as Base, Namespace
+from .base import Base, Namespace
 from .generic import (
     MutableDict, HasTaxonomy,
     HasReferenceAccessionNumber)
@@ -433,6 +433,7 @@ class TheoreticalGlycanCombination(Base):
                 yield composition
                 i += 1
 
+    @hybrid_method
     def dehydrated_mass(self, water_mass=glypy.Composition("H2O").mass):
         mass = self.calculated_mass
         return mass - (water_mass * self.count)

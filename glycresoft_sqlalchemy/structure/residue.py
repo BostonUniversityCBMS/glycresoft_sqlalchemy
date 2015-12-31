@@ -22,8 +22,8 @@ symbol_to_residue = {
     'T': 'Thr',
     'W': 'Trp',
     'Y': 'Tyr',
-    'V': 'Val',
-    "J": "Xle"}
+    'V': 'Val'
+}
 
 
 residue_to_symbol = {value: key for key, value in symbol_to_residue.items()}
@@ -50,15 +50,7 @@ residue_table = {
     'Trp': 'C11H10N2O1',
     'Tyr': 'C9H9N1O2',
     'Val': 'C5H9N1O1',
-    # 'HexNAc': 'C8H13NO5',
-    # 'Hex': 'C6H10O5',
-    # 'dHex': 'C6H10O4',
-    # 'NeuAc': 'C11H17NO8',
-    # 'NeuGc': 'C11H17NO9',
-    # 'Water': 'H2O'
-    }
-
-residue_table["Xle"] = residue_table["Leu"]
+}
 
 residue_chemical_property_group = {
     'Ala': 'hydrophobic',
@@ -84,7 +76,23 @@ residue_chemical_property_group = {
 }
 
 
+degeneracy_index = {
+}
+
+
 class MemoizedResidueMetaclass(type):
+    '''
+    A metaclass that memoizes Residues as they are constructed
+    by overriding the class __call__ method. It will attempt to
+    look up previously created residues by symbol, then by name.
+    If a previous instance is not found, it will be created and
+    saved.
+
+    Attributes
+    ----------
+    _cache: dict
+
+    '''
     def __call__(self, symbol=None, name=None, *args, **kwargs):
         if not hasattr(self, "_cache"):
             self._cache = dict()
@@ -112,6 +120,20 @@ class MemoizedResidueMetaclass(type):
 
 
 class Residue(ResidueBase):
+    '''
+    Represent a single Amino Acid residue which compose peptide sequences. The
+    structure itself is intended to be immutable.
+
+    Attributes
+    ----------
+    name: str
+    symbol: str
+    mass: float
+    composition: :class:`glypy.Composition`
+    chemical_class: str
+    is_degenerate: bool
+
+    '''
     __slots__ = ["name", "symbol", "mass", "composition"]
 
     __metaclass__ = MemoizedResidueMetaclass
@@ -123,7 +145,6 @@ class Residue(ResidueBase):
         formula = residue_table.get(name)
         return composition_to_mass(formula)
 
-    """Basic mass values for peptide sequences"""
     def __init__(self, symbol=None, name=None):
         self.symbol = symbol
         self.name = name
@@ -134,12 +155,27 @@ class Residue(ResidueBase):
             self.by_name(name)
 
     def by_name(self, name):
+        """Configure this instance by name information
+
+        Parameters
+        ----------
+        name : str
+            Amino Acid Name
+        """
         self.composition = Composition(residue_table[name])
         self.name = name
         self.mass = self.composition.mass
         self.symbol = residue_to_symbol[name]
 
     def by_symbol(self, symbol):
+        """Configure this instance by symbol information,
+        by going from symbol to name, and from name to data
+
+        Parameters
+        ----------
+        symbol : str
+            Amino Acid symbol
+        """
         try:
             name = symbol_to_residue[symbol]
             self.by_name(name)
@@ -150,14 +186,18 @@ class Residue(ResidueBase):
         return self.name
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(self.name)
 
     def __eq__(self, other):
+        if self is other:
+            return True
         if isinstance(other, Residue):
             other = other.name
         return self.name == other
 
     def __ne__(self, other):
+        if self is other:
+            return False
         if isinstance(other, Residue):
             other = other.name
         return self.name != other
@@ -172,28 +212,59 @@ class Residue(ResidueBase):
     def chemical_class(self):
         return residue_chemical_property_group[self.name]
 
+    @property
+    def is_degenerate(self):
+        try:
+            return degeneracy_index[self.name]
+        except KeyError:
+            return False
+
+
+def register_residue(name, symbol, formula, chemical_class):
+    assert symbol not in symbol_to_residue
+    assert name not in residue_table
+    residue_to_symbol[name] = symbol
+    symbol_to_residue[symbol] = name
+    residue_table[name] = formula
+    residue_chemical_property_group[name] = chemical_class
+    return Residue(symbol=symbol)
+
+
+def register_degenerate(name, symbol, mappings):
+    assert symbol not in symbol_to_residue
+    assert name not in residue_table
+    residue_to_symbol[name] = symbol
+    symbol_to_residue[symbol] = name
+    residue_table[name] = residue_table[mappings[0]]
+    residue_chemical_property_group[name] = residue_chemical_property_group[mappings[0]]
+    degeneracy_index[name] = frozenset(mappings)
+    return Residue(symbol=symbol)
+
+
+register_degenerate("Xle", "J", ["Leu", "Ile"])
+
 
 def get_all_residues():
     symbols = [
-    'A',
-    'R',
-    'N',
-    'D',
-    'C',
-    'E',
-    'Q',
-    'G',
-    'H',
-    'I',
-    'L',
-    'K',
-    'M',
-    'F',
-    'P',
-    'S',
-    'T',
-    'W',
-    'Y',
-    'V',
+        'A',
+        'R',
+        'N',
+        'D',
+        'C',
+        'E',
+        'Q',
+        'G',
+        'H',
+        'I',
+        'L',
+        'K',
+        'M',
+        'F',
+        'P',
+        'S',
+        'T',
+        'W',
+        'Y',
+        'V',
     ]
     return map(Residue, symbols)

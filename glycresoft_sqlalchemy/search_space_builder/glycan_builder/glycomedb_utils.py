@@ -9,6 +9,7 @@ from lxml import etree
 from glypy.utils import StringIO
 from glypy.io import glycoct
 from glypy import Glycan, GlycanComposition
+from glypy.composition.glycan_composition import FrozenGlycanComposition
 from glypy.algorithms import subtree_search
 
 from taxonomylite import Taxonomy
@@ -84,6 +85,7 @@ class GlycomeDBDownloader(PipelineModule):
                 i += 1
                 glycoct_str = structure.find("sequence").text
                 taxa = [Taxon.get(session, t.attrib['ncbi']) for t in structure.iterfind(".//taxon")]
+                session.flush()
                 glycan = glycoct.loads(glycoct_str)
                 if (glycoct.loads(str(glycan)).mass() - glycan.mass()) > 0.00001:
                     raise Exception("Mass did not match on reparse, %f" % (glycoct.loads(str(glycan)).mass() - glycan.mass()))
@@ -127,19 +129,19 @@ class GlycomeDBDownloader(PipelineModule):
                 func.distinct(TheoreticalGlycanStructure.composition)).filter(
                 TheoreticalGlycanStructure.hypothesis_id == hypothesis_id):
             i += 1
-            logger.info("Creating Composition %s", composition)
+            # logger.info("Creating Composition %s", composition)
             tgc = TheoreticalGlycanComposition(
                 composition=composition,
                 hypothesis_id=hypothesis_id,
-                calculated_mass=GlycanComposition.parse(composition).mass())
+                calculated_mass=FrozenGlycanComposition.parse(composition).mass())
             session.add(tgc)
             session.flush()
-            logger.info("Relating Composition to Structures %s", tgc)
+            # logger.info("Relating Composition to Structures %s", tgc)
             session.query(TheoreticalGlycanStructure).filter(
                 TheoreticalGlycanStructure.composition == composition).update({
                 "composition_reference_id": tgc.id
                 }, synchronize_session=False)
-            logger.info("Assigning Taxa")
+            # logger.info("Assigning Taxa")
             taxa_assoc = [{"taxon_id": id[0], "entity_id": tgc.id} for id in session.query(
                 func.distinct(Taxon.id)).join(
                 TheoreticalGlycanStructure.taxa).filter(
@@ -147,6 +149,7 @@ class GlycomeDBDownloader(PipelineModule):
             session.execute(CompositionTaxonomyAssociationTable.insert(), taxa_assoc)
             if i % 1000 == 0:
                 session.commit()
+                self.inform("Commit %s", i)
         session.commit()
         return hypothesis_id
 

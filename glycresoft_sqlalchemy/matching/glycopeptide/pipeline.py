@@ -25,6 +25,7 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         self.intensity_threshold = intensity_threshold
         self.n_processes = n_processes
         self.options = kwargs
+        self.scorer = scorer
 
     def prepare_hypothesis_sample_match(self):
         session = self.manager()
@@ -117,6 +118,7 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         task = score_spectrum_matches.SimpleSpectrumAssignment(
             self.database_path,
             hypothesis_id=self.target_hypothesis_id,
+            scorer=self.scorer,
             hypothesis_sample_match_id=self.hypothesis_sample_match_id,
             n_processes=self.n_processes)
         task.start()
@@ -125,6 +127,7 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         task = score_spectrum_matches.SimpleSpectrumAssignment(
             self.database_path,
             hypothesis_id=self.decoy_hypothesis_id,
+            scorer=self.scorer,
             hypothesis_sample_match_id=self.hypothesis_sample_match_id,
             n_processes=self.n_processes)
         task.start()

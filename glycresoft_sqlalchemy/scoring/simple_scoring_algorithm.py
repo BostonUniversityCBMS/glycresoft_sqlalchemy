@@ -212,9 +212,15 @@ def compute_percent_uncovered(matched):
 
 class SimpleSpectrumScorer(GlycopeptideSpectrumMatchScorer):
     def __init__(self):
-        super(SimpleSpectrumScorer, self).__init__(evaluate, "simple_ms2_score", "ms2_score")
+        super(SimpleSpectrumScorer, self).__init__("simple_ms2_score", "ms2_score")
+
+    def evaluate(self, *args, **kwargs):
+        evaluate(*args, **kwargs)
 
 
 class SimpleScorer(ScorerBase):
     def __init__(self):
-        super(SimpleScorer, self).__init__(evaluate, "ms2_score")
+        super(SimpleScorer, self).__init__("ms2_score")
+
+    def evaluate(self, *args, **kwargs):
+        evaluate(*args, **kwargs)

@@ -5,7 +5,7 @@ import logging
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, Hypothesis, SampleRun, HypothesisSampleMatch,
     BUPIDDeconvolutedLCMSMSSampleRun, Decon2LSLCMSSampleRun,
-    MS1GlycanHypothesis,
+    MS1GlycanHypothesis, MS1GlycanHypothesisSampleMatch,
     MS1GlycopeptideHypothesis, MS2GlycopeptideHypothesis,
     PeakGroupMatch, MS1GlycopeptideHypothesisSampleMatch)
 
@@ -104,6 +104,10 @@ class ProjectManager(DatabaseManager, TaskManager):
     def ms2_glycopeptide_hypotheses(self):
         session = self.session()
         return session.query(MS2GlycopeptideHypothesis).filter(~Hypothesis.is_decoy)
+
+    def ms1_glycan_hypothesis_sample_matches(self):
+        session = self.session()
+        return session.query(MS1GlycanHypothesisSampleMatch)
 
     def ms1_glycopeptide_peak_group_matches(self):
         session = self.session()

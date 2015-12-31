@@ -4,12 +4,10 @@ import operator
 
 from glycresoft_sqlalchemy.structure import sequence, constants
 from glycresoft_sqlalchemy.utils import collectiontools
-from glycresoft_sqlalchemy.structure import stub_glycopeptides
 from glycresoft_sqlalchemy.data_model import (
     TheoreticalPeptideProductIon, TheoreticalGlycopeptideStubIon)
 
 Sequence = sequence.Sequence
-StubGlycopeptide = stub_glycopeptides.StubGlycopeptide
 kind_getter = operator.attrgetter("kind")
 
 
@@ -96,10 +94,6 @@ def fragments(sequence):
             else:
                 y_ions.append({"key": key, "mass": mass})
 
-    # pep_stubs = StubGlycopeptide.from_sequence(sequence)
-    # stub_ions = pep_stubs.get_stubs()
-    # # oxonium_ions = pep_stubs.get_oxonium_ions()
-    # oxonium_ions = [{"key": f.name, "mass": f.mass} for f in sequence.glycan_fragments()]
     oxonium_ions, stub_ions = oxonium_ions_and_stub_ions(sequence)
     return (oxonium_ions, b_ions, y_ions,
             b_ions_hexnac, y_ions_hexnac,

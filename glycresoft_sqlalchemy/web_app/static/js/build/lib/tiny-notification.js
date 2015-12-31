@@ -1,4 +1,4 @@
-var TinyNotification;
+var TinyNotification, tinyNotify;
 
 TinyNotification = (function() {
   TinyNotification.prototype.template = "<div class='notification-container'>\n    <div class='clearfix dismiss-container'>\n        <a class='dismiss-notification mdi-content-clear'></a>\n    </div>\n    <div class='notification-content'>\n    </div>\n</div>";
@@ -36,5 +36,15 @@ TinyNotification = (function() {
   return TinyNotification;
 
 })();
+
+tinyNotify = function(top, left, message, parent, css) {
+  if (parent == null) {
+    parent = 'body';
+  }
+  if (css == null) {
+    css = {};
+  }
+  return new TinyNotification(top, left, message, parent, css);
+};
 
 //# sourceMappingURL=tiny-notification.js.map

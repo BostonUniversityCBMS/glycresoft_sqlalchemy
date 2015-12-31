@@ -25,3 +25,4 @@ class TinyNotification
         @container.find(".dismiss-notification").click()
 
 
+tinyNotify = (top, left, message, parent='body', css={}) -> new TinyNotification(top, left, message, parent, css)

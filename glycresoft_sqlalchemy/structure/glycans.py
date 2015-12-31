@@ -4,6 +4,7 @@ Deprecated Simplisitic Glycan Implementation
 
 from .modification import AnonymousModificationRule
 import glypy
+from glypy import Composition
 
 oxonium_ions = {
     "HexNAc": 204.0864,
@@ -24,12 +25,61 @@ class SimpleGlycan(glypy.GlycanComposition):
         super(SimpleGlycan).__init__(self, *args, **kwargs)
 
     @property
-    def molecular_weight(self):
-        return self.mass
-
-    @property
     def mass(self):
         return super(SimpleGlycan, self).mass()
 
     def as_modification(self):
         return AnonymousModificationRule("Glycan[{0}]".format(';'.join(self.serialize(), self.mass)))
+
+
+class GlycosylationSite(object):
+
+    def __init__(self, parent, position, glycosylation=None):
+        self.parent = parent
+        self.position = position
+        self.glycosylation = glycosylation
+        self.mass = glycosylation.mass()
+
+    def __repr__(self):
+        rep = 'GlycosylationSite(%d, %s)' % (self.position, self.glycosylation)
+        return rep
+
+    def __eq__(self, other):
+        try:
+            return (self.position == other.position) and (self.glycosylation == other.glycosylation)
+        except:
+            return False
+
+    def __ne__(self, other):
+        try:
+            return (self.position != other.position) and (self.glycosylation != other.glycosylation)
+        except:
+            return True
+
+    def __hash__(self):
+        return hash((self.position, self.glycosylation))
+
+
+class MassableValueDict(dict):
+    def total_composition(self):
+        total = Composition()
+        for key, value in self.items():
+            total += value.total_composition()
+        return total
+
+    def mass(self, charge=0, average=False, mass_data=None):
+        if charge == 0:
+            total = 0.
+            for key, value in self.items():
+                total += value.mass(average=average, mass_data=mass_data)
+            return total
+        else:
+            return self.total_composition().calc_mass(
+                charge=charge, average=average, mass_data=mass_data)
+
+
+class GlycosylationManager(MassableValueDict):
+    def __init__(self, parent, *glycosite):
+        self.parent = parent
+        for glycosite in self.glycosite:
+            self[glycosite.position] = glycosite

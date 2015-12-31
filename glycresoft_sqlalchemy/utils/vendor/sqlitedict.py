@@ -33,6 +33,7 @@ import tempfile
 import random
 import logging
 import traceback
+import functools
 
 from threading import Thread
 
@@ -82,6 +83,9 @@ except ImportError:
     from Queue import Queue
 
 
+dumps = functools.partial(dumps, protocol=PICKLE_PROTOCOL)
+
+
 logger = logging.getLogger(__name__)
 logger.setLevel("DEBUG")
 logger.propagate = False
@@ -93,19 +97,20 @@ def open(*args, **kwargs):
     return SqliteDict(*args, **kwargs)
 
 
-def encode(obj):
+def encode(obj, dumper=dumps):
     """Serialize an object using pickle to a binary format accepted by SQLite."""
-    return sqlite3.Binary(dumps(obj, protocol=PICKLE_PROTOCOL))
+    return sqlite3.Binary(dumper(obj))
 
 
-def decode(obj):
+def decode(obj, loader=loads):
     """Deserialize objects retrieved from SQLite."""
-    return loads(bytes(obj))
+    return loader(bytes(obj))
 
 
 class SqliteDict(DictClass):
     def __init__(self, filename=None, tablename='unnamed', flag='c',
-                 autocommit=False, journal_mode="DELETE"):
+                 autocommit=False, journal_mode="DELETE", dumper=dumps,
+                 loader=loads):
         """
         Initialize a thread-safe sqlite-backed dictionary. The dictionary will
         be a table `tablename` in database file `filename`. A single file (=database)
@@ -135,6 +140,8 @@ class SqliteDict(DictClass):
             if os.path.exists(filename):
                 os.remove(filename)
 
+        self.dumper = dumper
+        self.loader = loader
         dirname = os.path.dirname(filename)
         if dirname:
             if not os.path.exists(dirname):
@@ -161,7 +168,7 @@ class SqliteDict(DictClass):
         return "SqliteDict(%s)" % (self.conn.filename)
 
     def __repr__(self):
-        return str(self) # no need of something complex
+        return str(self)  # no need of something complex
 
     def __len__(self):
         # `select count (*)` is super slow in sqlite (does a linear scan!!)
@@ -186,11 +193,11 @@ class SqliteDict(DictClass):
 
     def values(self):
         GET_VALUES = 'SELECT value FROM %s ORDER BY rowid' % self.tablename
-        return  [decode(value[0]) for value in self.conn.select(GET_VALUES)]
+        return [decode(value[0], self.loader) for value in self.conn.select(GET_VALUES)]
 
     def items(self):
         GET_ITEMS = 'SELECT key, value FROM %s ORDER BY rowid' % self.tablename
-        return [(key,decode(value)) for key,value in self.conn.select(GET_ITEMS)]
+        return [(key, decode(value, self.loader)) for key, value in self.conn.select(GET_ITEMS)]
 
     def __contains__(self, key):
         HAS_ITEM = 'SELECT 1 FROM %s WHERE key = ?' % self.tablename
@@ -201,11 +208,11 @@ class SqliteDict(DictClass):
         item = self.conn.select_one(GET_ITEM, (key,))
         if item is None:
             raise KeyError(key)
-        return decode(item[0])
+        return decode(item[0], self.loader)
 
     def __setitem__(self, key, value):
         ADD_ITEM = 'REPLACE INTO %s (key, value) VALUES (?,?)' % self.tablename
-        self.conn.execute(ADD_ITEM, (key, encode(value)))
+        self.conn.execute(ADD_ITEM, (key, encode(value, self.dumper)))
 
     def __delitem__(self, key):
         if key not in self:
@@ -215,7 +222,7 @@ class SqliteDict(DictClass):
 
     def update(self, items=(), **kwds):
         try:
-            items = [(k, encode(v)) for k, v in items.items()]
+            items = [(k, encode(v, self.dumper)) for k, v in items.items()]
         except AttributeError:
             pass
 

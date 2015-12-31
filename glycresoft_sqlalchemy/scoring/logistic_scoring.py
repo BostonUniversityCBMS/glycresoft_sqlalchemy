@@ -51,6 +51,8 @@ class LogisticModelScorer(object):
 
     __call__ = predict_proba
 
+    evaluate = predict_proba
+
 
 def from_peak_group_scoring_model(model):
     return LogisticModelScorer(model.to_parameter_vector(), model.intercept)

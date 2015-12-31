@@ -1,11 +1,10 @@
-import re
 import itertools
 from glypy import MonosaccharideResidue
 
 from .residue import Residue as AminoAcidResidue, memoize, get_all_residues
 from .composition import Composition
 from .modification import Modification
-from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet
+from .sequence import Sequence
 
 
 class AminoAcidSequenceBuildingBlock(object):
@@ -21,16 +20,20 @@ class AminoAcidSequenceBuildingBlock(object):
         if neutral_mass is None:
             neutral_mass = residue_.mass + sum(m.mass for m in modifications)
         self.neutral_mass = neutral_mass
+        self._str = None
 
     def __iter__(self):
         yield self.residue
         yield self.modifications
 
     def __hash__(self):
-        return hash((self.residue, self.modifications))
+        return hash(self.residue.symbol)
 
     def __eq__(self, other):
-        return self.residue == other.residue and self.modifications == other.modifications
+        try:
+            return self.residue == other.residue and self.modifications == other.modifications
+        except:
+            return other == str(self)
 
     def __ne__(self, other):
         return not self == other
@@ -39,9 +42,14 @@ class AminoAcidSequenceBuildingBlock(object):
         return "({}, {}):{:.2f}".format(self.residue.symbol, self.modifications, self.neutral_mass)
 
     def __str__(self):
-        return "{}{}".format(
-            self.residue.symbol,
-            "({.name})".format(self.modifications[0]) if len(self.modifications) > 0 else "")
+        if self._str is None:
+            self._str = "{}{}".format(
+                self.residue.symbol,
+                "({.name})".format(self.modifications[0]) if len(self.modifications) > 0 else "")
+        return self._str
+
+    def __contains__(self, item):
+        return self == item
 
     @classmethod
     @memoize()
@@ -52,6 +60,12 @@ class AminoAcidSequenceBuildingBlock(object):
         if len(parts) > 1:
             mod = (Modification(parts[1][:-1]),)
         return cls(aa, mod)
+
+    def orderings(self):
+        yield str(self)
+
+
+n_hexnac = AminoAcidSequenceBuildingBlock.from_str("N(HexNAc)")
 
 
 class SequenceSegmentBlock(object):
@@ -66,17 +80,23 @@ class SequenceSegmentBlock(object):
 
         self.neutral_mass = neutral_mass
 
+        self._string = str(self.sequence)
+        self._hash = hash(self.sequence)
+
     def __iter__(self):
         return iter(self.sequence)
 
     def __hash__(self):
-        return hash(self.sequence)
+        return self._hash
 
     def __eq__(self, other):
         return self.sequence == other.sequence
 
     def __ne__(self, other):
         return not self == other
+
+    def __str__(self):
+        return self._string
 
 
 class MonosaccharideResidueAdapter(object):
@@ -114,7 +134,20 @@ class SequenceComposition(dict):
         self._mass = None
 
     def __getitem__(self, key):
+        if isinstance(key, basestring):
+            key = AminoAcidSequenceBuildingBlock.from_str(key)
         return dict.__getitem__(self, key)
+
+    def __contains__(self, key):
+        if isinstance(key, dict):
+            for k, v in key.items():
+                if self[k] - v < 0:
+                    return False
+            return True
+        else:
+            if isinstance(key, basestring):
+                key = AminoAcidSequenceBuildingBlock.from_str(key)
+            return dict.__contains__(self, key)
 
     @property
     def mass(self):
@@ -125,6 +158,8 @@ class SequenceComposition(dict):
             mass += residue_type.neutral_mass * count
         self._mass = mass
         return mass
+
+    neutral_mass = mass
 
     def extend(self, *args):
         for residue in args:
@@ -221,14 +256,14 @@ class SequenceComposition(dict):
         return inst
 
     def maybe_n_glycosylation(self):
-        n_N = self["N"]
+        n_N = self["N"] + self[n_hexnac]
         n_S = self["S"]
         n_T = self["T"]
         used = 0
         possible_sequons = 0
         while(n_N > 0):
             if n_S > 0 or n_T > 0:
-                if sum(self.values()) - used > 3:
+                if sum(self.values()) - used >= 3:
                     n_N -= 1
                     if n_S > 0:
                         n_S -= 1
@@ -242,8 +277,8 @@ class SequenceComposition(dict):
             break
         return possible_sequons
 
-    def possible_sequences(self):
-        for ordering in itertools.permute(self.flatten()):
+    def orderings(self):
+        for ordering in itertools.permutations(self.flatten()):
             yield Sequence(ordering)
 
 

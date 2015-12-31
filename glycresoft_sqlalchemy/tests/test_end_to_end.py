@@ -7,12 +7,10 @@ try:
 except:
     pass
 
-from glycresoft_sqlalchemy import data_model
 from glycresoft_sqlalchemy.search_space_builder import naive_glycopeptide_hypothesis
 from glycresoft_sqlalchemy.search_space_builder import search_space_builder, pooling_make_decoys
-from glycresoft_sqlalchemy.matching import matching
+from glycresoft_sqlalchemy.search_space_builder.glycan_builder import constrained_combinatorics
 from glycresoft_sqlalchemy.matching.glycopeptide.pipeline import GlycopeptideFragmentMatchingPipeline
-from glycresoft_sqlalchemy.scoring import target_decoy, score_spectrum_matches
 
 
 def test_main():
@@ -21,17 +19,44 @@ def test_main():
         os.remove(db_file_name)
     except:
         pass
+
+    rules_table = {
+        "Hex": (3, 8),
+        "HexNAc": (2, 8),
+        "Fuc": (0, 5),
+        "NeuAc": (0, 4)
+    }
+
+    job = constrained_combinatorics.ConstrainedCombinatoricsGlycanHypothesisBuilder(
+        db_file_name, rules_table=rules_table, constraints_list=[])
+    combn_glycan_hypothesis_id = job.start()
+    print "combn_glycan_hypothesis_id", combn_glycan_hypothesis_id
+
     constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (N)"])
     enzyme = 'trypsin'
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
-        db_file_name, "test", "./datafiles/proteins_agp_only.fasta",
-        None, "./datafiles/human_n_glycans.txt", 'txt', constant_mods,
-        variable_mods, enzyme, maximum_glycosylation_sites=1, n_processes=6)
-    job.start()
+        database_path=db_file_name,
+        hypothesis_name="test",
+        protein_file="./datafiles/proteins_agp_only.fasta",
+        site_list_file=None,
+        constant_modifications=constant_mods,
+        variable_modifications=variable_mods,
+        enzyme=enzyme,
+        glycomics_path=db_file_name,
+        glycomics_format='hypothesis',
+        source_hypothesis_id=combn_glycan_hypothesis_id,
+        # glycomics_path='./datafiles/human_n_glycans.txt',
+        # glycomics_format='txt',
+        maximum_glycosylation_sites=1,
+        max_missed_cleavages=1,
+        n_processes=6)
+    glycopeptide_hypothesis_id = job.start()
+
+    return 1
 
     ec = os.system(
-    r"glycresoft-database-search ms1 -n 6 -i datafiles\20140918_01_isos.db datafiles\naive_glycopeptide.db 1"
-    r" -p db -g 2e-5 --skip-grouping")
+        ("glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db datafiles/naive_glycopeptide.db %d "
+         "-p db -g 2e-5 --skip-grouping") % glycopeptide_hypothesis_id)
     assert ec == 0
     job = search_space_builder.BatchingTheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
         "datafiles/naive_glycopeptide.db", 1, 6)
@@ -46,37 +71,6 @@ def test_main():
         sample_run_name="20140918_01.yaml",
         hypothesis_sample_match_name="End-to-End AGP @ 20140918_01")
     job.start()
-
-    # manager = data_model.DatabaseManager(db_file_name)
-    # session = manager.session()
-    # hsm = data_model.MS2GlycopeptideHypothesisSampleMatch(
-    #     target_hypothesis_id=hypothesis_id,
-    #     decoy_hypothesis_id=decoy_hypothesis_id,
-    #     sample_run_name="20140918_01.yaml",
-    #     name="End-to-End AGP @ 20140918_01")
-    # session.add(hsm)
-    # session.commit()
-
-    # hsm_id = hsm.id
-
-    # matcher = matching.IonMatching(db_file_name, hypothesis_id, r"datafiles\20140918_01.db",
-    #                            "db", ms1_tolerance=1e-5, ms2_tolerance=2e-5,
-    #                            hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=8)
-    # matcher.start()
-    # matcher = matching.IonMatching(db_file_name, decoy_hypothesis_id, r"datafiles\20140918_01.db",
-    #                            "db", ms1_tolerance=1e-5, ms2_tolerance=2e-5,
-    #                            hypothesis_sample_match_id=hsm_id, sample_run_id=1, n_processes=8)
-    # matcher.start()
-
-    # job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, hypothesis_id, hsm_id)
-    # job.start()
-
-    # job = score_spectrum_matches.SimpleSpectrumAssignment(db_file_name, decoy_hypothesis_id, hsm_id)
-    # job.start()
-
-    # tda = target_decoy.TargetDecoyAnalyzer(db_file_name, hypothesis_id, decoy_hypothesis_id)
-    # tda.start()
-
 
 if __name__ == '__main__':
     test_main()

@@ -210,3 +210,22 @@ Glycopeptide Match Table
 .fragment-ion-table tbody tr:hover{
     background: whitesmoke;
 }
+
+
+.oxonium-ion-table td, .oxonium-ion-table th {
+    font-size: .7em;
+    padding: 3px !important;
+    word-break: break-all;
+}
+
+.oxonium-ion-table tbody tr:hover{
+    background: whitesmoke;
+}
+
+.glycosite-summary-table tbody td{
+    padding:5px !important;
+}
+
+.glycosite-summary-table tbody tr:hover{
+    background: whitesmoke;
+}

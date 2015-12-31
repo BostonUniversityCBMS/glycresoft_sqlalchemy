@@ -8,7 +8,7 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
 
 import numpy as np
 
-from .base import Base2 as Base
+from .base import Base
 from .connection import DatabaseManager
 from .generic import MutableDict
 
@@ -30,7 +30,9 @@ class HasPeakChromatogramData(object):
         scans = peak_data['scan_times']
         intensity = peak_data['intensities']
 
-        scan_groups = groupby(zip(scans, intensity), key_fn=operator.itemgetter(0), transform_fn=operator.itemgetter(1))
+        scan_groups = groupby(
+            zip(scans, intensity), key_fn=operator.itemgetter(0),
+            transform_fn=operator.itemgetter(1))
         scans = []
         intensity = []
         for scan, peak_group in scan_groups.items():
@@ -171,6 +173,7 @@ class Peak(Base):
     charge = Column(Integer)
     neutral_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
     intensity = Column(Numeric(12, 6, asdecimal=False))
+    # rank = Column(Integer)
 
     scan_peak_index = Column(Integer, index=True)
 

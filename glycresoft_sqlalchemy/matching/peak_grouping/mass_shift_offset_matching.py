@@ -263,7 +263,7 @@ class BatchPeakGroupMatching(PeakGroupMatching):
     def __init__(self, *args, **kwargs):
         super(BatchPeakGroupMatching, self).__init__(*args, **kwargs)
 
-    def stream_ids(self, chunk_size=200):
+    def stream_ids(self, chunk_size=400):
         session = self.manager.session()
         try:
             for gids in yield_ids(session, self.search_type, self.hypothesis_id, chunk_size=chunk_size):
@@ -291,7 +291,7 @@ class BatchPeakGroupMatching(PeakGroupMatching):
 
         counter = 0
         last = 0
-        step = 100
+        step = 1000
 
         task_fn = self.prepare_task_fn()
         toggler = toggle_indices(session, PeakGroupMatch)

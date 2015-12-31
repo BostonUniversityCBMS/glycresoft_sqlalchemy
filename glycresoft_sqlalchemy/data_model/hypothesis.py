@@ -8,7 +8,7 @@ from sqlalchemy import (
     Column, Integer, ForeignKey, PickleType, Unicode, Boolean)
 
 from .generic import MutableDict
-from .base import Base2 as Base
+from .base import Base
 
 from glycresoft_sqlalchemy.utils import classproperty
 

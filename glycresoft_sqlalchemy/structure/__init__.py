@@ -1,3 +1,6 @@
+from constants import constants
+
+
 __all__ = [
     "sequence",
     "modification",
@@ -9,8 +12,6 @@ __all__ = [
     "sequence_space"
 ]
 
-from constants import constants
-
 
 class MoleculeBase(object):
     mass = None
@@ -21,18 +22,12 @@ class PeptideSequenceBase(MoleculeBase):
     '''
     A base type for classes describing peptide sequences, with or without modifiations
     '''
-    def get_sequence(self, start=0):
-        return self.getSequence(start)
-
-    def getSequence(self, start=0):
-        pass
 
 
 class ModificationBase(MoleculeBase):
     '''
     A base type for classes describing peptide sequence modifications
     '''
-    pass
 
 
 class ResidueBase(MoleculeBase):

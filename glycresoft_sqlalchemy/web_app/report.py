@@ -10,9 +10,11 @@ except:
 from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch, DatabaseManager
 from glycresoft_sqlalchemy.report.plot_glycoforms import plot_glycoforms_svg
 from glycresoft_sqlalchemy.report import colors
+from glycresoft_sqlalchemy.utils import data_files
 from glycresoft_sqlalchemy.structure.sequence import Sequence, FrozenGlycanComposition
 from glycresoft_sqlalchemy.report.chromatogram import draw_chromatogram
 from glycresoft_sqlalchemy.report.sequence_fragment_logo import glycopeptide_match_logo
+
 from jinja2 import Environment, PackageLoader, Undefined, FileSystemLoader
 from jinja2 import nodes
 from jinja2.ext import Extension
@@ -114,14 +116,18 @@ def rgbpack(color):
 def glycopeptide_string(sequence, long=False, include_glycan=True):
     sequence = Sequence(sequence)
     parts = []
-    template = "(<span class='modification-chip' style='background-color:%s;padding-left:1px;padding-right:2px;border-radius:2px;' title='%s' data-modification=%s>%s</span>)"
+    template = "(<span class='modification-chip'"\
+        " style='background-color:%s;padding-left:1px;padding-right:2px;border-radius:2px;'"\
+        " title='%s' data-modification=%s>%s</span>)"
     for res, mods in sequence:
         parts.append(res.symbol)
         for mod in mods:
-            color = colors.get_color(mod)
+            color = colors.get_color(str(mod))
             letter = mod.name if long else mod.name[0]
             parts.append(template % (rgbpack(color), mod.name, mod.name, letter))
-    parts.append(str(sequence.glycan if sequence.glycan is not None else "") if include_glycan else "")
+    parts.append((
+        glycan_composition_string(str(sequence.glycan)) if sequence.glycan is not None else "")
+        if include_glycan else "")
     return ''.join(parts)
 
 
@@ -131,7 +137,7 @@ def glycan_composition_string(composition):
     template = "<span class='monosaccharide-name' style='background-color:%s; padding: 2px;border-radius:2px;'>%s %d</span>"
     for k, v in composition.items():
         name = str(k)
-        color = colors.get_color(name)
+        color = colors.get_color(str(name))
         parts.append(template % (rgbpack(color), name, v))
     return ' '.join(parts)
 

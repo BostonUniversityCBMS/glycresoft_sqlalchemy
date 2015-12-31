@@ -15,8 +15,8 @@ fragment_pairing = {
 }
 
 fragment_shift = {
-    'b': Composition('H+').mass,
-    'y': Composition('H2O').mass + Composition('H+').mass,
+    'b': 0.,
+    'y': Composition('H2O').mass
 }
 
 fragment_direction = {
@@ -53,7 +53,8 @@ class PeptideFragment(object):
 
         return "".join(name_block)
 
-    def __init__(self, frag_type, pos, mod_dict, mass, golden_pairs=None, flanking_amino_acids=None):
+    def __init__(self, frag_type, position, modification_dict, mass, golden_pairs=None,
+                 flanking_amino_acids=None, glycosylation=None):
         if golden_pairs is None:
             golden_pairs = []
         self.type = frag_type
@@ -64,33 +65,21 @@ class PeptideFragment(object):
 
         self.flanking_amino_acids = flanking_amino_acids
 
-        self.position = pos
-        self.mod_dict = mod_dict
+        self.position = position
+        self.modification_dict = modification_dict
 
-        for key, value in self.mod_dict.items():
+        for key, value in self.modification_dict.items():
             self.mass += Modification(key).mass * value
 
         self.golden_pairs = golden_pairs
+        self.glycosylation = glycosylation
 
-    def get(self):
+    def base_name(self):
         """Simply return string like b2, y3 with no modificaiton information."""
         fragment_name = []
         fragment_name.append(self.type)
         fragment_name.append(str(self.position))
         return ''.join(fragment_name)
-
-    def get_mass(self):
-        return self.mass
-
-    def get_modification_number(self, mod_name):
-        if mod_name in self.mod_dict:
-            return self.mod_dict[mod_name]
-        else:
-            return 0
-
-    def get_modifications(self):
-        for name, number in self.mod_dict.items():
-            yield [name, number]
 
     def get_fragment_name(self):
         """Connect the information into string."""
@@ -100,10 +89,10 @@ class PeptideFragment(object):
 
         # Only concerned modifications are reported.
         for mod_name in self.concerned_mods:
-            if mod_name in self.mod_dict:
-                if self.mod_dict[mod_name] > 1:
-                    fragment_name.extend(['+', str(self.mod_dict[mod_name]), mod_name])
-                elif self.mod_dict[mod_name] == 1:
+            if mod_name in self.modification_dict:
+                if self.modification_dict[mod_name] > 1:
+                    fragment_name.extend(['+', str(self.modification_dict[mod_name]), mod_name])
+                elif self.modification_dict[mod_name] == 1:
                     fragment_name.extend(['+', mod_name])
                 else:
                     pass
@@ -113,7 +102,7 @@ class PeptideFragment(object):
     def partial_loss(self, modifications=None):
         if modifications is None:
             modifications = self.concerned_mods
-        mods = dict(self.mod_dict)
+        mods = dict(self.modification_dict)
         mods_of_interest = {k: v for k, v in mods.items() if k in modifications}
 
         other_mods = {k: v for k, v in mods.items() if k not in modifications}
@@ -131,7 +120,8 @@ class PeptideFragment(object):
         return self.get_fragment_name()
 
     def __repr__(self):
-        return "Fragment(%(type)s @ %(position)s %(mass)s %(mod_dict)s %(flanking_amino_acids)s)" % self.__dict__
+        return "Fragment(%(type)s @ %(position)s %(mass)s\
+         %(modification_dict)s %(flanking_amino_acids)s)" % self.__dict__
 
 
 Fragment = PeptideFragment
@@ -213,6 +203,24 @@ class IonSeries(object):
             return self.regex.search(key)
 
     __call__ = is_member
+
+    def __radd__(self, other):
+        return other + self.mass_shift
+
+    def __rsub__(self, other):
+        return other - self.mass_shift
+
+    def __neg__(self):
+        return -self.mass_shift
+
+    def __pos__(self):
+        return self.mass_shift
+
+    def __add__(self, other):
+        return self.mass_shift + other
+
+    def __sub__(self, other):
+        return self.mass_shift - other
 
 
 IonSeries.b = IonSeries("b")

@@ -12,7 +12,7 @@ from sqlalchemy import (PickleType, Numeric, Unicode,
 from sqlalchemy.orm.session import object_session
 
 
-from ..base import Base2 as Base, Bundle
+from ..base import Base, Bundle
 
 from ..hypothesis import Hypothesis
 from ..generic import MutableDict, MutableList
@@ -103,12 +103,15 @@ class SpectrumMatchBase(object):
                     break
         return series
 
-    def comatches(self):
+    def comatches(self, same_hypothesis=True):
         session = object_session(self)
         TYPE = self.__class__
         comatches = session.query(TYPE).filter(
             TYPE.id != self.id,
-            TYPE.hypothesis_sample_match_id == self.hypothesis_sample_match_id).all()
+            TYPE.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
+            TYPE.scan_time == self.scan_time)
+        if same_hypothesis:
+            comatches = comatches.filter(TYPE.hypothesis_id == self.hypothesis_id)
         return comatches
 
 
@@ -179,9 +182,11 @@ class GlycopeptideMatch(GlycopeptideBase, Base, HasMS1Information):
     __collection_name__ = "glycopeptide_matches"
 
     id = Column(Integer, primary_key=True)
-    theoretical_glycopeptide_id = Column(Integer, ForeignKey(TheoreticalGlycopeptide.id, ondelete='CASCADE'), index=True)
+    theoretical_glycopeptide_id = Column(Integer, ForeignKey(
+        TheoreticalGlycopeptide.id, ondelete='CASCADE'), index=True)
     theoretical_reference = relationship(TheoreticalGlycopeptide)
-    hypothesis_sample_match_id = Column(Integer, ForeignKey("HypothesisSampleMatch.id", ondelete='CASCADE'), index=True)
+    hypothesis_sample_match_id = Column(Integer, ForeignKey(
+        "HypothesisSampleMatch.id", ondelete='CASCADE'), index=True)
     hypothesis_sample_match = relationship(
         "HypothesisSampleMatch", backref=backref("glycopeptide_matches", lazy='dynamic'))
 
@@ -215,9 +220,49 @@ class GlycopeptideMatch(GlycopeptideBase, Base, HasMS1Information):
     def is_not_decoy(cls):
         return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy))
 
+    @classmethod
+    def is_decoy(cls):
+        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (Hypothesis.is_decoy))
+
     def __repr__(self):
         rep = "<GlycopeptideMatch {} {} {}>".format(self.glycopeptide_sequence, self.ms2_score, self.observed_mass)
         return rep
+
+    def fragments(self, kind=('ox', 'b', 'y', 'gb', 'gy', 'stub')):
+        '''
+        A unified API for accessing lazy sequences of molecular fragments
+
+        Parameters
+        ----------
+        kind: sequence of str
+            A sequence of sigil strings for the different types of fragments
+            to generate. These sigils follow the standard nomenclature of bc-yz for peptides
+            and the BC-YZ nomenclature for glycans, as well as special combinations for oxonium
+            ions and stub glycopeptide ions.
+
+        Yields
+        ------
+        dict: A simple mapping object that defines a fragment
+        '''
+        kind = set(kind)
+        if 'ox' in kind:
+            for ox in self.oxonium_ions:
+                yield ox
+        if 'b' in kind:
+            for b in self.bare_b_ions:
+                yield b
+        if 'y' in kind:
+            for y in self.bare_y_ions:
+                yield y
+        if 'gb' in kind:
+            for bg in self.glycosylated_b_ions:
+                yield bg
+        if 'gy' in kind:
+            for yg in self.glycosylated_y_ions:
+                yield yg
+        if 'stub' in kind:
+            for stub in self.stub_ions:
+                yield stub
 
 
 class GlycanStructureMatch(Base):

@@ -5,7 +5,7 @@ from sqlalchemy import (
 
 import numpy as np
 
-from ..base import Namespace, Base2 as Base
+from ..base import Namespace, Base
 from ..hypothesis_sample_match import HypothesisSampleMatch
 
 

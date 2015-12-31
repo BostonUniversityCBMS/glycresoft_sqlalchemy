@@ -1,4 +1,4 @@
-var ActionBook, DataSource, PartialSource, makeAPIGet, makePartialGet;
+var ActionBook, DataSource, PartialSource, makeAPIGet, makeParameterizedAPIGet, makePartialGet;
 
 ActionBook = {
   home: {
@@ -43,11 +43,18 @@ makeAPIGet = function(url) {
   };
 };
 
+makeParameterizedAPIGet = function(url) {
+  return function(params, callback) {
+    return $.get(url.format(params)).success(callback);
+  };
+};
+
 DataSource = {
   hypotheses: makeAPIGet("/api/hypotheses"),
   samples: makeAPIGet("/api/samples"),
   hypothesisSampleMatches: makeAPIGet("/api/hypothesis_sample_matches"),
-  tasks: makeAPIGet("/api/tasks")
+  tasks: makeAPIGet("/api/tasks"),
+  glycopeptideMatches: makeAPIGet("/api/glycopeptide_matches")
 };
 
 makePartialGet = function(url, method) {

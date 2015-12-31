@@ -1,18 +1,23 @@
 import logging
-from copy import deepcopy
 from . import constants as structure_constants
 from . import PeptideSequenceBase
-from ..utils.memoize import memoize
 from glypy.composition.glycan_composition import FrozenGlycanComposition
 
 glycan_parser = FrozenGlycanComposition.parse
 
 
-@memoize()
 def sequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
-    '''
-        A simple stateful sequence parser implementing a formally context-free language
-        describing components of a polypeptide sequence with N-, C- and internal modifications.
+    '''A simple stateful sequence parser implementing a formally context-free language
+    describing components of a polypeptide sequence with N-, C- and internal modifications,
+    as well as a glycan composition written at the end.
+
+    Return
+    ------
+    chunks: list
+    mods: list
+    n_term: str
+    c_term: str
+    glycan: :class:`glypy.composition.glycan_composition.FrozenGlycanComposition`
     '''
     state = "start"  # [start, n_term, aa, mod, c_term]
     n_term = implicit_n_term or structure_constants.N_TERM_DEFAULT
@@ -141,15 +146,11 @@ def sequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
 
     return chunks, mods, glycan, n_term, c_term
 
-# Unused alias
-parse = sequence_tokenizer
 
-
-#@memocpy(20000)
 def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
-    '''
-        A simple stateful sequence parser implementing a formally context-free language
-        describing components of a polypeptide sequence with N-, C- and internal modifications.
+    '''A version of the :func:`sequence_tokenizer` which places modifications
+    to the left of the amino acid which they are associated with, as is the convention
+    in mzIdentML and some other software.
     '''
     state = "start"  # [start, n_term, aa, mod, c_term]
     n_term = implicit_n_term or structure_constants.N_TERM_DEFAULT
@@ -285,15 +286,18 @@ def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
 
 
 def prefix_to_postfix_modifications(sequence):
-    '''Legacy code denotes a modified residue by placing the
-    modification AFTER the residue. The community denotes a modified
-    residue by placing the modification BEFORE the residue. This function
-    converts prefixed residue-modification association to postfix
+    '''Transform a chunk-list from modification-on-the-left to
+    modification-on-the-right association rules.
 
-    This code does not work with terminal modifications'''
+    This code does not work with terminal modifications
+
+    Return
+    ------
+    list
+    '''
     sequence = "!" + sequence
 
-    tokens, mods, glycan, n_term, c_term = deepcopy(sequence_tokenizer(sequence))
+    tokens, mods, glycan, n_term, c_term = sequence_tokenizer(sequence)
     last_mods = tokens.pop(0)[1]
     for token in tokens:
         mods = token[1]
@@ -303,12 +307,24 @@ def prefix_to_postfix_modifications(sequence):
 
 
 def sequence_length(sequence):
+    '''Compute the peptide length of a sequence string.
+    This parses the sequence and counts the number of chunks.
+
+    Return
+    ------
+    int
+    '''
     sequence, modifications, glycan, n_term, c_term = sequence_tokenizer(sequence)
     return len(sequence)
 
 
 def strip_modifications(sequence):
-    '''A wrapper around `sequence_tokenizer` that discards all modifications'''
+    '''A wrapper around `sequence_tokenizer` that discards all modifications
+
+    Return
+    ------
+    str
+    '''
     if isinstance(sequence, PeptideSequenceBase):
         sequence = str(sequence)
     chunks, modifications, glycan, n_term, c_term = sequence_tokenizer(sequence)
@@ -316,7 +332,12 @@ def strip_modifications(sequence):
 
 
 def sequence_tokenizer_respect_sequons(sequence):
-    '''A wrapper around `sequence_tokenizer` that will treat an n-glycan sequon as a single unit'''
+    '''A wrapper around `sequence_tokenizer` that will treat an n-glycan sequon as a single unit
+
+    Return
+    ------
+    list
+    '''
     chunks, modifications, glycan, n_term, c_term = sequence_tokenizer(sequence)
     positions = []
     i = 0

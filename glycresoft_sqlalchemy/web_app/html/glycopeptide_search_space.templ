@@ -67,27 +67,69 @@
             <span class='message'></span>
             </div>
         </div>
-        <div class='row'>
+        <div class='row' style='margin-bottom:0px;'>
             <div class='col s8'>
+                <h6>Glycan Definitions</h6>
+            </div>
+            <small class='col s4' id='sitelist-file-help'>
+                List of glycan structures/compositions to attach to each protein.
+            </small>                
+        </div>
+        <div class='row' style='margin-bottom:0px;'>
+            <div class='col s6'>
                 <div class="file-field input-field">
-                    <h6>Glycan Definitions</h6>                    
+                    <h6>
+                        Text File of Glycan Structures or Compositions
+                    </h6>
                     <div class="btn">
                         <span>Select File...</span>
                         <input name='glycan-definition-file' id='glycan-definition-file' type="file" />
                     </div>
                     <input class="file-path validate" type="text" style="width: 67%;padding-left:5px;"/>
+                    <br>
+                    {#
                     <span>
                         <input class="file-format-radio" name="glycans-file-format" value='txt' type="radio" id="glycans-file-txt-radio-btn" checked />
                         <label for='glycans-file-txt-radio-btn'>Text File</label>
                         <input class="file-format-radio" name="glycans-file-format" value='hypothesis' type="radio" id="glycans-file-hypothesis-radio-btn" />
                         <label for='glycans-file-hypothesis-radio-btn'>Hypothesis Database</label>                            
                     </span>
+                    #}
                 </div>
             </div>
-            <small class='col s4' id='sitelist-file-help'>
-            List of glycan structures/compositions to attach to each protein.
-            </small>
+            <div class='col s1'>
+                <br><br>Or
+            </div>
+            <div class='col s4'>
+                <div class='input-field'>
+                    <h6>
+                        Select a Glycan Hypothesis or Sample Match
+                    </h6>
+                    <select id="glycan-database-source" name="glycan-database-source" class='browser-default'>
+                        <option selected="true"></option>
+                        <optgroup label="Glycan Hypotheses">
+                        {% for hypothesis in Manager.ms1_glycan_hypotheses() %}
+                            <option value="Hypothesis,{{hypothesis.id}}">{{hypothesis.name}}</option>
+                        {% endfor %}
+                        </optgroup>
+                        <optgroup label="Glycan Hypothesis Sample Matches">
+                        {% for hsm in Manager.ms1_glycan_hypothesis_sample_matches() %}
+                            <option value="HypothesisSampleMatch,{{hsm.id}}">{{hsm.name}}</option>
+                        {% endfor %}
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
         </div>
+        <div class='row'>
+            <div class='col s3 tooltipped' data-position='top' data-tooltip="Be careful if using a large number glycans, as this can make the hypothesis intractably large.">
+                <div>
+                    <label for='max_glycosylation_sites' >Maximum Number of Glycosylations per Peptide</label>
+                    <input class='validate' type='number' min="0" id='max_glycosylation_sites' name='max_glycosylation_sites' value="1"/>
+                </div>
+            </div>
+        </div>
+
         <button class='btn wave-effect'>
             Generate
         </button>
@@ -104,6 +146,8 @@ $("#protein-list-file").on("change", function(event){
         updateFormatOptions(format)
     })
 })
+
+$('.tooltipped').tooltip({delay: 50});
 
 function updateFormatOptions(format){
     console.log(format)

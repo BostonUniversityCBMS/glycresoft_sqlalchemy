@@ -29,35 +29,60 @@ def build_glycopeptide_search_space_post():
     protein_list_type = values.get("proteomics-file-type")
 
     site_list = request.files["glycosylation-site-list-file"]
-    glycan_file = request.files["glycan-definition-file"]
+    glycan_file = request.files.get("glycan-definition-file")
+    glycan_database = values.get("glycan-database-source")
     glycan_file_type = values.get("glycans-file-format")
 
+    glycan_options = {}
+
     max_missed_cleavages = intify(values.get("missed_cleavages"))
+    maximum_glycosylation_sites = intify(values.get("max_glycosylation_combinations", 1))
 
     secure_protein_list = g.manager.get_temp_path(secure_filename(protein_list.filename))
     secure_site_list_file = g.manager.get_temp_path(secure_filename(site_list.filename))
-    secure_glycan_file = g.manager.get_temp_path(secure_filename(glycan_file.filename))
 
     protein_list.save(secure_protein_list)
-    glycan_file.save(secure_glycan_file)
     if site_list.filename != "":
         site_list.save(secure_site_list_file)
     else:
         secure_site_list_file = None
+
+    if glycan_database == "" or glycan_database is None:
+        glycan_file_type = "txt"
+        glycan_options["glycan_file_type"] = glycan_file_type
+
+        secure_glycan_file = g.manager.get_temp_path(secure_filename(glycan_file.filename))
+        glycan_file.save(secure_glycan_file)
+
+        glycan_options["glycan_file"] = secure_glycan_file
+    else:
+        option_type, option_id = glycan_database.split(",", 1)
+        option_id = int(option_id)
+        glycan_options["glycan_file"] = g.manager.path
+
+        if option_type == "Hypothesis":
+            option_type = "hypothesis"
+            glycan_options["source_hypothesis_id"] = option_id
+        elif option_type == "HypothesisSampleMatch":
+            option_type = "hypothesis-sample-match"
+            glycan_options["source_hypothesis_sample_match_id"] = option_id
+
+        glycan_options["glycan_file_type"] = option_type
 
     task = None
     if protein_list_type == "mzIdentML":
         task = IntegratedOmicsGlycopeptideHypothesisBuilderTask(
             g.manager.path, hypothesis_name=hypothesis_name,
             protein_file=secure_protein_list, site_list_file=secure_site_list_file,
-            glycan_file=secure_glycan_file, glycan_file_type=glycan_file_type,
-            constant_modifications=constant_modifications,
-            callback=lambda: 0)
+            maximum_glycosylation_sites=maximum_glycosylation_sites,
+            callback=lambda: 0, glycan_options=glycan_options)
     else:
         task = NaiveGlycopeptideHypothesisBuilderTask(
-            g.manager.path, hypothesis_name,
-            secure_protein_list, secure_site_list_file,
-            secure_glycan_file, glycan_file_type, constant_modifications,
-            variable_modifications, enzyme, max_missed_cleavages, callback=lambda: 0)
+            g.manager.path, hypothesis_name=hypothesis_name,
+            protein_file=secure_protein_list, site_list_file=secure_site_list_file,
+            constant_modifications=constant_modifications, variable_modifications=variable_modifications,
+            maximum_glycosylation_sites=maximum_glycosylation_sites,
+            enzyme=enzyme, max_missed_cleavages=max_missed_cleavages, callback=lambda: 0,
+            glycan_options=glycan_options)
     g.manager.add_task(task)
     return jsonify(**dict(request.values))

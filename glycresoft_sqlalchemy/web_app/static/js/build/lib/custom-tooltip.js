@@ -1,7 +1,7 @@
 $(function() {
   var $body, $tooltip, closeTooltip, openTooltip, xOffset, yOffset;
-  yOffset = -3;
-  xOffset = 3;
+  yOffset = 20;
+  xOffset = -180;
   $body = $('body');
   $tooltip = $('<div></div>').hide().css({
     'position': 'absolute',

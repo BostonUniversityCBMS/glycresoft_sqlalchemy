@@ -1,4 +1,4 @@
-var ActionBook, DataSource, PartialSource, makeAPIGet, makePartialGet;
+var ActionBook, DataSource, PartialSource, makeAPIGet, makeParameterizedAPIGet, makePartialGet;
 
 ActionBook = {
   home: {
@@ -43,11 +43,18 @@ makeAPIGet = function(url) {
   };
 };
 
+makeParameterizedAPIGet = function(url) {
+  return function(params, callback) {
+    return $.get(url.format(params)).success(callback);
+  };
+};
+
 DataSource = {
   hypotheses: makeAPIGet("/api/hypotheses"),
   samples: makeAPIGet("/api/samples"),
   hypothesisSampleMatches: makeAPIGet("/api/hypothesis_sample_matches"),
-  tasks: makeAPIGet("/api/tasks")
+  tasks: makeAPIGet("/api/tasks"),
+  glycopeptideMatches: makeAPIGet("/api/glycopeptide_matches")
 };
 
 makePartialGet = function(url, method) {
@@ -168,11 +175,9 @@ Application = (function(superClass) {
     return $.post('/preferences', payload).success((function(_this) {
       return function(data) {
         var k, v;
-        console.log(data, "Update Settings");
         for (k in data) {
           v = data[k];
           _this.settings[k] = v;
-          console.log(k, v);
         }
         return _this.emit("update_settings");
       };
@@ -190,7 +195,6 @@ Application = (function(superClass) {
       state = handle.attr('data-status');
       id = handle.attr('data-id');
       if (state === 'finished') {
-        console.log(self.tasks[id]);
         delete self.tasks[id];
         handle.fadeOut();
         handle.remove();
@@ -690,7 +694,7 @@ MonosaccharideFilter = (function() {
     }
     residue.name = residue;
     residue.sanitizeName = sanitizeName = residue.replace(/[\(\),]/g, "_");
-    template = "<span class=\"col s2 monosaccharide-filter\" data-name='" + residue + "'>\n    <p style='margin: 0px; margin-bottom: -10px;'>\n        <input type=\"checkbox\" id=\"" + sanitizeName + "_include\" name=\"" + sanitizeName + "_include\"/>\n        <label for=\"" + sanitizeName + "_include\"><b>" + residue + "</b></label>\n    </p>\n    <p>\n        <input id=\"" + sanitizeName + "_min\" type=\"number\" placeholder=\"Minimum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.minimum + "\" max=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_min\"/> : \n        <input id=\"" + sanitizeName + "_max\" type=\"number\" placeholder=\"Maximum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_max\"/>\n    </p>\n</span>";
+    template = "<span class=\"col s2 monosaccharide-filter\" data-name='" + residue + "'>\n    <p style='margin: 0px; margin-bottom: -10px;'>\n        <input type=\"checkbox\" id=\"" + sanitizeName + "_include\" name=\"" + sanitizeName + "_include\"/>\n        <label for=\"" + sanitizeName + "_include\"><b>" + residue + "</b></label>\n    </p>\n    <p style='margin-top: 0px; margin-bottom: 0px;'>\n        <input id=\"" + sanitizeName + "_min\" type=\"number\" placeholder=\"Minimum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.minimum + "\" max=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_min\"/> : \n        <input id=\"" + sanitizeName + "_max\" type=\"number\" placeholder=\"Maximum " + residue + "\" style='width: 45px;' min=\"0\"\n               value=\"" + rule.maximum + "\" name=\"" + sanitizeName + "_max\"/>\n    </p>\n</span>";
     self = this;
     rendered = $(template);
     rendered.find("#" + sanitizeName + "_min").change(function() {

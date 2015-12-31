@@ -7,23 +7,23 @@ from .sequence import Sequence
 
 class SequenceSpace:
     """Generate all theoretical glycopeptide sequences"""
-    def __init__(self, seq, glycan_sites, mod_list):
+    def __init__(self, sequnce, glycan_sites, mod_list):
         """
-            seq -- sequence code
+            sequnce -- sequence code
             glycan_compo -- glycan compositions, dict.
             glycan_sites -- sets of candidate sites for glycosylation
             mod_list -- list of modifications.
         """
         # Filter the glycan composition. Get the max number of HexNAc
-        self.seq = Sequence(seq)  # Sequence object
+        self.sequence = Sequence(sequnce)  # Sequence object
         self.candidate_sites = glycan_sites
         self.modifications = mod_list
 
     def __repr__(self):
         rep = """
-sequence:{seq2}
+sequence:{sequence}
 candidate_sites:{candidate_sites}
-modifications:{modifications}""".format(seq2=self.seq.get_sequence(), **self.__dict__)
+modifications:{modifications}""".format(**self.__dict__)
         return rep
 
     def get_modification_sites(self):
@@ -33,10 +33,11 @@ modifications:{modifications}""".format(seq2=self.seq.get_sequence(), **self.__d
                 # The modification position is pre-specified
                 modification_index_bound.append([mod.position])
             else:
-                valid_sites = mod.find_valid_sites(self.seq)
+                valid_sites = mod.find_valid_sites(self.sequence)
                 all_combinations = [position for position in itertools.combinations(valid_sites, mod.number)]
                 if(len(all_combinations) == 0):
-                    raise NoSitesFoundException("No Valid Sites Found: %r %r in\n %r" % (mod, valid_sites, self.seq))
+                    raise NoSitesFoundException("No Valid Sites Found: %r %r in\n %r" % (
+                        mod, valid_sites, self.sequence))
                 modification_index_bound.append(all_combinations)
 
         return modification_index_bound
@@ -56,7 +57,7 @@ modifications:{modifications}""".format(seq2=self.seq.get_sequence(), **self.__d
                 # Invalid Configuration, can't place all Glycans
                 continue
 
-            raw_sequence = copy.deepcopy(self.seq)
+            raw_sequence = copy.deepcopy(self.sequence)
 
             for index in range(num_modifications):
                 for mod_site in mod_sites[index]:
@@ -72,14 +73,9 @@ modifications:{modifications}""".format(seq2=self.seq.get_sequence(), **self.__d
         return seq_space
 
     def get_theoretical_sequence(self, num_sites):
-        try:
-            modification_index_bound = self.get_modification_sites()
-            sequence_space = self.compose_sequence(modification_index_bound, num_sites)
-            return sequence_space
-        except Exception, e:
-            print("An error occurred while building the space for %s." % self)
-            print(e)
-            raise e
+        modification_index_bound = self.get_modification_sites()
+        sequence_space = self.compose_sequence(modification_index_bound, num_sites)
+        return sequence_space
 
 
 class NoSitesFoundException(Exception):

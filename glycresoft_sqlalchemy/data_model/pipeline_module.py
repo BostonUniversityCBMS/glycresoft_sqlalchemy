@@ -10,7 +10,7 @@ from sqlalchemy import (PickleType, Numeric, Unicode, Table, DateTime, func,
 from sqlalchemy.orm import relationship
 
 from .connection import DatabaseManager
-from .base import Base2 as Base
+from .base import Base
 
 from glycresoft_sqlalchemy.utils.worker_utils import profile_task
 
@@ -154,3 +154,7 @@ class PipelineModule(object):
     @property
     def database_path(self):
         return self.manager.path
+
+
+class PipelineException(Exception):
+    pass

@@ -96,7 +96,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                     query_mass = theoretical_ion['mass']
                     for peak in peak_list:
                         observed_mass = peak.neutral_mass
-                        protonated_mass = observed_mass + proton
+                        protonated_mass = observed_mass  # + proton
                         match_error = lppm_error(protonated_mass, query_mass)
                         if lfabs(match_error) <= ms2_tolerance:
                             match = ({'key': theoretical_ion['key'],
@@ -116,7 +116,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 collect = bare_b_ions.append
                 for theoretical_ion in theoretical.bare_b_ions:
                     query_mass = theoretical_ion['mass']
-                    deprotonated_mass = query_mass - proton
+                    deprotonated_mass = query_mass  # - proton
                     for peak in peak_list:
                         observed_mass = peak.neutral_mass
                         match_error = lppm_error(observed_mass, deprotonated_mass)
@@ -133,7 +133,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 collect = bare_y_ions.append
                 for theoretical_ion in theoretical.bare_y_ions:
                     query_mass = theoretical_ion['mass']
-                    deprotonated_mass = query_mass - proton
+                    deprotonated_mass = query_mass  # - proton
                     for peak in peak_list:
                         observed_mass = peak.neutral_mass
                         match_error = lppm_error(observed_mass, deprotonated_mass)
@@ -150,7 +150,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 collect = glycosylated_b_ions.append
                 for theoretical_ion in theoretical.glycosylated_b_ions:
                     query_mass = theoretical_ion['mass']
-                    deprotonated_mass = query_mass - proton
+                    deprotonated_mass = query_mass  # - proton
                     for peak in peak_list:
                         observed_mass = peak.neutral_mass
                         match_error = lppm_error(observed_mass, deprotonated_mass)
@@ -167,7 +167,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 collect = glycosylated_y_ions.append
                 for theoretical_ion in theoretical.glycosylated_y_ions:
                     query_mass = theoretical_ion['mass']
-                    deprotonated_mass = query_mass - proton
+                    deprotonated_mass = query_mass  # - proton
                     for peak in peak_list:
                         observed_mass = peak.neutral_mass
                         match_error = lppm_error(observed_mass, deprotonated_mass)
@@ -184,7 +184,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 collect = stub_ions.append
                 for theoretical_ion in theoretical.stub_ions:
                     query_mass = theoretical_ion['mass']
-                    deprotonated_mass = query_mass - proton
+                    deprotonated_mass = query_mass  # - proton
                     for peak in peak_list:
                         observed_mass = peak.neutral_mass
                         match_error = lppm_error(observed_mass, deprotonated_mass)

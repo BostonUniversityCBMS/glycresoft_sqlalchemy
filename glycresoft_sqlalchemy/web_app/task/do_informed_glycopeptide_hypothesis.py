@@ -5,16 +5,17 @@ from ..common import get_random_string
 
 
 def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
-             glycan_file, glycan_file_type, constant_modifications,
+             glycan_options, maximum_glycosylation_sites,
              comm=None, **kwargs):
     if comm is None:
         comm = NullPipe()
     manager = DatabaseManager(database_path)
     try:
+        kwargs.setdefault("n_processes", 4)
         task = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
             database_path, hypothesis_name=hypothesis_name, mzid_path=protein_file,
-            glycomics_path=glycan_file, glycomics_format=glycan_file_type,
-            n_processes=kwargs.get("n_processes", 4))
+            n_processes=kwargs.get("n_processes", 4), maximum_glycosylation_sites=maximum_glycosylation_sites,
+            **glycan_options)
         hypothesis_id = task.start()
         if task.status != 0:
             raise task.error
@@ -29,10 +30,10 @@ def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
 
 class IntegratedOmicsGlycopeptideHypothesisBuilderTask(Task):
     def __init__(self, database_path, hypothesis_name, protein_file, site_list_file,
-                 glycan_file, glycan_file_type, constant_modifications,
+                 glycan_options, maximum_glycosylation_sites,
                  callback, **kwargs):
         args = (database_path, hypothesis_name, protein_file, site_list_file,
-                glycan_file, glycan_file_type, constant_modifications)
+                glycan_options, maximum_glycosylation_sites)
         if hypothesis_name == "":
             hypothesis_name = get_random_string(10)
         job_name = "Integrated-Omics Glycopeptide Hypothesis Builder " + hypothesis_name

@@ -141,19 +141,32 @@ class FrequencyCounter(object):
 
 
 def extract_matched_fragments(match):
+    keys = set()
     for f in match.bare_b_ions:
+        if f['key'] in keys:
+            continue
+        keys.add(f['key'])
         yield f
     for f in match.bare_y_ions:
+        if f['key'] in keys:
+            continue
+        keys.add(f['key'])
         yield f
     for f in match.glycosylated_b_ions:
+        if f['key'] in keys:
+            continue
+        keys.add(f['key'])
         yield f
     for f in match.glycosylated_y_ions:
+        if f['key'] in keys:
+            continue
+        keys.add(f['key'])
         yield f
 
 
 class FrequencyScorer(GlycopeptideSpectrumMatchScorer):
     def __init__(self, frequency_counter, use_interaction=False):
-        super(FrequencyScorer, self).__init__(self.evaluate, "pair_counting_ms2_score", "ms2_score")
+        super(FrequencyScorer, self).__init__("pair_counting_ms2_score", "ms2_score")
         self.use_interaction = use_interaction
         self.frequency_counter = frequency_counter
 

@@ -1815,100 +1815,139 @@ static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_6te
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
 </pre><pre class="cython line score-0">&#xA0;<span class="">273</span>: </pre>
 <pre class="cython line score-0">&#xA0;<span class="">274</span>: </pre>
-<pre class="cython line score-11" onclick='toggleDiv(this)'>+<span class="">275</span>: <span class="k">cpdef</span> <span class="kt">list</span> <span class="nf">parse</span><span class="p">(</span><span class="nb">str</span> <span class="n">sequence</span><span class="p">):</span></pre>
-<pre class='cython code score-11 '>static PyObject *__pyx_pw_21glycresoft_sqlalchemy_9structure_3ext_9structure_9parse(PyObject *__pyx_self, PyObject *__pyx_v_sequence); /*proto*/
-static PyObject *__pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_parse(CYTHON_UNUSED PyObject *__pyx_v_sequence, CYTHON_UNUSED int __pyx_skip_dispatch) {
-  PyObject *__pyx_v_chunks = 0;
-  CYTHON_UNUSED PyObject *__pyx_v_current_chunk = 0;
-  CYTHON_UNUSED int __pyx_v_state;
-  PyObject *__pyx_r = NULL;
-  <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
-  <span class='refnanny'>__Pyx_RefNannySetupContext</span>("parse", 0);
-/* … */
-  /* function exit code */
-  __pyx_L1_error:;
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("glycresoft_sqlalchemy.structure.ext.structure.parse", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 0;
-  __pyx_L0:;
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_v_chunks);
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_v_current_chunk);
-  <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
-  <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
-  return __pyx_r;
-}
-
-/* Python wrapper */
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_9structure_3ext_9structure_9parse(PyObject *__pyx_self, PyObject *__pyx_v_sequence); /*proto*/
-static PyObject *__pyx_pw_21glycresoft_sqlalchemy_9structure_3ext_9structure_9parse(PyObject *__pyx_self, PyObject *__pyx_v_sequence) {
-  PyObject *__pyx_r = 0;
-  <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
-  <span class='refnanny'>__Pyx_RefNannySetupContext</span>("parse (wrapper)", 0);
-  if (unlikely(!<span class='pyx_c_api'>__Pyx_ArgTypeTest</span>(((PyObject *)__pyx_v_sequence), (&amp;PyString_Type), 1, "sequence", 1))) <span class='error_goto'>{__pyx_filename = __pyx_f[0]; __pyx_lineno = 275; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
-  __pyx_r = __pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_8parse(__pyx_self, ((PyObject*)__pyx_v_sequence));
-  CYTHON_UNUSED int __pyx_lineno = 0;
-  CYTHON_UNUSED const char *__pyx_filename = NULL;
-  CYTHON_UNUSED int __pyx_clineno = 0;
-
-  /* function exit code */
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __pyx_r = NULL;
-  __pyx_L0:;
-  <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
-  return __pyx_r;
-}
-
-static PyObject *__pyx_pf_21glycresoft_sqlalchemy_9structure_3ext_9structure_8parse(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sequence) {
-  PyObject *__pyx_r = NULL;
-  <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
-  <span class='refnanny'>__Pyx_RefNannySetupContext</span>("parse", 0);
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_r);
-  __pyx_t_1 = __pyx_f_21glycresoft_sqlalchemy_9structure_3ext_9structure_parse(__pyx_v_sequence, 0);<span class='error_goto'> if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 275; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
-  goto __pyx_L0;
-
-  /* function exit code */
-  __pyx_L1_error:;
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("glycresoft_sqlalchemy.structure.ext.structure.parse", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = NULL;
-  __pyx_L0:;
-  <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
-  <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
-  return __pyx_r;
-}
-</pre><pre class="cython line score-0">&#xA0;<span class="">276</span>:     <span class="n">cdef</span><span class="p">:</span></pre>
-<pre class="cython line score-5" onclick='toggleDiv(this)'>+<span class="">277</span>:         <span class="nb">list</span> <span class="n">chunks</span> <span class="o">=</span> <span class="p">[]</span></pre>
-<pre class='cython code score-5 '>  __pyx_t_1 = <span class='py_c_api'>PyList_New</span>(0);<span class='error_goto'> if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
-  __pyx_v_chunks = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
-</pre><pre class="cython line score-5" onclick='toggleDiv(this)'>+<span class="">278</span>:         <span class="nb">list</span> <span class="n">current_chunk</span> <span class="o">=</span> <span class="p">[]</span></pre>
-<pre class='cython code score-5 '>  __pyx_t_1 = <span class='py_c_api'>PyList_New</span>(0);<span class='error_goto'> if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
-  __pyx_v_current_chunk = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">279</span>:         <span class="nb">str</span> <span class="n">amino_acid</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">280</span>:         <span class="nb">list</span> <span class="n">modifications</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">281</span>:         <span class="nb">str</span> <span class="n">modification</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">282</span>:         <span class="n">size_t</span> <span class="n">i</span><span class="p">,</span> <span class="n">length</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">283</span>:         <span class="nb">str</span> <span class="n">c</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">284</span>:         <span class="nb">str</span> <span class="n">glycan</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">285</span>:         <span class="c"># start: 0</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">286</span>:         <span class="c"># aa: 1</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">287</span>:         <span class="c"># mod: 2</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">288</span>:         <span class="c"># n_term: 3</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">289</span>:         <span class="c"># c_term: 4</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">290</span>:         <span class="c"># glycan: 5</span></pre>
-<pre class="cython line score-0" onclick='toggleDiv(this)'>+<span class="">291</span>:         <span class="nb">int</span> <span class="n">state</span> <span class="o">=</span> <span class="mf">0</span></pre>
-<pre class='cython code score-0 '>  __pyx_v_state = 0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">292</span>: </pre>
-<pre class="cython line score-2" onclick='toggleDiv(this)'>+<span class="">293</span>:     <span class="k">return</span> <span class="n">chunks</span></pre>
-<pre class='cython code score-2 '>  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_r);
-  <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_v_chunks);
-  __pyx_r = __pyx_v_chunks;
-  goto __pyx_L0;
-</pre></div></body></html>
+<pre class="cython line score-0">&#xA0;<span class="">275</span>: <span class="c"># cpdef list parse(str sequence, str n_term=&quot;H&quot;, str c_term=&quot;OH&quot;):</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">276</span>: <span class="c">#     cdef:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">277</span>: <span class="c">#         list chunks = []</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">278</span>: <span class="c">#         list current_chunk = []</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">279</span>: <span class="c">#         list mods = []</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">280</span>: <span class="c">#         str current_aa</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">281</span>: <span class="c">#         str current_mod</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">282</span>: <span class="c">#         str next_char</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">283</span>: <span class="c">#         size_t i, length</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">284</span>: <span class="c">#         # start: 0</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">285</span>: <span class="c">#         # aa: 1</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">286</span>: <span class="c">#         # mod: 2</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">287</span>: <span class="c">#         # n_term: 3</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">288</span>: <span class="c">#         # c_term: 4</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">289</span>: <span class="c">#         # glycan: 5</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">290</span>: <span class="c">#         str state = &quot;start&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">291</span>: <span class="c">#         int paren_level = 0</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">292</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">293</span>: <span class="c">#     while i &lt; len(sequence):</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">294</span>: <span class="c">#         next_char = sequence[i]</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">295</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">296</span>: <span class="c">#         # Transition from aa to mod when encountering the start of a modification</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">297</span>: <span class="c">#         # internal to the sequence</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">298</span>: <span class="c">#         if next_char == &quot;(&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">299</span>: <span class="c">#             if state == &quot;aa&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">300</span>: <span class="c">#                 state = &quot;mod&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">301</span>: <span class="c">#                 assert paren_level == 0</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">302</span>: <span class="c">#                 paren_level += 1</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">303</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">304</span>: <span class="c">#             # Transition to n_term when starting on an open parenthesis</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">305</span>: <span class="c">#             elif state == &quot;start&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">306</span>: <span class="c">#                 state = &quot;n_term&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">307</span>: <span class="c">#                 paren_level += 1</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">308</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">309</span>: <span class="c">#             else:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">310</span>: <span class="c">#                 paren_level += 1</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">311</span>: <span class="c">#                 if not (state in {&quot;n_term&quot;, &quot;c_term&quot;} and paren_level == 1):</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">312</span>: <span class="c">#                     current_mod += next_char</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">313</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">314</span>: <span class="c">#         elif next_char == &quot;)&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">315</span>: <span class="c">#             if state == &quot;aa&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">316</span>: <span class="c">#                 raise Exception(</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">317</span>: <span class="c">#                     &quot;Invalid Sequence. ) found outside of modification, Position {0}. {1}&quot;.format(i, sequence))</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">318</span>: <span class="c">#             else:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">319</span>: <span class="c">#                 paren_level -= 1</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">320</span>: <span class="c">#                 if paren_level == 0:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">321</span>: <span class="c">#                     mods.append(current_mod)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">322</span>: <span class="c">#                     current_mods.append(current_mod)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">323</span>: <span class="c">#                     if state == &quot;mod&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">324</span>: <span class="c">#                         state = &#39;aa&#39;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">325</span>: <span class="c">#                         # If we encounter multiple modifications in separate parentheses</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">326</span>: <span class="c">#                         # in a row, attach them to the previous position</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">327</span>: <span class="c">#                         if current_aa == &quot;&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">328</span>: <span class="c">#                             chunks[-1][1].extend(current_mods)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">329</span>: <span class="c">#                         else:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">330</span>: <span class="c">#                             chunks.append([current_aa, current_mods])</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">331</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">332</span>: <span class="c">#                     elif state == &quot;n_term&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">333</span>: <span class="c">#                         if sequence[i+1] != &quot;-&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">334</span>: <span class="c">#                             raise Exception(&quot;Malformed N-terminus for &quot; + sequence)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">335</span>: <span class="c">#                         # Only one modification on termini</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">336</span>: <span class="c">#                         n_term = current_mod</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">337</span>: <span class="c">#                         state = &quot;aa&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">338</span>: <span class="c">#                         # Jump ahead past - into the amino acid sequence</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">339</span>: <span class="c">#                         i += 1</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">340</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">341</span>: <span class="c">#                     elif state == &quot;c_term&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">342</span>: <span class="c">#                         # Only one modification on termini</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">343</span>: <span class="c">#                         c_term = current_mod</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">344</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">345</span>: <span class="c">#                     current_mods = []</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">346</span>: <span class="c">#                     current_mod = &quot;&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">347</span>: <span class="c">#                     current_aa = &quot;&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">348</span>: <span class="c">#                 else:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">349</span>: <span class="c">#                     current_mod += next_char</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">350</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">351</span>: <span class="c">#         elif next_char == &quot;|&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">352</span>: <span class="c">#             if state == &quot;aa&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">353</span>: <span class="c">#                 raise Exception(&quot;Invalid Sequence. | found outside of modification&quot;)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">354</span>: <span class="c">#             else:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">355</span>: <span class="c">#                 current_mods.append(current_mod)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">356</span>: <span class="c">#                 mods.append(current_mod)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">357</span>: <span class="c">#                 current_mod = &quot;&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">358</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">359</span>: <span class="c">#         elif next_char == &quot;{&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">360</span>: <span class="c">#             if (state == &#39;aa&#39; or (state == &quot;c_term&quot; and paren_level == 0)):</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">361</span>: <span class="c">#                 glycan = sequence[i:]</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">362</span>: <span class="c">#                 break</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">363</span>: <span class="c">#             elif (state in {&quot;mod&quot;, &quot;n_term&quot;, &quot;c_term&quot;}) and paren_level &gt; 0:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">364</span>: <span class="c">#                 current_mod += next_char</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">365</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">366</span>: <span class="c">#         elif next_char == &quot;-&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">367</span>: <span class="c">#             if state == &quot;aa&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">368</span>: <span class="c">#                 state = &quot;c_term&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">369</span>: <span class="c">#                 if(current_aa != &quot;&quot;):</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">370</span>: <span class="c">#                     current_mods.append(current_mod)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">371</span>: <span class="c">#                     chunks.append([current_aa, current_mods])</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">372</span>: <span class="c">#                     current_mod = &quot;&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">373</span>: <span class="c">#                     current_mods = []</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">374</span>: <span class="c">#                     current_aa = &quot;&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">375</span>: <span class="c">#             else:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">376</span>: <span class="c">#                 current_mod += next_char</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">377</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">378</span>: <span class="c">#         elif state == &quot;start&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">379</span>: <span class="c">#             state = &quot;aa&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">380</span>: <span class="c">#             current_aa = next_char</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">381</span>: <span class="c">#         elif state == &quot;aa&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">382</span>: <span class="c">#             if(current_aa != &quot;&quot;):</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">383</span>: <span class="c">#                 current_mods.append(current_mod)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">384</span>: <span class="c">#                 chunks.append([current_aa, current_mods])</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">385</span>: <span class="c">#                 current_mod = &quot;&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">386</span>: <span class="c">#                 current_mods = []</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">387</span>: <span class="c">#                 current_aa = &quot;&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">388</span>: <span class="c">#             current_aa = next_char</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">389</span>: <span class="c">#         elif state in {&quot;n_term&quot;, &quot;mod&quot;, &quot;c_term&quot;}:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">390</span>: <span class="c">#             current_mod += next_char</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">391</span>: <span class="c">#         else:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">392</span>: <span class="c">#             raise Exception(</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">393</span>: <span class="c">#                 &quot;Unknown Tokenizer State&quot;, current_aa, current_mod, i, next_char)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">394</span>: <span class="c">#         i += 1</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">395</span>: <span class="c">#     if current_aa != &quot;&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">396</span>: <span class="c">#         current_mods.append(&quot;&quot;)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">397</span>: <span class="c">#         chunks.append([current_aa, current_mods])</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">398</span>: <span class="c">#     if current_mod != &quot;&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">399</span>: <span class="c">#         mods.append(current_mod)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">400</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">401</span>: <span class="c">#     #if glycan != &quot;&quot;:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">402</span>: <span class="c">#     #    try:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">403</span>: <span class="c">#     #        glycan = glycan_parser(glycan)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">404</span>: <span class="c">#     #    except Exception, e:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">405</span>: <span class="c">#     #        logging.exception(&quot;Error in parser, %s and %s&quot;, glycan, sequence, exc_info=e)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">406</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">407</span>: <span class="c">#     # return chunks, mods, glycan, n_term, c_term</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">408</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">409</span>: <span class="c">#     return chunks</span></pre>
+</div></body></html>

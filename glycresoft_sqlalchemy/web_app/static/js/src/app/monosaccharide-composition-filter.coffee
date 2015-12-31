@@ -27,7 +27,7 @@ class MonosaccharideFilter
                     <input type="checkbox" id="#{sanitizeName}_include" name="#{sanitizeName}_include"/>
                     <label for="#{sanitizeName}_include"><b>#{residue}</b></label>
                 </p>
-                <p>
+                <p style='margin-top: 0px; margin-bottom: 0px;'>
                     <input id="#{sanitizeName}_min" type="number" placeholder="Minimum #{residue}" style='width: 45px;' min="0"
                            value="#{rule.minimum}" max="#{rule.maximum}" name="#{sanitizeName}_min"/> : 
                     <input id="#{sanitizeName}_max" type="number" placeholder="Maximum #{residue}" style='width: 45px;' min="0"

@@ -39,6 +39,7 @@ if logging.getLogger().root.handle == []:
 
 Sequence = sequence.Sequence
 Modification = modification.Modification
+NGlycanCoreGlycosylation = modification.NGlycanCoreGlycosylation
 ModificationTable = modification.ModificationTable
 Composition = composition.Composition
 

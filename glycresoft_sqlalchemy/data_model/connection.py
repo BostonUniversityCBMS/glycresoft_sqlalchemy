@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.pool import NullPool
 
-from .base import Base2 as Base, Namespace
+from .base import Base, Namespace
 from ..utils import database_utils
 
 import logging

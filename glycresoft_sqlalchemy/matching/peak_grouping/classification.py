@@ -13,7 +13,7 @@ from sqlalchemy import func, bindparam, select
 import numpy as np
 
 from glycresoft_sqlalchemy.data_model import (
-    PipelineModule, HypothesisSampleMatch, Decon2LSPeakGroup,
+    PipelineModule, HypothesisSampleMatch, Decon2LSPeakGroup, PipelineException,
     PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch, JointPeakGroupMatch,
     PeakGroupMatchToJointPeakGroupMatch, PeakGroupScoringModel)
 
@@ -415,7 +415,7 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
             model = session.query(PeakGroupScoringModel).filter_by(
                 name=PeakGroupScoringModel.GENERIC_MODEL_NAME).first()
             if model is None:
-                raise Exception("Generic PeakGroupScoringModel Not Found")
+                raise PipelineException("Generic PeakGroupScoringModel Not Found")
             classifier = logistic_scoring.from_peak_group_scoring_model(model)
         else:
             classifier = ClassifierType()
@@ -490,7 +490,7 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
             PeakGroupMatch.matched).selectable
 
         if not len(data_model_session.connection().execute(id_stmt).fetchmany(2)) == 2:
-            raise ValueError("Hypothesis-Sample Match ID matches maps no PeakGroupMatches")
+            raise PipelineException("Hypothesis-Sample Match ID matches maps no PeakGroupMatches")
 
         # Use the presence of a PeakGroupMatch.matched == True row to indicate whether something was a match
         # and fill out the :attr:`TempPeakGroupMatch.matched` column
@@ -623,7 +623,7 @@ class PeakGroupClassification(PipelineModule):
             PeakGroupMatch.matched).selectable
 
         if not len(data_model_session.connection().execute(id_stmt).fetchmany(2)) == 2:
-            raise ValueError("Hypothesis-Sample Match ID matches maps no PeakGroupMatches")
+            raise PipelineException("Hypothesis-Sample Match ID matches maps no PeakGroupMatches")
 
         # Use the presence of a PeakGroupMatch.matched == True row to indicate whether something was a match
         # and fill out the :attr:`TempPeakGroupMatch.matched` column

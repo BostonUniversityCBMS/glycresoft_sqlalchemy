@@ -9,7 +9,7 @@ from sqlalchemy.orm.session import object_session
 import numpy as np
 
 
-from ..base import Hierarchy, Namespace, Base2 as Base
+from ..base import Hierarchy, Namespace, Base
 
 from ..generic import MutableDict, MutableList
 from ..sequence_model.peptide import TheoreticalGlycopeptideComposition, Protein

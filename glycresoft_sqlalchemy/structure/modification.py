@@ -6,6 +6,8 @@ from pkg_resources import resource_stream
 
 from collections import defaultdict
 from collections import Sequence as Iterable
+from glypy.composition.glycan_composition import (
+    FrozenMonosaccharideResidue, FrozenGlycanComposition)
 
 from .residue import residue_to_symbol, Residue
 from .composition import composition_to_mass, Composition
@@ -13,6 +15,7 @@ from .parser import prefix_to_postfix_modifications
 from . import PeptideSequenceBase
 from . import ModificationBase
 from . import ResidueBase
+
 
 target_string_pattern = re.compile(
     r'((?P<n_term>N-term)|(?P<c_term>C-term)|(?P<amino_acid>[A-Z]+))')
@@ -23,6 +26,21 @@ is_mass_delta = re.compile(r"^Delta:")
 
 
 def composition_delta_parser(formula):
+    '''Parses a Unimod composition offset formula where
+    the isotope specification is the 'opposite' of the
+    specification used by this library.
+
+    Warning - Currently unused internally.
+
+    Parameters
+    ----------
+    formula: str
+        The formula parsed
+
+    Return
+    ------
+    dict
+    '''
     elemental_composition = {}
     components = re.findall(r"([A-Za-z0-9]+)\(([\-0-9]+)\)", formula)
     for element, amount in components:
@@ -35,7 +53,21 @@ def composition_delta_parser(formula):
 
 def extract_targets_from_string(target_string):
     '''Parses the Protein Prospector modification name string to
-    extract the modification target specificity'''
+    extract the modification target specificity
+
+    Format:
+
+    `"Modification Name (Residues Targeted)"`
+
+    Parameters
+    ----------
+    target_string: str
+
+    Return
+    ------
+    :class:`ModificationTarget`
+
+    '''
     params = target_string_pattern.search(target_string).groupdict()
     amino_acid_targets = params.pop("amino_acid", None)
     amino_acid_targets = map(lambda x: residue_to_symbol.get(x, x), list(
@@ -50,7 +82,20 @@ def extract_targets_from_string(target_string):
 
 
 def get_position_modifier_rules_dict(sequence):
-    '''Labels the start and end indices of the sequence'''
+    '''Labels the start and end indices of the sequence
+
+    A convenience dictionary initializer for ease-of-access in
+    :class:`ModificationTarget` site validation functions
+
+    Parameters
+    ----------
+    sequence: PeptideSequence
+        The sequence for which to project labels
+
+    Return
+    ------
+    defaultdict
+    '''
     return defaultdict(lambda: "internal", **{
         0: "N-term",
         (len(sequence) - 1): "C-term"
@@ -58,10 +103,25 @@ def get_position_modifier_rules_dict(sequence):
 
 
 class ModificationTarget(object):
-    '''Specifies the range of targets that a given modification can be found at.'''
+    '''Specifies the range of targets that a given modification can be found at.
 
-    @staticmethod
-    def from_unimod_specificity(specificity):
+    A single instance of :class:`ModificationTarget` describes one or more position/residue
+    rules for a single type of modification, bundled together underneath a single :class:`ModificationRule`
+    instance. :class:`ModificationTarget` may be extracted from Unimod data dictionaries using the
+    :meth:`from_unimod_specificity` class method.
+
+    Attributes
+    ----------
+    amino_acid_targets: list
+        The list of amino acid residues that this rule
+        permits.
+    position_modifiers: list
+        The list of sequence-position specific filters
+        this rule enforces.
+    '''
+
+    @classmethod
+    def from_unimod_specificity(cls, specificity):
         amino_acid = specificity["site"]
         if amino_acid in set(["N-term", "C-term"]):
             amino_acid = None
@@ -74,7 +134,7 @@ class ModificationTarget(object):
             position_modifiers = "C-term"
         else:
             raise Exception("Undefined Position, " + position_modifiers)
-        return ModificationTarget(amino_acid, position_modifiers)
+        return cls(amino_acid, position_modifiers)
 
     def __init__(self, site_targets=None, position_modifiers=None):
         self.amino_acid_targets = site_targets
@@ -195,7 +255,8 @@ class ModificationRule(object):
                 composition=Composition({str(k): int(v) for k, v in unimod_entry['composition'].items()}))
 
     def __init__(self, amino_acid_specificity, modification_name,
-                 title=None, monoisotopic_mass=None, **kwargs):
+                 title=None, monoisotopic_mass=None, composition=None,
+                 categories=None, **kwargs):
         # Attempt to parse the protein prospector name which contains the
         # target in
         try:
@@ -206,8 +267,10 @@ class ModificationRule(object):
         self.unimod_name = modification_name
         self.mass = float(monoisotopic_mass)
         self.title = title if title is not None else modification_name
-        self.composition = kwargs.get("composition")
+        self.composition = composition
         self.preferred_name = min(self.unimod_name, self.title, self.name, key=len)
+        self.categories = categories or []
+        self.options = kwargs
 
         # The type of the parameter passed for amino_acid_specificity is variable
         # so select the method correct for the passed type
@@ -298,6 +361,12 @@ class ModificationRule(object):
             raise TypeError(
                 "Unsupported types. Can only add two ModificationRules together.")
 
+    def __call__(self, **kwargs):
+        return Modification(self, **kwargs)
+
+    def is_a(self, category):
+        return category in self.categories
+
 
 class AnonymousModificationRule(ModificationRule):
     '''
@@ -347,7 +416,7 @@ class AnonymousModificationRule(ModificationRule):
         return rep
 
 
-def simple_sequence_mass(seq_list):
+def _simple_sequence_mass(seq_list):
     '''Because AminoAcidSubstitution may contain sequence-like entries that
     need massing but we cannot import `sequence` here, this defines a simple
     sequence list to total mass without any terminal groups, but handles residues
@@ -376,12 +445,15 @@ class AminoAcidSubstitution(AnonymousModificationRule):
         else:
             return None
 
-    def __init__(self, original_residue, substitution_residue):
+    def __init__(self, original_residue, substitution_residue, **kwargs):
         self.name = "{0}->{1}".format(original_residue, substitution_residue)
         self.mass = 0.0
         self.original = prefix_to_postfix_modifications(original_residue)
         self.substitution = prefix_to_postfix_modifications(substitution_residue)
-        self.delta = simple_sequence_mass(self.substitution) - simple_sequence_mass(self.original)
+        self.delta = _simple_sequence_mass(self.substitution) - _simple_sequence_mass(self.original)
+        self.preferred_name = self.name
+        self.options = kwargs
+        self.categories = ['substitution']
 
     def serialize(self):
         return "@" + self.name
@@ -390,14 +462,22 @@ class AminoAcidSubstitution(AnonymousModificationRule):
         return "{name}:{delta}".format(**self.__dict__)
 
 
+_hexnac = FrozenMonosaccharideResidue.from_iupac_lite("HexNAc")
+_hexose = FrozenMonosaccharideResidue.from_iupac_lite("Hex")
+
+
 class Glycosylation(ModificationRule):
     parser = re.compile(r"@(?P<glycan_composition>\{[^\}]+\})")
 
     def __init__(self, glycan_composition):
-        self.name = "@" + glycan_composition.serialize()
+        if isinstance(glycan_composition, basestring):
+            glycan_composition = FrozenGlycanComposition.parse(glycan_composition)
+
+        self.name = "@" + str(glycan_composition)
         self.mass = glycan_composition.mass()
         self.title = self.name
         self.preferred_name = self.name
+        self.categories = ["glycosylation"]
 
     def losses(self):
         for i in []:
@@ -406,22 +486,23 @@ class Glycosylation(ModificationRule):
 
 class NGlycanCoreGlycosylation(Glycosylation):
     mass_ladder = {
-        "{HexNAc:1}": 203.079372,
-        "{HexNAc:2}": 406.158745,
-        "{HexNAc:2; Hex:1}": 586.222133,
-        "{HexNAc:2; Hex:2}": 730.264391,
-        "{HexNAc:2; Hex:3}": 892.317215
+        "{HexNAc:1}": _hexnac.mass(),
+        "{HexNAc:2}": _hexnac.mass() * 2,
+        "{HexNAc:2; Hex:1}": _hexnac.mass() * 2 + _hexose.mass() * 1,
+        "{HexNAc:2; Hex:2}": _hexnac.mass() * 2 + _hexose.mass() * 2,
+        "{HexNAc:2; Hex:3}": _hexnac.mass() * 2 + _hexose.mass() * 3
     }
 
-    def __init__(self, base_mass=203.07937):
+    def __init__(self, base_mass=_hexnac.mass()):
         self.name = "HexNAc"
         self.mass = base_mass
         self.title = "NGlycanCoreGlycosylation"
         self.unimod_name = "HexNAc"
         self.targets = [(ModificationTarget("N"))]
-        self.composition = None
+        self.composition = _hexnac.total_composition().clone()
         self.title = self.name
         self.preferred_name = self.name
+        self.categories = ["glycosylation"]
 
     def losses(self):
         for label_loss in self.mass_ladder.items():
@@ -430,16 +511,16 @@ class NGlycanCoreGlycosylation(Glycosylation):
 
 class OGlcNAcylation(Glycosylation):
     mass_ladder = {
-        "{GlcNAc:1}": 203.079372
+        "{GlcNAc:1}": _hexnac.mass()
     }
 
-    def __init__(self, base_mass=203.07937):
+    def __init__(self, base_mass=_hexnac.mass()):
         self.name = "O-GlcNAc"
         self.mass = base_mass
         self.title = "O-GlcNAc"
         self.unimod_name = "O-GlcNAc"
         self.targets = [ModificationTarget("S"), ModificationTarget("T")]
-        self.composition = None
+        self.composition = _hexnac.total_composition().clone()
         self.title = self.name
         self.preferred_name = self.name
 
@@ -478,8 +559,12 @@ class ModificationTable(dict):
     other_modifications = {
         "HexNAc": NGlycanCoreGlycosylation(),
         "O-GlcNAc": OGlcNAcylation(),
-        "H": ModificationRule("N-term", "H", "H", composition_to_mass("H")),
-        "OH": ModificationRule("C-term", "OH", "OH", composition_to_mass("OH")),
+        "H": ModificationRule(
+            "N-term", "H", "H",
+            composition_to_mass("H"), composition=Composition("H")),
+        "OH": ModificationRule(
+            "C-term", "OH", "OH",
+            composition_to_mass("OH"), composition=Composition("OH")),
     }
 
     # Class Methods
@@ -787,6 +872,10 @@ class Modification(ModificationBase):
         self.position = mod_pos
         self.number = mod_num
         self.rule = rule
+        try:
+            self.composition = rule.composition
+        except:
+            self.composition = None
 
     def serialize(self):
         rep = self.rule.serialize()
@@ -825,3 +914,6 @@ class Modification(ModificationBase):
 
     def __setstate__(self, state):
         self.name, self.mass, self.position, self.number, self.rule = state
+
+    def clone(self):
+        return self.__class__(self.rule)

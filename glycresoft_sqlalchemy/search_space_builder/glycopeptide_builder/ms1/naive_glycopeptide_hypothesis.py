@@ -10,10 +10,10 @@ from glycresoft_sqlalchemy.data_model import (
     TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func,
     TheoreticalGlycanCombination)
 
-from .include_glycomics import MS1GlycanImporter
+from .include_glycomics import MS1GlycanImporter, MS1GlycanImportManager
 
 from ..peptide_utilities import generate_peptidoforms, ProteinFastaFileParser, SiteListFastaFileParser
-from ..glycan_utilities import get_glycan_combinations, merge_compositions
+from ..glycan_utilities import get_glycan_combinations
 from ..utils import flatten
 
 from glycresoft_sqlalchemy.structure import composition
@@ -117,38 +117,52 @@ def digest_protein(protein, manager, constant_modifications, variable_modificati
         session.close()
 
 
-class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
+class NaiveGlycopeptideHypothesisBuilder(PipelineModule, MS1GlycanImportManager):
     HypothesisType = MS1GlycopeptideHypothesis
 
     def __init__(self, database_path, hypothesis_name, protein_file, site_list_file,
-                 glycan_file, glycan_file_type, constant_modifications, variable_modifications,
+                 glycomics_path, glycomics_format, constant_modifications, variable_modifications,
                  enzyme, max_missed_cleavages=1, maximum_glycosylation_sites=2, n_processes=4, **kwargs):
         self.manager = self.manager_type(database_path)
         self.manager.initialize()
+
+        MS1GlycanImportManager.__init__(
+            self, glycomics_path, glycomics_format, None, maximum_glycosylation_sites,
+            **kwargs)
+        self.hypothesis_name = hypothesis_name
         self.protein_file = protein_file
         self.site_list_file = site_list_file
-        self.glycan_file = glycan_file
-        self.glycan_file_type = glycan_file_type
-        self.session = session = self.manager.session()
-        self.hypothesis = self.HypothesisType(name=hypothesis_name)
+        self.glycomics_path = glycomics_path
+        self.glycomics_format = glycomics_format
+        self.session = self.manager.session()
         self.constant_modifications = constant_modifications
         self.variable_modifications = variable_modifications
         self.enzyme = enzyme
         self.max_missed_cleavages = max_missed_cleavages
         self.maximum_glycosylation_sites = maximum_glycosylation_sites
-        self.hypothesis.parameters = ({
-            "protein_file": protein_file,
-            "site_list_file": site_list_file,
-            "glycan_file": glycan_file,
-            "glycan_file_type": glycan_file_type,
-            "constant_modifications": constant_modifications,
-            "variable_modifications": variable_modifications,
-            "enzyme": enzyme,
-            "max_missed_cleavages": max_missed_cleavages
+        self.options = kwargs
+        self.n_processes = n_processes
+
+    def bootstrap_hypothesis(self, session=None):
+        if session is None:
+            session = self.manager.session()
+
+        hypothesis = None
+        hypothesis = self.hypothesis = self.HypothesisType(name=self.hypothesis_name)
+        hypothesis.parameters = ({
+            "protein_file": self.protein_file,
+            "site_list_file": self.site_list_file,
+            "glycomics_path": self.glycomics_path,
+            "glycomics_format": self.glycomics_format,
+            "constant_modifications": self.constant_modifications,
+            "variable_modifications": self.variable_modifications,
+            "enzyme": self.enzyme,
+            "max_missed_cleavages": self.max_missed_cleavages
         })
+
         session.add(self.hypothesis)
         session.commit()
-        self.n_processes = n_processes
+        self.hypothesis_id = hypothesis.id
 
     def prepare_task_fn(self):
         return functools.partial(generate_glycopeptide_compositions,
@@ -167,13 +181,27 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule):
 
     def run(self):
         session = self.session
-        if self.glycan_file_type == "txt":
-            importer = MS1GlycanImporter(
-                self.database_path, self.glycan_file, self.hypothesis.id, 'txt',
-                combination_size=self.maximum_glycosylation_sites)
-            importer.run()
-        else:
-            raise NotImplementedError()
+        self.bootstrap_hypothesis(session)
+        self.import_glycans()
+        # if self.glycan_file_type == "txt":
+        #     importer = MS1GlycanImporter(
+        #         self.database_path, self.glycan_file, self.hypothesis.id, 'txt',
+        #         combination_size=self.maximum_glycosylation_sites)
+        #     importer.start()
+        # elif self.glycan_file_type == "hypothesis":
+        #     importer = MS1GlycanImporter(
+        #         self.database_path, self.glycan_file, self.hypothesis.id, "hypothesis",
+        #         source_hypothesis_id=self.options.get("source_hypothesis_id"),
+        #         combination_size=self.maximum_glycosylation_sites)
+        #     importer.start()
+        # elif self.glycan_file_type == "hypothesis-sample-match":
+        #     importer = MS1GlycanImporter(
+        #         self.database_path, self.glycan_file, self.hypothesis.id, "hypothesis-sample-match",
+        #         source_hypothesis_sample_match_id=self.options.get("source_hypothesis_sample_match_id"),
+        #         combination_size=self.maximum_glycosylation_sites)
+        #     importer.start()
+        # else:
+        #     raise NotImplementedError()
         logger.info("Loaded glycans")
 
         site_list_map = {}

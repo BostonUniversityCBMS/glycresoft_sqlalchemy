@@ -17,19 +17,13 @@ except ImportError:  # pragma: no cover
     except:
         from xml.etree import ElementTree as ET
 
-from itertools import cycle
 from matplotlib import pyplot as plt
-from matplotlib import patches as mpatches
-from matplotlib.path import Path
-from matplotlib.colors import cnames, hex2color, Normalize
-from matplotlib import cm as colormap
 
 import operator
 import numpy as np
 
 from glycresoft_sqlalchemy.data_model import (
-    DatabaseManager, Decon2LSPeakGroup, PeakGroupMatch,
-    Hypothesis, Decon2LSPeak, HasPeakChromatogramData)
+    Decon2LSPeak, HasPeakChromatogramData)
 
 from ..utils.collectiontools import groupby
 

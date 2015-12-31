@@ -23,9 +23,6 @@ from matplotlib import cm as colormap
 import operator
 import numpy as np
 
-from glycresoft_sqlalchemy.data_model import (
-    DatabaseManager, Decon2LSPeakGroup, PeakGroupMatch,
-    Hypothesis, Decon2LSPeak)
 
 from ..spectra.spectrum_model import mass_charge_ratio
 

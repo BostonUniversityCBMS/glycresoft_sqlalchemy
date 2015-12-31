@@ -5,7 +5,7 @@ import itertools
 
 from glycresoft_sqlalchemy.data_model import (
     HypothesisSampleMatch, PipelineModule, GlycopeptideMatch,
-    GlycopeptideSpectrumMatch)
+    GlycopeptideSpectrumMatch, GlycopeptideSpectrumMatchScore)
 
 from glycresoft_sqlalchemy.scoring import target_decoy
 from glycresoft_sqlalchemy.scoring import score_spectrum_matches, simple_scoring_algorithm
@@ -32,7 +32,8 @@ def do_glycopeptide_match_scoring(glycopeptide_match_ids, database_manager, scor
         session.close()
 
 
-def do_glycopeptide_spectrum_match_scoring(glycopeptide_spectrum_match_ids, database_manager, scorer, score_parameters):
+def do_glycopeptide_spectrum_match_scoring(
+        glycopeptide_spectrum_match_ids, database_manager, scorer, score_parameters):
     session = database_manager()
     collection = []
     try:
@@ -85,12 +86,12 @@ class RescoreHypothesisSampleMatch(PipelineModule):
         if is_decoy:
             q = session.query(GlycopeptideMatch.id).filter(
                 GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-                ~GlycopeptideMatch.is_not_decoy())
+                GlycopeptideMatch.is_decoy())
         else:
             q = session.query(GlycopeptideMatch.id).filter(
                 GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
                 GlycopeptideMatch.is_not_decoy())
-        for chunk in yield_ids(session, q):
+        for chunk in yield_ids(session, q, chunk_size=500):
             yield chunk
         session.close()
 
@@ -111,7 +112,7 @@ class RescoreHypothesisSampleMatch(PipelineModule):
                     logger.info("Scored %d matches", cntr)
                     last = cntr
             pool.close()
-            pool.terminate()
+
         else:
             for res in itertools.imap(fn, self.stream_ids(is_decoy=is_decoy)):
                 cntr += res
@@ -122,7 +123,9 @@ class RescoreHypothesisSampleMatch(PipelineModule):
     def run(self):
         session = self.manager()
         hsm = session.query(HypothesisSampleMatch).get(self.hypothesis_sample_match_id)
+        logger.info("Scoring Targets")
         self.do_score(session, is_decoy=False)
+        logger.info("Scoring Decoys")
         self.do_score(session, is_decoy=True)
 
         job = target_decoy.TargetDecoyAnalyzer.from_hypothesis_sample_match(self.database_path, hsm)
@@ -153,7 +156,7 @@ class RescoreSpectrumHypothesisSampleMatch(PipelineModule):
             q = session.query(GlycopeptideSpectrumMatch.id).filter(
                 GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
                 GlycopeptideSpectrumMatch.is_not_decoy())
-        for chunk in yield_ids(session, q):
+        for chunk in yield_ids(session, q, chunk_size=500):
             yield chunk
         session.close()
 
@@ -182,8 +185,24 @@ class RescoreSpectrumHypothesisSampleMatch(PipelineModule):
                     logger.info("Scored %d matches", cntr)
                     last = cntr
 
+    def clear_old_scores(self):
+        session = self.manager()
+        ids = session.query(GlycopeptideSpectrumMatchScore.id).join(
+            GlycopeptideSpectrumMatch).filter(
+            GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
+            ((GlycopeptideSpectrumMatchScore.name == self.scorer.score_name) |
+             (GlycopeptideSpectrumMatchScore.name == 'q_value')))
+        session.query(GlycopeptideSpectrumMatchScore).filter(GlycopeptideSpectrumMatchScore.id.in_(ids)).delete(False)
+        session.commit()
+
     def run(self):
         session = self.manager()
         hsm = session.query(HypothesisSampleMatch).get(self.hypothesis_sample_match_id)
+        self.clear_old_scores()
+        logger.info("Scoring Targets")
         self.do_score(session, is_decoy=False)
+        logger.info("Scoring Decoys")
         self.do_score(session, is_decoy=True)
+        job = target_decoy.TargetDecoySpectrumMatchAnalyzer.from_hypothesis_sample_match(
+            self.database_path, hsm, score=self.scorer.score_name)
+        job.start()

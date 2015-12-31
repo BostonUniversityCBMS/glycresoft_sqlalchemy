@@ -4,8 +4,9 @@ from .task_process import NullPipe, Message, Task
 
 
 def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
-             glycan_file, glycan_file_type, constant_modifications,
+             glycan_options, constant_modifications,
              variable_modifications, enzyme, max_missed_cleavages=1,
+             maximum_glycosylation_sites=1,
              comm=None, **kwargs):
     if comm is None:
         comm = NullPipe()
@@ -16,13 +17,13 @@ def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
             hypothesis_name=hypothesis_name,
             protein_file=protein_file,
             site_list_file=site_list_file,
-            glycan_file=glycan_file,
-            glycan_file_type=glycan_file_type,
             constant_modifications=constant_modifications,
             variable_modifications=variable_modifications,
             enzyme=enzyme,
             max_missed_cleavages=max_missed_cleavages,
-            n_processes=kwargs.get("n_processes", 4)
+            maximum_glycosylation_sites=maximum_glycosylation_sites,
+            n_processes=kwargs.get("n_processes", 4),
+            **glycan_options
             )
         hypothesis_id = task.start()
         if task.status != 0:
@@ -38,12 +39,14 @@ def taskmain(database_path, hypothesis_name, protein_file, site_list_file,
 
 class NaiveGlycopeptideHypothesisBuilderTask(Task):
     def __init__(self, database_path, hypothesis_name, protein_file, site_list_file,
-                 glycan_file, glycan_file_type, constant_modifications,
+                 glycan_options, constant_modifications,
                  variable_modifications, enzyme, max_missed_cleavages,
+                 maximum_glycosylation_sites,
                  callback, **kwargs):
         args = (database_path, hypothesis_name, protein_file, site_list_file,
-                glycan_file, glycan_file_type, constant_modifications,
-                variable_modifications, enzyme, max_missed_cleavages)
+                glycan_options, constant_modifications,
+                variable_modifications, enzyme, max_missed_cleavages,
+                maximum_glycosylation_sites)
         job_name = "Naive Glycopeptide Hypothesis Builder " + hypothesis_name
         kwargs.setdefault('name', job_name)
         super(NaiveGlycopeptideHypothesisBuilderTask, self).__init__(taskmain, args, callback, **kwargs)

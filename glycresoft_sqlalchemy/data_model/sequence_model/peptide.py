@@ -1,19 +1,22 @@
 import re
 from collections import OrderedDict
 
+from sqlalchemy.ext.baked import bakery
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, backref, make_transient, Query
 from sqlalchemy.ext.hybrid import hybrid_method
-from sqlalchemy import (PickleType, Numeric, Unicode, Table,
+from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 from sqlalchemy.orm.exc import DetachedInstanceError
 from ..generic import MutableDict, MutableList
-from ..base import Base2 as Base
+from ..base import Base
 from ..glycomics import (
-    TheoreticalGlycanComposition as Glycan, with_glycan_composition,
-    TheoreticalGlycanCombination, has_glycan_composition_listener)
+    with_glycan_composition, TheoreticalGlycanCombination, has_glycan_composition_listener)
 
 from ...structure import sequence
+
+
+peptide_bakery = bakery()
 
 
 class Protein(Base):
@@ -26,15 +29,9 @@ class Protein(Base):
     hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id", ondelete="CASCADE"))
     glycosylation_sites = Column(MutableList.as_mutable(PickleType))
 
-    # theoretical_glycopeptides = relationship(
-    #     "TheoreticalGlycopeptide", backref=backref('protein', order_by=id), lazy='dynamic')
-
-    # glycopeptide_matches = relationship(
-    #     "GlycopeptideMatch", lazy='dynamic', backref=backref('protein', order_by=id))
-
     def __repr__(self):
         return "<Protein {0} {1} {2} {3}...>".format(
-            self.id, self.name, (self.glycopeptide_matches.count()),
+            self.id, self.name, self.glycosylation_sites,
             self.protein_sequence[:20] if self.protein_sequence is not None else "")
 
     def to_json(self, full=False):
@@ -92,6 +89,30 @@ class PeptideBase(object):
 
     peptide_modifications = Column(Unicode(128))
     glycosylation_sites = Column(MutableList.as_mutable(PickleType))
+
+    _query_ppm_tolerance_search_no_hypothesis_id = None
+    _query_ppm_tolerance_search = None
+
+    @classmethod
+    def ppm_error_tolerance_search(cls, session, mass, tolerance, hypothesis_id=None):
+        width = (mass * tolerance)
+        lower = mass - width
+        upper = mass + width
+        if hypothesis_id is not None:
+            if cls._query_ppm_tolerance_search is None:
+                q = peptide_bakery(lambda session: session.query(cls).join(Protein))
+                q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
+                q += lambda q: q.filter(
+                    cls.protein_id == Protein.id, Protein.hypothesis_id == bindparam("hypothesis_id"))
+                cls._query_ppm_tolerance_search = q
+            return cls._query_ppm_tolerance_search(session).params(
+                lower=lower, upper=upper, hypothesis_id=hypothesis_id)
+        else:
+            if cls._query_ppm_tolerance_search_no_hypothesis_id is None:
+                q = peptide_bakery(lambda session: session.query(cls))
+                q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
+                cls._query_ppm_tolerance_search_no_hypothesis_id = q
+            return cls._query_ppm_tolerance_search_no_hypothesis_id(session).params(lower=lower, upper=upper)
 
     @hybrid_method
     def spans(self, point):

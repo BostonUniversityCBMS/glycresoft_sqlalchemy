@@ -1,18 +1,19 @@
 <div class='row'>
     <div class='col s8'>
-    <h4>{{hsm.name}}</h4>
+    <h5>{{hsm.name}}</h5>
     </div>
     <div class='col s4'>
         {{hsm.id}}
     </div>
 </div>
-<div class='row'>
+<div class='row' style='margin-bottom:0px;'>
     <div class='col s8'>
-        <h5>Proteins:</h5>
         {% with proteins=hsm.target_hypothesis.proteins %}
             {% include "tandem_glycopeptide_search/components/protein_matches_table.templ" %}
         {% endwith %}
-        <h5>Glycan Definitions:</h5>
+        <div id='monosaccharide-filters' class='row' style='padding-left:18.25px;'>
+            <h6><b>Glycan Compositions</b></h6>
+        </div>
     </div>
     <div class='col s4'>
         <h5>Target Database:</h5>
@@ -26,8 +27,7 @@
         </button>
     </div>
 </div>
-<div id='monosaccharide-filters' class='row'>
-</div>
+
 <div id='chosen-protein-container'>
     <div class="progress"><div class="indeterminate"></div></div>
 </div>

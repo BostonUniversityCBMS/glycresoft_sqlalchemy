@@ -3,30 +3,25 @@ try:
     logger = logging.getLogger("target_decoy")
 except:
     pass
-import operator
 from itertools import chain
-from collections import Counter, OrderedDict, defaultdict, namedtuple
-import numpy as np
+from collections import OrderedDict, defaultdict
 
 from sqlalchemy import func, distinct
 from ..data_model import (
-    DatabaseManager, GlycopeptideMatch, Protein,
+    GlycopeptideMatch, Protein, PipelineModule,
     GlycopeptideSpectrumMatch, GlycopeptideSpectrumMatchScore)
-from ..data_model import PipelineModule
-from glycresoft_sqlalchemy.utils import collectiontools
 
 
 ms2_score = GlycopeptideMatch.ms2_score
 
 
 class TargetDecoyAnalyzer(PipelineModule):
-
     @classmethod
     def from_hypothesis_sample_match(cls, database_path, hsm, **kwargs):
         return cls(database_path, hsm.target_hypothesis_id, hsm.decoy_hypothesis_id, hsm.id, **kwargs)
 
     def __init__(self, database_path, target_hypothesis_id=None, decoy_hypothesis_id=None,
-                 hypothesis_sample_match_id=None, with_pit=True, **kwargs):
+                 hypothesis_sample_match_id=None, with_pit=False, **kwargs):
         self.manager = self.manager_type(database_path)
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.target_id = target_hypothesis_id
@@ -219,7 +214,7 @@ class TargetDecoyAnalyzer(PipelineModule):
 
 class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
     def __init__(self, database_path, target_hypothesis_id=None, decoy_hypothesis_id=None,
-                 hypothesis_sample_match_id=None, with_pit=True, score="simple_ms2_score", **kwargs):
+                 hypothesis_sample_match_id=None, with_pit=False, score="simple_ms2_score", **kwargs):
         self.manager = self.manager_type(database_path)
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.target_id = target_hypothesis_id
@@ -249,6 +244,7 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
             GlycopeptideSpectrumMatch).group_by(
             GlycopeptideSpectrumMatchScore.value).order_by(
             GlycopeptideSpectrumMatchScore.value.asc()).filter(
+            GlycopeptideSpectrumMatch.best_match,
             GlycopeptideSpectrumMatchScore.name == self.score,
             GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id
             if self.hypothesis_sample_match_id is not None else True,
@@ -268,6 +264,7 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
             GlycopeptideSpectrumMatch).group_by(
             GlycopeptideSpectrumMatchScore.value).order_by(
             GlycopeptideSpectrumMatchScore.value.asc()).filter(
+            GlycopeptideSpectrumMatch.best_match,
             GlycopeptideSpectrumMatchScore.name == self.score,
             GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id
             if self.hypothesis_sample_match_id is not None else True,
@@ -293,7 +290,8 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
         else:
             session = self.manager.session()
             self.n_decoys_at[threshold] = session.query(
-                GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatch.scores).filter(
+                GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatchScore).filter(
+                GlycopeptideSpectrumMatch.best_match,
                 GlycopeptideSpectrumMatchScore.name == self.score,
                 GlycopeptideSpectrumMatch.hypothesis_id == self.decoy_id).filter(
                 GlycopeptideSpectrumMatchScore.value >= threshold,
@@ -307,7 +305,8 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
         else:
             session = self.manager.session()
             self.n_targets_at[threshold] = session.query(
-                GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatch.scores).filter(
+                GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatchScore).filter(
+                GlycopeptideSpectrumMatch.best_match,
                 GlycopeptideSpectrumMatchScore.name == self.score,
                 GlycopeptideSpectrumMatch.hypothesis_id == self.target_id).filter(
                 GlycopeptideSpectrumMatchScore.value >= threshold,
@@ -372,7 +371,6 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
         q_map = self._calculate_q_values()
         accumulator = []
         for k in sorted(q_map):
-            logger.info("Updating entries with score %f -> %f", k, q_map[k])
             ids = [x[0] for x in session.query(GlycopeptideSpectrumMatch.id).join(
                 GlycopeptideSpectrumMatchScore).filter(
                 GlycopeptideSpectrumMatchScore.value == k,
@@ -381,12 +379,12 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
                 GlycopeptideSpectrumMatchScore(
                     name='q_value', value=q_map[k], spectrum_match_id=i) for i in ids)
             if len(accumulator) > 200:
+                logger.info("Updating entries with score %f -> %f", k, q_map[k])
                 session.bulk_save_objects(accumulator)
                 accumulator = []
 
-        if len(accumulator) > 200:
-            session.bulk_save_objects(accumulator)
-            accumulator = []
+        session.bulk_save_objects(accumulator)
+        accumulator = []
 
         session.commit()
         session.close()
@@ -397,6 +395,9 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
 
 
 class InMemoryTargetDecoyAnalyzer(object):
+    '''
+    A work in progress
+    '''
     def __init__(self, target_series, decoy_series, with_pit=True):
         self.targets = target_series
         self.decoys = decoy_series

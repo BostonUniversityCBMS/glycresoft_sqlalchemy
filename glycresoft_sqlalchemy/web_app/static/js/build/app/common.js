@@ -103,11 +103,9 @@ Application = (function(superClass) {
     return $.post('/preferences', payload).success((function(_this) {
       return function(data) {
         var k, v;
-        console.log(data, "Update Settings");
         for (k in data) {
           v = data[k];
           _this.settings[k] = v;
-          console.log(k, v);
         }
         return _this.emit("update_settings");
       };
@@ -125,7 +123,6 @@ Application = (function(superClass) {
       state = handle.attr('data-status');
       id = handle.attr('data-id');
       if (state === 'finished') {
-        console.log(self.tasks[id]);
         delete self.tasks[id];
         handle.fadeOut();
         handle.remove();

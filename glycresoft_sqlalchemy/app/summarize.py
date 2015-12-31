@@ -113,7 +113,7 @@ def main(database_path, mode='text'):
         for line in Summary(stream_hypotheses(session)):
             print(line)
     elif mode == "pager":
-        pager.page(Summary(stream_hypotheses(session)))
+        pager.page(iter(Summary(stream_hypotheses(session))))
     else:
         print("Unknown Interface - using text.")
         for line in Summary(stream_hypotheses(session)):

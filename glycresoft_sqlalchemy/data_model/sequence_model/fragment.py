@@ -7,7 +7,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import (PickleType, Numeric, Unicode, and_,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 
-from ..base import Base2 as Base
+from ..base import Base
 from ...structure import fragment
 
 

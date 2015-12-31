@@ -394,8 +394,8 @@ $(document).on("mousedown", function(e) {
 
 $(function() {
   var $body, $tooltip, closeTooltip, openTooltip, xOffset, yOffset;
-  yOffset = -3;
-  xOffset = 3;
+  yOffset = 20;
+  xOffset = -180;
   $body = $('body');
   $tooltip = $('<div></div>').hide().css({
     'position': 'absolute',
@@ -879,7 +879,7 @@ PeptideSequence = (function() {
 
 //# sourceMappingURL=peptide-sequence.js.map
 
-var TinyNotification;
+var TinyNotification, tinyNotify;
 
 TinyNotification = (function() {
   TinyNotification.prototype.template = "<div class='notification-container'>\n    <div class='clearfix dismiss-container'>\n        <a class='dismiss-notification mdi-content-clear'></a>\n    </div>\n    <div class='notification-content'>\n    </div>\n</div>";
@@ -917,5 +917,15 @@ TinyNotification = (function() {
   return TinyNotification;
 
 })();
+
+tinyNotify = function(top, left, message, parent, css) {
+  if (parent == null) {
+    parent = 'body';
+  }
+  if (css == null) {
+    css = {};
+  }
+  return new TinyNotification(top, left, message, parent, css);
+};
 
 //# sourceMappingURL=tiny-notification.js.map

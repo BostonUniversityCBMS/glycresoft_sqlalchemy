@@ -1,7 +1,7 @@
 from collections import defaultdict
 import itertools
 
-import sqlitedict
+from .vendor import sqlitedict
 
 try:
     range = xrange
@@ -149,3 +149,11 @@ def descending_combination_counter(counter):
 
 def flatten(iterable):
     return tuple(itertools.chain.from_iterable(iterable))
+
+
+class decoratordict(dict):
+    def __call__(self, key):
+        def wrapper(f):
+            self[key] = f
+            return f
+        return wrapper

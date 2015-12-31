@@ -63,10 +63,8 @@ class Application extends ActionLayerManager
 
     updateSettings: (payload={}) ->
         $.post('/preferences', payload).success((data) =>
-            console.log data, "Update Settings"
             for k, v of data
                 @settings[k] = v
-                console.log k, v
             @emit("update_settings")
         ).error (err) ->
             console.log "error in updateSettings", err, arguments
@@ -79,7 +77,6 @@ class Application extends ActionLayerManager
             state = handle.attr('data-status')
             id = handle.attr('data-id')
             if state == 'finished'
-                console.log self.tasks[id]
                 delete self.tasks[id]
                 handle.fadeOut()
                 handle.remove()

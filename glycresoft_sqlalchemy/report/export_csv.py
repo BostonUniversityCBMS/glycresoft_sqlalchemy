@@ -118,6 +118,70 @@ def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identiti
         return output_path
 
 
+def export_glycan_ms1_matches_legacy_ungrouping(peak_group_matches, monosaccharide_identities, output_path):
+    with open(output_path, 'wb') as fh:
+        writer = csv.writer(fh)
+        headers = [
+            "Score", "MassSpec MW", "Compound Key", "PPM Error",
+            "#ofAdduct", "#ofCharges", "#ofScans", "ScanDensity", "Avg A:A+2 Error",
+            "A:A+2 Ratio", "Total Volume", "Signal to Noise Ratio", "Centroid Scan Error",
+            "Centroid Scan", "MinScanNumber", "MaxScanNumber", "Hypothesis MW"
+        ] + monosaccharide_identities + ["Adduct/Replacement", "ID"]
+        writer.writerow(headers)
+
+        def adduct_label(x):
+            if x.mass_shift_type:
+                return "%s:%d" % (x.mass_shift.name, x.mass_shift_count)
+            return 'No Shift'
+
+        for pgm in peak_group_matches.yield_per(1000):
+            theoretical_match = pgm.theoretical_match
+            if theoretical_match is not None:
+                glycan_composition = [theoretical_match.glycan_composition[g] for g in monosaccharide_identities]
+            else:
+                glycan_composition = ['' for g in monosaccharide_identities]
+            for subgroup in pgm.subgroups:
+                row = [
+                    pgm.ms1_score, subgroup.weighted_monoisotopic_mass,
+                    theoretical_match.composition if pgm.matched else "",
+                    pgm.ppm_error if subgroup.matched else "",
+                    pgm.modification_state_count, subgroup.charge_state_count,
+                    subgroup.scan_count, subgroup.scan_density,
+                    subgroup.a_peak_intensity_error, subgroup.average_a_to_a_plus_2_ratio,
+                    subgroup.total_volume, subgroup.average_signal_to_noise, subgroup.centroid_scan_error,
+                    subgroup.centroid_scan_error, subgroup.first_scan_id, subgroup.last_scan_id,
+                    theoretical_match.calculated_mass if pgm.matched else ""
+                ] + glycan_composition + [adduct_label(subgroup), subgroup.id]
+                writer.writerow(row)
+        return output_path
+
+
+def export_glycan_composition_hypothesis(glycan_compositions, monosaccharide_identities, output_path):
+    headers = ["theoretical mass", "composition"] + monosaccharide_identities
+    with open(output_path, 'wb') as fh:
+        writer = csv.writer(fh)
+        writer.writerow(headers)
+        for row in glycan_compositions:
+            writer.writerow([str(row.calculated_mass), str(row.composition)] + [
+                str(row.glycan_composition[k]) for k in monosaccharide_identities])
+    return output_path
+
+
+def export_theoretical_glycopeptide_hypothesis(glycopeptides, monosaccharide_identities, output_path):
+    headers = ["theoretical mass", "peptide sequence", "modifications", "glycan composition"] +\
+             monosaccharide_identities + ["protein name", "start", "end", "missed cleavages", "glycosylation sites"]
+    with open(output_path, 'wb') as fh:
+        writer = csv.writer(fh)
+        writer.writerow(headers)
+        for row in glycopeptides:
+            writer.writerow([
+                str(row.calculated_mass), row.modified_peptide_sequence, str(row.peptide_modifications),
+                row.glycan_composition_str] + [str(row.glycan_composition[k]) for k in monosaccharide_identities] + [
+                str(row.protein.name), str(row.start_position), str(row.end_position), str(row.count_missed_cleavages),
+                str(row.count_glycosylation_sites)])
+    return output_path
+
+
 class CSVExportDriver(PipelineModule):
     def __init__(self, database_path, hypothesis_sample_match_ids=None, output_path=None, filterfunc=lambda q: q):
         self.manager = self.manager_type(database_path)

@@ -118,6 +118,60 @@ def golden_pair_map(sequence):
     return key_to_golden_pairs
 
 
+def total_composition(sequence):
+    if isinstance(sequence, basestring):
+        sequence = parse(sequence)
+    return _total_composition(sequence)
+
+
+def _total_composition(sequence):
+    glycan = sequence.glycan
+    total = Composition()
+    if glycan is not None:
+        for position in sequence:
+            total += position[0].composition
+            for mod in position[1]:
+                if mod.name == "HexNAc":
+                    continue
+                total += mod.composition
+        total += sequence.n_term.composition
+        total += sequence.c_term.composition
+        total += glycan.total_composition()
+    else:
+        for position in sequence:
+            total += position[0].composition
+            for mod in position[1]:
+                total += mod.composition
+        total += sequence.n_term.composition
+        total += sequence.c_term.composition
+
+    return total
+
+
+def _calculate_mass(sequence):
+    glycan = sequence.glycan
+    total = 0
+    if glycan is not None:
+        for position in sequence:
+            total += position[0].mass
+            for mod in position[1]:
+                if mod.name == "HexNAc":
+                    continue
+                total += mod.mass
+        total += sequence.n_term.mass
+        total += sequence.c_term.mass
+        total += glycan.mass()
+    else:
+        for position in sequence:
+            total += position[0].mass
+            for mod in position[1]:
+                total += mod.mass
+        total += sequence.n_term.mass
+        total += sequence.c_term.mass
+
+    return total
+
+
 class PeptideSequence(PeptideSequenceBase):
     '''
     Represents a peptide that may have post-translational modifications
@@ -184,35 +238,38 @@ class PeptideSequence(PeptideSequenceBase):
         return seq
 
     def __init__(self, sequence, **kwargs):
-        seq_list, modifications, glycan, n_term, c_term = sequence_tokenizer(sequence)
         self.mass = 0.0
         self.seq = []
         self.modification_index = defaultdict(int)
-        for item in seq_list:
-            try:
-                res = Residue(item[0])
-                self.mass += res.mass
-                mods = []
-                for mod in item[1]:
-                    if mod != '':
-                        mod = Modification(mod)
-                        mods.append(mod)
-                        self.modification_index[mod.name] += 1
-                        self.mass += mod.mass
-                self.seq.append(self.position_class([res, mods]))
-            except:
-                print(sequence)
-                print(item)
-                raise
 
         self._glycan = None
-        self.glycan = glycan if glycan != "" else None
 
         self._n_term = None
         self._c_term = None
+        if sequence == "" or sequence is None:
+            pass
+        else:
+            seq_list, modifications, glycan, n_term, c_term = sequence_tokenizer(sequence)
+            for item in seq_list:
+                try:
+                    res = Residue(item[0])
+                    self.mass += res.mass
+                    mods = []
+                    for mod in item[1]:
+                        if mod != '':
+                            mod = Modification(mod)
+                            mods.append(mod)
+                            self.modification_index[mod.name] += 1
+                            self.mass += mod.mass
+                    self.seq.append(self.position_class([res, mods]))
+                except:
+                    print(sequence)
+                    print(item)
+                    raise
 
-        self.n_term = Modification(n_term) if isinstance(n_term, basestring) else n_term
-        self.c_term = Modification(c_term) if isinstance(c_term, basestring) else c_term
+            self.glycan = glycan if glycan != "" else None
+            self.n_term = Modification(n_term) if isinstance(n_term, basestring) else n_term
+            self.c_term = Modification(c_term) if isinstance(c_term, basestring) else c_term
 
     def _patch_glycan_composition(self):
         occupied_sites = self.modification_index['HexNAc']
@@ -365,7 +422,7 @@ class PeptideSequence(PeptideSequenceBase):
 
         return b_frag, y_frag
 
-    def get_fragments(self, kind, include_golden_pairs=False):
+    def get_fragments(self, kind, **kwargs):
         """Return a list of mass values for each fragment of `kind`"""
 
         mass_shift = 0.0
@@ -492,7 +549,12 @@ class PeptideSequence(PeptideSequenceBase):
         return self.seq[start:]
 
     def clone(self):
-        return copy.deepcopy(self)
+        inst = self.__class__()
+        inst.n_term = self.n_term.clone()
+        inst.c_term = self.c_term.clone()
+        inst.seq = [self.position_class([o[0], list(o[1])]) for o in self]
+        inst.glycan = self.glycan.clone()
+        return inst
 
     def append(self, residue, modification=None):
         self.mass += residue.mass
@@ -617,7 +679,6 @@ class PeptideSequence(PeptideSequenceBase):
         ------
         SimpleFragment
         '''
-        PROTON = Composition("H+").mass
         WATER = Composition("H2O").mass
         TAIL = Composition("CH2O").mass
         if oxonium:
@@ -632,39 +693,40 @@ class PeptideSequence(PeptideSequenceBase):
             for k in glycan:
                 key = str(k)
                 mass = k.mass()
-                yield SimpleFragment(name=key, mass=mass + PROTON, kind=oxonium_ion_series)
-                yield SimpleFragment(name=key + "-H2O", mass=mass + PROTON - WATER, kind=oxonium_ion_series)
+                yield SimpleFragment(name=key, mass=mass, kind=oxonium_ion_series)
+                yield SimpleFragment(name=key + "-H2O", mass=mass - WATER, kind=oxonium_ion_series)
 
                 yield SimpleFragment(
-                    name=key + "-2H2O", mass=mass + PROTON - 2 * WATER, kind=oxonium_ion_series)
+                    name=key + "-2H2O", mass=mass - 2 * WATER, kind=oxonium_ion_series)
                 yield SimpleFragment(
-                    name=key + "-2H2O-CH2O", mass=mass + PROTON - (2 * WATER) - TAIL, kind=oxonium_ion_series)
+                    name=key + "-2H2O-CH2O", mass=mass - (2 * WATER) - TAIL, kind=oxonium_ion_series)
             for kk in itertools.combinations(glycan, 2):
                 key = ''.join(map(str, kk))
                 mass = sum(k.mass() for k in kk)
                 yield SimpleFragment(
-                    name=key, mass=mass + PROTON, kind=oxonium_ion_series)
+                    name=key, mass=mass, kind=oxonium_ion_series)
                 yield SimpleFragment(
-                    name=key + "-H2O", mass=mass + PROTON - WATER, kind=oxonium_ion_series)
+                    name=key + "-H2O", mass=mass - WATER, kind=oxonium_ion_series)
                 yield SimpleFragment(
-                    name=key + "-2H2O", mass=mass + PROTON - 2 * WATER, kind=oxonium_ion_series)
+                    name=key + "-2H2O", mass=mass - 2 * WATER, kind=oxonium_ion_series)
                 yield SimpleFragment(
-                    name=key + "-2H2O-CH2O", mass=mass + PROTON - (2 * WATER) - TAIL, kind=oxonium_ion_series)
+                    name=key + "-2H2O-CH2O", mass=mass - (2 * WATER) - TAIL, kind=oxonium_ion_series)
 
         if isinstance(self.glycan, Glycan) and all_series:
             glycan = self.glycan
             hexnac_mass = MonosaccharideResidue.from_iupac_lite("HexNAc").mass()
-            base_mass = self.mass - (hexnac_mass) + PROTON
+            base_mass = self.mass - (hexnac_mass)
             for fragment in glycan.fragments("BY"):
                 if fragment.is_reducing():
                     # TODO:
                     # When self.glycan is adjusted for the attachment cost with the anchoring
                     # amino acid, this WATER penalty can be removed
                     yield SimpleFragment(
-                        name="peptide+" + fragment.name, mass=base_mass + fragment.mass - WATER, kind=stub_glycopeptide_series)
+                        name="peptide+" + fragment.name, mass=base_mass + fragment.mass - WATER,
+                        kind=stub_glycopeptide_series)
                 else:
                     yield SimpleFragment(
-                        name=fragment.name, mass=fragment.mass + PROTON, kind=oxonium_ion_series)
+                        name=fragment.name, mass=fragment.mass, kind=oxonium_ion_series)
         elif allow_ambiguous and all_series:
             total = FrozenGlycanComposition(self.glycan)
             base = FrozenGlycanComposition(Hex=3, HexNAc=2)
@@ -674,12 +736,14 @@ class PeptideSequence(PeptideSequenceBase):
                 composition = FrozenGlycanComposition(composition)
                 if sum(composition.values()) > 2:
                     yield SimpleFragment(
-                        name=composition.serialize(), mass=composition.mass() + PROTON - WATER, kind=oxonium_ion_series)
+                        name=composition.serialize(), mass=composition.mass() - WATER, kind=oxonium_ion_series)
                 yield SimpleFragment(
                     name="peptide+" + str(total - composition), mass=stub_mass + total.mass() - composition.mass(),
                     kind=stub_glycopeptide_series)
         elif all_series:
             raise TypeError("Cannot generate B/Y fragments from non-Glycan {}".format(self.glycan))
+
+    total_composition = _total_composition
 
 
 Sequence = PeptideSequence
