@@ -1,6 +1,6 @@
 from functools import wraps
 from copy import deepcopy
-import sqlitedict
+from .vendor import sqlitedict
 try:
     import cPickle as pickle
 except:
