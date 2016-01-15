@@ -79,7 +79,7 @@ class MassableValueDict(dict):
 
 
 class GlycosylationManager(MassableValueDict):
-    def __init__(self, parent, *glycosite):
+    def __init__(self, parent, *glycosites):
         self.parent = parent
-        for glycosite in self.glycosite:
+        for glycosite in glycosites:
             self[glycosite.position] = glycosite

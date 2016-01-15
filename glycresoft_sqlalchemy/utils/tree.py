@@ -43,20 +43,23 @@ class PrefixTree(TreeReprMixin, defaultdict):
 
     def __contains__(self, sequence):
         layer = self
-        satisfied = True
+        j = 0
         for i in sequence:
-            if i not in layer.keys():
-                satisfied = False
+            j += 1
+            if not dict.__contains__(layer, i):
                 break
             layer = layer[i]
-        return satisfied
+        return len(sequence) == j
 
     def depth_in(self, sequence):
         layer = self
         count = 0
         for i in sequence:
-            if i not in layer.keys():
+            if not dict.__contains__(layer, i):
+                print "Breaking"
                 break
+            else:
+                layer = layer[i]
             count += 1
         return count
 
@@ -93,6 +96,9 @@ class KeyTransformingPrefixTree(PrefixTree):
         self.transformer = transformer
         self.labels = set()
 
+    def get(self, key):
+        return self[self.transformer(key)]
+
     def add(self, sequence, label=None):
         layer = self
         t = self.transformer
@@ -104,27 +110,28 @@ class KeyTransformingPrefixTree(PrefixTree):
             layer = layer[t(sequence[i])]
             if label:
                 layer.labels.add(label)
-            # self.add(sequence[i+1:], label=label)
         return self
 
     def __contains__(self, sequence):
         layer = self
-        satisfied = True
+        j = 0
         t = self.transformer
         for i in sequence:
-            if t(i) not in layer.keys():
-                satisfied = False
+            j += 1
+            if not dict.__contains__(layer, t(i)):
                 break
             layer = layer[i]
-        return satisfied
+        return j == len(sequence)
 
     def depth_in(self, sequence):
         layer = self
         count = 0
         t = self.transformer
         for i in sequence:
-            if t(i) not in layer.keys():
+            if not dict.__contains__(layer, t(i)):
                 break
+            else:
+                layer = layer[i]
             count += 1
         return count
 

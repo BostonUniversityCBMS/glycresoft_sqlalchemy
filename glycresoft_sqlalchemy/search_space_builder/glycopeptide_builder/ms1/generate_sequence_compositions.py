@@ -8,7 +8,7 @@ SequenceComposition = sequence_composition.SequenceComposition
 
 def generate_all_compositions(session, blocks=None, size=5, terminal_composition=Composition()):
     if blocks is None:
-        blocks = sequence_composition.AminoAcidSequenceBuildingBlock.get_all_common_residues()
+        blocks = sequence_composition.AminoAcidSequenceBuildingBlock.get_all_sequencing_residues()
     T_AminoAcidComposition = AminoAcidComposition.__table__
     accumulator = []
     for composition in sequence_composition.all_compositions(blocks, size):

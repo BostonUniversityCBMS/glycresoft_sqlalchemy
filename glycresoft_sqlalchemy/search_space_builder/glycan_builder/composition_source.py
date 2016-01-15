@@ -27,6 +27,7 @@ class TextGlycanCompositionHypothesisBuilder(PipelineModule):
     def __init__(self, database_path, text_file_path, reduction=None, derivatization=None,
                  hypothesis_id=None, **kwargs):
         self.manager = self.manager_type(database_path)
+        self.manager.initialize()
         self.text_file_path = text_file_path
         self.reduction = reduction
         self.derivatization = derivatization
@@ -87,6 +88,7 @@ class TextGlycanCompositionHypothesisBuilder(PipelineModule):
         hypothesis.parameters["monosaccharide_identities"] = monosaccharide_identities
         session.add(hypothesis)
         session.commit()
+        return hypothesis.id
 
 
 @registry.composition_source_type.register("hypothesis")
@@ -158,6 +160,7 @@ class OtherGlycanHypothesisGlycanHypothesisBuilder(PipelineModule):
         hypothesis.parameters["monosaccharide_identities"] = monosaccharide_identities
         session.add(hypothesis)
         session.commit()
+        return hypothesis.id
 
 
 @registry.composition_source_type.register("hypothesis-sample-match")
@@ -233,6 +236,7 @@ class MS1GlycanHypothesisSampleMatchGlycanHypothesisBuilder(PipelineModule):
         hypothesis.parameters["monosaccharide_identities"] = monosaccharide_identities
         session.add(hypothesis)
         session.commit()
+        return hypothesis.id
 
 
 class GlycanCompositionHypothesisBuilder(PipelineModule):

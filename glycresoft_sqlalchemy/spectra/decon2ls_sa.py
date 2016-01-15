@@ -4,7 +4,7 @@ import uuid
 
 from glycresoft_sqlalchemy.data_model import PipelineModule
 from glycresoft_sqlalchemy.data_model.observed_ions import (
-    Decon2LSLCMSSampleRun, MSScan, Decon2LSPeak, DatabaseManager)
+    Decon2LSLCMSSampleRun, MSScan, Decon2LSPeak)
 
 isos_to_db_map = {
     "abundance": "intensity",
@@ -23,6 +23,31 @@ TDecon2LSPeak = Decon2LSPeak.__table__
 
 
 class Decon2LSIsosParser(PipelineModule):
+    """
+    Parse an "_isos.csv" file produced by `Decon2LS` into :class:`MSScan` and
+    :class:`Decon2LSPeak` records in the database given by :attr:`manager`. These
+    records are owned by a newly created :class:`Decon2LSLCMSSampleRun` record associated
+    with the file.
+
+    Attributes
+    ----------
+    file_path : str
+        Path to "_isos.csv" file to be parsed
+    interval : int
+        # of records to produce between commits.
+    manager : :class:`DatabaseManager`
+        Broker database session
+    sample_run : :class:`Decon2LSLCMSSampleRun`
+        The `SampleRun` instance associated with this experimental data.
+
+    On creation, if the `database_path` argument is `None`, a new database will be constructed
+    extrapolated from `file_path` with the '.db' extension, and the :attr:`manager` will initialize
+    it.
+
+    .. warning::
+        This `PipelineModule` will start immediately upon instantiation. This behavior is deprecated
+        and will change at the earliest opportunity.
+    """
     def __init__(self, file_path, database_path=None, interval=100000):
         self.file_path = file_path
         if database_path is None:
@@ -57,37 +82,8 @@ class Decon2LSIsosParser(PipelineModule):
                 last_scan_id = remap['scan_id']
                 if last + self.interval == i:
                     session.commit()
-                    print "Commit!"
                     last = i
                     conn = session.connection()
             remap['scan_id'] = last_key
             conn.execute(TDecon2LSPeak.insert().values(**remap))
         session.commit()
-
-
-# def parse_decon2ls(isos_path, database_path=None):
-#     if database_path is None:
-#         database_path = os.path.splitext(isos_path)[0] + '.db'
-#     dbm = DatabaseManager(database_path)
-#     dbm.initialize()
-#     session = dbm.session()
-#     sample_run = Decon2LSLCMSSampleRun(name=os.path.basename(isos_path), parameters={"deconvoluted_by": 'decon2ls'})
-#     session.add(sample_run)
-#     session.commit()
-#     interval = 100000
-#     last = 0
-#     conn = session.connection()
-#     last_scan_id = -1
-#     for i, row in enumerate(csv.DictReader(open(isos_path))):
-#         remap = {v: row[k] for k, v in isos_to_db_map.items()}
-#         if remap['scan_id'] != last_scan_id:
-#             session.add(MSScan(id=remap['scan_id'], sample_run_id=sample_run.id))
-#             last_scan_id = remap['scan_id']
-#             if last + interval == i:
-#                 session.commit()
-#                 print "Commit!"
-#                 last = i
-#                 conn = session.connection()
-#         conn.execute(TDecon2LSPeak.insert().values(**remap))
-#     session.commit()
-#     return dbm

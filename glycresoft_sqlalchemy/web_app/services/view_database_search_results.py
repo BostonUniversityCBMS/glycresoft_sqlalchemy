@@ -1,11 +1,13 @@
-from flask import request, g, render_template, Response, Blueprint
+from flask import request, g, render_template, Response, Blueprint, jsonify
 
 from glycresoft_sqlalchemy.data_model import (
     HypothesisSampleMatch, GlycopeptideMatch, PeakGroupMatchType, Protein,
     JointPeakGroupMatch, MS1GlycopeptideHypothesisSampleMatch,
     MS1GlycanHypothesisSampleMatch)
+from glycresoft_sqlalchemy.report import analysis_comparison
 from glycresoft_sqlalchemy.report import microheterogeneity
 from glycresoft_sqlalchemy.web_app.utils.pagination import paginate
+from glycresoft_sqlalchemy.web_app.report import svg_plot
 
 view_database_search_results = Blueprint("view_database_search_results", __name__)
 
@@ -200,10 +202,8 @@ def view_peak_grouping_glycopeptide_composition_details(id):
 @app.route("/view_database_search_results/results_view/", methods=["POST"])
 def view_glycan_composition_results():
 
-    print request.values
-    print request
     parameters = request.get_json()
-    print parameters
+
     hypothesis_sample_match_id = parameters['context']["hypothesis_sample_match_id"]
     hsm = g.db.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
 
@@ -276,3 +276,28 @@ def view_peak_grouping_glycan_composition_details(id):
     return render_template(
         "view_glycan_peak_group_search_results/components/glycan_composition_details.templ", pgm=pgm,
         ambiguous_with=ambiguous_with)
+
+
+# ----------------------------------------------------------------------
+#           Hypothesis Sample Match Comparison
+# ----------------------------------------------------------------------
+
+@app.route("/view_database_search_results/compare")
+def select_hypothesis_sample_match_checklist():
+    hsms = g.db.query(HypothesisSampleMatch).all()
+    return render_template(
+        "components/hypothesis_sample_match_comparison_checklist.templ", hsms=hsms)
+
+
+@app.route("/view_database_search_results/compare/plot", methods=["POST"])
+def dispatch_plot():
+    params = [int(case.split('-')[-1]) for case in request.values.keys()]
+    cases = g.db.query(HypothesisSampleMatch).filter(HypothesisSampleMatch.id.in_(params)).all()
+    print cases
+    if len({(
+            case.target_hypothesis.theoretical_structure_type,
+            case.target_hypothesis.ms_level) for case in cases}) > 1:
+        return jsonify(message='Invalid: Not all Hypothesis Sample Matches are the same type')
+    job = analysis_comparison.HypothesisSampleMatchComparer(g.manager.path, *params)
+    ax = job.start()
+    return svg_plot(ax, width=10, patchless=True)

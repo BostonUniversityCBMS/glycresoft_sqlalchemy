@@ -38,19 +38,20 @@ def build_naive_ms1_glycopeptide(database_path, protein_file, site_list_file, gl
 
 def build_informed_ms1_glycopeptide(mzid_path, database_path, site_list_file, glycan_file,
                                     glycan_file_type="txt", protein_name_pattern='.*', hypothesis_id=None,
-                                    protein_selection_type='regex', n_processes=4):
+                                    protein_selector_type='regex', n_processes=4, **kwargs):
     if database_path is None:
         database_path = path.splitext(mzid_path)[0] + '.db'
 
-    if protein_selection_type == "regex":
+    if protein_selector_type == "regex":
         protein_ids = list(mzid_sa.protein_names(mzid_path, protein_name_pattern))
     else:
-        protein_ids = map(int, protein_name_pattern.split(","))
+        protein_ids = [name.lstrip().rstrip() for name in protein_name_pattern.split(",")]
 
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         database_path, mzid_path=mzid_path, protein_ids=protein_ids,
         glycomics_path=glycan_file, glycomics_format=glycan_file_type,
-        n_processes=n_processes)
+        n_processes=n_processes, **kwargs)
+
     job.start()
     print job.hypothesis_id
 
@@ -145,25 +146,48 @@ app.add_argument("-n", "--n-processes", default=4, type=int, help='Number of pro
 subparsers = app.add_subparsers()
 
 
+def configure_parser_glycomics_for_glycoproteomics(parser):
+    c = parser
+    c.add_argument(
+        "-g", "--glycan-file",
+        help="Path to file of glycans to use. May be either a CSV or a database file formats."
+        )
+    c.add_argument("-f", "--glycan-file-type", help="The format of --glycan-file")
+    c.add_argument("--source-hypothesis-id", required=False, type=int,
+                   help="The hypothesis from which to copy all glycan compositions")
+    c.add_argument("--source-hypothesis-sample-match-id", required=False, type=int,
+                   help="The hypothesis sample match from which to copy all glycan compositions")
+
+
+def configure_parser_common_glycopeptide_properties(parser):
+    c = parser
+    c.add_argument("--maximum-glycosylation-sites", type=int, required=False,
+                   default=1, help="The maximum number of glycosylation sites to"
+                   " populate on a single peptide. This number will exponentially increase"
+                   " runtime if greater than 1.")
+    c.add_argument(
+        "-s", "--site-list-file",
+        required=False, help="Path to a file in FASTA format where each sequence is N-glycosylated."
+        "Entries are each a space-separated list of positions that start at 1. If omitted, glycosites"
+        " will be inferred using canonical sequon patterns.")
+
+    c.add_argument("-n", "--n-processes", default=4, required=False, type=int)
+
+
 with let(subparsers.add_parser("naive-glycopeptide-ms1")) as c:
     c.add_argument(
         "-d", "--database-path", default=None, required=True,
         help="Path to project database.")
     c.add_argument(
         "-p", "--protein-file", help="Path to Proteins to digest in Fasta format")
-    c.add_argument(
-        "-s", "--site-list-file",
-        required=False, help="Path to a file in FASTA format where each sequence is N-glycosylated."
-        "Entries are each a space-separated list of positions that start at 1. If omitted, glycosites"
-        " will be inferred using canonical sequon patterns.")
-    c.add_argument(
-        "-g", "--glycan-file",
-        help="Path to file of glycans to use. May be either a CSV or a database file formats."
-        )
-    c.add_argument("-f", "--glycan-file-type", help="The format of --glycan-file")
+
+    configure_parser_glycomics_for_glycoproteomics(c)
+    configure_parser_common_glycopeptide_properties(c)
+
     c.add_argument(
         "-c", "--constant-modifications", action='append', help='A text formatted modification specifier'
-        ' to be applied at every possible site. Modification specifier of the form "ModificationName (ResiduesAllowed)"'
+        ' to be applied at every possible site. Modification specifier of the form \
+        "ModificationName (ResiduesAllowed)"'
         " May be specified more than once.")
 
     c.add_argument(
@@ -174,10 +198,32 @@ with let(subparsers.add_parser("naive-glycopeptide-ms1")) as c:
         "-e", "--enzyme", required=False, default='trypsin', help="Protease to use for in-silico"
         " digestion of proteins. Defaults to trypsin.")
     c.add_argument(
-        "-m", "--missed-cleavages", dest="max_missed_cleavages", type=int, default=2, required=False, help="The maximum number of"
-        " missed cleavages to allow. Defaults to 2")
+        "-m", "--missed-cleavages", dest="max_missed_cleavages", type=int, default=2, required=False,
+        help="The maximum number of missed cleavages to allow. Defaults to 2")
     c.add_argument("--hypothesis-name", default=None, required=False, help="Name of the hypothesis")
     c.set_defaults(task=build_naive_ms1_glycopeptide)
+
+with let(subparsers.add_parser("informed-glycopeptide-ms1")) as c:
+    c.add_argument(
+        "-d", "--database-path", default=None, required=True,
+        help="Path to project database.")
+    c.add_argument("--hypothesis-name", default=None, required=False, help="Name of the hypothesis")
+
+    configure_parser_glycomics_for_glycoproteomics(c)
+    configure_parser_common_glycopeptide_properties(c)
+
+    c.add_argument("-m", "--mzid-path", required=True, help="Path to mzidentML file to read proteomics data from")
+    c.add_argument("-b", "--include-baseline-peptides", required=False, action="store_true", default=False,
+                   help='Include all peptides spanning glycosylation sites with'
+                        ' on constant modifications and no missed cleavages, even if'
+                        ' they were not observed in the proteomics data.')
+    c.add_argument("-p", '--protein-selection', dest="protein_name_pattern", default='.*', required=False,
+                   help='Select the proteins to include ')
+    c.add_argument("--protein-selector-type", choices=['regex', 'list'], default='regex', required=False,
+                   help="Choose how to select proteins from the mzidentML file, using either a name regex or a list"
+                        " of names separated by commas")
+    c.set_defaults(task=build_informed_ms1_glycopeptide)
+
 
 with let(subparsers.add_parser("naive-glycopeptide-ms2")) as c:
     c.add_argument(
@@ -203,7 +249,8 @@ with let(subparsers.add_parser("glycomics")) as c:
              "(In trivial IUPAC) or glycan structures (in condensed GlycoCT). Alternatively, it may be a "
              "list of constraint rules with which to generate compositions."
         )
-    c.add_argument("-f", "--glycan-file-type", choices=('text', 'glycoct', 'rules'), help="The format of --glycan-file")
+    c.add_argument("-f", "--glycan-file-type", choices=('text', 'glycoct', 'rules'),
+                   help="The format of --glycan-file")
     c.add_argument("-e", "--derivatization")
     c.add_argument("-r", "--reduction")
     c.set_defaults(task=dispatch_glycomics)
@@ -227,7 +274,6 @@ with let(subparsers.add_parser("glycomics-glycomedb")) as c:
 
 def main():
     args = app.parse_args()
-    print args
     task_fn = args.task
     del args.task
     task_fn(**args.__dict__)

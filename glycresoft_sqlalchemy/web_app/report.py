@@ -15,7 +15,7 @@ from glycresoft_sqlalchemy.structure.sequence import Sequence, FrozenGlycanCompo
 from glycresoft_sqlalchemy.report.chromatogram import draw_chromatogram
 from glycresoft_sqlalchemy.report.sequence_fragment_logo import glycopeptide_match_logo
 
-from jinja2 import Environment, PackageLoader, Undefined, FileSystemLoader
+from jinja2 import Environment, PackageLoader, Undefined, FileSystemLoader, escape
 from jinja2 import nodes
 from jinja2.ext import Extension
 try:
@@ -87,8 +87,9 @@ def render_plot(figure, **kwargs):
         figure.set_figheight(kwargs["height"])
     if "width" in kwargs:
         figure.set_figwidth(kwargs['width'])
-    if kwargs.get("bbox_inches") != 'tight':
+    if kwargs.get("bbox_inches") != 'tight' or kwargs.get("patchless"):
         figure.patch.set_visible(False)
+        figure.axes[0].patch.set_visible(False)
     buffer = StringIO()
     figure.savefig(buffer, **kwargs)
     plt.close(figure)
@@ -118,15 +119,27 @@ def glycopeptide_string(sequence, long=False, include_glycan=True):
     parts = []
     template = "(<span class='modification-chip'"\
         " style='background-color:%s;padding-left:1px;padding-right:2px;border-radius:2px;'"\
-        " title='%s' data-modification=%s>%s</span>)"
+        " title='%s' data-modification='%s'>%s</span>)"
+
+    n_term_template = template.replace("(", "").replace(")", "") + '-'
+    c_term_template = "-" + (template.replace("(", "").replace(")", ""))
+
+    def render(mod, template=template):
+        color = colors.get_color(str(mod))
+        letter = escape(mod.name if long else mod.name[0])
+        name = escape(mod.name)
+        parts.append(template % (rgbpack(color), name, name, letter))
+
+    if sequence.n_term != "H":
+        render(sequence.n_term, n_term_template)
     for res, mods in sequence:
         parts.append(res.symbol)
         for mod in mods:
-            color = colors.get_color(str(mod))
-            letter = mod.name if long else mod.name[0]
-            parts.append(template % (rgbpack(color), mod.name, mod.name, letter))
+            render(mod)
+    if sequence.c_term != "OH":
+        render(sequence.c_term, c_term_template)
     parts.append((
-        glycan_composition_string(str(sequence.glycan)) if sequence.glycan is not None else "")
+        ' ' + glycan_composition_string(str(sequence.glycan)) if sequence.glycan is not None else "")
         if include_glycan else "")
     return ''.join(parts)
 
@@ -134,8 +147,8 @@ def glycopeptide_string(sequence, long=False, include_glycan=True):
 def glycan_composition_string(composition):
     composition = FrozenGlycanComposition.parse(composition)
     parts = []
-    template = "<span class='monosaccharide-name' style='background-color:%s; padding: 2px;border-radius:2px;'>%s %d</span>"
-    for k, v in composition.items():
+    template = "<span class='monosaccharide-name' style='background-color:%s;padding:2px;border-radius:2px;'>%s %d</span>"
+    for k, v in sorted(composition.items(), key=lambda x: x[0].mass()):
         name = str(k)
         color = colors.get_color(str(name))
         parts.append(template % (rgbpack(color), name, v))

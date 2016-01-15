@@ -26,6 +26,9 @@
             A list of protein sequences to digest and glycosylate <em>in-silico</em>, provided in Fasta format or mzIdentML. 
             </small>
         </div>
+        <div id='mzid-protein-list-container'>
+            
+        </div>
         <div class='row'>
             <div class='col s8'>
                 <div class="file-field input-field">
@@ -141,15 +144,18 @@ $("#protein-list-file").on("change", function(event){
     if(this.files[0] === undefined){
         return
     }
-    identifyProteomicsFormat(this.files[0], function(format){
+    file = this.files[0]
+    identifyProteomicsFormat(file, function(format){
         $("#proteomics-file-type").val(format)
-        updateFormatOptions(format)
+        updateFormatOptions(format, file)
     })
 })
 
 $('.tooltipped').tooltip({delay: 50});
 
-function updateFormatOptions(format){
+mzIdentMLHandle = undefined;
+
+function updateFormatOptions(format, file){
     console.log(format)
     if(format === "fasta"){
         var handle = $("#variable-modifications-container")
@@ -162,9 +168,10 @@ function updateFormatOptions(format){
         handle.find("input").removeAttr("disabled").css("cursor", "default")
         handle.find("h6").removeClass("grey-text")
         handle.find("span.message").text("")
-
+        $("#mzid-protein-list-container").hide()
+        mzIdentMLHandle = undefined
     }
-    else{
+    else {
         var handle = $("#variable-modifications-container")
         handle.find("select").attr("disabled", true).css("cursor", "not-allowed")
         handle.find("h6").addClass("grey-text")
@@ -175,7 +182,8 @@ function updateFormatOptions(format){
         handle.find("input").attr("disabled", true).css("cursor", "not-allowed")
         handle.find("h6").addClass("grey-text")
         handle.find("span.message").text("Informed Hypotheses do not need proteolytic enzyme rules")
-
+        $("#mzid-protein-list-container").show()
+        mzIdentMLHandle = new MzIdentMLProteinSelector(file, "#mzid-protein-list-container")
     }
 }
 

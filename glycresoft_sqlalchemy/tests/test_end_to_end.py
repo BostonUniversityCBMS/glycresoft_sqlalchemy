@@ -8,17 +8,15 @@ except:
     pass
 
 from glycresoft_sqlalchemy.search_space_builder import naive_glycopeptide_hypothesis
-from glycresoft_sqlalchemy.search_space_builder import search_space_builder, pooling_make_decoys
+from glycresoft_sqlalchemy.search_space_builder import search_space_builder
+from glycresoft_sqlalchemy.search_space_builder import make_decoys
 from glycresoft_sqlalchemy.search_space_builder.glycan_builder import constrained_combinatorics
 from glycresoft_sqlalchemy.matching.glycopeptide.pipeline import GlycopeptideFragmentMatchingPipeline
 
 
 def test_main():
     db_file_name = "./datafiles/naive_glycopeptide.db"
-    try:
-        os.remove(db_file_name)
-    except:
-        pass
+    os.remove(db_file_name)
 
     rules_table = {
         "Hex": (3, 8),
@@ -52,8 +50,6 @@ def test_main():
         n_processes=6)
     glycopeptide_hypothesis_id = job.start()
 
-    return 1
-
     ec = os.system(
         ("glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db datafiles/naive_glycopeptide.db %d "
          "-p db -g 2e-5 --skip-grouping") % glycopeptide_hypothesis_id)
@@ -61,7 +57,8 @@ def test_main():
     job = search_space_builder.BatchingTheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
         "datafiles/naive_glycopeptide.db", 1, 6)
     hypothesis_id = job.start()
-    job = pooling_make_decoys.PoolingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id])
+    job = make_decoys.BatchingDecoySearchSpaceBuilder(
+        db_file_name, hypothesis_ids=[hypothesis_id])
     decoy_hypothesis_id = job.start()[0]
 
     job = GlycopeptideFragmentMatchingPipeline(

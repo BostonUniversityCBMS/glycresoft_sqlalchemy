@@ -228,7 +228,7 @@ NGlycanCompositionColorizer = GlycanCompositionClassifierColorizer(OrderedDict([
     (CompositionRuleClassifier("Penta-Antennerary", [CompositionRangeRule("HexNAc", 7, 7)]), '#8c564b'),
     (CompositionRuleClassifier("Supra-Penta-Antennerary", [CompositionRangeRule("HexNAc", 8)]), 'brown')
 ]))
-NGlycanCompositionOrderer = GlycanCompositionOrderer(["HexNAc", "Hex"])
+NGlycanCompositionOrderer = GlycanCompositionOrderer(["HexNAc", "Hex", "Fucose", "NeuAc"])
 
 _null_color_chooser = GlycanCompositionClassifierColorizer({}, default='blue')
 

@@ -1,4 +1,5 @@
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table, UnicodeText, bindparam
 
 from ..base import Base
@@ -53,7 +54,7 @@ class AminoAcidComposition(Base):
         return cls._query_ppm_tolerance_search(session).params(
             lower=lower, upper=upper)
 
-    @property
+    @hybrid_property
     def neutral_mass(self):
         return self.mass
 

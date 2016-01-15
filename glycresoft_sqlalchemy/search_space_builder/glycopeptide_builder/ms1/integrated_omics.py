@@ -8,12 +8,10 @@ from multiprocessing import Pool
 
 from glycresoft_sqlalchemy.data_model import (
     Hypothesis, ExactMS1GlycopeptideHypothesis, Protein,
-    TheoreticalGlycanComposition, DatabaseManager,
-    func, TheoreticalGlycopeptideComposition, TheoreticalGlycanCombination)
+    func, TheoreticalGlycopeptideComposition)
 
 from glycresoft_sqlalchemy.data_model import (
     InformedPeptide, InformedTheoreticalGlycopeptideComposition,
-    # InformedPeptideToTheoreticalGlycopeptide
     )
 from glycresoft_sqlalchemy.data_model import PipelineModule
 
@@ -21,7 +19,7 @@ from glycresoft_sqlalchemy.proteomics.enrich_peptides import EnrichDistinctPepti
 from glycresoft_sqlalchemy.utils.worker_utils import async_worker_pool
 from glycresoft_sqlalchemy.utils.database_utils import toggle_indices
 
-from .include_glycomics import MS1GlycanImporter
+from .include_glycomics import MS1GlycanImporter, MS1GlycanImportManager
 from .include_proteomics import ProteomeImporter
 
 from ..glycan_utilities import get_glycan_combinations
@@ -34,8 +32,6 @@ from glycresoft_sqlalchemy.structure import composition
 
 
 logger = logging.getLogger("integrated_omics-ms1-search-space")
-if logging.getLogger().root.handle == []:
-    print "No logger"
 
 Sequence = sequence.Sequence
 Modification = modification.Modification
@@ -65,14 +61,34 @@ def make_name(mzid_path, glycan_path):
 
 
 def glycosylate_callback(peptide, session, hypothesis_id, position_selector, max_sites=2):
+    """
+    Generate all glycoform combinations of `peptide` with up to `max_sites` glycosylations
+
+    Parameters
+    ----------
+    peptide : :class:`InformedPeptide`
+        The peptide sequence to be glycosylated
+    session : :class:`sqlalchemy.Session`
+        An active database connection session to read :class:`TheoreticalGlycanCombination`
+        with.
+    hypothesis_id : int
+        The hypothesis to read :class:`TheoreticalGlycanCombination` from.
+    position_selector : function
+        Function to call to use select glycosylation site combinations.
+    max_sites : int, optional
+        The maximum number of glycosylation sites to occupy.
+
+    Returns
+    -------
+    result: list of :class:`PeptideSequence`
+        Glycosylated product sequences
+    """
     n_sites = len(peptide.glycosylation_sites)
     result = []
     for glycan_count in range(1, min(n_sites + 1, max_sites + 1)):
         for glycans in get_glycan_combinations(session, glycan_count, hypothesis_id):
             for sites in position_selector(peptide.glycosylation_sites, glycan_count):
                 target = Sequence(peptide.modified_peptide_sequence)
-                glycan_composition = list(glycans)
-                assert len(glycan_composition) == glycan_count, (glycan_count, glycan_composition, glycans)
 
                 glycan_iter = iter(glycans)
                 for site in sites:
@@ -94,14 +110,14 @@ def make_theoretical_glycopeptide(peptide, position_selector, database_manager, 
 
     Parameters
     ----------
-    peptide : InformedPeptide
+    peptide: InformedPeptide
         The template peptide onto which glycans are added
-    position_selector : function
+    position_selector: function
         A function that controls the manner in which combinations or
         permutations of glycans are added to the template
-    database_manager : DatabaseManager
+    database_manager: DatabaseManager
         The manager of database connections
-    hypothesis_id : int
+    hypothesis_id: int
         The hypothesis to look up information in.
 
     Returns
@@ -168,28 +184,44 @@ def load_glycomics_naive(database_path, glycan_path, hypothesis_id, format='txt'
     return task.hypothesis_id
 
 
-class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
+class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManager):
     hypothesis_type = ExactMS1GlycopeptideHypothesis
 
     def __init__(self, database_path, hypothesis_id=None, protein_ids=None, mzid_path=None,
                  glycomics_path=None, glycomics_format='txt', hypothesis_name=None, maximum_glycosylation_sites=2,
                  n_processes=4, **kwargs):
         self.manager = self.manager_type(database_path)
-        if not os.path.exists(database_path):
-            self.manager.initialize()
-            self.manager = self.manager_type(database_path)
+        self.manager.initialize()
+
+        MS1GlycanImportManager.__init__(
+            self, glycomics_path, glycomics_format, None, maximum_glycosylation_sites,
+            **kwargs)
+
         self.hypothesis_id = hypothesis_id
         self.mzid_path = mzid_path
-        self.glycomics_path = glycomics_path
-        self.glycomics_format = glycomics_format
+
         self.protein_ids = protein_ids
         self.n_processes = n_processes
         self.hypothesis_name = hypothesis_name
-        self.maximum_glycosylation_sites = maximum_glycosylation_sites
-        self.include_all_baseline = kwargs.get("include_all_baseline", False)
+        self.include_all_baseline = kwargs.get("include_all_baseline", True)
         self.options = kwargs
 
     def bootstrap_hypothesis(self):
+        """
+        Perform any required initialization steps to prepare the :class:`Hypothesis`
+        instance this `PipelineModule` will populate.
+
+        This step may create :class:`Protein`, :class:`TheoreticalGlycanComposition` and
+        :class:`TheoreticalGlycanCombination` entities in addition to a :class:`Hypothesis`
+        if one does not already exist for the given :attr:`hypothesis_id`.
+
+        Subtasks
+            1. :class:`ProteomeImporter`
+            2. :class:`MS1GlycanImporter`
+
+        This step may also update :attr:`protein_ids` if they were not
+        provided, or provided as a list of names instead of id numbers.
+        """
         session = self.manager.session()
 
         hypothesis = None
@@ -202,24 +234,29 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule):
             hypothesis = self.hypothesis_type(name=self.hypothesis_name)
             session.add(hypothesis)
             session.commit()
+            self.hypothesis_id = hypothesis.id
             load_proteomics(
                 self.database_path, self.mzid_path,
                 hypothesis_id=hypothesis.id,
                 hypothesis_type=self.hypothesis_type,
                 include_all_baseline=self.include_all_baseline)
-            load_glycomics_naive(
-                self.database_path, self.glycomics_path, hypothesis.id,
-                format=self.glycomics_format, combination_size=self.maximum_glycosylation_sites,
-                **self.options)
+            self.import_glycans()
 
-        self.hypothesis_id = hypothesis.id
         if self.protein_ids is None:
             protein_ids = flatten(session.query(Protein.id).filter(Protein.hypothesis_id == self.hypothesis_id))
         elif isinstance(self.protein_ids[0], basestring):
-            protein_ids = flatten(session.query(Protein.id).filter(Protein.name == name).first()
-                                  for name in self.protein_ids)
+            def tryfind(name):
+                result = session.query(Protein.id).filter(
+                    Protein.name == name,
+                    Protein.hypothesis_id == self.hypothesis_id).first()
+                if result is None:
+                    logger.exception("No protein could be found for name %s", name)
+                    return None
+                else:
+                    return result[0]
+            protein_ids = [id for id in [tryfind(name) for name in self.protein_ids] if id is not None]
         else:
-            protein_ids = protein_ids
+            protein_ids = self.protein_ids
         session.close()
 
         self.protein_ids = protein_ids
@@ -306,7 +343,7 @@ class IntegratedOmicsMS1LegacyCSV(PipelineModule):
         self.manager = self.manager_type(database_path)
 
         self.hypothesis_id = hypothesis_id
-        session = self.manager.session()
+        session = self.manager()
         if protein_ids is None:
             protein_ids = flatten(session.query(Protein.id).filter(Protein.hypothesis_id == hypothesis_id))
         elif isinstance(protein_ids[0], basestring):

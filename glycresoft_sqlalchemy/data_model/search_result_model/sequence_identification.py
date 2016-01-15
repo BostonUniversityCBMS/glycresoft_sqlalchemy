@@ -121,6 +121,11 @@ class GlycopeptideSpectrumMatch(Base, SpectrumMatchBase):
     id = Column(Integer, primary_key=True, autoincrement=True)
     glycopeptide_match_id = Column(Integer, ForeignKey("GlycopeptideMatch.id", ondelete='CASCADE'), index=True)
 
+    theoretical_glycopeptide_id = Column(
+        Integer, ForeignKey("TheoreticalGlycopeptide.id", ondelete='CASCADE'), index=True)
+
+    theoretical_glycopeptide = relationship("TheoreticalGlycopeptide")
+
     def __repr__(self):
         try:
             return "<GlycopeptideSpectrumMatch {} -> Spectrum {} | {} Peaks Matched>".format(
@@ -138,7 +143,10 @@ class GlycopeptideSpectrumMatch(Base, SpectrumMatchBase):
     @property
     def glycopeptide_sequence(self):
         try:
-            return self.glycopeptide_match.glycopeptide_sequence
+            try:
+                return self.theoretical_glycopeptide.glycopeptide_sequence
+            except:
+                return self.glycopeptide_match.glycopeptide_sequence
         except:
             return "(No Sequence Error)"
 

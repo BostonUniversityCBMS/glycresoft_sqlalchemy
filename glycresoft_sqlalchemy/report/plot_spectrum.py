@@ -49,7 +49,7 @@ def plot_scan(scan, ax=None, logscale=False, color='black', labels=None, **kwarg
     if logscale:
         intensities = np.log(intensities)
 
-    kwargs.setdefault("width", 0.1)
+    kwargs.setdefault("width", 0.01)
     kwargs.setdefault("edgecolor", color)
     ax.bar(mzs, intensities, **kwargs)
 

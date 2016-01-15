@@ -3,7 +3,7 @@ from collections import OrderedDict
 from glycresoft_sqlalchemy.data_model import (
     GlycopeptideMatch, HypothesisSampleMatch, PipelineModule,
     Protein, object_session, GlycopeptideSpectrumMatchScore,
-    GlycopeptideSpectrumMatch)
+    GlycopeptideSpectrumMatch, JointPeakGroupMatch)
 
 from sqlalchemy import func
 from matplotlib import pyplot as plt
@@ -53,6 +53,26 @@ def count_at_score_glycopeptide_spectrum_match(session, hypothesis_id, hypothesi
     return targets_above
 
 
+def count_at_score_joint_peak_group_match(session, matched, hypothesis_sample_match_id):
+    targets = session.query(JointPeakGroupMatch.ms1_score, func.count(JointPeakGroupMatch.ms1_score)).join(
+            HypothesisSampleMatch).group_by(
+            JointPeakGroupMatch.ms1_score).order_by(
+            JointPeakGroupMatch.ms1_score.asc()).filter(
+            JointPeakGroupMatch.matched == matched,
+            (JointPeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id)).all()
+
+    running_total = 0
+    targets_above = OrderedDict()
+    for score, at in targets:
+        targets_above[score] = running_total
+        running_total += at
+
+    for score, at in list(targets_above.items()):
+        targets_above[score] = running_total - targets_above[score]
+
+    return targets_above
+
+
 def detect_rapid_drop(counts, step_size=1, threshold=0.5):
     i = 0
     size = len(counts)
@@ -61,6 +81,7 @@ def detect_rapid_drop(counts, step_size=1, threshold=0.5):
         if ratio < threshold:
             return i + step_size
         i += 1
+    return 0
 
 
 def curve_for(score_count_pairs, ax=None, threshold=True, **kwargs):
@@ -108,6 +129,8 @@ class HypothesisSampleMatchComparer(PipelineModule):
         ax.xaxis.set_ticks(ticks)
         ax.set_xticklabels(ticks, rotation=90, ha='center')
 
+        ax.grid(alpha=0.2)
+
         ax.legend(fontsize=8, frameon=False)
         ax.set_xlabel("GSMs Retained")
         ax.set_ylabel("FDR")
@@ -132,15 +155,52 @@ def _name_to_id(session, *names):
         HypothesisSampleMatch.name.in_(list(names))).all()]
 
 
-class ROCCurvePlot(HypothesisSampleMatchComparer):
-    x_axis_max = None
-    y_axis_max = None
+class MS2GlycopepeptideROCCurvePlot(HypothesisSampleMatchComparer):
 
     def add_hypothesis_sample_match(self, hypothesis_sample_match):
         session = object_session(hypothesis_sample_match)
         self.index[hypothesis_sample_match.name] = ROCSeries(
             self.count_at_score(session, hypothesis_sample_match.decoy_hypothesis_id, hypothesis_sample_match.id),
             self.count_at_score(session, hypothesis_sample_match.target_hypothesis_id, hypothesis_sample_match.id)
+            )
+
+    def plot(self):
+        ax = None
+        # false_max = max(self.index.values(), key=lambda x: x.xmax).xmax
+        # true_max = max(self.index.values(), key=lambda x: x.ymax).ymax
+
+        false_max = None
+        true_max = None
+
+        fig, ax = plt.subplots(1)
+
+        for title, series in self.index.items():
+            curve_path, auc_score = series(xmax=false_max, ymax=true_max)
+            ax.plot(*zip(*curve_path), label="%s (%0.2f%%)" % (title, 100 * auc_score), alpha=0.5, lw=2)
+
+        cap = 1.01
+
+        ax.set_xlim(0, cap)
+        ax.set_ylim(0, cap)
+        ax.plot((0, cap), (0, cap), ls='--', c='black')
+
+        ax.set_xlabel("FPR")
+        ax.set_ylabel("TPR")
+        ax.set_title("ROC Curve")
+        ax.legend(frameon=False, fontsize=8, loc='lower right')
+        return ax
+
+
+class MS1JointPeakGroupROCCurvePlot(HypothesisSampleMatchComparer):
+    def count_at_score(self, session, matched_flag, hypothesis_sample_match_id):
+        counts = count_at_score_joint_peak_group_match(session, matched_flag, hypothesis_sample_match_id)
+        return counts
+
+    def add_hypothesis_sample_match(self, hypothesis_sample_match):
+        session = object_session(hypothesis_sample_match)
+        self.index[hypothesis_sample_match.name] = ROCSeries(
+            self.count_at_score(session, True, hypothesis_sample_match.id),
+            self.count_at_score(session, False, hypothesis_sample_match.id)
             )
 
     def plot(self):
@@ -209,11 +269,15 @@ class ROCSeries(object):
                 last_xi = xi
             except TypeError:
                 xi = last_xi
+            except ValueError:
+                continue
             try:
                 yi = int(yf(i))
                 last_yi = yi
             except TypeError:
                 yi = last_yi
+            except ValueError:
+                continue
             path.append((min(xi/xmax, 1), min(yi/ymax, 1)))
         auc_score = auc(*zip(*path))
         return path, auc_score

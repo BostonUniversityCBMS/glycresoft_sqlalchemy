@@ -4,7 +4,8 @@ import operator
 import functools
 
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import alias, event, func
+from sqlalchemy import alias, event, func, bindparam
+from sqlalchemy.ext.baked import bakery
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy import Numeric, Unicode, Column, Integer, ForeignKey, Table, PickleType, Boolean
 from sqlalchemy.ext.hybrid import hybrid_method
@@ -27,6 +28,9 @@ from ..utils.memoize import memoclone
 FrozenGlycanComposition = glycan_composition.FrozenGlycanComposition
 crossring_pattern = re.compile(r"\d,\d")
 glycoct_parser = memoclone(100)(glycoct.loads)
+
+
+glycan_bakery = bakery()
 
 
 class MassShift(Base):
@@ -59,16 +63,16 @@ class AssociationComposition(_AssociationDict):
         self.lazy_collection = lazy_collection
 
     def mass(self, *args, **kwargs):
-        return glycan_composition.GlycanComposition(**self).mass(*args, **kwargs)
+        return FrozenGlycanComposition(**self).mass(*args, **kwargs)
 
     def total_composition(self, *args, **kwargs):
-        return glycan_composition.GlycanComposition(**self).total_composition(*args, **kwargs)
+        return FrozenGlycanComposition(**self).total_composition(*args, **kwargs)
 
     def serialize(self):
-        return glycan_composition.GlycanComposition(**self).serialize()
+        return FrozenGlycanComposition(**self).serialize()
 
     def clone(self):
-        return glycan_composition.GlycanComposition(**self)
+        return FrozenGlycanComposition(**self)
 
     def __getitem__(self, key):
         try:
@@ -109,14 +113,14 @@ class AssociationComposition(_AssociationDict):
             raise TypeError(
                 'Cannot multiply Composition by non-integer',
                 other)
-        prod = glycan_composition.GlycanComposition()
+        prod = FrozenGlycanComposition()
         for k, v in self.items():
             prod[k] = v * other
 
         return (prod)
 
     def copy(self):
-        return glycan_composition.GlycanComposition(**self)
+        return FrozenGlycanComposition(**self)
 
 
 def association_composition_creator(k, v, reference_table):
@@ -159,7 +163,7 @@ def has_glycan_composition(model, composition_attr):
         def convert_composition(target, value, oldvalue, initiator):
             if value == "{}" or value is None:
                 return
-            for k, v in glycan_composition.parse(value).items():
+            for k, v in FrozenGlycanComposition.parse(value).items():
                 target.glycan_composition[k.name()] = v
 
         @event.listens_for(model, "load")
@@ -167,7 +171,7 @@ def has_glycan_composition(model, composition_attr):
             value = getattr(target, composition_attr)
             if value == "{}" or value is None:
                 return
-            for k, v in glycan_composition.parse(value).items():
+            for k, v in FrozenGlycanComposition.parse(value).items():
                 target.glycan_composition[k.name()] = v
 
         creator = functools.partial(
@@ -251,7 +255,7 @@ def has_glycan_composition_listener(attr):
     def convert_composition(target, value, oldvalue, initiator):
         if value == "{}" or value is None:
             return
-        for k, v in glycan_composition.parse(value).items():
+        for k, v in FrozenGlycanComposition.parse(value).items():
             target.glycan_composition[str(k)] = v
 
     @event.listens_for(attr.class_, "load")
@@ -259,7 +263,7 @@ def has_glycan_composition_listener(attr):
         value = getattr(target, attr.prop.key)
         if value == "{}" or value is None:
             return
-        for k, v in glycan_composition.parse(value).items():
+        for k, v in FrozenGlycanComposition.parse(value).items():
             target.glycan_composition[str(k)] = v
 
 
@@ -270,6 +274,30 @@ class GlycanBase(object):
     reduction = Column(Unicode(64))
     name = Column(Unicode(64))
     composition = Column(Unicode(128), index=True)
+
+    _query_ppm_tolerance_search_hypothesis = None
+    _query_ppm_tolerance_search = None
+
+    @classmethod
+    def ppm_error_tolerance_search(cls, session, mass, tolerance, hypothesis_id=None):
+        width = (mass * tolerance)
+        lower = mass - width
+        upper = mass + width
+        if hypothesis_id is not None:
+            if cls._query_ppm_tolerance_search_hypothesis is None:
+                q = glycan_bakery(lambda session: session.query(cls))
+                q += lambda q: q.filter(cls.mass.between(bindparam("lower"), bindparam("upper")))
+                q += lambda q: q.filter(cls.hypothesis_id == bindparam('hypothesis_id'))
+                cls._query_ppm_tolerance_search_hypothesis = q
+            return cls._query_ppm_tolerance_search_hypothesis(session).params(
+                lower=lower, upper=upper, hypothesis_id=hypothesis_id)
+        else:
+            if cls._query_ppm_tolerance_search is None:
+                q = glycan_bakery(lambda session: session.query(cls))
+                q += lambda q: q.filter(cls.mass.between(bindparam("lower"), bindparam("upper")))
+                cls._query_ppm_tolerance_search = q
+            return cls._query_ppm_tolerance_search(session).params(
+                lower=lower, upper=upper)
 
     @declared_attr
     def hypothesis_id(self):
@@ -286,6 +314,9 @@ class GlycanBase(object):
     @from_hypothesis.expression
     def from_hypothesis(self, hypothesis_id):
         return (self.hypothesis_id == hypothesis_id)
+
+    def as_composition(self):
+        return FrozenGlycanComposition(self.glycan_composition)
 
 
 @with_glycan_composition("composition")
@@ -425,6 +456,9 @@ class TheoreticalGlycanCombination(Base):
 
     hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id"), index=True)
 
+    def as_composition(self):
+        return FrozenGlycanComposition.parse(self.composition)
+
     def __iter__(self):
         for composition, count in self.components.add_column(
                 TheoreticalGlycanCombinationTheoreticalGlycanComposition.c.count):
@@ -449,6 +483,31 @@ class TheoreticalGlycanCombination(Base):
     @from_hypothesis.expression
     def from_hypothesis(self, hypothesis_id):
         return (self.hypothesis_id == hypothesis_id)
+
+    _query_ppm_tolerance_search = None
+    _query_ppm_tolerance_search_dehydrate = None
+
+    @classmethod
+    def ppm_error_tolerance_search(cls, session, mass, tolerance, hypothesis_id, dehydrate=True):
+        width = (mass * tolerance)
+        lower = mass - width
+        upper = mass + width
+        if dehydrate:
+            if cls._query_ppm_tolerance_search_dehydrate is None:
+                q = glycan_bakery(lambda session: session.query(cls))
+                q += lambda q: q.filter(cls.dehydrated_mass().between(bindparam("lower"), bindparam("upper")))
+                q += lambda q: q.filter(cls.hypothesis_id == bindparam('hypothesis_id'))
+                cls._query_ppm_tolerance_search_dehydrate = q
+            return cls._query_ppm_tolerance_search_dehydrate(session).params(
+                lower=lower, upper=upper, hypothesis_id=hypothesis_id)
+        else:
+            if cls._query_ppm_tolerance_search is None:
+                q = glycan_bakery(lambda session: session.query(cls))
+                q += lambda q: q.filter(cls.mass.between(bindparam("lower"), bindparam("upper")))
+                q += lambda q: q.filter(cls.hypothesis_id == bindparam('hypothesis_id'))
+                cls._query_ppm_tolerance_search_hypothesis = q
+            return cls._query_ppm_tolerance_search_hypothesis(session).params(
+                lower=lower, upper=upper, hypothesis_id=hypothesis_id)
 
 
 def make_composition_table(monosaccharide_names):

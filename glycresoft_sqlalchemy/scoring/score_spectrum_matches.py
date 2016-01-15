@@ -134,9 +134,10 @@ def score_on_limited_peak_matches(glycopeptide_match, database_manager, scorer, 
         session = database_manager.session()
         with session.no_autoflush:
             glycopeptide_match = session.query(GlycopeptideMatch).get(glycopeptide_match)
-            ion_matches = split_ion_list(merge_ion_matches(itertools.chain.from_iterable(itertools.chain.from_iterable(
-                [gsm.peak_match_map.values() for gsm in glycopeptide_match.spectrum_matches
-                 if gsm.best_match]))))
+            ion_matches = split_ion_list(
+                merge_ion_matches(itertools.chain.from_iterable(itertools.chain.from_iterable(
+                    [gsm.peak_match_map.values() for gsm in glycopeptide_match.spectrum_matches
+                     if gsm.best_match]))))
 
             for series, value in ion_matches.items():
                 setattr(glycopeptide_match, series, value)

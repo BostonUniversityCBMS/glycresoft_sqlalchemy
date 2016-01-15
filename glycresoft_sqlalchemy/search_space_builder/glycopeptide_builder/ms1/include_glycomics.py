@@ -11,6 +11,18 @@ from glycresoft_sqlalchemy.utils.collectiontools import decoratordict
 from glycresoft_sqlalchemy.utils.database_utils import database_exists as db_exists
 
 
+class UnknownGlycomicsFormatError(Exception):
+    pass
+
+
+class InvalidGlycomicsConfigurationError(Exception):
+    pass
+
+
+class MissingGlycomicsDataError(Exception):
+    pass
+
+
 logger = logging.getLogger("include_glycomics")
 
 glycan_file_type_map = {
@@ -39,15 +51,10 @@ class MS1GlycanImporter(PipelineModule):
             self.options)
         loader.start(verbose=False)
         self.inform("Building glycan combinations")
-        create_combinations(session, self.combination_size, self.hypothesis_id)
-
-
-class UnknownGlycomicsFormatError(Exception):
-    pass
-
-
-class InvalidGlycomicsConfigurationError(Exception):
-    pass
+        count = create_combinations(session, self.combination_size, self.hypothesis_id)
+        logger.info("Produced %d glycan composition combinations", count)
+        if count == 0:
+            raise MissingGlycomicsDataError("No glycan combinations were produced")
 
 
 keyword_validator = decoratordict()
@@ -92,6 +99,16 @@ class MS1GlycanImportManager(object):
             raise InvalidGlycomicsConfigurationError(reason)
 
     def import_glycans(self):
+        session = self.manager()
+        hypothesis = session.query(Hypothesis).get(self.hypothesis_id)
+        hypothesis.parameters.update({
+            "glycomics_path": self.glycomics_path,
+            "glycomics_format": self.glycomics_format,
+            "maximum_glycosylation_sites": self.maximum_glycosylation_sites
+            })
+        session.add(hypothesis)
+        session.commit()
+        session.close()
         if self.glycomics_format == "txt":
             importer = MS1GlycanImporter(
                 self.database_path, self.glycomics_path, self.hypothesis_id, 'txt',
@@ -110,4 +127,4 @@ class MS1GlycanImportManager(object):
                 combination_size=self.maximum_glycosylation_sites)
             importer.start()
         else:
-            raise UnknownGlycanFormatError(self.glycomics_format)
+            raise UnknownGlycomicsFormatError(self.glycomics_format)

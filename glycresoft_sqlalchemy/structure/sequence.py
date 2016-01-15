@@ -59,9 +59,9 @@ def sequence_to_mass(sequence):
 def find_n_glycosylation_sequons(sequence, allow_modified=frozenset()):
     try:
         iter(allow_modified)
-        allow_modified = set(allow_modified) | {"HexNAc"}
+        allow_modified = set(allow_modified) | {Modification("HexNAc")}
     except:
-        allow_modified = {"HexNAc"}
+        allow_modified = (Modification("HexNAc"),)
     state = "seek"  # [seek, n, ^p, st]
     if(isinstance(sequence, Sequence)):
         asn = "Asn"
@@ -237,7 +237,7 @@ class PeptideSequence(PeptideSequenceBase):
         seq.c_term = c_term
         return seq
 
-    def __init__(self, sequence, **kwargs):
+    def __init__(self, sequence=None, **kwargs):
         self.mass = 0.0
         self.seq = []
         self.modification_index = defaultdict(int)
@@ -479,36 +479,36 @@ class PeptideSequence(PeptideSequenceBase):
                 fragments_from_site.extend(frag.partial_loss())
             yield fragments_from_site
 
-    def drop_modification(self, pos, mod_type):
+    def drop_modification(self, position, modification_type):
         '''
         Drop a modification by name from a specific residue
         '''
         dropped_index = None
-        for i, mod in enumerate(self.seq[pos][1]):
-            if mod_type == mod.name:
+        for i, mod in enumerate(self.seq[position][1]):
+            if modification_type == mod.name:
                 dropped_index = i
                 break
         try:
-            drop_mod = self.seq[pos][1].pop(dropped_index)
+            drop_mod = self.seq[position][1].pop(dropped_index)
             self.mass -= drop_mod.mass
             self.modification_index[drop_mod.name] -= 1
         except:
-            raise ValueError("Modification not found! %s @ %s" % (mod_type, pos))
+            raise ValueError("Modification not found! %s @ %s" % (modification_type, position))
 
-    def add_modification(self, pos=None, mod_type=None):
-        if pos is None and isinstance(mod_type, Modification):
-            pos = mod_type.position
+    def add_modification(self, position=None, modification_type=None):
+        if position is None and isinstance(modification_type, Modification):
+            position = modification_type.position
 
-        if (pos == -1) or (pos >= len(self.seq)):
+        if (position == -1) or (position >= len(self.seq)):
             raise IndexError(
                 "Invalid modification position. %s, %s, %s" %
-                (pos, str(self.seq), mod_type))
+                (position, str(self.seq), modification_type))
             return -1
-        if isinstance(mod_type, Modification):
-            mod = mod_type
+        if isinstance(modification_type, Modification):
+            mod = modification_type
         else:
-            mod = Modification(rule=mod_type, mod_pos=pos)
-        self.seq[pos][1].append(mod)
+            mod = Modification(rule=modification_type, mod_pos=position)
+        self.seq[position][1].append(mod)
         self.mass += mod.mass
         self.modification_index[mod.name] += 1
 
@@ -553,7 +553,8 @@ class PeptideSequence(PeptideSequenceBase):
         inst.n_term = self.n_term.clone()
         inst.c_term = self.c_term.clone()
         inst.seq = [self.position_class([o[0], list(o[1])]) for o in self]
-        inst.glycan = self.glycan.clone()
+        if self.glycan is not None:
+            inst.glycan = self.glycan.clone()
         return inst
 
     def append(self, residue, modification=None):

@@ -16,11 +16,7 @@ from glycresoft_sqlalchemy.scoring import pair_counting
 
 def test_main():
     db_file_name = "./datafiles/integrated_omics_simple.db"
-    try:
-        os.remove(db_file_name)
-        pass
-    except:
-        print "\n\nCould not remove database\n\n"
+    os.remove(db_file_name)
 
     rules_table = {
         "Hex": (3, 8),
@@ -33,18 +29,30 @@ def test_main():
         db_file_name, rules_table=rules_table, constraints_list=[])
     job.start()
 
+    n_processes = 6
+
+    complex_proteome = [
+        "P02763|A1AG1_HUMAN",
+        "P19652|A1AG2_HUMAN",
+        "P00738|HPT_HUMAN"
+    ]
+
+    simple_proteome = [
+        "P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"
+    ]
+
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         db_file_name,
-        protein_ids=["P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"],  # "P19652|A1AG2_HUMAN",
+        protein_ids=simple_proteome,
         mzid_path="datafiles/AGP_Proteomics2.mzid",
         # glycomics_path='./datafiles/human_n_glycans.txt',
         # glycomics_format='txt',
-        glycomics_path=db_file_name,# './datafiles/human_n_glycans.txt',
+        glycomics_path=db_file_name,
         glycomics_format='hypothesis',
         source_hypothesis_id=1,
         maximum_glycosylation_sites=1,
         include_all_baseline=True,
-        n_processes=6)
+        n_processes=n_processes)
     hypothesis_id = job.start()
 
     ec = os.system(
@@ -56,7 +64,7 @@ def test_main():
     job = exact_search_space_builder.BatchingExactSearchSpaceBuilder.from_hypothesis_sample_match(
         db_file_name, 1, 6)
     hypothesis_id = job.start()
-    job = make_decoys.BatchingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id])
+    job = make_decoys.BatchingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id], n_processes=6)
     decoy_hypothesis_id = job.start()[0]
 
     # hypothesis_id = 2

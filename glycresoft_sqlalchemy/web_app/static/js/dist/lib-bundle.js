@@ -559,7 +559,7 @@ GlycanComposition = (function() {
 
 //# sourceMappingURL=glycan-composition.js.map
 
-var getProteinName, getProteinNamesFromMzIdentML, identifyProteomicsFormat;
+var MzIdentMLProteinSelector, getProteinName, getProteinNamesFromMzIdentML, identifyProteomicsFormat;
 
 identifyProteomicsFormat = function(file, callback) {
   var isMzidentML, reader;
@@ -588,12 +588,20 @@ identifyProteomicsFormat = function(file, callback) {
 };
 
 getProteinName = function(line) {
-  return line.split("_", 2)[1];
+  var id;
+  id = /id="([^"]+)"/.exec(line);
+  id = id[1];
+  return id.split("_").slice(1).join("_");
 };
 
-getProteinNamesFromMzIdentML = function(file, callback) {
+getProteinNamesFromMzIdentML = function(file, callback, nameCallback) {
   var chunksize, fr, offset, proteins, seek;
   fr = new FileReader();
+  if (nameCallback == null) {
+    nameCallback = function(name) {
+      return console.log(name);
+    };
+  }
   chunksize = 1024 * 8;
   offset = 0;
   proteins = {};
@@ -604,8 +612,10 @@ getProteinNamesFromMzIdentML = function(file, callback) {
       line = lines[i];
       if (/<ProteinDetectionHypothesis/i.test(line)) {
         name = getProteinName(line);
-        console.log(name);
-        proteins[name] = true;
+        if (!proteins[name]) {
+          proteins[name] = true;
+          nameCallback(name);
+        }
       }
     }
     return seek();
@@ -623,6 +633,113 @@ getProteinNamesFromMzIdentML = function(file, callback) {
   };
   return seek();
 };
+
+MzIdentMLProteinSelector = (function() {
+  function MzIdentMLProteinSelector(file, listContainer) {
+    this.fileObject = file;
+    this.container = $(listContainer);
+    this.initializeContainer();
+  }
+
+  MzIdentMLProteinSelector.prototype.initializeContainer = function() {
+    var self, template;
+    template = "<div class='display-control'>\n    <a class='toggle-visible-btn right' data-open=\"open\" style='cursor:hand;'>\n        <i class=\"material-icons\">keyboard_arrow_up</i>\n    </a>\n</div>\n<div class='hideable-container'>\n    <div class='row'>\n        <div class='col s4'>\n            <div class='input-field'>\n                <input value='' name=\"protein-regex\" type=\"text\" class=\"validate protein-regex\">\n                <label class=\"active\" for=\"protein-regex\">Protein Pattern</label>\n            </div>\n        </div>\n    </div>\n    <div class='row'>\n        <div class='col s8 protein-name-list'>\n\n        </div>\n    </div>\n</div>";
+    this.container.html(template);
+    this.hideableContainer = this.container.find(".hideable-container");
+    this.regex = this.container.find(".protein-regex");
+    this.list = this.container.find(".protein-name-list");
+    this.toggleVisible = this.container.find(".toggle-visible-btn");
+    self = this;
+    this.toggleVisible.click(function() {
+      var handle;
+      handle = $(this);
+      if (handle.attr("data-open") === "open") {
+        self.hideableContainer.hide();
+        handle.attr("data-open", "closed");
+        return handle.html('<i class="material-icons">keyboard_arrow_down</i>');
+      } else if (handle.attr("data-open") === "closed") {
+        self.hideableContainer.show();
+        handle.attr("data-open", "open");
+        return handle.html('<i class="material-icons">keyboard_arrow_up</i>');
+      }
+    });
+    this.regex.change(function(e) {
+      var pattern;
+      e.preventDefault();
+      pattern = $(this).val();
+      return self.updateVisibleProteins(pattern);
+    });
+    this.regex.keydown((function(_this) {
+      return function(e) {
+        if (e.keyCode === 13) {
+          e.preventDefault();
+          _this.regex.change();
+          return false;
+        }
+      };
+    })(this));
+    return this.load();
+  };
+
+  MzIdentMLProteinSelector.prototype.createAddProteinNameToListCallback = function() {
+    var callback;
+    callback = (function(_this) {
+      return function(name) {
+        var checker, entryContainer;
+        entryContainer = $("<p></p>").css({
+          "padding-left": 20,
+          "display": 'inline-block',
+          "width": 240
+        }).addClass('input-field protein-name');
+        checker = $("<input />").attr("type", "checkbox").attr("name", name);
+        entryContainer.append(checker);
+        entryContainer.append($("<label></label>").html(name).attr("for", name).click((function() {
+          return checker.click();
+        })));
+        return _this.list.append(entryContainer);
+      };
+    })(this);
+    return callback;
+  };
+
+  MzIdentMLProteinSelector.prototype.updateVisibleProteins = function(pattern) {
+    var regex;
+    regex = new RegExp(pattern, 'i');
+    return $('.protein-name').each(function() {
+      var handle, name;
+      handle = $(this);
+      name = handle.find("input").attr("name");
+      if (regex.test(name)) {
+        return handle.show();
+      } else {
+        return handle.hide();
+      }
+    });
+  };
+
+  MzIdentMLProteinSelector.prototype.load = function() {
+    var callback;
+    callback = this.createAddProteinNameToListCallback();
+    return getProteinNamesFromMzIdentML(this.fileObject, (function() {}), callback);
+  };
+
+  MzIdentMLProteinSelector.prototype.getChosenProtein = function() {
+    var a;
+    return (function() {
+      var i, len, ref, results;
+      ref = this.container.find("input:checked");
+      results = [];
+      for (i = 0, len = ref.length; i < len; i++) {
+        a = ref[i];
+        results.push($(a).attr("name"));
+      }
+      return results;
+    }).call(this);
+  };
+
+  return MzIdentMLProteinSelector;
+
+})();
 
 //# sourceMappingURL=infer-protein-data-format.js.map
 
@@ -666,7 +783,17 @@ materialFileInput = function() {
 
 //# sourceMappingURL=material-shim.js.map
 
-var PeptideSequence, PeptideSequencePosition;
+var PeptideSequence, PeptideSequencePosition, _formatModification;
+
+_formatModification = function(modification, colorSource, long) {
+  var color, content;
+  if (long == null) {
+    long = false;
+  }
+  color = colorSource.get(modification);
+  content = escape(long ? modification : modification[0]);
+  return "(<span class='modification-chip' style='background-color:" + color + ";padding-left:1px;padding-right:2px;border-radius:2px;' title='" + (escape(modification)) + "' data-modification=" + (escape(modification)) + ">" + content + "</span>)";
+};
 
 PeptideSequencePosition = (function() {
   var formatModification;
@@ -851,11 +978,18 @@ PeptideSequence = (function() {
   }
 
   PeptideSequence.prototype.format = function(colorSource, includeGlycan) {
-    var glycan, position, positions, sequence;
+    var cTerm, glycan, nTerm, position, positions, sequence;
     if (includeGlycan == null) {
       includeGlycan = true;
     }
-    positions = (function() {
+    positions = [];
+    if (this.nTerm === "H") {
+      nTerm = "";
+    } else {
+      nTerm = _formatModification(this.nTerm, colorSource).slice(1, -1) + '-';
+      positions.push(nTerm);
+    }
+    positions = positions.concat((function() {
       var j, len, ref, results;
       ref = this.sequence;
       results = [];
@@ -864,11 +998,17 @@ PeptideSequence = (function() {
         results.push(position.format(colorSource));
       }
       return results;
-    }).call(this);
+    }).call(this));
+    if (this.cTerm === "OH") {
+      cTerm = "";
+    } else {
+      cTerm = '-' + (_formatModification(this.cTerm, colorSource).slice(1, -1));
+      positions.push(cTerm);
+    }
     sequence = positions.join("");
     if (includeGlycan) {
       glycan = this.glycan.format(colorSource);
-      sequence += glycan;
+      sequence += ' ' + glycan;
     }
     return sequence;
   };

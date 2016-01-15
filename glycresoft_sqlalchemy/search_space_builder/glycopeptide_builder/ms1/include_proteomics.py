@@ -55,7 +55,9 @@ class ProteomeImporter(PipelineModule):
             for peptidoform in generate_peptidoforms(
                     protein, self.constant_modifications, [],
                     self.enzymes[0], missed_cleavages=self.baseline_missed_cleavages,
-                    peptide_class=self.peptide_type):
+                    peptide_class=self.peptide_type,
+                    **{"count_variable_modifications": 0}):
+                peptidoform.count_variable_modifications = 0
                 session.add(peptidoform)
             protein.informed_peptides.filter(
                 self.peptide_type.count_glycosylation_sites == None).delete("fetch")
@@ -79,7 +81,7 @@ class ProteomeImporter(PipelineModule):
                             os.path.basename(self.mzid_path)
                             )[0],
                         tag)
-                hypothesis = self.hypothesis_type(name=name, parameters={"mzid_path": self.mzid_path})
+                hypothesis = self.hypothesis_type(name=name, parameters={"protein_file": self.mzid_path})
                 session.add(hypothesis)
                 session.commit()
                 self.hypothesis_id = hypothesis.id
@@ -95,7 +97,7 @@ class ProteomeImporter(PipelineModule):
             logger.info("Enzyme: %r", self.enzymes)
 
             if self.glycosylation_sites_file is None:
-                for protein in session.query(Protein):
+                for protein in session.query(Protein).filter(Protein.hypothesis_id == self.hypothesis_id):
                     protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
                     session.add(protein)
                     session.flush()
@@ -123,7 +125,8 @@ class ProteomeImporter(PipelineModule):
                 list(self.constant_modifications), [])
             basic_peptides = []
             for peptide in session.query(self.peptide_type).filter(
-                    self.peptide_type.protein_id == Protein.id, Protein.hypothesis_id == self.hypothesis_id).group_by(
+                    self.peptide_type.protein_id == Protein.id,
+                    Protein.hypothesis_id == self.hypothesis_id).group_by(
                     self.peptide_type.base_peptide_sequence):
                 peptide = make_base_sequence(peptide, self.constant_modifications, modification_table)
                 basic_peptides.append(peptide)
@@ -135,8 +138,18 @@ class ProteomeImporter(PipelineModule):
             session.add_all(basic_peptides)
             session.commit()
 
+            assert session.query(InformedPeptide).filter(
+                InformedPeptide.protein_id == None).count() == 0
+
             self._display_protein_peptide_counts(session)
 
+            hypothesis.parameters.update({
+                "protein_file": self.mzid_path,
+                "enzyme": self.enzymes,
+                "constant_modifications": self.constant_modifications,
+                "include_all_baseline": self.include_all_baseline,
+                "variable_modifications": []
+            })
             session.close()
         except Exception, e:
             logger.exception("%r", locals(), exc_info=e)

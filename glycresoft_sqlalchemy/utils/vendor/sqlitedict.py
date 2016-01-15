@@ -254,27 +254,31 @@ class SqliteDict(DictClass):
     def close(self, do_log=True):
         if do_log:
             logger.debug("closing %s" % self)
-        if hasattr(self, 'conn') and self.conn is not None:
-            if self.conn.autocommit:
-                # typically calls to commit are non-blocking when autocommit is
-                # used.  However, we need to block on close() to ensure any
-                # awaiting exceptions are handled and that all data is
-                # persisted to disk before returning.
+        try:
+            if hasattr(self, 'conn') and self.conn is not None:
+                if self.conn.autocommit:
+                    # typically calls to commit are non-blocking when autocommit is
+                    # used.  However, we need to block on close() to ensure any
+                    # awaiting exceptions are handled and that all data is
+                    # persisted to disk before returning.
+                    try:
+                        self.conn.commit(blocking=True)
+                    except Exception, e:
+                        if do_log:
+                            logger.exception("Exception in SqliteDict.close", exc_info=e)
                 try:
-                    self.conn.commit(blocking=True)
+                    self.conn.close()
                 except Exception, e:
-                    logger.exception("Exception in SqliteDict.close", exc_info=e)
-            try:
-                self.conn.close()
-            except Exception, e:
-                # logger.exception("Exception in SqliteDict.close 2", exc_info=e)
-                pass
-            self.conn = None
-        if self.in_temp:
-            try:
-                os.remove(self.filename)
-            except:
-                pass
+                    if do_log:
+                        logger.exception("Exception in SqliteDict.close 2", exc_info=e)
+                self.conn = None
+            if self.in_temp:
+                try:
+                    os.remove(self.filename)
+                except:
+                    pass
+        except AttributeError:
+            pass
 
     def terminate(self):
         """Delete the underlying database file. Use with care."""
@@ -283,11 +287,12 @@ class SqliteDict(DictClass):
         if self.filename == ':memory:':
             return
 
-        logger.debug("deleting %s" % self.filename)
+        # logger.debug("deleting %s" % self.filename)
         try:
             os.remove(self.filename)
         except (OSError, IOError):
-            logger.exception("failed to delete %s" % (self.filename))
+            pass
+            # logger.exception("failed to delete %s" % (self.filename))
 
     def __del__(self):
         # like close(), but assume globals are gone by now (do not log!)
@@ -381,8 +386,8 @@ class SqliteMultithread(Thread):
 
                 if self.autocommit:
                     conn.commit()
-
-        self.log.debug('received: %s, send: --no more--', req)
+        # print req
+        # self.log.debug('received: %s, send: --no more--', req)
         conn.close()
         res.put('--no more--')
 

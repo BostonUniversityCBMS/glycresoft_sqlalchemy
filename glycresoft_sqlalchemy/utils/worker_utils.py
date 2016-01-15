@@ -7,7 +7,6 @@ try:
 except:
     pass
 
-import multiprocessing
 
 try:
     range = xrange
@@ -23,9 +22,13 @@ except:
     pass
 
 
+IS_PROFILE = True
+
+
 def async_worker_pool(worker_pool, work_stream, task_fn, result_callback=None,
                       logger=logger, update_window=30, initial_load=1500,
                       maxload=10000):
+
     if result_callback is None:
         result_callback = ResultCounter()
     logger.info("async_worker_pool starting")
@@ -84,7 +87,7 @@ class ResultCounter(object):
         self.n += i
 
 
-def profile_task(f, directory=".", **kwargs):
+def _profile_task(f, directory=".", **kwargs):
     try:
         name = f.func_name
     except:
@@ -102,3 +105,10 @@ def profile_task(f, directory=".", **kwargs):
         return wrapped
 
     return profiled_fn
+
+
+def profile_task(f, *args, **kwargs):
+    if IS_PROFILE:
+        return _profile_task(f, *args, **kwargs)
+    else:
+        return f

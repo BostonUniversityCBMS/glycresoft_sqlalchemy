@@ -6,24 +6,27 @@ from .sequence import Sequence
 
 
 class SequenceSpace:
-    """Generate all theoretical glycopeptide sequences"""
-    def __init__(self, sequnce, glycan_sites, mod_list):
-        """
-            sequnce -- sequence code
-            glycan_compo -- glycan compositions, dict.
-            glycan_sites -- sets of candidate sites for glycosylation
-            mod_list -- list of modifications.
-        """
-        # Filter the glycan composition. Get the max number of HexNAc
-        self.sequence = Sequence(sequnce)  # Sequence object
+    """
+    Generate all possible modified peptide sequences for a given
+    base sequence and a collection of modifications and specific
+    glycosylation_sites.
+
+    Attributes
+    ----------
+    candidate_sites : list of int
+        List of indices that may be glycosylated
+    modifications : list of :class:`Modification`
+        The modifications to place on the sequence
+    sequence : str
+        The base peptide sequence to build on
+    """
+    def __init__(self, sequence, glycan_sites, mod_list):
+        self.sequence = Sequence(sequence)
         self.candidate_sites = glycan_sites
         self.modifications = mod_list
 
     def __repr__(self):
-        rep = """
-sequence:{sequence}
-candidate_sites:{candidate_sites}
-modifications:{modifications}""".format(**self.__dict__)
+        rep = "SequenceSpace({sequence} {candidate_sites} {modifications})".format(**self.__dict__)
         return rep
 
     def get_modification_sites(self):

@@ -157,6 +157,14 @@ class PeptideBase(object):
             pass
         return list(sites)
 
+    @property
+    def hypothesis_id(self):
+        return self.protein.hypothesis_id
+
+    @property
+    def is_decoy(self):
+        return self.protein.hypothesis.is_decoy
+
     def __hash__(self):
         return hash((self.most_detailed_sequence, self.protein_id))
 
@@ -221,10 +229,18 @@ class InformedPeptide(PeptideBase, Base):
     id = Column(Integer, primary_key=True)
     peptide_score = Column(Numeric(12, 6, asdecimal=False), index=True)
     peptide_score_type = Column(Unicode(56))
+
+    count_variable_modifications = Column(Integer)
+
     theoretical_glycopeptides = relationship(
         "InformedTheoreticalGlycopeptideComposition",
         lazy="dynamic", backref="base_peptide")
     other = Column(PickleType)
+
+    def __init__(self, **kwargs):
+        super(InformedPeptide, self).__init__(**kwargs)
+        if kwargs.get("count_variable_modifications") is None:
+            raise Exception("Variable Modification Count Is None")
 
     __mapper_args__ = {
         'polymorphic_identity': u'InformedPeptide',

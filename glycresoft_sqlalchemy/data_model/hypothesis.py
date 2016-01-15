@@ -87,6 +87,8 @@ class Hypothesis(Base):
         except:
             return None
 
+    ms_level = 0
+
 
 class MS1GlycanHypothesis(Hypothesis):
     __tablename__ = "MS1GlycanHypothesis"
@@ -101,6 +103,8 @@ class MS1GlycanHypothesis(Hypothesis):
     def theoretical_structure_type(cls):
         from . import glycomics
         return glycomics.TheoreticalGlycanComposition
+
+    ms_level = 1
 
 
 class MS2GlycanHypothesis(Hypothesis):
@@ -118,6 +122,8 @@ class MS2GlycanHypothesis(Hypothesis):
         from . import glycomics
         return glycomics.TheoreticalGlycanStructure
 
+    ms_level = 2
+
 
 class MS1GlycopeptideHypothesis(Hypothesis):
 
@@ -133,6 +139,8 @@ class MS1GlycopeptideHypothesis(Hypothesis):
     def theoretical_structure_type(cls):
         from .sequence_model import peptide
         return peptide.TheoreticalGlycopeptideComposition
+
+    ms_level = 1
 
 
 class ExactMS1GlycopeptideHypothesis(MS1GlycopeptideHypothesis):
@@ -159,6 +167,8 @@ class MS2GlycopeptideHypothesis(Hypothesis):
     def theoretical_structure_type(cls):
         from .sequence_model import peptide
         return peptide.TheoreticalGlycopeptide
+
+    ms_level = 2
 
 
 class ExactMS2GlycopeptideHypothesis(MS2GlycopeptideHypothesis):

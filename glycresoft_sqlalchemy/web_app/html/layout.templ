@@ -14,7 +14,7 @@
 
 $(function() {
     $(".side-nav").css('top', $('.nav-wrapper').innerHeight()).css("z-index", 3)
-    $(".add-sample").click(function(event){
+    $("#add-sample").click(function(event){
         event.preventDefault()
         setupAjaxForm("/add_sample", "#dialog-modal")
     })

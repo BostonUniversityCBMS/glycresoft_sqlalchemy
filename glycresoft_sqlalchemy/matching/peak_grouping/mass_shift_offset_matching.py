@@ -13,7 +13,7 @@ from sqlalchemy.ext.baked import bakery
 
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule,
-    SampleRun,
+    SampleRun, Decon2LSPeakGroup,
     TheoreticalCompositionMap, MassShift, HypothesisSampleMatch,
     PeakGroupDatabase, PeakGroupMatch,
 )
@@ -42,6 +42,79 @@ def yield_ids(session, theoretical_type, hypothesis_id, chunk_size=100, filter=l
             break
 
 
+def yield_peak_group_ids(session, group_type, sample_run_id, chunk_size=100, filter=lambda q: q):
+    base_query = filter(session.query(
+        group_type.id).filter(group_type.sample_run_id == sample_run_id)).all()
+    last = 0
+    final = len(base_query)
+    while 1:
+        next_chunk = base_query[last:(last + chunk_size)]
+        if last <= final:
+            yield next_chunk
+            last += chunk_size
+        else:
+            break
+
+
+def batch_match_theoretical_composition(
+        peak_group_ids, search_type, database_manager, observed_ions_manager,
+        matching_tolerance, mass_shift_map, hypothesis_id,
+        hypothesis_sample_match_id):
+    session = database_manager()
+    ions_session = observed_ions_manager()
+    params = []
+    try:
+        for peak_group_id in peak_group_ids:
+            peak_group = ions_session.query(Decon2LSPeakGroup).get(peak_group_id[0])
+            base_mass = peak_group.weighted_monoisotopic_mass
+            matches = []
+            for mass_shift, count_range in mass_shift_map.items():
+                shift = mass_shift.mass
+                for shift_count in range(1, count_range + 1):
+                    total_mass = base_mass + (shift * shift_count)
+                    for mass_match in search_type.ppm_error_tolerance_search(
+                            session=session,
+                            mass=total_mass, tolerance=matching_tolerance,
+                            hypothesis_id=hypothesis_id):
+                        mass_error = ppm_error(mass_match.calculated_mass, total_mass)
+                        matches.append((mass_match, mass_error, mass_shift, shift_count))
+            for mass_match, mass_error, mass_shift, shift_count in matches:
+                # logger.debug("Peak data: %r", mass_match.peak_data)
+                case = {
+                    "hypothesis_sample_match_id": hypothesis_sample_match_id,
+                    "theoretical_match_type": search_type.__name__,
+                    "theoretical_match_id": mass_match.id,
+                    "charge_state_count": peak_group.charge_state_count,
+                    "scan_count": peak_group.scan_count,
+                    "first_scan_id": peak_group.first_scan_id,
+                    "last_scan_id": peak_group.last_scan_id,
+                    "ppm_error": mass_error,
+                    "scan_density": peak_group.scan_density,
+                    "weighted_monoisotopic_mass": peak_group.weighted_monoisotopic_mass,
+                    "total_volume": peak_group.total_volume,
+                    "average_a_to_a_plus_2_ratio": peak_group.average_a_to_a_plus_2_ratio,
+                    "a_peak_intensity_error": peak_group.a_peak_intensity_error,
+                    "centroid_scan_estimate": peak_group.centroid_scan_estimate,
+                    "centroid_scan_error": peak_group.centroid_scan_error,
+                    "average_signal_to_noise": peak_group.average_signal_to_noise,
+                    "peak_data": peak_group.peak_data,
+                    "matched": True,
+                    "mass_shift_type": mass_shift.id,
+                    "mass_shift_count": shift_count,
+                    "peak_group_id": peak_group.id,
+                }
+                params.append(case)
+        session.bulk_insert_mappings(PeakGroupMatch, params)
+        session.commit()
+
+    except Exception, e:
+        logger.exception("An exception occurred in match_peak_group, %r", locals(), exc_info=e)
+        raise e
+    finally:
+        session.close()
+        return len(peak_group_ids)
+
+
 def batch_match_peak_group(search_ids, search_type, database_manager, observed_ions_manager,
                            matching_tolerance, mass_shift_map, sample_run_id,
                            hypothesis_sample_match_id):
@@ -56,9 +129,7 @@ def batch_match_peak_group(search_ids, search_type, database_manager, observed_i
                 shift = mass_shift.mass
                 for shift_count in range(1, count_range + 1):
                     total_mass = base_mass + (shift * shift_count)
-                    # This query is recompiled every time, using up the majority of the time spent
-                    # per call. Look into cached compilation with bind parameters and the BakedQuery
-                    # pattern.
+
                     for mass_match in observed_ions_manager.ppm_match_tolerance_search(
                             total_mass, matching_tolerance, sample_run_id):
                         mass_error = ppm_error(mass_match.weighted_monoisotopic_mass, total_mass)
@@ -313,3 +384,62 @@ class BatchPeakGroupMatching(PeakGroupMatching):
         logger.info("Search Complete.")
         toggler.create()
         session.close()
+
+
+class BatchPeakGroupMatchingSearchGroups(PeakGroupMatching):
+    def __init__(self, *args, **kwargs):
+        super(BatchPeakGroupMatchingSearchGroups, self).__init__(*args, **kwargs)
+
+    def stream_ids(self, chunk_size=400):
+        session = self.lcms_database()
+        try:
+            for gids in yield_peak_group_ids(session, Decon2LSPeakGroup, self.sample_run_id, chunk_size=chunk_size):
+                yield gids
+        except Exception, e:
+            logger.info("An exception occurred while streaming ids", exc_info=e)
+            raise e
+        finally:
+            session.close()
+
+    def prepare_task_fn(self):
+        fn = functools.partial(
+            batch_match_theoretical_composition,
+            search_type=self.search_type,
+            database_manager=self.manager,
+            observed_ions_manager=self.lcms_database,
+            matching_tolerance=self.match_tolerance,
+            mass_shift_map=self.mass_shift_map,
+            hypothesis_id=self.hypothesis_id,
+            hypothesis_sample_match_id=self.hypothesis_sample_match_id)
+        return fn
+
+    def run(self):
+        session = self.manager.session()
+
+        counter = 0
+        last = 0
+        step = 1000
+
+        task_fn = self.prepare_task_fn()
+        toggler = toggle_indices(session, PeakGroupMatch)
+        toggler.drop()
+        if self.n_processes > 1:
+            pool = multiprocessing.Pool(self.n_processes)
+            for res in pool.imap_unordered(task_fn, self.stream_ids()):
+                counter += res
+                if counter > (last + step):
+                    last += step
+                    logger.info("%d masses searched", counter)
+
+        else:
+            for res in itertools.imap(task_fn, self.stream_ids()):
+                counter += res
+                if counter > (last + step):
+                    last += step
+                    logger.info("%d masses searched", counter)
+        logger.info("Search Complete.")
+        toggler.create()
+        session.close()
+
+
+BatchPeakGroupMatching = BatchPeakGroupMatchingSearchGroups

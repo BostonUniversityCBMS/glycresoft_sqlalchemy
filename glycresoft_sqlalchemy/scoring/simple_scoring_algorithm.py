@@ -14,11 +14,26 @@ chain = itertools.chain
 
 key_getter = operator.itemgetter("key")
 
+_normalizer = math.log(3, 2)
+_expected_stub_ion_count = 3
+
 bare_ion_pattern = re.compile(r"[czby](\d+)")
 glycosylated_ion_pattern = re.compile(r"[czby](\d+)\+(.+)")
 
 
 def split_ion_list(ion_list):
+    """
+    Split a list of ions into classed sub-lists
+    Parameters
+    ----------
+    ion_list : list
+        List of ions of mixed series/classes
+
+    Returns
+    -------
+    dict
+        Maps ion series names to ion series members from `ion_list`
+    """
     ion_store = {
         "oxonium_ions": [],
         "stub_ions": [],
@@ -84,15 +99,50 @@ def merge_ion_matches(matches):
 
 
 def evaluate(matched, theoretical, **parameters):
+    """
+    Compute the score statistics of `matched`, the `mean_coverage` and
+    `mean_hexnac_coverage`, and the `ms2_score` based on these by calling
+    :func:`calculate_score`
+
+    Parameters
+    ----------
+    matched : :class:`GlycopeptideMatch`
+        Match to be scored
+    theoretical : :class:`TheoreticalGlycopeptide`
+        The theoretical reference of `matched`
+        Description
+
+    Returns
+    -------
+    float
+    """
     matched.mean_coverage = mean_coverage2(matched)
     matched.mean_hexnac_coverage = mean_hexnac_coverage(matched, theoretical)
     return calculate_score(matched, **parameters)
 
 
 def calculate_score(matched, backbone_weight=0.5, hexnac_weight=0.5, stub_weight=0.2):
+    """
+    Calculates the `ms2_score` of `matched`, setting it and returning
+
+    Parameters
+    ----------
+    matched : :class:`GlycopeptideMatch`
+        Match to be scored
+    backbone_weight : float, optional
+        Weight to be given to bare backbone ions. Defaults to 0.5
+    hexnac_weight : float, optional
+        Weight to be given to glycosylated backbone ions. Defaults to 0.5
+    stub_weight : float, optional
+        Weight to be given to the stub ions. Defaults to 0.2
+
+    Returns
+    -------
+    float
+    """
     matched.ms2_score = (((matched.mean_coverage * backbone_weight) +
                           (matched.mean_hexnac_coverage * hexnac_weight)) * (1 - stub_weight)) +\
-                         (observed_vs_enumerated_stub(matched) * stub_weight)
+                        (observed_vs_enumerated_stub(matched) * stub_weight)
     return matched.ms2_score
 
 
@@ -112,14 +162,56 @@ def incvec_spot(vector, p, s=1):
 
 
 def bitwise_or(a, b):
+    """
+    Compute the max of each parallel position
+    of two sequences
+
+    Parameters
+    ----------
+    a : Iterable
+    b : Iterable
+        Iterable of numbers
+
+    Returns
+    -------
+    list
+        List of the maximum of each position between `a` and `b`
+    """
     return list(imap(max, zip(a, b)))
 
 
 def mean(vector):
+    """
+    Arithmetic Mean
+
+    Parameters
+    ----------
+    vector : Iterable
+        Iterable of numbers
+
+    Returns
+    -------
+    float
+        Description
+    """
     return sum(vector) / float(len(vector))
 
 
 def vsum(a, b):
+    """
+    Sum two iterables
+
+    Parameters
+    ----------
+    a : Iterable
+    b : Iterable
+        Iterable of numbers
+
+    Returns
+    -------
+    list
+        The sum of the `a` and `b`
+    """
     return [x + y for x, y in zip(a, b)]
 
 
@@ -175,8 +267,8 @@ def mean_coverage(matched):
 def mean_coverage2(matched):
     b_ions, glycosylated_b_ions, y_ions, glycosylated_y_ions = compute_backbone_vectors(matched, incvec_spot)
     coverage = vsum(bitwise_or(b_ions, glycosylated_b_ions), bitwise_or(y_ions, glycosylated_y_ions))
-    # This normalization constant keeps the sum very close to 1.0 in a perfect case.
-    coverage = sum([math.log(1 + i, 2)/(1.584962500723) for i in coverage]) / (1. * len(coverage))
+    # This normalization constant log2(3, 2) keeps the sum very close to 1.0 in a perfect case.
+    coverage = sum([math.log(1 + i, 2)/_normalizer for i in coverage]) / (1. * len(coverage))
     return coverage
 
 
@@ -191,13 +283,7 @@ def mean_hexnac_coverage(matched, theoretical):
 
 def observed_vs_enumerated_stub(matched):
     obs = len({stub['key'].split(':')[0] for stub in matched.stub_ions})
-    # expected = len(StubGlycopeptide.from_sequence(
-    #    Sequence(matched.glycopeptide_sequence)).get_stubs())
-    return min(obs / 3., 1.0)
-
-
-def bad_oxonium(matched, theoretical):
-    pass
+    return min(obs / _expected_stub_ion_count, 1.0)
 
 
 def compute_percent_uncovered(matched):

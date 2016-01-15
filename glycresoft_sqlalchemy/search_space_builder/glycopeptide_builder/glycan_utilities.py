@@ -72,7 +72,7 @@ def merge_compositions(composition_list):
     return first.serialize()
 
 
-def merge_compositions2(composition_list):
+def merge_compositions_frozen(composition_list):
     """Given a list of monosaccharide packed strings,
     sum the monosaccharide counts across lists and return
     the merged string
@@ -105,7 +105,7 @@ def create_combinations(session, n, hypothesis_id, unique_unordered=True):
             j += 1
             counts = Counter(g[0] for g in comb_compositions)
             tgc = TheoreticalGlycanCombination(count=i, hypothesis_id=hypothesis_id)
-            tgc.composition = merge_compositions2(g[1] for g in comb_compositions)
+            tgc.composition = merge_compositions_frozen(g[1] for g in comb_compositions)
             tgc.calculated_mass = sum(g[1].mass() for g in comb_compositions)
             session.add(tgc)
             session.flush()
@@ -123,6 +123,7 @@ def create_combinations(session, n, hypothesis_id, unique_unordered=True):
         join_table_accumulator)
     join_table_accumulator = []
     session.commit()
+    return j
 
 
 def query_chunker(query, chunk_size=20000):

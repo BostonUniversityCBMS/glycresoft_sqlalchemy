@@ -2,7 +2,9 @@
 
 from ...utils.memoize import memoize
 
-from glypy.composition.composition import Composition, calculate_mass, ChemicalCompositionError
+from glypy.composition.composition import (
+    Composition, calculate_mass, ChemicalCompositionError,
+    _make_isotope_string)
 
 
 @memoize()

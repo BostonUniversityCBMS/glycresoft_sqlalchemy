@@ -157,7 +157,8 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule, MS1GlycanImportManager)
             "constant_modifications": self.constant_modifications,
             "variable_modifications": self.variable_modifications,
             "enzyme": self.enzyme,
-            "max_missed_cleavages": self.max_missed_cleavages
+            "max_missed_cleavages": self.max_missed_cleavages,
+            "maximum_glycosylation_sites": self.maximum_glycosylation_sites
         })
 
         session.add(self.hypothesis)

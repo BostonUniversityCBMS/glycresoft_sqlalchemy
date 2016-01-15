@@ -7,9 +7,9 @@ import numpy as np
 from ..data_model import Peak, TheoreticalGlycanCombination
 from ..utils.common_math import ppm_error, DPeak
 from ..utils.tree import SuffixTree
+from ..utils.collectiontools import groupby
 
-
-from ..structure import sequence, fragment, composition
+from ..structure import sequence, fragment, composition, sequence_composition
 
 Composition = composition.Composition
 IonSeries = fragment.IonSeries
@@ -17,6 +17,8 @@ neutral_mass_getter = operator.attrgetter('neutral_mass')
 intensity_getter = operator.attrgetter("intensity")
 default_match_tolerance = 2e-5
 Sequence = sequence.Sequence
+
+ModificationBuildingBlock = sequence_composition.ModificationBuildingBlock
 
 
 def delta_peak_list(peak_list):
@@ -35,6 +37,11 @@ class DegenerateSegmentBlock(object):
         self._string = str(composition)
         self._hash = hash(self.composition.keys()[0])
 
+    def _reset(self):
+        self._string = str(self.composition)
+        self._hash = hash(self.composition.keys()[0])
+        self.neutral_mass = self.composition.mass
+
     def __eq__(self, other):
         try:
             return self.composition == other.composition
@@ -46,6 +53,9 @@ class DegenerateSegmentBlock(object):
             return self.composition != other.composition
         except:
             return str(self) != str(other)
+
+    def clone(self):
+        return self.__class__(self.composition.clone())
 
     def __hash__(self):
         return self._hash
@@ -60,26 +70,37 @@ class DegenerateSegmentBlock(object):
     def __contains__(self, item):
         return item in self.composition
 
+    def add_modification(self, modification):
+        self.composition[ModificationBuildingBlock(modification)] += 1
+        self._reset()
+        return self
+
 
 class SpectrumGraph(object):
     def __init__(self, peaks, precursor_mass, glycosylation_resolver):
         self.peaks = sorted(peaks, key=neutral_mass_getter)
-        self.source_node = SpectrumNode(DPeak(Peak(id=-1, neutral_mass=0, charge=0, intensity=0, scan_peak_index=-1)))
+        self.source_node = SpectrumNode(DPeak(Peak(
+            id=-1, neutral_mass=0, charge=0, intensity=0, scan_peak_index=-1)))
         self.nodes = [SpectrumNode(p) for p in self.peaks]
         self.edges = defaultdict(list)
-        self.sink_nodes = []
+        self.precursor_mass = precursor_mass
+        self.sink_node = SpectrumNode(DPeak(Peak(
+            id=-2, neutral_mass=precursor_mass, charge=0, intensity=0, scan_peak_index=-2)))
         self.glycosylation_resolver = glycosylation_resolver
+        self.solutions = {}
 
     def iteredges(self):
         for nodes, edges in self.edges.items():
             for edge in edges:
                 yield edge
 
-    def find_starting_points(self, blocks, offset, tolerance=2e-5):
+    def find_starting_points(self, blocks, offset, terminal_modifications=None, tolerance=2e-5):
         if isinstance(offset, IonSeries):
             offset_mass = offset.mass_shift
         else:
             offset_mass = offset
+        if terminal_modifications is None:
+            terminal_modifications = []
         a_mass = offset_mass
         a_peak = self.source_node
         for block in blocks:
@@ -91,6 +112,20 @@ class SpectrumGraph(object):
                 elif b_peak.neutral_mass + (b_peak.neutral_mass * tolerance) > a_mass:
                     break
             a_mass -= block.neutral_mass
+
+        for modification in terminal_modifications:
+            a_mass = offset_mass + modification.mass
+            a_peak = self.source_node
+            for block in blocks:
+                a_mass += block.neutral_mass
+                for b_peak in self.nodes:
+                    if abs(ppm_error(a_mass, b_peak.neutral_mass)) <= tolerance:
+                        self.edges[a_peak, b_peak].append(ModifiedSourceSpectrumEdge(
+                            a_peak, b_peak, block.neutral_mass,
+                            annotation=block, series=offset, modification=modification))
+                    elif b_peak.neutral_mass + (b_peak.neutral_mass * tolerance) > a_mass:
+                        break
+                a_mass -= block.neutral_mass
 
     def find_edges(self, blocks, tolerance=2e-5):
         for i, a_peak in enumerate(self.nodes):
@@ -148,6 +183,24 @@ class SpectrumGraph(object):
         else:
             yield denovo_type(current_sequence, graph=self)
 
+    def find_sinks(self, sequences, blocks, tolerance=2e-5):
+        b_peak = self.sink_node
+        for seq in sequences:
+            a_peak = seq.last_peak
+            a_mass = seq.sequence_mass()
+            print(seq, a_mass)
+            for block in blocks:
+                a_mass += block.neutral_mass
+                solutions = self.glycosylation_resolver.solutions(mass=a_mass)
+                if len(solutions) > 0:
+                    for solution in solutions:
+                        print block, solution, solution.calculated_mass
+                        self.edges[a_peak, b_peak].append(SpectrumEdge(
+                            a_peak, b_peak, block.neutral_mass + solution.calculated_mass,
+                            annotation=block))
+
+                a_mass -= block.neutral_mass
+
     def search_from(self, node, blocks, tolerance=2e-5):
         a_mass = node.neutral_mass
         for block in blocks:
@@ -190,6 +243,38 @@ class SpectrumGraph(object):
                 sourced_sequence, internal_segments,
                 blocks, tolerance=2e-5)
 
+    def run(self, single_blocks, blocks_list=None, ion_series=(IonSeries.b, IonSeries.y), tolerance=2e-5):
+        if blocks_list is None:
+            blocks_list = []
+        for offset in ion_series:
+            self.find_starting_points(single_blocks, offset, tolerance)
+            for blocks_opt in blocks_list:
+                self.find_starting_points(blocks_opt, offset, tolerance)
+        self.find_edges(single_blocks, tolerance)
+        for blocks_opt in blocks_list:
+            self.find_edges(blocks_opt, tolerance)
+        contigs = self.generate_contiguous()
+
+        self.join_internal_segments(contigs, single_blocks, tolerance)
+        for blocks_opt in blocks_list:
+            self.join_internal_segments(contigs, blocks_opt, tolerance)
+
+        contigs = self.generate_contiguous()
+        by_source = groupby(contigs, lambda x: x.has_source())
+        by_source.pop(None, None)  # remove those contigs without a source
+
+        forward_sequences = []
+        reverse_sequences = []
+        for k, v in by_source.items():
+            if k.direction > 0:
+                forward_sequences.extend(v)
+            else:
+                reverse_sequences.extend(v)
+        reverse_sequences = [s.reverse() for s in reverse_sequences]
+
+        # Solve merging forward and reverse annotations together using
+        # a suffix tree to hash the annotations
+
 
 def partition_sequences(denovo_sequences):
     sourced_sequences = []
@@ -202,6 +287,11 @@ def partition_sequences(denovo_sequences):
             internal_segments.append(seq)
 
     return sourced_sequences, internal_segments
+
+
+def unique_sequences(denovo_sequences):
+    denovo_sequences = sorted(denovo_sequences, key=DeNovoSequence.total_energy, reverse=True)
+    return [v[0] for v in groupby(denovo_sequences, str).values()]
 
 
 class GlycanCombinationResolverBase(object):
@@ -266,8 +356,12 @@ class GlycanCombinationResolverQuerySearcher(GlycanCombinationResolverBase):
             expr, self.glycan_combination_type).filter(*self.glycan_combination_filters).filter()
         return possible_solutions
 
-    def solutions(self, peptide, tolerance=2e-5):
-        peptide_mass = peptide.sequence_mass()
+    def solutions(self, peptide=None, mass=None, tolerance=2e-5):
+        if peptide is not None:
+            peptide_mass = peptide.sequence_mass()
+        elif mass is not None:
+            peptide_mass = mass
+
         gct = self.glycan_combination_type
         adjusted_mass = self.total_mass - gct.dehydrated_mass()
         mass_ppm_error = (peptide_mass - adjusted_mass) / adjusted_mass
@@ -311,11 +405,14 @@ class SpectrumEdge(object):
     def __init__(self, parent, child, mass_shift, annotation):
         self.parent = parent
         self.child = child
-        self._hash = None
+        self._hash = hash(annotation)
         self.mass_shift = mass_shift
         self.annotation = annotation
         parent.out_edges.add(self)
         child.in_edges.add(self)
+
+    def _reset(self):
+        self._hash = hash(self.annotation)
 
     def __repr__(self):
         return "SpectrumEdge({}, {}, {}, {})".format(
@@ -332,8 +429,6 @@ class SpectrumEdge(object):
         return not self == other
 
     def __hash__(self):
-        if self._hash is None:
-            self._hash = hash(self.annotation)
         return self._hash
 
 
@@ -345,6 +440,17 @@ class SourceSpectrumEdge(SpectrumEdge):
     def __repr__(self):
         return "SourceSpectrumEdge({}, {}, {}, {}|{})".format(
             self.parent, self.child, self.mass_shift, self.annotation, self.series)
+
+
+class ModifiedSourceSpectrumEdge(SourceSpectrumEdge):
+    def __init__(self, parent, child, mass_shift, annotation, series, modification):
+        super(ModifiedSourceSpectrumEdge, self).__init__(parent, child, mass_shift, annotation, series)
+        self.modification = modification
+
+    def __repr__(self):
+        return "ModifiedSourceSpectrumEdge({}, {}, {}, {}|{}|{})".format(
+            self.parent, self.child, self.mass_shift, self.annotation, self.series,
+            self.modification)
 
 
 class DeNovoSequence(object):
@@ -414,7 +520,7 @@ class DeNovoSequence(object):
         return self._edges[0].parent.peak.neutral_mass, self._edges[-1].child.peak.neutral_mass
 
     def reverse(self):
-        return self.__class__(reversed(self._edges))
+        return self.__class__(reversed(self._edges), self.graph)
 
     def isin(self, collection):
         return self in collection

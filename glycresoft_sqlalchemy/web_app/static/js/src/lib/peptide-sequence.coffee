@@ -1,3 +1,10 @@
+_formatModification = (modification, colorSource, long=false) ->
+        color = colorSource.get(modification)
+        content = escape(if long then modification else modification[0])
+        return "(<span class='modification-chip' style='background-color:#{color};padding-left:1px;padding-right:2px;border-radius:2px;'
+           title='#{escape(modification)}' data-modification=#{escape(modification)}>#{content}</span>)"
+
+
 class PeptideSequencePosition
     formatModification = (modification, colorSource, long=false) ->
         color = colorSource.get(modification)
@@ -133,10 +140,23 @@ class PeptideSequence
         [@sequence, mods, @glycan, @nTerm, @cTerm] = parser(string)
 
     format: (colorSource, includeGlycan=true) ->
-        positions = (position.format(colorSource) for position in @sequence)
+        positions = []
+        if @nTerm == "H"
+            nTerm = ""
+        else
+            nTerm = _formatModification(@nTerm, colorSource).slice(1, -1) + '-'
+            positions.push nTerm
+
+        positions = positions.concat (position.format(colorSource) for position in @sequence)
+
+        if @cTerm == "OH"
+            cTerm = ""
+        else
+            cTerm = '-' + (_formatModification(@cTerm, colorSource).slice(1, -1))
+            positions.push cTerm
         sequence = positions.join ""
         if includeGlycan
             glycan = @glycan.format(colorSource)
-            sequence += glycan
+            sequence += ' ' + glycan
         return sequence
 

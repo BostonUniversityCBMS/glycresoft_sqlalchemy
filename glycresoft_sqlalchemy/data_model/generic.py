@@ -1,6 +1,7 @@
 
 from sqlalchemy.ext.mutable import Mutable, MutableDict
-from sqlalchemy import Table, Column, Integer, ForeignKey, Unicode, ForeignKeyConstraint
+from sqlalchemy import (
+    Table, Column, Integer, ForeignKey, Unicode, ForeignKeyConstraint)
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr

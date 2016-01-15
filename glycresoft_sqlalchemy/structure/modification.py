@@ -220,6 +220,19 @@ class ModificationRule(object):
     Additionally stores information on the represented modification in Protein Prospector.'''
 
     @staticmethod
+    def reduce(rules):
+        collector = defaultdict(list)
+        for rule in rules:
+            collector[rule.name].append(rule)
+        reductions = []
+        for rule_name, rules in collector.items():
+            accum = rules[0]
+            for other in rules[1:]:
+                accum = accum + other
+            reductions.append(accum)
+        return reductions
+
+    @staticmethod
     def from_protein_prospector(amino_acid_specificity, modification_name,
                                 title=None, monoisotopic_mass=None):
         # If the specificity is a string, parse it into rules
@@ -268,9 +281,13 @@ class ModificationRule(object):
         self.mass = float(monoisotopic_mass)
         self.title = title if title is not None else modification_name
         self.composition = composition
-        self.preferred_name = min(self.unimod_name, self.title, self.name, key=len)
+        self.names = {self.unimod_name, self.name, self.title}
         self.categories = categories or []
         self.options = kwargs
+        self._n_term_target = None
+        self._c_term_target = None
+
+        self.preferred_name = min(self.unimod_name, self.title, self.name, key=len)
 
         # The type of the parameter passed for amino_acid_specificity is variable
         # so select the method correct for the passed type
@@ -351,11 +368,14 @@ class ModificationRule(object):
 
     def __add__(self, other):
         if(isinstance(other, ModificationRule)):
-            if id(other.targets) == id(self.targets):
+            if (other.targets) is (self.targets):
                 return self
             dup = deepcopy(self)
             dup.targets = (set(self.targets) | set(other.targets))
             dup.composition = self.composition or other.composition
+            dup.names = self.names | other.names
+            dup.preferred_name = min(dup.names, key=len)
+            dup.options.update(other.options)
             return dup
         else:
             raise TypeError(
@@ -366,6 +386,39 @@ class ModificationRule(object):
 
     def is_a(self, category):
         return category in self.categories
+
+    @property
+    def n_term_targets(self):
+        if self._n_term_target is None:
+            solutions = []
+            for target in self.targets:
+                if target.position_modifiers == "N-term":
+                    solutions.append(target)
+            self._n_term_target = solutions
+        return self._n_term_target
+
+    @property
+    def c_term_targets(self):
+        if self._c_term_target is None:
+            solutions = []
+            for target in self.targets:
+                if target.position_modifiers == "C-term":
+                    solutions.append(target)
+            self._c_term_target = solutions
+        return self._c_term_target
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        idents = self.names
+        try:
+            other_idents = other.names
+        except AttributeError:
+            other_idents = {other}
+        return len(idents & other_idents) > 0
+
+    def __ne__(self, other):
+        return not self == other
 
 
 class AnonymousModificationRule(ModificationRule):
@@ -452,6 +505,7 @@ class AminoAcidSubstitution(AnonymousModificationRule):
         self.substitution = prefix_to_postfix_modifications(substitution_residue)
         self.delta = _simple_sequence_mass(self.substitution) - _simple_sequence_mass(self.original)
         self.preferred_name = self.name
+        self.names = {self.name}
         self.options = kwargs
         self.categories = ['substitution']
 
@@ -478,6 +532,8 @@ class Glycosylation(ModificationRule):
         self.title = self.name
         self.preferred_name = self.name
         self.categories = ["glycosylation"]
+        self.names = {self.name, self.title}
+        self.options = {}
 
     def losses(self):
         for i in []:
@@ -501,7 +557,9 @@ class NGlycanCoreGlycosylation(Glycosylation):
         self.targets = [(ModificationTarget("N"))]
         self.composition = _hexnac.total_composition().clone()
         self.title = self.name
+        self.names = {self.name}
         self.preferred_name = self.name
+        self.options = {}
         self.categories = ["glycosylation"]
 
     def losses(self):
@@ -523,6 +581,7 @@ class OGlcNAcylation(Glycosylation):
         self.composition = _hexnac.total_composition().clone()
         self.title = self.name
         self.preferred_name = self.name
+        self.options = {}
 
     def losses(self):
         for label_loss in self.mass_ladder.items():
@@ -579,9 +638,9 @@ class ModificationTable(dict):
     @classmethod
     def _definitions_from_stream_default(cls):
         defs = []
+        defs += load_from_json(cls._unimod_definitions())
         if cls.use_protein_prospector:
             defs += load_from_csv(cls._table_definition_file())
-        defs += load_from_json(cls._unimod_definitions())
         return defs
 
     @classmethod
@@ -599,9 +658,9 @@ class ModificationTable(dict):
     def load_from_file_default(cls):
         '''Load the rules definitions from the default package files'''
         defs = []
+        defs += load_from_json(cls._unimod_definitions())
         if cls.use_protein_prospector:
             defs += load_from_csv(cls._table_definition_file())
-        defs += load_from_json(cls._unimod_definitions())
         return ModificationTable(defs)
 
     bootstrapped = None
@@ -633,6 +692,9 @@ class ModificationTable(dict):
             if not isinstance(definition, ModificationRule):
                 definition = ModificationRule(**definition)
             self.modification_rules.append(definition)
+
+        self.modification_rules = ModificationRule.reduce(self.modification_rules)
+
         self.modification_rules.extend(
             ModificationTable.other_modifications.values())
 
@@ -833,7 +895,7 @@ class RestrictedModificationTable(ModificationTable):
 class Modification(ModificationBase):
 
     """Represents a molecular modification, which may be bound at a given position,
-    or may be present at multiple locations. This class apparently pulls double duty,
+    or may be present at multiple locations. This class pulls double duty,
     and when describing the total number of modifications of a type on a molecule, its
     position attributes are unused."""
 
@@ -900,14 +962,13 @@ class Modification(ModificationBase):
         return hash(str(self))
 
     def __eq__(self, other):
-        if isinstance(other, Modification):
+        try:
             return (self.name == other.name) and (self.number == other.number)
-        return self.serialize() == other
+        except AttributeError:
+            return self.rule == other
 
     def __ne__(self, other):
-        if isinstance(other, Modification):
-            other = other.serialize()
-        return self.serialize() != other
+        return not self == other
 
     def __getstate__(self):
         return [self.name, self.mass, self.position, self.number, self.rule]

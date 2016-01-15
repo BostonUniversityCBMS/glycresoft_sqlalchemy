@@ -4,13 +4,22 @@ from glypy import MonosaccharideResidue
 from .residue import Residue as AminoAcidResidue, memoize, get_all_residues
 from .composition import Composition
 from .modification import Modification
-from .sequence import Sequence
 
 
 class AminoAcidSequenceBuildingBlock(object):
     @classmethod
     def get_all_common_residues(cls):
         return map(cls, get_all_residues())
+
+    @classmethod
+    def get_all_sequencing_residues(cls):
+        residues = get_all_residues()
+        for residue in list(residues):
+            degenerate = residue.is_degenerate
+            if degenerate:
+                for degen in degenerate:
+                    residues.remove(degen)
+        return map(cls, residues)
 
     def __init__(self, residue_, modifications=None, neutral_mass=None):
         if modifications is None:
@@ -20,11 +29,14 @@ class AminoAcidSequenceBuildingBlock(object):
         if neutral_mass is None:
             neutral_mass = residue_.mass + sum(m.mass for m in modifications)
         self.neutral_mass = neutral_mass
-        self._str = None
+        self._string = None
 
     def __iter__(self):
         yield self.residue
         yield self.modifications
+
+    def _reset(self):
+        self._string = None
 
     def __hash__(self):
         return hash(self.residue.symbol)
@@ -42,11 +54,11 @@ class AminoAcidSequenceBuildingBlock(object):
         return "({}, {}):{:.2f}".format(self.residue.symbol, self.modifications, self.neutral_mass)
 
     def __str__(self):
-        if self._str is None:
-            self._str = "{}{}".format(
+        if self._string is None:
+            self._string = "{}{}".format(
                 self.residue.symbol,
                 "({.name})".format(self.modifications[0]) if len(self.modifications) > 0 else "")
-        return self._str
+        return self._string
 
     def __contains__(self, item):
         return self == item
@@ -54,6 +66,10 @@ class AminoAcidSequenceBuildingBlock(object):
     @classmethod
     @memoize()
     def from_str(cls, string):
+        # A hack to get ModificationBuildingBlock into the same flow of execution
+        # Move this logic to a pure function later.
+        if string.startswith("@"):
+            return ModificationBuildingBlock(string)
         parts = string.split("(")
         aa = AminoAcidResidue(parts[0])
         mod = tuple()
@@ -62,41 +78,61 @@ class AminoAcidSequenceBuildingBlock(object):
         return cls(aa, mod)
 
     def orderings(self):
-        yield str(self)
+        yield (self)
+
+    def clone(self):
+        return self.__class__(self.residue, tuple(self.modifications))
+
+    def add_modification(self, modification):
+        # This method invalidates hashes. Only use during initialization
+        mods = list(self.modifications)
+        mods.append(modification)
+        self.modifications = tuple(mods)
+        self.neutral_mass += modification.mass
+        return self
 
 
-n_hexnac = AminoAcidSequenceBuildingBlock.from_str("N(HexNAc)")
+class ModificationBuildingBlock(object):
+    # Not all SequenceComposition methods are compatible with these?
+    sigil = '@'
 
+    def __init__(self, name):
+        try:
+            if name.startswith(self.sigil):
+                self.name = name
+                self.modification = Modification(name[1:])
+            else:
+                self.name = self.sigil + name
+                self.modification = Modification(name)
+        except AttributeError:
+            self.name = self.sigil + str(name)
+            self.modification = name
+        self.neutral_mass = self.modification.mass
+        self._hash = hash(self.modification)
 
-class SequenceSegmentBlock(object):
-    def __init__(self, sequence, neutral_mass=None):
-        self.sequence = sequence
-        if neutral_mass is None:
-            neutral_mass = 0.
-            for residue, mods in sequence:
-                neutral_mass += AminoAcidResidue.mass_by_name(residue)
-                for mod in mods:
-                    neutral_mass += Modification.mass_by_name(mod)
+    def __repr__(self):
+        return self.name
 
-        self.neutral_mass = neutral_mass
+    def __eq__(self, other):
+        try:
+            return self.modification == other.modification
+        except:
+            return str(self) == str(other)
 
-        self._string = str(self.sequence)
-        self._hash = hash(self.sequence)
-
-    def __iter__(self):
-        return iter(self.sequence)
+    def __ne__(self, other):
+        try:
+            return self.modification != other.modification
+        except:
+            return str(self) != str(other)
 
     def __hash__(self):
         return self._hash
 
-    def __eq__(self, other):
-        return self.sequence == other.sequence
+    def clone(self):
+        return self.__class__(self.name)
 
-    def __ne__(self, other):
-        return not self == other
 
-    def __str__(self):
-        return self._string
+n_hexnac = AminoAcidSequenceBuildingBlock.from_str("N(HexNAc)")
 
 
 class MonosaccharideResidueAdapter(object):
@@ -126,6 +162,11 @@ class SequenceComposition(dict):
         self._mass = None
         self._composition_offset = Composition("H2O")
         self.extend(*args)
+
+    def clone(self):
+        inst = self.__class__()
+        inst += self
+        return inst
 
     def __setitem__(self, key, value):
         if key is None:
@@ -229,9 +270,6 @@ class SequenceComposition(dict):
         self._mass = None
         self._composition_offset = value
 
-    def clone(self):
-        return self.__class__(*list(self.flatten()))
-
     def flatten(self):
         for k in self:
             for i in range(0, self[k]):
@@ -279,7 +317,7 @@ class SequenceComposition(dict):
 
     def orderings(self):
         for ordering in itertools.permutations(self.flatten()):
-            yield Sequence(ordering)
+            yield ordering
 
 
 def all_compositions(blocks, size=20):

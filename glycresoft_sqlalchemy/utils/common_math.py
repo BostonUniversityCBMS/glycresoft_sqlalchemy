@@ -173,3 +173,51 @@ except ImportError, e:
                         smallest_diff_peak.id = original_index
                         assigned.add(smallest_diff_peak.id)
                         break
+
+    class solution(object):
+        def __init__(self, peak, ppm_error):
+            self.peak = peak
+            self.ppm_error = ppm_error
+
+        def __repr__(self):
+            return "solution(%r, %e)" % (self.peak, self.ppm_error)
+
+    def binary_search(mass, peak_list, tolerance, low, high, solutions):
+        if (high - low) < 3:
+            for i in range(low, high + 1):
+                error = ppm_error(peak_list[i], mass)
+                if abs(error) <= tolerance:
+                    solutions.append(solution(peak_list[i], error))
+            return solutions
+        else:
+            mid = int((low + high) / 2)
+            if abs(ppm_error(peak_list[mid], mass)) <= tolerance:
+                solutions.append(peak_list[mid])
+                center = mid - 1
+                while(True):
+                    error = ppm_error(peak_list[center], mass)
+                    if abs(error) <= tolerance:
+                        solutions.append(solution(peak_list[center], error))
+                        center -= 1
+                    else:
+                        break
+                center = mid + 1
+                while(True):
+                    error = ppm_error(peak_list[center], mass)
+                    if abs(error) <= tolerance:
+                        solutions.append(solution(peak_list[center], error))
+                        center += 1
+                    else:
+                        break
+                return solutions
+            elif peak_list[mid] > mass:
+                return binary_search(mass, peak_list, tolerance, low, mid, solutions)
+            elif peak_list[mid] < mass:
+                return binary_search(mass, peak_list, tolerance, mid, high, solutions)
+            else:
+                raise ValueError("No Solutions?")
+
+    def do_binary_search(mass, peak_list, tolerance=2e-5):
+        low = 0
+        high = len(peak_list) - 1
+        return binary_search(mass, peak_list, tolerance=tolerance, low=low, high=high, solutions=[])

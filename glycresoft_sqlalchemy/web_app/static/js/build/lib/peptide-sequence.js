@@ -1,4 +1,14 @@
-var PeptideSequence, PeptideSequencePosition;
+var PeptideSequence, PeptideSequencePosition, _formatModification;
+
+_formatModification = function(modification, colorSource, long) {
+  var color, content;
+  if (long == null) {
+    long = false;
+  }
+  color = colorSource.get(modification);
+  content = escape(long ? modification : modification[0]);
+  return "(<span class='modification-chip' style='background-color:" + color + ";padding-left:1px;padding-right:2px;border-radius:2px;' title='" + (escape(modification)) + "' data-modification=" + (escape(modification)) + ">" + content + "</span>)";
+};
 
 PeptideSequencePosition = (function() {
   var formatModification;
@@ -183,11 +193,18 @@ PeptideSequence = (function() {
   }
 
   PeptideSequence.prototype.format = function(colorSource, includeGlycan) {
-    var glycan, position, positions, sequence;
+    var cTerm, glycan, nTerm, position, positions, sequence;
     if (includeGlycan == null) {
       includeGlycan = true;
     }
-    positions = (function() {
+    positions = [];
+    if (this.nTerm === "H") {
+      nTerm = "";
+    } else {
+      nTerm = _formatModification(this.nTerm, colorSource).slice(1, -1) + '-';
+      positions.push(nTerm);
+    }
+    positions = positions.concat((function() {
       var j, len, ref, results;
       ref = this.sequence;
       results = [];
@@ -196,11 +213,17 @@ PeptideSequence = (function() {
         results.push(position.format(colorSource));
       }
       return results;
-    }).call(this);
+    }).call(this));
+    if (this.cTerm === "OH") {
+      cTerm = "";
+    } else {
+      cTerm = '-' + (_formatModification(this.cTerm, colorSource).slice(1, -1));
+      positions.push(cTerm);
+    }
     sequence = positions.join("");
     if (includeGlycan) {
       glycan = this.glycan.format(colorSource);
-      sequence += glycan;
+      sequence += ' ' + glycan;
     }
     return sequence;
   };

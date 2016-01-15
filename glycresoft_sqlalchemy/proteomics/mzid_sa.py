@@ -3,7 +3,8 @@ import logging
 
 from pyteomics import mzid
 from sqlalchemy import func
-from glycresoft_sqlalchemy.data_model import DatabaseManager, Protein, InformedPeptide, Hypothesis, ExactMS1GlycopeptideHypothesis
+from glycresoft_sqlalchemy.data_model import (
+    DatabaseManager, Protein, InformedPeptide, ExactMS1GlycopeptideHypothesis)
 from glycresoft_sqlalchemy.structure import sequence, modification, residue
 from .enzyme import expasy_rules
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
@@ -18,7 +19,7 @@ _local_name = mzid.xml._local_name
 peptide_evidence_ref = re.compile(r"(?P<evidence_id>PEPTIDEEVIDENCE_PEPTIDE_\d+_DBSEQUENCE_)(?P<parent_accession>.+)")
 
 PROTEOMICS_SCORE = ["PEAKS:peptideScore", "mascot:score", "PEAKS:proteinScore"]
-WHITELIST_GLYCOSITE_PTMS = {"Deamidation"}
+WHITELIST_GLYCOSITE_PTMS = ["Deamidation"]
 
 
 class MultipleProteinMatchesException(Exception):
@@ -152,11 +153,19 @@ class Parser(MzIdentML):
 
 
 def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None, **kwargs):
-    # logger.debug("Input: %r, Parent: %r", sequence_dict, parent_protein)
     base_sequence = sequence_dict["PeptideSequence"]
     peptide_sequence = Sequence(sequence_dict["PeptideSequence"])
     insert_sites = []
     counter = 0
+
+    # Keep a count of the number of variable modifications.
+    # It may be desirable to threshold sequences for inclusion
+    # based on this value.
+    modification_counter = 0
+    constant_modifications = kwargs.get("constant_modifications", [])
+
+    glycosite_candidates = (sequence.find_n_glycosylation_sequons(
+                peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
 
     if "SubstitutionModification" in sequence_dict:
         subs = sequence_dict["SubstitutionModification"]
@@ -164,6 +173,7 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
             pos = sub['location'] - 1
             replace = Residue(sub["replacementResidue"])
             peptide_sequence[pos][0] = replace
+            modification_counter += 1
 
     if "Modification" in sequence_dict:
         mods = sequence_dict["Modification"]
@@ -171,6 +181,14 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
             pos = mod["location"] - 1
             try:
                 modification = Modification(mod["name"])
+                try:
+                    rule_text = "%s (%s)" % (mod["name"], mod["residues"][0])
+                    if (rule_text not in constant_modifications) and not (
+                            pos in glycosite_candidates and modification in WHITELIST_GLYCOSITE_PTMS):
+                        modification_counter += 1
+                except KeyError:
+                    modification_counter += 1
+
                 if pos == -1:
                     peptide_sequence.n_term = modification
                 elif pos == len(peptide_sequence):
@@ -181,6 +199,7 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                 if "unknown modification" in mod:
                     mod_description = mod["unknown modification"]
                     insertion = re.search(r"(\S{3})\sinsertion", mod_description)
+                    modification_counter += 1
                     if insertion:
                         insert_sites.append(mod['location'] - 1)
                     else:
@@ -199,6 +218,7 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
             score_type = k
             score = v
             break
+
     for evidence in evidence_list:
         if "skip" in evidence:
             continue
@@ -228,6 +248,7 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                 modified_peptide_sequence=str(peptide_sequence),
                 count_glycosylation_sites=None,
                 count_missed_cleavages=missed_cleavages,
+                count_variable_modifications=modification_counter,
                 start_position=start,
                 end_position=end,
                 peptide_score=score,
@@ -300,7 +321,9 @@ class Proteome(object):
 
         for spectrum_identification in self.parser.iterfind(
                 "SpectrumIdentificationItem", retrieve_refs=True, iterative=True):
-            counter += convert_dict_to_sequence(spectrum_identification, session, self.hypothesis_id, enzyme=enzyme)
+            counter += convert_dict_to_sequence(
+                spectrum_identification, session, self.hypothesis_id, enzyme=enzyme,
+                constant_modifications=self.constant_modifications)
             i += 1
             if i % 1000 == 0:
                 logger.info("%d spectrum matches processed.", i)

@@ -191,16 +191,18 @@ class Residue(ResidueBase):
     def __eq__(self, other):
         if self is other:
             return True
-        if isinstance(other, Residue):
-            other = other.name
-        return self.name == other
+        try:
+            return self.name == other.name
+        except AttributeError:
+            return self.name == other
 
     def __ne__(self, other):
         if self is other:
-            return False
-        if isinstance(other, Residue):
-            other = other.name
-        return self.name != other
+            return True
+        try:
+            return self.name != other.name
+        except AttributeError:
+            return self.name != other
 
     def __getstate__(self):
         return [self.name, self.symbol, self.mass]
@@ -245,26 +247,14 @@ register_degenerate("Xle", "J", ["Leu", "Ile"])
 
 
 def get_all_residues():
-    symbols = [
-        'A',
-        'R',
-        'N',
-        'D',
-        'C',
-        'E',
-        'Q',
-        'G',
-        'H',
-        'I',
-        'L',
-        'K',
-        'M',
-        'F',
-        'P',
-        'S',
-        'T',
-        'W',
-        'Y',
-        'V',
-    ]
-    return map(Residue, symbols)
+    return set(map(Residue, symbol_to_residue))
+
+
+def get_all_sequencing_residues():
+    residues = set(get_all_residues())
+    for residue in list(residues):
+        degenerate = residue.is_degenerate
+        if degenerate:
+            for degen in degenerate:
+                residues.remove(degen)
+    return residues

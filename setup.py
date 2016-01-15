@@ -60,8 +60,6 @@ def OpenMPExtension(*args, **kwargs):
     return ext
 
 extensions = [
-    Extension("glycresoft_sqlalchemy.structure.composition.ccomposition",
-              ["glycresoft_sqlalchemy/structure/composition/ccomposition." + c_ext]),
     Extension("glycresoft_sqlalchemy.structure.ext.structure",
               ["glycresoft_sqlalchemy/structure/ext/structure." + c_ext]),
     OpenMPExtension("glycresoft_sqlalchemy.utils.ccommon_math",

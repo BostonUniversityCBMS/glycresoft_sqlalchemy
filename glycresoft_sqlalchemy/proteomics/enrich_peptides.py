@@ -57,14 +57,15 @@ class EnrichDistinctPeptides(PipelineModule):
 
     def stream_distinct_peptides(self, protein):
         session = self.manager.session()
+        get = session.query(InformedPeptide).get
         for i, in session.query(InformedPeptide.id).join(Protein).filter(
                 Protein.hypothesis_id == self.hypothesis_id).group_by(
                 InformedPeptide.modified_peptide_sequence,
                 ~InformedPeptide.modified_peptide_sequence.in_(
-                   session.query(InformedPeptide.modified_peptide_sequence).filter(
-                    InformedPeptide.protein_id == protein.id))
+                    session.query(InformedPeptide.modified_peptide_sequence).filter(
+                        InformedPeptide.protein_id == protein.id))
                 ).group_by(InformedPeptide.modified_peptide_sequence):
-            yield session.query(InformedPeptide).get(i)
+            yield get(i)
 
     def run(self):
         session = self.manager.session()
@@ -81,24 +82,31 @@ class EnrichDistinctPeptides(PipelineModule):
         else:
             decider_fn = substring_edit_distance
 
+        assert session.query(InformedPeptide).filter(
+            InformedPeptide.protein_id == None).count() == 0
+
         for protein_id in protein_ids:
             target_protein = session.query(Protein).get(protein_id)
             i = 0
+            logger.info("Enriching %r", target_protein)
+            target_protein_sequence = target_protein.protein_sequence
             for peptide in self.stream_distinct_peptides(target_protein):
-                match = decider_fn(peptide.base_peptide_sequence, target_protein.protein_sequence)
+
+                match = decider_fn(peptide.base_peptide_sequence, target_protein_sequence)
+
                 if match is not False:
                     start, end, distance = match
                     make_transient(peptide)
                     peptide.id = None
-                    peptide.protein = None
-                    peptide.protein_id = target_protein.id
+                    peptide.protein_id = protein_id
                     peptide.start_position = start
                     peptide.end_position = end
-                    session.merge(peptide)
+                    session.add(peptide)
                 i += 1
                 if i % 1000 == 0:
                     logger.info("%d peptides handled for %r", i, target_protein)
                     session.commit()
+
             session.commit()
             ids = session.query(InformedPeptide.id).filter(
                 InformedPeptide.protein_id == Protein.id,
@@ -115,4 +123,9 @@ class EnrichDistinctPeptides(PipelineModule):
             conn = session.connection()
             conn.execute(InformedPeptide.__table__.delete(
                 InformedPeptide.__table__.c.id.in_(q.selectable)))
+
             session.commit()
+
+            total_unassigned = session.query(InformedPeptide).filter(
+                InformedPeptide.protein_id == None).count()
+            assert total_unassigned == 0

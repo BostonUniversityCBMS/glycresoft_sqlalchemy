@@ -14,7 +14,7 @@
                     <span class="card-title">Search Space Building</span>
                 </div>
                 <div class="card-action">
-                    <a id="build-glycan-search-space" class='handle'  >Build a Glycan Search Space</a><br>
+                    <a id="build-glycan-search-space" class='handle'>Build a Glycan Search Space</a><br>
                     <a id='build-glycopeptide-search-space' class="handle">Build a Glycopeptide Search Space</a>
                 </div>
             </div>
@@ -26,7 +26,7 @@
                 </div>
                 <div class="card-action">
                     <a id='run-matching' class='handle'>Run Sample Matching</a><br>
-                    <a href="#">Run Search Space Complexity Analysis</a>
+                    <a id='add-sample' class='handle' href="#">Add Sample To Workspace</a>
                 </div>
             </div>
         </div>
@@ -36,30 +36,37 @@
                     <span class="card-title">Data Viewer</span>
                 </div>
                 <div class="card-action">
-                    <a href="#">View Database Search Results</a><br>
-                    <a href="#">View a Search Space</a>
+                    <a href="#" class='tooltipped' data-tooltip="Click on a name below">View Database Search Results</a><br>
+                    <a href="#" id='compare-hypothesis-sample-matches-label'>Compare Database Searches</a>
                 </div>
             </div>
         </div>
     </div>
     <div class='row'>
         <div id='hypothesis-list-container' class='col s4'>
-        <div class='center-align'>Search Spaces <a class='mdi-content-add'></a></div>
+        <div class='center-align'>Search Spaces</div>
             <div class='divider'></div>
             <div class='hypothesis-list'>
             </div>           
         </div>  
         <div id='sample-list-container' class='col s4'>
-            <div class='center-align'>Samples Loaded <a class='add-sample mdi-content-add'></a></div>
+            <div class='center-align'>Samples Loaded</div>
             <div class='divider'></div>
             <div class='sample-list'>
             </div>
         </div>
         <div id='hypothesis-sample-match-list-container' class='col s4'>
-            <div class='center-align'>Hypothesis Sample Matches <a class='mdi-content-add'></a></div>
+            <div class='center-align'>Hypothesis Sample Matches</div>
             <div class='divider'></div>
             <div class='hypothesis-sample-match-list'>
             </div>
         </div>
     </div>
+    <script>
+$('.tooltipped').tooltip({delay: 50});
+$("#compare-hypothesis-sample-matches-label").click(function(){
+    event.preventDefault()
+    setupAjaxForm("/view_database_search_results/compare", "#dialog-modal")
+})
+    </script>
 {% endblock %}

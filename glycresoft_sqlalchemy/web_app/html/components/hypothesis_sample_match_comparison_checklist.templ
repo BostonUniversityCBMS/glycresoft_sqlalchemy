@@ -1,0 +1,35 @@
+<div class='hypothesis-sample-match-checklist row'>
+    <form class='col s8' id='checklist-form' action='/view_database_search_results/compare/plot' method="POST">
+        {% for hsm in hsms %}
+            <div class='input-field' style='padding-bottom:20px;'>
+                <input type="checkbox" name="hsm-checklist-{{hsm.id}}">
+                <label for="hsm-checklist-{{hsm.id}}">{{hsm.name}} ({{hsm.hypothesis_sample_match_type}})</label>
+            </div>
+        {% endfor %}
+        <br>
+        <button class='btn'>Compare</button>
+    </form>
+    <div class='col s4'>
+        Check two or more boxes for Hypothesis Sample Matches of the same type to compare them
+    </div>
+</div>
+<script>
+
+materialRefresh()
+
+//The materializecss checkbox widget needs to be re-wired since these are added after
+//page load.
+function refreshCheck(){
+    _.forEach($("#checklist-form").find("label"), function(label){
+        var handle = $(label)
+        var name = handle.attr("for")
+        handle.click(function(){
+            $("input[name='" + name + "']").click()
+        })
+    })
+}
+refreshCheck()
+ajaxForm("#checklist-form", function(data){
+    GlycReSoft.displayMessageModal(data)
+})
+</script>

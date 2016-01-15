@@ -68,8 +68,6 @@ def groupby(ungrouped_list, key_fn=_identity, transform_fn=_identity, kind=list)
         return groupby_list(ungrouped_list, key_fn, transform_fn)
     elif kind == set:
         return groupby_set(ungrouped_list, key_fn, transform_fn)
-    elif kind == "sqlist":
-        return groupby_sqlist(ungrouped_list, key_fn, transform_fn)
     else:
         raise TypeError("Collection {kind} is not defined".format(kind=kind))
 
@@ -87,17 +85,6 @@ def groupby_set(ungrouped_list, key_fn, transform_fn):
     for item in ungrouped_list:
         key_value = key_fn(item)
         groups[key_value].add(transform_fn(item))
-    return groups
-
-
-def groupby_sqlist(ungrouped_list, key_fn, transform_fn):
-    groups = DefaultSqliteDict(None, default=list)
-    for item in ungrouped_list:
-        key_value = key_fn(item)
-        interm = groups[key_value]
-        interm.append(transform_fn(item))
-        groups[key_value] = interm
-    groups.commit()
     return groups
 
 
