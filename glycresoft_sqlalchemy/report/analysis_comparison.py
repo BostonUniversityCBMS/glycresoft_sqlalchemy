@@ -96,13 +96,16 @@ def curve_for(score_count_pairs, ax=None, threshold=True, **kwargs):
 
 
 class HypothesisSampleMatchComparer(PipelineModule):
-    def __init__(self, database_path, *ids):
+    def __init__(self, database_path, ids=None, counter=count_at_score_glycopeptide_match):
+        if ids is None:
+            ids = []
         self.manager = self.manager_type(database_path)
         self.ids = ids
+        self.counter = counter
         self.index = OrderedDict()
 
     def count_at_score(self, session, hypothesis_id, hypothesis_sample_match_id):
-        counts = count_at_score_glycopeptide_match(session, hypothesis_id, hypothesis_sample_match_id)
+        counts = self.counter(session, hypothesis_id, hypothesis_sample_match_id)
         return counts
 
     def add_hypothesis_sample_match(self, hypothesis_sample_match):

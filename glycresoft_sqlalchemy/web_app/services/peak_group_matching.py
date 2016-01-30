@@ -3,6 +3,7 @@ from flask import request, g, render_template, Blueprint, jsonify
 from glycresoft_sqlalchemy.data_model import MassShift
 
 from glycresoft_sqlalchemy.web_app.task.do_ms1_peak_group_matching import LCMSSearchTask
+from glycresoft_sqlalchemy.web_app.common import logerror
 
 
 app = peak_group_matching = Blueprint("peak_group_matching", __name__)
@@ -14,6 +15,7 @@ def peak_grouping_match_samples():
 
 
 @app.route("/peak_grouping_match_samples", methods=["POST"])
+@logerror
 def peak_grouping_match_samples_post():
     '''
     Handle received parameters for /peak_grouping_match_samples and schedule
@@ -35,6 +37,7 @@ def peak_grouping_match_samples_post():
 
     '''
     user_parameters = request.values
+    print user_parameters
     job_parameters = {
         "match_tolerance": float(user_parameters["mass-matching-tolerance"]) * 1e-6,
         "grouping_error_tolerance": float(user_parameters["peak-grouping-tolerance"]) * 1e-6,
@@ -47,6 +50,7 @@ def peak_grouping_match_samples_post():
 
     job_parameters["search_type"] = input_type
     job_parameters["hypothesis_id"] = input_id
+    job_parameters["skip_grouping"] = user_parameters.get("skip-grouping") == "on"
 
     # Handle mass shifts --
     mass_shift_names = user_parameters.getlist("mass_shift_name")

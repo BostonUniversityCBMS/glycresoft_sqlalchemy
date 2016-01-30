@@ -28,3 +28,9 @@ materialFileInput = ->
         path_input.trigger 'change'
         return
     return
+
+materialCheckbox = (selector) ->
+    $(selector).click (e) ->
+        handle = $(this)
+        target = handle.attr("for")
+        $("input[name='#{target}']").click()

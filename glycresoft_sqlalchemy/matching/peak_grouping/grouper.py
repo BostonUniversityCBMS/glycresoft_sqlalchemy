@@ -127,9 +127,12 @@ class Decon2LSPeakGrouper(PipelineModule):
             map_items.append({"peak_id": peak_id, "group_id": group_id})
             # Add this peak to the many-to-many mapping between peaks and groups with respect to this group.
             # Many-to-many relationship allows a peak to be assigned to a group without changing the peak.
-            if count % 1000 == 0:
+            if count % 10000 == 0:
                 logger.info("%d peaks clustered, %d groups", count, group_count)
                 conn.execute(map_insert, map_items)
+                session.commit()
+                conn = session.connection()
+
                 map_items = []
 
         conn.execute(map_insert, map_items)

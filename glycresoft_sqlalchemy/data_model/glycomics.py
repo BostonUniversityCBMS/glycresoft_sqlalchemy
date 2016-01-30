@@ -1,3 +1,4 @@
+import logging
 import re
 import sys
 import operator
@@ -220,9 +221,20 @@ def has_glycan_composition(model, composition_attr):
                 symbol = cls.qmonosaccharide(monosaccharide_name)
                 if include:
                     if minimum == 0:
-                        q = q.outerjoin(symbol).filter(
-                            symbol.c.count.between(minimum, maximum) |
-                            symbol.c.base_type.is_(None))
+                        try:
+                            q = q.outerjoin(symbol).filter(
+                                symbol.c.count.between(minimum, maximum) |
+                                symbol.c.base_type.is_(None))
+                        except:
+                            # This is a flat repeat of the above code since it appears to croak
+                            # unreliably when threads are involved.
+                            try:
+                                q = q.outerjoin(symbol).filter(
+                                    symbol.c.count.between(minimum, maximum) |
+                                    symbol.c.base_type.is_(None))
+                            except Exception, e:
+                                logging.exception("An exception occurred in %r.glycan_composition_filters", cls, exc_info=e)
+                                
                     else:
                         q = q.join(symbol).filter(symbol.c.count.between(minimum, maximum))
                 else:
@@ -286,7 +298,7 @@ class GlycanBase(object):
         if hypothesis_id is not None:
             if cls._query_ppm_tolerance_search_hypothesis is None:
                 q = glycan_bakery(lambda session: session.query(cls))
-                q += lambda q: q.filter(cls.mass.between(bindparam("lower"), bindparam("upper")))
+                q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
                 q += lambda q: q.filter(cls.hypothesis_id == bindparam('hypothesis_id'))
                 cls._query_ppm_tolerance_search_hypothesis = q
             return cls._query_ppm_tolerance_search_hypothesis(session).params(
@@ -294,7 +306,7 @@ class GlycanBase(object):
         else:
             if cls._query_ppm_tolerance_search is None:
                 q = glycan_bakery(lambda session: session.query(cls))
-                q += lambda q: q.filter(cls.mass.between(bindparam("lower"), bindparam("upper")))
+                q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
                 cls._query_ppm_tolerance_search = q
             return cls._query_ppm_tolerance_search(session).params(
                 lower=lower, upper=upper)

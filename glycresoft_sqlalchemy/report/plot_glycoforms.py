@@ -147,18 +147,6 @@ def draw_layers(layers, protein, scale_factor=1.0, **kwargs):
                 ) else 'black'
             patch = mpatches.PathPatch(text_path, facecolor=color, lw=0.04)
             ax.add_patch(patch)
-            # ax.text(
-            #     protein_pad + i, layer_height + .2 + cur_y, aa,
-            #     family="monospace", fontsize=sequence_font_size,
-            #     color='red' if any((((i + cur_position) in glycosites),
-            #                         ((i + cur_position - 1) in glycosites),
-            #                         ((i + cur_position - 2) in glycosites))) else 'black')
-        # rect = mpatches.Rectangle((protein_pad, cur_y), (i + 0.5), layer_height,
-        #                           facecolor='red', edgecolor="maroon", alpha=0.5)
-        # id_mapper.add("main-sequence-%d", rect, {'main-sequence': True})
-        # ax.add_patch(rect)
-
-        # cur_y += y_step
 
         for layer in layers:
             c = 0
@@ -171,7 +159,7 @@ def draw_layers(layers, protein, scale_factor=1.0, **kwargs):
                 rect = mpatches.Rectangle(
                     (peptide_pad + gpm.start_position - cur_position, cur_y),
                     width=gpm.sequence_length, height=layer_height,
-                    facecolor='lightblue', edgecolor='black', linewidth=0.5,
+                    facecolor='lightblue', edgecolor='black', linewidth=0.15,
                     alpha=min(max(gpm.ms2_score * 2, 0.2), 0.8))
                 label = id_mapper.add("glycopeptide-%d", rect, {
                     "sequence": gpm.glycopeptide_sequence,
@@ -179,7 +167,9 @@ def draw_layers(layers, protein, scale_factor=1.0, **kwargs):
                     "end-position": gpm.end_position,
                     "ms2-score": gpm.ms2_score,
                     "q-value": gpm.q_value,
-                    "record-id": gpm.id
+                    "record-id": gpm.id,
+                    "calculated-mass": gpm.calculated_mass,
+                    "spectra-count": gpm.spectrum_matches.filter_by(best_match=True).count()
                 })
                 ax.add_patch(rect)
                 seq = sequence.Sequence(gpm.glycopeptide_sequence)

@@ -180,43 +180,7 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule, MS1GlycanImportManager)
                 Protein.hypothesis_id == self.hypothesis.id):
             yield item
 
-    def run(self):
-        session = self.session
-        self.bootstrap_hypothesis(session)
-        self.import_glycans()
-        # if self.glycan_file_type == "txt":
-        #     importer = MS1GlycanImporter(
-        #         self.database_path, self.glycan_file, self.hypothesis.id, 'txt',
-        #         combination_size=self.maximum_glycosylation_sites)
-        #     importer.start()
-        # elif self.glycan_file_type == "hypothesis":
-        #     importer = MS1GlycanImporter(
-        #         self.database_path, self.glycan_file, self.hypothesis.id, "hypothesis",
-        #         source_hypothesis_id=self.options.get("source_hypothesis_id"),
-        #         combination_size=self.maximum_glycosylation_sites)
-        #     importer.start()
-        # elif self.glycan_file_type == "hypothesis-sample-match":
-        #     importer = MS1GlycanImporter(
-        #         self.database_path, self.glycan_file, self.hypothesis.id, "hypothesis-sample-match",
-        #         source_hypothesis_sample_match_id=self.options.get("source_hypothesis_sample_match_id"),
-        #         combination_size=self.maximum_glycosylation_sites)
-        #     importer.start()
-        # else:
-        #     raise NotImplementedError()
-        logger.info("Loaded glycans")
-
-        site_list_map = {}
-        if self.site_list_file is not None:
-            for protein_entry in SiteListFastaFileParser(self.site_list_file):
-                site_list_map[protein_entry['name']] = protein_entry['glycosylation_sites']
-        for protein in ProteinFastaFileParser(self.protein_file):
-            if protein.name in site_list_map:
-                protein.glycosylation_sites = list(set(protein.glycosylation_sites) | site_list_map[protein.name])
-            protein.hypothesis_id = self.hypothesis.id
-            session.add(protein)
-            logger.info("Loaded %s", protein)
-
-        session.commit()
+    def digest_proteins(self, session):
         protein_digest_task = functools.partial(
             digest_protein,
             manager=self.manager,
@@ -233,11 +197,54 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule, MS1GlycanImportManager)
                 protein_digest_task(protein)
         session.commit()
         session.expire_all()
-        print session.query(NaivePeptide).filter(NaivePeptide.count_glycosylation_sites == None).delete("fetch")
+        session.query(NaivePeptide).filter(
+            NaivePeptide.count_glycosylation_sites == None).delete("fetch")
         session.commit()
         session.expire_all()
 
-        assert session.query(NaivePeptide).filter(NaivePeptide.count_glycosylation_sites == None).count() == 0
+        assert session.query(NaivePeptide).filter(
+            NaivePeptide.count_glycosylation_sites == None).count() == 0
+
+    def _remove_duplicates(self, session):
+        logger.info("Checking integrity")
+        ids = session.query(func.min(TheoreticalGlycopeptideComposition.id)).filter(
+            TheoreticalGlycopeptideComposition.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis.id).group_by(
+            TheoreticalGlycopeptideComposition.glycopeptide_sequence,
+            TheoreticalGlycopeptideComposition.peptide_modifications,
+            TheoreticalGlycopeptideComposition.glycosylation_sites,
+            TheoreticalGlycopeptideComposition.protein_id)
+
+        q = session.query(TheoreticalGlycopeptideComposition.id).filter(
+            TheoreticalGlycopeptideComposition.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis.id,
+            ~TheoreticalGlycopeptideComposition.id.in_(ids.correlate(None)))
+        conn = session.connection()
+        conn.execute(TheoreticalGlycopeptideComposition.__table__.delete(
+            TheoreticalGlycopeptideComposition.__table__.c.id.in_(q.selectable)))
+        session.commit()
+
+    def run(self):
+        session = self.session
+        self.bootstrap_hypothesis(session)
+        self.import_glycans()
+
+        logger.info("Loaded glycans")
+
+        site_list_map = {}
+        if self.site_list_file is not None:
+            for protein_entry in SiteListFastaFileParser(self.site_list_file):
+                site_list_map[protein_entry['name']] = protein_entry['glycosylation_sites']
+        for protein in ProteinFastaFileParser(self.protein_file):
+            if protein.name in site_list_map:
+                protein.glycosylation_sites = list(set(protein.glycosylation_sites) | site_list_map[protein.name])
+            protein.hypothesis_id = self.hypothesis.id
+            session.add(protein)
+            logger.info("Loaded %s", protein)
+
+        session.commit()
+
+        self.digest_proteins(session)
 
         work_stream = self.stream_peptides()
         task_fn = self.prepare_task_fn()

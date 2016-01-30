@@ -72,6 +72,10 @@ class MzIdentMLProteinSelector
                         <label class="active" for="protein-regex">Protein Pattern</label>
                     </div>
                 </div>
+                <div class='col s2'>
+                    <input type='checkbox' id='select-all-proteins-checkbox' name='select-all-proteins-checkbox'/>
+                    <label for='select-all-proteins-checkbox'>Select All</label>
+                </div>
             </div>
             <div class='row'>
                 <div class='col s8 protein-name-list'>
@@ -85,6 +89,7 @@ class MzIdentMLProteinSelector
         @regex = @container.find ".protein-regex"
         @list = @container.find ".protein-name-list"
         @toggleVisible = @container.find ".toggle-visible-btn"
+        @selectAllChecker = @container.find '#select-all-proteins-checkbox'
         self = @
 
         @toggleVisible.click ->
@@ -108,12 +113,17 @@ class MzIdentMLProteinSelector
                 e.preventDefault();
                 @regex.change()
                 return false;
+        @selectAllChecker.click (e) =>
+            if @selectAllChecker.prop("checked")
+                @container.find("input[type='checkbox']:visible").prop("checked", true)
+            else
+                @container.find("input[type='checkbox']:visible").prop("checked", false)
         @load()
 
     createAddProteinNameToListCallback: ->
         callback = (name) =>
             entryContainer = $("<p></p>").css({"padding-left": 20, "display": 'inline-block', "width": 240}).addClass('input-field protein-name')
-            checker = $("<input />").attr("type", "checkbox").attr("name", name)
+            checker = $("<input />").attr("type", "checkbox").attr("name", name).addClass("protein-name-check")
             entryContainer.append checker
             entryContainer.append $("<label></label>").html(name).attr("for", name).click(( -> checker.click()))
             @list.append entryContainer
@@ -133,5 +143,8 @@ class MzIdentMLProteinSelector
         callback = @createAddProteinNameToListCallback()
         getProteinNamesFromMzIdentML(@fileObject, (->), callback)
 
-    getChosenProtein: ->
-        return ($(a).attr("name") for a in @container.find("input:checked"))
+    getChosenProteins: ->
+        return ($(a).attr("name") for a in @container.find("input.protein-name-check:checked"))
+
+    getAllProteins: ->
+        return ($(a).attr("name") for a in @container.find("input.protein-name-check"))

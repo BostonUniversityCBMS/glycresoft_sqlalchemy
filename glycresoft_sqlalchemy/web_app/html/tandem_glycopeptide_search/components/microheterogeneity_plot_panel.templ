@@ -1,0 +1,6 @@
+{% for site, plot in site_summary.glycan_site_specific_abundance_plot() | dictsort %}
+    <div>
+        <h5>Site {{site}}, {{protein.protein_sequence[site-1:site+5]}}</h5>
+        {{plot|svg_plot(pad_inches=0.5, bbox_inches='tight')}}
+    </div>
+{% endfor %}

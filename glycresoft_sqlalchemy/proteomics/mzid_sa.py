@@ -13,6 +13,7 @@ logger = logging.getLogger("mzid")
 Sequence = sequence.Sequence
 Residue = residue.Residue
 Modification = modification.Modification
+ModificationNameResolutionError = modification.ModificationNameResolutionError
 
 MzIdentML = mzid.MzIdentML
 _local_name = mzid.xml._local_name
@@ -154,7 +155,11 @@ class Parser(MzIdentML):
 
 def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None, **kwargs):
     base_sequence = sequence_dict["PeptideSequence"]
-    peptide_sequence = Sequence(sequence_dict["PeptideSequence"])
+    try:
+        peptide_sequence = Sequence(sequence_dict["PeptideSequence"])
+    except residue.UnknownAminoAcidException:
+        return 0
+
     insert_sites = []
     counter = 0
 
@@ -163,6 +168,7 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
     # based on this value.
     modification_counter = 0
     constant_modifications = kwargs.get("constant_modifications", [])
+    modification_translation_table = kwargs.get("modification_translation_table", {})
 
     glycosite_candidates = (sequence.find_n_glycosylation_sequons(
                 peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
@@ -180,9 +186,24 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
         for mod in mods:
             pos = mod["location"] - 1
             try:
-                modification = Modification(mod["name"])
                 try:
-                    rule_text = "%s (%s)" % (mod["name"], mod["residues"][0])
+                    _name = mod["name"]
+                    modification = Modification(_name)
+                except KeyError, e:
+                    if "unknown modification" in mod:
+                        try:
+                            _name = mod['unknown modification']
+                            if _name in modification_translation_table:
+                                modification = modification_translation_table[_name]()
+                            else:
+                                modification = Modification(_name)
+                        except ModificationNameResolutionError:
+                            raise e
+                    else:
+                        raise e
+
+                try:
+                    rule_text = "%s (%s)" % (_name, mod["residues"][0])
                     if (rule_text not in constant_modifications) and not (
                             pos in glycosite_candidates and modification in WHITELIST_GLYCOSITE_PTMS):
                         modification_counter += 1
@@ -204,6 +225,9 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                         insert_sites.append(mod['location'] - 1)
                     else:
                         raise
+                else:
+                    raise
+
     insert_sites.sort()
     evidence_list = sequence_dict["PeptideEvidenceRef"]
     # Flatten the evidence list if it has extra nesting because of alternative
@@ -283,6 +307,7 @@ class Proteome(object):
         self.hypothesis_type = hypothesis_type
         self.enzymes = []
         self.constant_modifications = []
+        self.modification_translation_table = {}
 
         self._load()
 
@@ -358,7 +383,16 @@ class Proteome(object):
 
         for param in search_param_modifications:
             for mod in param['SearchModification']:
-                name = mod['name']
+                try:
+                    name = mod['name']
+                except KeyError:
+                    name = mod['unknown modification']
+                    try:
+                        Modification(name)
+                    except ModificationNameResolutionError:
+                        self.modification_conversion_map[name] = modification.AnonymousModificationRule(
+                            name, mod['massDelta'])
+
                 residues = mod['residues']
                 if mod.get('fixedMod', False):
                     identifier = "%s (%s)" % (name, ''.join(residues).replace(" ", ""))

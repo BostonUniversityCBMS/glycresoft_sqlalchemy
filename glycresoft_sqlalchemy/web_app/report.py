@@ -33,7 +33,7 @@ mpl_params.update({
     'figure.facecolor': 'white',
     'figure.edgecolor': 'white',
     'font.size': 10,
-    # 72 dpi matches SVG/qtconsole
+    # 72 dpi matches SVG
     # this only affects PNG export, as SVG has no dpi setting
     'savefig.dpi': 72,
     # 10pt still needs a little more room on the xlabel:
@@ -64,10 +64,10 @@ def _string_to_deep_getter(string):
     return unravel
 
 
-def fsort(L, f):
+def fsort(L, f, *args, **kwargs):
     if isinstance(f, basestring):
         f = _string_to_deep_getter(f)
-    return sorted(L, key=f, reverse=True)
+    return sorted(L, key=lambda x: f(x, *args, **kwargs), reverse=True)
 
 
 def png_plot(figure, **kwargs):

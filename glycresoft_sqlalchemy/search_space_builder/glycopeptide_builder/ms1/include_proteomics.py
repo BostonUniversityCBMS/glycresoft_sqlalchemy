@@ -37,6 +37,7 @@ class ProteomeImporter(PipelineModule):
 
     def __init__(self, database_path, mzid_path, glycosylation_sites_file=None,
                  hypothesis_id=None, constant_modifications=("Carbamidomethyl (C)",),
+                 target_proteins=None,
                  hypothesis_type=ExactMS1GlycopeptideHypothesis, peptide_type=InformedPeptide,
                  baseline_missed_cleavages=1, include_all_baseline=False):
         self.manager = self.manager_type(database_path)
@@ -48,20 +49,23 @@ class ProteomeImporter(PipelineModule):
         self.peptide_type = peptide_type
         self.baseline_missed_cleavages = baseline_missed_cleavages
         self.include_all_baseline = include_all_baseline
+        self.target_proteins = target_proteins or {}
 
     def build_baseline_peptides(self, session, protein):
         if len(self.enzymes):
-            logger.info("Building All Baseline Peptides For %r", protein)
-            for peptidoform in generate_peptidoforms(
-                    protein, self.constant_modifications, [],
-                    self.enzymes[0], missed_cleavages=self.baseline_missed_cleavages,
-                    peptide_class=self.peptide_type,
-                    **{"count_variable_modifications": 0}):
-                peptidoform.count_variable_modifications = 0
-                session.add(peptidoform)
-            protein.informed_peptides.filter(
-                self.peptide_type.count_glycosylation_sites == None).delete("fetch")
-            session.commit()
+            if (len(self.target_proteins) == 0) or (protein.id in self.target_proteins) or\
+                    (protein.name in self.target_proteins):
+                logger.info("Building All Baseline Peptides For %r", protein)
+                for peptidoform in generate_peptidoforms(
+                        protein, self.constant_modifications, [],
+                        self.enzymes[0], missed_cleavages=self.baseline_missed_cleavages,
+                        peptide_class=self.peptide_type,
+                        **{"count_variable_modifications": 0}):
+                    peptidoform.count_variable_modifications = 0
+                    session.add(peptidoform)
+                protein.informed_peptides.filter(
+                    self.peptide_type.count_glycosylation_sites == None).delete("fetch")
+                session.commit()
 
     def _display_protein_peptide_counts(self, session):
         peptide_counts = session.query(Protein.name, func.count(InformedPeptide.id)).filter(
@@ -120,23 +124,24 @@ class ProteomeImporter(PipelineModule):
             session.add(hypothesis)
             session.commit()
 
-            logger.info("Building Unmodified Reference Peptides")
-            modification_table = modification.RestrictedModificationTable.bootstrap(
-                list(self.constant_modifications), [])
-            basic_peptides = []
-            for peptide in session.query(self.peptide_type).filter(
-                    self.peptide_type.protein_id == Protein.id,
-                    Protein.hypothesis_id == self.hypothesis_id).group_by(
-                    self.peptide_type.base_peptide_sequence):
-                peptide = make_base_sequence(peptide, self.constant_modifications, modification_table)
-                basic_peptides.append(peptide)
-                if len(basic_peptides) > 1000:
-                    session.add_all(basic_peptides)
-                    session.commit()
-                    basic_peptides = []
+            if not self.include_all_baseline:
+                logger.info("Building Unmodified Reference Peptides")
+                modification_table = modification.RestrictedModificationTable.bootstrap(
+                    list(self.constant_modifications), [])
+                basic_peptides = []
+                for peptide in session.query(self.peptide_type).filter(
+                        self.peptide_type.protein_id == Protein.id,
+                        Protein.hypothesis_id == self.hypothesis_id).group_by(
+                        self.peptide_type.base_peptide_sequence):
+                    peptide = make_base_sequence(peptide, self.constant_modifications, modification_table)
+                    basic_peptides.append(peptide)
+                    if len(basic_peptides) > 1000:
+                        session.add_all(basic_peptides)
+                        session.commit()
+                        basic_peptides = []
 
-            session.add_all(basic_peptides)
-            session.commit()
+                session.add_all(basic_peptides)
+                session.commit()
 
             assert session.query(InformedPeptide).filter(
                 InformedPeptide.protein_id == None).count() == 0

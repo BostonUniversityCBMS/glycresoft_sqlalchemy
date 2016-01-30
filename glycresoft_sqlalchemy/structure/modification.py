@@ -12,6 +12,7 @@ from glypy.composition.glycan_composition import (
 from .residue import residue_to_symbol, Residue
 from .composition import composition_to_mass, Composition
 from .parser import prefix_to_postfix_modifications
+from ..utils import Enum
 from . import PeptideSequenceBase
 from . import ModificationBase
 from . import ResidueBase
@@ -23,6 +24,26 @@ title_cleaner = re.compile(
     r'(?P<name>.*)\s(?P<target>\(.+\))?$')
 
 is_mass_delta = re.compile(r"^Delta:")
+
+
+class SequenceLocation(Enum):
+    anywhere = None
+    internal = 0
+    n_term = 1
+    c_term = 2
+    protein_n_term = 3
+    protein_c_term = 4
+
+
+SequenceLocation.n_term.add_name("N-term")
+SequenceLocation.n_term.add_name("n-term")
+SequenceLocation.n_term.add_name("N_term")
+SequenceLocation.c_term.add_name("C-term")
+SequenceLocation.c_term.add_name("c-term")
+SequenceLocation.c_term.add_name("C_term")
+SequenceLocation.anywhere.add_name("Anywhere")
+SequenceLocation.protein_n_term.add_name("Protein N-term")
+SequenceLocation.protein_c_term.add_name("Protein C-term")
 
 
 def composition_delta_parser(formula):
@@ -73,7 +94,7 @@ def extract_targets_from_string(target_string):
     amino_acid_targets = map(lambda x: residue_to_symbol.get(x, x), list(
         amino_acid_targets)) if amino_acid_targets is not None else None
     position_modifiers = [
-        pos for pos, flag in params.items() if flag is not None] if len(params) != 0 else None
+        SequenceLocation[pos] for pos, flag in params.items() if flag is not None] if len(params) != 0 else None
     position_modifiers = position_modifiers if len(
         position_modifiers) != 0 else None
 
@@ -96,9 +117,9 @@ def get_position_modifier_rules_dict(sequence):
     ------
     defaultdict
     '''
-    return defaultdict(lambda: "internal", **{
-        0: "N-term",
-        (len(sequence) - 1): "C-term"
+    return defaultdict(lambda: SequenceLocation.internal, **{
+        0: SequenceLocation.n_term,
+        (len(sequence) - 1): SequenceLocation.c_term
     })
 
 
@@ -127,11 +148,11 @@ class ModificationTarget(object):
             amino_acid = None
         position_modifiers = specificity["position"]
         if position_modifiers == "Anywhere":
-            position_modifiers = None
+            position_modifiers = SequenceLocation.anywhere
         elif position_modifiers == "Protein N-term" or position_modifiers == "Any N-term":
-            position_modifiers = "N-term"
+            position_modifiers = SequenceLocation.n_term
         elif position_modifiers == "Protein C-term" or position_modifiers == "Any C-term":
-            position_modifiers = "C-term"
+            position_modifiers = SequenceLocation.c_term
         else:
             raise Exception("Undefined Position, " + position_modifiers)
         return cls(amino_acid, position_modifiers)
@@ -147,19 +168,15 @@ class ModificationTarget(object):
             amino_acid = amino_acid.symbol
         amino_acid = residue_to_symbol.get(amino_acid, amino_acid)
         valid = False
-        try:
-            # Validate amino acid target target
-            valid = (self.amino_acid_targets is None) or (
-                amino_acid in self.amino_acid_targets)
-            valid = valid and ((self.position_modifiers is None) or
-                               ((position_modifiers is not None) and
-                                (position_modifiers in self.position_modifiers)))
 
-            return valid
-        except:
-            print(valid, self.amino_acid_targets, self.position_modifiers,
-                  amino_acid, position_modifiers)
-            raise
+        # Validate amino acid target target
+        valid = (self.amino_acid_targets is None) or (
+            amino_acid in self.amino_acid_targets)
+        valid = valid and ((self.position_modifiers is None) or
+                           ((position_modifiers is not None) and
+                            (position_modifiers in self.position_modifiers)))
+
+        return valid
 
     def valid_site_seq(self, sequence, position, position_modifiers=None):
         if(isinstance(sequence, PeptideSequenceBase)):
@@ -825,6 +842,10 @@ class ModificationStringParseError(Exception):
     pass
 
 
+class ModificationNameResolutionError(Exception):
+    pass
+
+
 class RestrictedModificationTable(ModificationTable):
 
     '''Creates a table from a list of ModificationRules. Assumes that we begin with a set of all rules,
@@ -923,7 +944,7 @@ class Modification(ModificationBase):
                 if anon is None:
                     aa_sub = AminoAcidSubstitution.try_parse(rule)
                     if aa_sub is None:
-                        raise Exception("Could not resolve Modification Name: %s" % rule)
+                        raise ModificationNameResolutionError(rule)
                     else:
                         rule = aa_sub
                 else:

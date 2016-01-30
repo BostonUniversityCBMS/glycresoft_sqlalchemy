@@ -12,10 +12,10 @@ from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptideComposition,
 
 def test_main():
     db_file = "./datafiles/build_informed_hypothesis_test.db"
-    try:
-        os.remove(db_file)
-    except:
-        pass
+    # try:
+    #     os.remove(db_file)
+    # except:
+    #     pass
 
     simple_proteome = [
         "P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"

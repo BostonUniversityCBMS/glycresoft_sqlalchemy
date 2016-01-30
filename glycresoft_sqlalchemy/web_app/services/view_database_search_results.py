@@ -2,16 +2,21 @@ from flask import request, g, render_template, Response, Blueprint, jsonify
 
 from glycresoft_sqlalchemy.data_model import (
     HypothesisSampleMatch, GlycopeptideMatch, PeakGroupMatchType, Protein,
-    JointPeakGroupMatch, MS1GlycopeptideHypothesisSampleMatch,
-    MS1GlycanHypothesisSampleMatch)
+    MS1GlycopeptideHypothesisSampleMatch, TheoreticalGlycopeptide,
+    MS1GlycanHypothesisSampleMatch, func)
+
 from glycresoft_sqlalchemy.report import analysis_comparison
 from glycresoft_sqlalchemy.report import microheterogeneity
 from glycresoft_sqlalchemy.web_app.utils.pagination import paginate
 from glycresoft_sqlalchemy.web_app.report import svg_plot
+from glycresoft_sqlalchemy.web_app.utils.state_transfer import request_arguments_and_context
+from glycresoft_sqlalchemy.web_app.utils.cache import CachablePartialFunction, MonosaccharideFilterSet, ApplicationDataCache
 
 view_database_search_results = Blueprint("view_database_search_results", __name__)
 
 app = view_database_search_results
+
+microheterogeneity_summary_cache = ApplicationDataCache()
 
 
 @app.route("/view_database_search_results/<int:id>", methods=["POST"])
@@ -28,6 +33,47 @@ def view_database_search_results_dispatch(id):
 # ----------------------------------------------------------------------
 #           View Tandem Glycopeptide Database Search Results
 # ----------------------------------------------------------------------
+
+def view_tandem_glycopeptide_protein_results_filter_context(
+        q, hypothesis_sample_match_id, minimum_score, monosaccharide_filters):
+    return GlycopeptideMatch.glycan_composition_filters(q.filter_by(
+            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
+            GlycopeptideMatch.ms2_score > minimum_score), monosaccharide_filters)
+
+
+def protein_table_data_composer(session, hypothesis_id, hypothesis_sample_match_id, filter_context=lambda q: q):
+    table = dict()
+
+    q = session.query(
+        Protein, func.count(GlycopeptideMatch.id)).join(
+        GlycopeptideMatch).filter(
+        GlycopeptideMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
+        Protein.hypothesis_id == hypothesis_id).group_by(
+        Protein.id)
+
+    glycopeptide_match_counts = filter_context(q).all()
+
+    theoretical_sequence_counts = session.query(
+        Protein, func.count(TheoreticalGlycopeptide.id)).join(
+        TheoreticalGlycopeptide).filter(
+        Protein.hypothesis_id == hypothesis_id).group_by(
+        Protein.id).all()
+
+    for protein, theoretical_count in theoretical_sequence_counts:
+        if theoretical_count == 0:
+            continue
+        table[protein.id] = {
+            "protein": protein,
+            "theoretical_count": theoretical_count,
+            "match_count": 0
+        }
+
+    for protein, match_count in glycopeptide_match_counts:
+        table[protein.id]['match_count'] = match_count
+
+    return sorted(table.values(), key=lambda x: x['theoretical_count'], reverse=True)
+
+
 def view_tandem_glycopeptide_database_search_results(id):
     hsm = g.db.query(HypothesisSampleMatch).get(id)
     hypothesis_sample_match_id = id
@@ -36,50 +82,151 @@ def view_tandem_glycopeptide_database_search_results(id):
     settings = state['settings']
     context = state['context']
 
-    minimum_score = settings.get('minimum_ms2_score', 0.2)
-    monosaccharide_filters = settings.get("monosaccharide_filters", {})
+    minimum_score = float(settings.get('minimum_ms2_score', 0.2))
+    monosaccharide_filters = MonosaccharideFilterSet.fromdict(settings.get("monosaccharide_filters", {}))
 
-    def filter_context(q):
-        return GlycopeptideMatch.glycan_composition_filters(q.filter_by(
-            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
-            GlycopeptideMatch.ms2_score > minimum_score), monosaccharide_filters)
-
-    return render_template(
+    filter_context = CachablePartialFunction(
+        view_tandem_glycopeptide_protein_results_filter_context,
+        hypothesis_sample_match_id=hypothesis_sample_match_id,
+        minimum_score=minimum_score,
+        monosaccharide_filters=monosaccharide_filters
+        )
+    protein_table = protein_table_data_composer(g.db, hsm.target_hypothesis_id, hsm.id, filter_context)
+    template = render_template(
         "tandem_glycopeptide_search/view_database_search_results.templ",
         hsm=hsm,
-        filter_context=filter_context)
+        filter_context=filter_context,
+        protein_table=protein_table)
+    return template
 
 
 @app.route("/view_database_search_results/protein_view/<int:id>", methods=["POST"])
 def view_tandem_glycopeptide_protein_results(id):
     parameters = request.get_json()
-    print parameters
-    print id
+
     hypothesis_sample_match_id = parameters['context']['hypothesis_sample_match_id']
     protein = g.db.query(Protein).get(id)
 
-    monosaccharide_filters = parameters['settings'].get("monosaccharide_filters", {})
+    monosaccharide_filters = MonosaccharideFilterSet.fromdict(
+        parameters['settings'].get("monosaccharide_filters", {}))
 
     minimum_score = float(parameters['settings'].get("minimum_ms2_score", 0.2))
 
-    def filter_context(q):
-        return GlycopeptideMatch.glycan_composition_filters(q.filter_by(
-            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
-            GlycopeptideMatch.ms2_score > minimum_score), monosaccharide_filters)
+    filter_context = CachablePartialFunction(
+        view_tandem_glycopeptide_protein_results_filter_context,
+        hypothesis_sample_match_id=hypothesis_sample_match_id,
+        minimum_score=minimum_score,
+        monosaccharide_filters=monosaccharide_filters
+        )
 
     if parameters['settings'].get("color_palette") == "NGlycanCompositionColorizer":
         palette = microheterogeneity.NGlycanCompositionColorizer
     else:
         palette = microheterogeneity._null_color_chooser
 
-    site_summary = microheterogeneity.GlycoproteinMicroheterogeneitySummary(
+    site_summary = microheterogeneity_summary_cache.cache(
+        protein, microheterogeneity.GlycoproteinMicroheterogeneitySummary,
         protein, filter_context, color_chooser=palette)
+    # site_summary = microheterogeneity.GlycoproteinMicroheterogeneitySummary(
+    #     protein, filter_context, color_chooser=palette)
 
     return render_template(
         "tandem_glycopeptide_search/components/protein_view.templ",
         protein=protein,
         site_summary=site_summary,
         filter_context=filter_context)
+
+
+@app.route("/view_database_search_results/glycopeptide_match_table"
+           "/<int:protein_id>/<int:page>", methods=["POST"])
+def view_glycopeptide_table_partial(protein_id, page):
+    arguments, state = request_arguments_and_context(request)
+
+    hypothesis_sample_match_id = state.hypothesis_sample_match_id
+    protein = g.db.query(Protein).get(protein_id)
+
+    monosaccharide_filters = state.monosaccharide_filters
+    minimum_score = float(state.minimum_ms2_score)
+
+    filter_context = CachablePartialFunction(
+        view_tandem_glycopeptide_protein_results_filter_context,
+        hypothesis_sample_match_id=hypothesis_sample_match_id,
+        minimum_score=minimum_score,
+        monosaccharide_filters=monosaccharide_filters
+        )
+
+    paginator = paginate(
+        filter_context(
+            protein.glycopeptide_matches).order_by(
+            GlycopeptideMatch.ms2_score.desc()), page, 50)
+
+    return render_template(
+        "tandem_glycopeptide_search/components/glycopeptide_match_table.templ",
+        paginator=paginator)
+
+
+@app.route("/view_database_search_results/protein_view/<int:id>/microheterogeneity_plot_panel", methods=["POST"])
+def microheterogeneity_plot_panel(id):
+    parameters = request.get_json()
+
+    hypothesis_sample_match_id = parameters['context']['hypothesis_sample_match_id']
+    protein = g.db.query(Protein).get(id)
+
+    monosaccharide_filters = MonosaccharideFilterSet.fromdict(
+        parameters['settings'].get("monosaccharide_filters", {}))
+
+    minimum_score = float(parameters['settings'].get("minimum_ms2_score", 0.2))
+
+    filter_context = CachablePartialFunction(
+        view_tandem_glycopeptide_protein_results_filter_context,
+        hypothesis_sample_match_id=hypothesis_sample_match_id,
+        minimum_score=minimum_score,
+        monosaccharide_filters=monosaccharide_filters
+        )
+
+    if parameters['settings'].get("color_palette") == "NGlycanCompositionColorizer":
+        palette = microheterogeneity.NGlycanCompositionColorizer
+    else:
+        palette = microheterogeneity._null_color_chooser
+
+    site_summary = microheterogeneity_summary_cache.cache(
+        protein, microheterogeneity.GlycoproteinMicroheterogeneitySummary,
+        protein, filter_context, color_chooser=palette)
+
+    # site_summary = microheterogeneity.GlycoproteinMicroheterogeneitySummary(
+    #     protein, filter_context, color_chooser=palette)
+
+    return render_template(
+        "tandem_glycopeptide_search/components/microheterogeneity_plot_panel.templ",
+        site_summary=site_summary, protein=protein)
+
+
+@app.route("/view_database_search_results/protein_view/<int:id>/protein_overview_panel", methods=["POST"])
+def protein_overview_panel(id):
+    arguments, state = request_arguments_and_context(request)
+
+    hypothesis_sample_match_id = state.hypothesis_sample_match_id
+    protein = g.db.query(Protein).get(id)
+
+    monosaccharide_filters = state.monosaccharide_filters
+    minimum_score = float(state.minimum_ms2_score)
+
+    filter_context = CachablePartialFunction(
+        view_tandem_glycopeptide_protein_results_filter_context,
+        hypothesis_sample_match_id=hypothesis_sample_match_id,
+        minimum_score=minimum_score,
+        monosaccharide_filters=monosaccharide_filters
+        )
+    if state.color_palette == "NGlycanCompositionColorizer":
+        palette = microheterogeneity.NGlycanCompositionColorizer
+    else:
+        palette = microheterogeneity._null_color_chooser
+    site_summary = microheterogeneity_summary_cache.cache(
+        protein, microheterogeneity.GlycoproteinMicroheterogeneitySummary,
+        protein, filter_context, color_chooser=palette)
+    return render_template(
+        "tandem_glycopeptide_search/components/protein_overview_panel.templ",
+        site_summary=site_summary, protein=protein, filter_context=filter_context)
 
 
 @app.route("/view_database_search_results/view_glycopeptide_details/<int:id>")
@@ -298,6 +445,6 @@ def dispatch_plot():
             case.target_hypothesis.theoretical_structure_type,
             case.target_hypothesis.ms_level) for case in cases}) > 1:
         return jsonify(message='Invalid: Not all Hypothesis Sample Matches are the same type')
-    job = analysis_comparison.HypothesisSampleMatchComparer(g.manager.path, *params)
+    job = analysis_comparison.HypothesisSampleMatchComparer(g.manager.path, params)
     ax = job.start()
     return svg_plot(ax, width=10, patchless=True)

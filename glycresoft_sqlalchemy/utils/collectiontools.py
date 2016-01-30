@@ -1,7 +1,10 @@
 from collections import defaultdict
 import itertools
 
+from glypy.utils.multimap import MultiMap
+
 from .vendor import sqlitedict
+
 
 try:
     range = xrange

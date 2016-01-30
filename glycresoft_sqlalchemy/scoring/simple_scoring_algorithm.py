@@ -121,6 +121,12 @@ def evaluate(matched, theoretical, **parameters):
     return calculate_score(matched, **parameters)
 
 
+def evaluate2(matched, theoretical, **parameters):
+    matched.mean_coverage = mean_coverage2(matched)
+    matched.mean_hexnac_coverage = mean_hexnac_coverage(matched, theoretical)
+    return calculate_score2(matched, **parameters)
+
+
 def calculate_score(matched, backbone_weight=0.5, hexnac_weight=0.5, stub_weight=0.2):
     """
     Calculates the `ms2_score` of `matched`, setting it and returning
@@ -144,6 +150,15 @@ def calculate_score(matched, backbone_weight=0.5, hexnac_weight=0.5, stub_weight
                           (matched.mean_hexnac_coverage * hexnac_weight)) * (1 - stub_weight)) +\
                         (observed_vs_enumerated_stub(matched) * stub_weight)
     return matched.ms2_score
+
+
+def calculate_score2(matched, backbone_weight=0.5, hexnac_weight=0.5, stub_weight=0.2):
+    score = ((matched.mean_coverage * backbone_weight) +
+             (matched.mean_hexnac_coverage * hexnac_weight))
+    scaler = (observed_vs_enumerated_stub(matched) * stub_weight)
+    score *= 1 - scaler
+    matched.ms2_score = score
+    return score
 
 
 def stream_backbone_coordinate(iterable):
@@ -310,3 +325,19 @@ class SimpleScorer(ScorerBase):
 
     def evaluate(self, *args, **kwargs):
         evaluate(*args, **kwargs)
+
+
+class SimpleSpectrumScorer2(GlycopeptideSpectrumMatchScorer):
+    def __init__(self):
+        super(SimpleSpectrumScorer2, self).__init__("simple2_ms2_score", "ms2_score")
+
+    def evaluate(self, *args, **kwargs):
+        evaluate2(*args, **kwargs)
+
+
+class SimpleScorer2(ScorerBase):
+    def __init__(self):
+        super(SimpleScorer2, self).__init__("ms2_score")
+
+    def evaluate(self, *args, **kwargs):
+        evaluate2(*args, **kwargs)

@@ -161,9 +161,9 @@ def unpositioned_isoforms(
     counter = 0
     kept = 0
     strseq = str(sequence)
+    solutions = SqliteSet()
     for i in range(len(sequons)):
         for sequons_occupied in (combinations(sequons, i + 1)):
-            solutions = SqliteSet()
             sequons_occupied = set(sequons_occupied)
             _sequons_occupied = list(sequons_occupied)
             yield strseq, {}, sequence.mass, _sequons_occupied
@@ -177,8 +177,10 @@ def unpositioned_isoforms(
                 if counter % 1000 == 0:
                     logger.info("%d modification configurations computed, %d unique (%s)", counter, kept, strseq)
                 counter += 1
+                if sum(modifications.values()) > max_modifications:
+                    continue
                 hashable = frozenset(modifications.items())
-                if hashable in solutions or sum(modifications.values()) > max_modifications:
+                if hashable in solutions:
                     continue
                 else:
                     solutions.add(hashable)
@@ -290,3 +292,18 @@ class SiteListFastaFileParser(FastaFileParser):
         v = d.pop("protein_sequence")
         d['glycosylation_sites'] = set(map(int, v.split(" ")))
         return d
+
+
+class FastaFileWriter(object):
+    def __init__(self, handle):
+        self.handle = handle
+
+    def write(self, defline, sequence):
+        self.handle.write(defline)
+        self.handle.write("\n")
+        self.handle.write(sequence)
+        self.handle.write("\n\n")
+
+    def writelines(self, iterable):
+        for defline, seq in iterable:
+            self.write(defline, seq)

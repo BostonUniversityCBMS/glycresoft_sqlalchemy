@@ -186,7 +186,7 @@ class DecoySearchSpaceBuilder(PipelineModule):
             if name is None:
                 name = 'decoy-{}'.format(datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S"))
 
-            decoy_hypothesis = HypothesisType(name=name.replace("target", "decoy"), is_decoy=True)
+            decoy_hypothesis = HypothesisType(name="decoy-%s" % (name), is_decoy=True)
             decoy_hypothesis.parameters = {"mirror": reference_hypothesis.id}
             self.session.add(decoy_hypothesis)
             self.session.commit()
@@ -338,6 +338,7 @@ class BatchingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
                 if (cntr - last) > 1000:
                     logger.info("%d Decoys Complete." % cntr)
                     last = cntr
+            pool.terminate()
         else:
             for res in itertools.imap(task_fn, self.stream_theoretical_glycopeptides()):
                 cntr += res

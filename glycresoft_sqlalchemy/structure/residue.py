@@ -1,6 +1,7 @@
 from . import ResidueBase
 from .composition import Composition, composition_to_mass
 from ..utils.memoize import memoize
+from glycresoft_sqlalchemy.utils.collectiontools import MultiMap
 
 symbol_to_residue = {
     'A': 'Ala',
@@ -75,9 +76,32 @@ residue_chemical_property_group = {
     'Val': 'hydrophobic',
 }
 
+residue_to_neutral_loss = MultiMap()
+residue_to_neutral_loss.update({
+    "Ser": -Composition("H2O"),
+    "Thr": -Composition("H2O"),
+    "Glu": -Composition("H2O"),
+    "Asp": -Composition("H2O"),
+
+    "Arg": -Composition("NH3"),
+    "Lys": -Composition("NH3"),
+    "Gln": -Composition("NH3"),
+    "Asn": -Composition("NH3"),
+    })
+
+residue_to_neutral_loss.update({
+    "Arg": Composition("H2O"),
+    "His": Composition("H2O"),
+    "Lys": Composition("H2O")
+    })
+
 
 degeneracy_index = {
 }
+
+
+class UnknownAminoAcidException(Exception):
+    pass
 
 
 class MemoizedResidueMetaclass(type):
@@ -116,7 +140,7 @@ class MemoizedResidueMetaclass(type):
                 self._cache[inst.name] = inst
                 return inst
             else:
-                raise KeyError("Cannot find a Residue for %r" % ((symbol, name),))
+                raise UnknownAminoAcidException("Cannot find a Residue for %r" % ((symbol, name),))
 
 
 class Residue(ResidueBase):
@@ -134,7 +158,7 @@ class Residue(ResidueBase):
     is_degenerate: bool
 
     '''
-    __slots__ = ["name", "symbol", "mass", "composition"]
+    __slots__ = ["name", "symbol", "mass", "composition", "neutral_loss"]
 
     __metaclass__ = MemoizedResidueMetaclass
 
@@ -153,6 +177,7 @@ class Residue(ResidueBase):
             self.by_symbol(symbol)
         elif name is not None:
             self.by_name(name)
+        self.neutral_loss = residue_to_neutral_loss[self.name]
 
     def by_name(self, name):
         """Configure this instance by name information
@@ -205,10 +230,14 @@ class Residue(ResidueBase):
             return self.name != other
 
     def __getstate__(self):
-        return [self.name, self.symbol, self.mass]
+        return [self.name, self.symbol, self.mass, self.neutral_loss]
 
     def __setstate__(self, state):
-        self.name, self.symbol, self.mass = state
+        self.name = state[0]
+        self.symbol = state[1]
+        self.mass = state[2]
+        if len(state) > 3:
+            self.neutral_loss = state[3]
 
     @property
     def chemical_class(self):
@@ -239,6 +268,7 @@ def register_degenerate(name, symbol, mappings):
     symbol_to_residue[symbol] = name
     residue_table[name] = residue_table[mappings[0]]
     residue_chemical_property_group[name] = residue_chemical_property_group[mappings[0]]
+    residue_to_neutral_loss[name] = residue_to_neutral_loss[mappings[0]]
     degeneracy_index[name] = frozenset(mappings)
     return Residue(symbol=symbol)
 

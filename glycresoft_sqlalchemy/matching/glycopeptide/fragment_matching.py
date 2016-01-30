@@ -274,6 +274,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
             for g, spectrum_match_list in glycopeptide_matches_spectrum_matches:
                 for spectrum_match_inst in spectrum_match_list:
                     spectrum_match_inst.glycopeptide_match_id = g.id
+                    spectrum_match_inst.theoretical_glycopeptide_id = g.theoretical_glycopeptide_id
                 session.add_all(spectrum_match_list)
             session.commit()
         return len(theoretical_ids)

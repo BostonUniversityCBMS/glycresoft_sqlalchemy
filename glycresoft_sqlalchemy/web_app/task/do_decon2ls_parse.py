@@ -19,7 +19,7 @@ def taskmain(database_path, isos_path, results_path, comm=None):
     try:
         os.remove(isos_path)
     except Exception, e:
-        comm.send(Message(["Could not remove isos file", e]))
+        comm.send(Message(["Could not remove isos file"]))
 
 
 class Decon2LSIsosParseTask(Task):

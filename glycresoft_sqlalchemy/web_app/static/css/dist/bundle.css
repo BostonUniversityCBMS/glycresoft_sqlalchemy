@@ -8605,8 +8605,20 @@ Protein Overview Graphic
 }
 
 
+/*
+
+Navigation
+
+*/
+
 .side-nav.fixed {
     padding-left: 5px;
+}
+
+.task-list-container ul li {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 3px;
+    margin-bottom: 2px;
 }
 
 /*
@@ -8898,7 +8910,7 @@ Modals
 */
 
 .modal.wide {
-    width: 85% !important;
+    width: 95% !important;
     height: 80% !important;
 }
 

@@ -4,6 +4,7 @@ import random
 import string
 from hashlib import sha512
 
+
 logger = logging.getLogger('wcom')
 
 
@@ -38,6 +39,16 @@ def intify(value, default=0):
         return int(value)
     except:
         return default
+
+
+def logerror(f):
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception, e:
+            logger.exception("An error occured in %s", f, exc_info=e)
+            raise e
+    return wrapper
 
 
 def listify(value):

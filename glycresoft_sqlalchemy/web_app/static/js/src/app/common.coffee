@@ -33,6 +33,11 @@ class Application extends ActionLayerManager
                 'status': 'running'
             self.updateTaskList()
             return
+        @handleMessage 'task-error', (data) =>
+            task = self.tasks[data.id]
+            task.status = 'error'
+            self.updateTaskList()
+            return
         @handleMessage 'task-complete', (data) =>
             try
                 self.tasks[data.id].status = 'finished'
@@ -99,8 +104,6 @@ class Application extends ActionLayerManager
 
     @initializers = [
         ->
-            @updateSettings()
-        ->
             self = @
             $ ->
                 self.container = $(self.options.actionContainer)
@@ -132,14 +135,21 @@ class Application extends ActionLayerManager
 
     loadData: ->
         DataSource.hypotheses (d) => 
+            console.log('hypothesis', d)
             @hypotheses = d
             @emit "render-hypotheses"
         DataSource.samples (d) =>
+            console.log('samples', d)
             @samples = d
             @emit "render-samples"
         DataSource.hypothesisSampleMatches (d) =>
+            console.log('hypothesisSampleMatches', d)
             @hypothesisSampleMatches = d
             @emit "render-hypothesis-sample-matches"
+        DataSource.tasks (d) =>
+            console.log('tasks', d)
+            @tasks = d
+            @updateTaskList()
         @colors.update()
 
     downloadFile: (filePath) ->
@@ -160,6 +170,7 @@ class Application extends ActionLayerManager
         options.data = JSON.stringify(data)
         options.contentType = "application/json"
         return $.ajax(url, options)
+
 
 
 renderTask = (task) ->

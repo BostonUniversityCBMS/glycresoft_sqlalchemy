@@ -5,6 +5,18 @@ Base = declarative_base()
 Base2 = Base
 
 
+def _base_eq(self, other):
+    return self.id == other.id and self.__class__ == other.__class__
+
+
+def _base_hash(self):
+    return hash((self.id, self.__class__))
+
+
+Base.__eq__ = _base_eq
+Base.__hash__ = _base_hash
+
+
 class _Namespace(Bundle):
     def __init__(self, *args, **kwargs):
         self.initialization_list = []

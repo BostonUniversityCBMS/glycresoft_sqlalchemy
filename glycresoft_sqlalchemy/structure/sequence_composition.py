@@ -43,7 +43,7 @@ class AminoAcidSequenceBuildingBlock(object):
 
     def __eq__(self, other):
         try:
-            return self.residue == other.residue and self.modifications == other.modifications
+            return self.residue is other.residue and self.modifications == other.modifications
         except:
             return other == str(self)
 

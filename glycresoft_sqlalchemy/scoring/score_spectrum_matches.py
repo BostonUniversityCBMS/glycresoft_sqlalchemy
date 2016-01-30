@@ -50,17 +50,25 @@ class SimpleSpectrumAssignment(PipelineModule):
 
     def prepare_task_fn(self):
         return functools.partial(
-            score_on_limited_peak_matches,
+            batch_score_on_limited_peak_matches,
             scorer=self.scorer,
             database_manager=self.manager, score_parameters=self.score_parameters)
 
-    def stream_glycopeptide_match_ids(self):
+    def stream_glycopeptide_match_ids(self, chunk_size=200):
         session = self.manager.session()
-        for id, in session.query(GlycopeptideMatch.id).filter(
+        batch = []
+        i = 0
+        for id_ in session.query(GlycopeptideMatch.id).filter(
                 GlycopeptideMatch.protein_id == Protein.id,
                 Protein.hypothesis_id == self.hypothesis_id,
                 GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id):
-            yield id
+            batch.append(id_)
+            i += 1
+            if i > chunk_size:
+                yield batch
+                batch = []
+                i = 0
+        yield batch
         session.close()
 
     def run(self):
@@ -95,37 +103,22 @@ class SimpleSpectrumAssignment(PipelineModule):
         task_fn = self.prepare_task_fn()
 
         cntr = 0
-        accum = []
+        last = 0
+
         logger.info("Begin Scoring")
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             for result in pool.imap_unordered(task_fn, self.stream_glycopeptide_match_ids()):
-                accum.append(result)
-                cntr += 1
-                if cntr % 1000 == 0:
-                    for a in accum:
-                        session.merge(a)
+                cntr += result
+                if cntr - last > 1000:
                     logger.info("%d matches scored", cntr)
-                    session.commit()
-                    accum = []
             pool.terminate()
-            del pool
         else:
             for id in self.stream_glycopeptide_match_ids():
                 result = task_fn(id)
-                accum.append(result)
-                cntr += 1
-                if cntr % 1000 == 0:
-                    for a in accum:
-                        session.merge(a)
+                cntr += result
+                if cntr - last > 1000:
                     logger.info("%d matches scored", cntr)
-                    session.commit()
-                    accum = []
-        for a in accum:
-            session.merge(a)
-        session.commit()
-        accum = []
-        session.commit()
         session.close()
 
 
@@ -150,6 +143,33 @@ def score_on_limited_peak_matches(glycopeptide_match, database_manager, scorer, 
         raise e
     finally:
         session.close()
+
+
+def batch_score_on_limited_peak_matches(glycopeptide_spectrum_match_ids, database_manager, scorer, score_parameters):
+    try:
+        session = database_manager()
+        batch = []
+        for gsm_id in glycopeptide_spectrum_match_ids:
+            session.query(GlycopeptideMatch).get(gsm_id[0])
+
+            glycopeptide_match = session.query(GlycopeptideMatch).get(gsm_id)
+            ion_matches = split_ion_list(
+                merge_ion_matches(itertools.chain.from_iterable(itertools.chain.from_iterable(
+                    [gsm.peak_match_map.values() for gsm in glycopeptide_match.spectrum_matches
+                     if gsm.best_match]))))
+
+            for series, value in ion_matches.items():
+                setattr(glycopeptide_match, series, value)
+            theoretical_sequence = glycopeptide_match.theoretical_reference
+            glycopeptide_match.ms2_score = 0.0
+            scorer(glycopeptide_match, theoretical_sequence, **score_parameters)
+            batch.append(glycopeptide_match)
+        session.bulk_save_objects(batch)
+        session.commit()
+        return len(glycopeptide_spectrum_match_ids)
+    except Exception, e:
+        logging.exception("An error occurred in batch_score_on_limited_peak_matches", exc_info=e)
+        raise e
 
 
 def score_spectrum_match(glycopeptide_spectrum_match_id, database_manager, scorer, score_parameters):

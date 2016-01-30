@@ -10,7 +10,7 @@ import numpy as np
 
 from .base import Base
 from .connection import DatabaseManager
-from .generic import MutableDict
+from .generic import MutableDict, ParameterStore
 
 from ..structure.composition import Composition
 from ..utils.common_math import DPeak
@@ -47,13 +47,13 @@ class HasPeakChromatogramData(object):
         return time, abundance_over_time
 
 
-class SampleRun(Base):
+class SampleRun(Base, ParameterStore):
     __tablename__ = "SampleRun"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     uuid = Column(Unicode(32), index=True, unique=True)
-    name = Column(Unicode(128))
-    parameters = Column(MutableDict.as_mutable(PickleType))
+    name = Column(Unicode(128), unique=True)
+
     ms_scans = relationship("MSScan", backref=backref("sample_run"), lazy='dynamic')
     tandem_scans = relationship("TandemScan", backref=backref("sample_run"), lazy='dynamic')
     sample_type = Column(Unicode(128))

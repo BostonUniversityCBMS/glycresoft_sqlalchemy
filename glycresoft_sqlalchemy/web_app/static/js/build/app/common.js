@@ -44,6 +44,14 @@ Application = (function(superClass) {
         self.updateTaskList();
       };
     })(this));
+    this.handleMessage('task-error', (function(_this) {
+      return function(data) {
+        var task;
+        task = self.tasks[data.id];
+        task.status = 'error';
+        self.updateTaskList();
+      };
+    })(this));
     this.handleMessage('task-complete', (function(_this) {
       return function(data) {
         var err;
@@ -159,8 +167,6 @@ Application = (function(superClass) {
 
   Application.initializers = [
     function() {
-      return this.updateSettings();
-    }, function() {
       var self;
       self = this;
       return $(function() {
@@ -211,20 +217,30 @@ Application = (function(superClass) {
   Application.prototype.loadData = function() {
     DataSource.hypotheses((function(_this) {
       return function(d) {
+        console.log('hypothesis', d);
         _this.hypotheses = d;
         return _this.emit("render-hypotheses");
       };
     })(this));
     DataSource.samples((function(_this) {
       return function(d) {
+        console.log('samples', d);
         _this.samples = d;
         return _this.emit("render-samples");
       };
     })(this));
     DataSource.hypothesisSampleMatches((function(_this) {
       return function(d) {
+        console.log('hypothesisSampleMatches', d);
         _this.hypothesisSampleMatches = d;
         return _this.emit("render-hypothesis-sample-matches");
+      };
+    })(this));
+    DataSource.tasks((function(_this) {
+      return function(d) {
+        console.log('tasks', d);
+        _this.tasks = d;
+        return _this.updateTaskList();
       };
     })(this));
     return this.colors.update();

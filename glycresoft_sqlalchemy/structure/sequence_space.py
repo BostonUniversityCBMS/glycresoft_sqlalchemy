@@ -70,7 +70,7 @@ class SequenceSpace:
                 temp_seq = copy.deepcopy(raw_sequence)
                 for site in sites:
                     gly_mod = Modification(ModificationTable.other_modifications["HexNAc"], site, 1)
-                    temp_seq.add_modification(mod_type=gly_mod)
+                    temp_seq.add_modification(modification_type=gly_mod)
                 seq_space.append(temp_seq)
 
         return seq_space

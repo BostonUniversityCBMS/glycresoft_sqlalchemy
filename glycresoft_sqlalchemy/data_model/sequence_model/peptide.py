@@ -4,12 +4,13 @@ from collections import OrderedDict
 from sqlalchemy.ext.baked import bakery
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, backref, make_transient, Query
-from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 from sqlalchemy.orm.exc import DetachedInstanceError
 from ..generic import MutableDict, MutableList
 from ..base import Base
+from ..hypothesis import Hypothesis
 from ..glycomics import (
     with_glycan_composition, TheoreticalGlycanCombination, has_glycan_composition_listener)
 
@@ -161,9 +162,21 @@ class PeptideBase(object):
     def hypothesis_id(self):
         return self.protein.hypothesis_id
 
-    @property
+    @hybrid_property
     def is_decoy(self):
         return self.protein.hypothesis.is_decoy
+
+    @is_decoy.expression
+    def is_decoy(cls):
+        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (Hypothesis.is_decoy))
+
+    @hybrid_property
+    def is_not_decoy(self):
+        return ~self.protein.hypothesis.is_decoy        
+
+    @is_not_decoy.expression
+    def is_not_decoy(cls):
+        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy))
 
     def __hash__(self):
         return hash((self.most_detailed_sequence, self.protein_id))
@@ -236,11 +249,6 @@ class InformedPeptide(PeptideBase, Base):
         "InformedTheoreticalGlycopeptideComposition",
         lazy="dynamic", backref="base_peptide")
     other = Column(PickleType)
-
-    def __init__(self, **kwargs):
-        super(InformedPeptide, self).__init__(**kwargs)
-        if kwargs.get("count_variable_modifications") is None:
-            raise Exception("Variable Modification Count Is None")
 
     __mapper_args__ = {
         'polymorphic_identity': u'InformedPeptide',
@@ -323,8 +331,16 @@ class HasTheoreticalFragments(object):
 class TheoreticalGlycopeptide(GlycopeptideBase, Base, HasMS1Information, HasTheoreticalFragments):
     __tablename__ = "TheoreticalGlycopeptide"
 
-    base_composition_id = Column(Integer, ForeignKey("PeakGroupMatch.id"), index=True)
+    base_composition_id = Column(Integer, ForeignKey(TheoreticalGlycopeptideComposition.id), index=True)
 
     def __repr__(self):
         rep = "<TheoreticalGlycopeptide {} {}>".format(self.glycopeptide_sequence, self.observed_mass)
         return rep
+
+    @classmethod
+    def is_not_decoy(cls):
+        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy))
+
+    @classmethod
+    def is_decoy(cls):
+        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (Hypothesis.is_decoy))

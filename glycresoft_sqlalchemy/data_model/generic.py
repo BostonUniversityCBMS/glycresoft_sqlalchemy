@@ -1,7 +1,11 @@
+from contextlib import contextmanager
+import operator
 
+from sqlalchemy.orm.session import object_session
 from sqlalchemy.ext.mutable import Mutable, MutableDict
 from sqlalchemy import (
-    Table, Column, Integer, ForeignKey, Unicode, ForeignKeyConstraint)
+    Table, Column, Integer, ForeignKey, Unicode, ForeignKeyConstraint,
+    PickleType)
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
@@ -36,6 +40,31 @@ class MutableList(Mutable, list):
 
     def __setstate__(self, state):
         self[:] = state
+
+
+class ParameterStore(object):
+    parameters = Column(MutableDict.as_mutable(PickleType))
+
+    def cache(self, obj, callpath, *args, **kwargs):
+        self.parameters.setdefault("__cache__", {})
+        cache = self.parameters['__cache__']
+        getter = operator.attrgetter(callpath)
+        fn = getter(obj)
+        source_id, source_type = obj.id, obj.__class__.__name__
+
+        try:
+            value = cache[source_id, source_type, callpath, tuple(args), frozenset(kwargs.items())]
+            return value
+        except KeyError:
+            value = fn(*args, **kwargs)
+            cache[source_id, source_type, callpath, tuple(args), frozenset(kwargs.items())] = value
+            return value
+
+    @contextmanager
+    def transaction(self):
+        session = object_session(self)
+        yield
+        session.commit()
 
 
 class Taxon(Base):

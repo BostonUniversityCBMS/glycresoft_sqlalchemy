@@ -3,22 +3,18 @@ from flask import Flask, request, session, g, redirect, url_for, \
      abort, render_template, flash, Markup, make_response, jsonify, \
      Response
 
-from werkzeug import secure_filename
 import argparse
 
+from werkzeug.contrib.profiler import ProfilerMiddleware
+from werkzeug.wsgi import LimitedStream
+
 from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
+from glycresoft_sqlalchemy.web_app.utils.cache import ApplicationDataCache
 from glycresoft_sqlalchemy.web_app import report
 
 from glycresoft_sqlalchemy.data_model import (
     Hypothesis, Protein, TheoreticalGlycopeptide, PeakGroupMatchType, TheoreticalGlycopeptideComposition,
-    GlycopeptideMatch, HypothesisSampleMatch, MassShift, json_type, make_transient, MS1GlycanHypothesisSampleMatch,
-    MS2GlycanHypothesisSampleMatch, MS1GlycopeptideHypothesisSampleMatch, MS2GlycopeptideHypothesisSampleMatch)
-
-from glycresoft_sqlalchemy.report import microheterogeneity, colors
-from glycresoft_sqlalchemy.utils.database_utils import get_or_create
-
-from glycresoft_sqlalchemy.web_app.task.do_ms2_search import TandemMSGlycoproteomicsSearchTask
-from glycresoft_sqlalchemy.web_app.task.do_ms1_peak_group_matching import LCMSSearchTask
+    GlycopeptideMatch)
 
 
 from glycresoft_sqlalchemy.web_app.services.server_sent_events import server_sent_events
@@ -36,15 +32,30 @@ from glycresoft_sqlalchemy.web_app.services.view_hypothesis import view_hypothes
 
 from glycresoft_sqlalchemy.web_app.utils.pagination import paginate
 
-no_gevent = False
 
-try:
-    from gevent.pywsgi import WSGIServer
-except:
-    no_gevent = True
+class StreamConsumingMiddleware(object):
+
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        stream = LimitedStream(environ['wsgi.input'],
+                               int(environ['CONTENT_LENGTH'] or 0))
+        environ['wsgi.input'] = stream
+        app_iter = self.app(environ, start_response)
+        try:
+            stream.exhaust()
+            for event in app_iter:
+                yield event
+        finally:
+            if hasattr(app_iter, 'close'):
+                app_iter.close()
+
 
 
 app = Flask(__name__)
+app.wsgi_app = StreamConsumingMiddleware(app.wsgi_app)
+# app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir='profiling')
 app.config['PROPAGATE_EXCEPTIONS'] = True
 report.prepare_environment(app.jinja_env)
 
@@ -106,6 +117,12 @@ def shutdown():
 # ----------------------------------------
 #
 # ----------------------------------------
+
+
+@app.route("/internal/show_cache")
+def show_cache():
+    print cache.app_data
+    return Response("Printed")
 
 
 def connect_db():
@@ -186,17 +203,13 @@ def run(store_path, external, no_execute_tasks, port, **kwargs):
         host = "0.0.0.0"
     DATABASE = store_path
     CAN_EXECUTE = not no_execute_tasks
+
     manager = ProjectManager(DATABASE)
+
     app.debug = DEBUG
     app.secret_key = SECRETKEY
-    setup_logging()
-    if no_gevent:
-        print "No gevent"
-        app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=port, passthrough_errors=True)
-    else:
-        print "gevent"
-        SERVER = WSGIServer(("", port), app)
-        SERVER.serve_forever()
+    # setup_logging()
+    app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=port, passthrough_errors=True)
 
 
 def main():

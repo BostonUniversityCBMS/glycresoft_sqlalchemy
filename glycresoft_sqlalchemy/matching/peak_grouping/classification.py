@@ -1,5 +1,8 @@
 import logging
 import itertools
+import functools
+import multiprocessing
+import operator
 try:
     logger = logging.getLogger("peak_grouping")
     logging.basicConfig(level='DEBUG')
@@ -93,7 +96,7 @@ def _group_unmatched_peak_groups_by_shifts(groups, mass_shift_map, grouping_erro
 
 def _get_groups_by_composition_ids(session, hypothesis_sample_match_id):
     composition_id_q = session.query(PeakGroupMatch.theoretical_match_id).filter(
-        PeakGroupMatch.hypothesis_sample_match_id).group_by(
+        PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id).group_by(
         PeakGroupMatch.theoretical_match_id).order_by(
         PeakGroupMatch.weighted_monoisotopic_mass.desc())
     for _composition_id in composition_id_q:
@@ -210,7 +213,7 @@ def join_unmatched(session, hypothesis_sample_match_id, grouping_error_tolerance
 
     mass_shift_map = unmatched[0].hypothesis_sample_match.parameters['mass_shift_map']
     conn = session.connection()
-    for bunch in _group_unmatched_peak_groups_by_shifts(unmatched, mass_shift_map):
+    for bunch in _group_unmatched_peak_groups_by_shifts(unmatched, mass_shift_map, grouping_error_tolerance):
         if len(bunch) == 0:
             continue
         group, member_ids = _merge_groups(bunch, minimum_abundance_ratio)
@@ -233,6 +236,257 @@ def join_matched(session, hypothesis_sample_match_id, minimum_abundance_ratio=0.
         joint_id = conn.execute(T_JointPeakGroupMatch.insert(), group).lastrowid
         conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(),
                      [{"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids])
+
+
+def _batch_merge_groups(id_bunches, database_manager, minimum_abundance_ratio):
+    session = database_manager()
+    results = []
+    try:
+        for bunch in id_bunches:
+            bunch = [y for x in bunch for y in x]
+            group_matches = session.query(PeakGroupMatch).filter(PeakGroupMatch.id.in_(bunch)).all()
+            scan_count_total = 0
+            min_scan = float("inf")
+            max_scan = 0
+            charge_states = set()
+            scan_times = set()
+            average_a_to_a_plus_2_ratio = 0
+            total_volume = 0
+            average_signal_to_noise = 0
+            n = 0.
+            n_modification_states = 0
+            merged_peak_data = {
+                "peak_ids": [],
+                "intensities": [],
+                "scan_times": []
+            }
+            try:
+                maximum_volume = max(g.total_volume for g in group_matches)
+            except ValueError:
+                maximum_volume = 1.
+
+            minimum_abundance = minimum_abundance_ratio * maximum_volume
+
+            for peak_group in group_matches:
+                if peak_group.total_volume < minimum_abundance:
+                    continue
+                peak_data = peak_group.peak_data
+                merged_peak_data['peak_ids'].extend(peak_data['peak_ids'])
+                merged_peak_data['intensities'].extend(peak_data['intensities'])
+                merged_peak_data['scan_times'].extend(peak_data['scan_times'])
+
+                n_peaks = len(peak_data['peak_ids'])
+                n += n_peaks
+                scan_count_total += peak_group.scan_count
+                total_volume += peak_group.total_volume
+                n_modification_states += 1
+
+                average_a_to_a_plus_2_ratio += peak_group.average_a_to_a_plus_2_ratio * n_peaks
+                average_signal_to_noise += peak_group.average_signal_to_noise * n_peaks
+
+                min_scan = min(min_scan, peak_group.first_scan_id)
+                max_scan = max(max_scan, peak_group.last_scan_id)
+
+                scan_times.update(peak_data['scan_times'])
+                charge_states.update(peak_data.get("charge_states", ()))
+
+            average_signal_to_noise /= n
+            average_a_to_a_plus_2_ratio /= n
+            if len(charge_states) != 0:
+                charge_state_count = len(charge_states)
+            else:
+                charge_state_count = max(g.charge_state_count for g in group_matches)
+
+            scan_times = sorted(scan_times)
+            windows = expanding_window(scan_times)
+            window_densities = []
+            for window in windows:
+                window_max_scan = window[-1]
+                window_min_scan = window[0]
+                window_scan_count = len(window)
+                window_scan_density = window_scan_count / (
+                    float(window_max_scan - window_min_scan) + 15.) if window_scan_count > 1 else 0
+                if window_scan_density != 0:
+                    window_densities.append(window_scan_density)
+            if len(window_densities) != 0:
+                scan_density = max(window_densities)  # sum(window_densities) / float(len(window_densities))
+            else:
+                scan_density = 0.
+
+            try:
+                ppm_error = max(g.ppm_error for g in group_matches)
+            except ValueError:
+                ppm_error = None
+
+            instance_dict = {
+                "first_scan_id": min_scan,
+                "last_scan_id": max_scan,
+                "scan_density": scan_density,
+                "ppm_error": ppm_error,
+                "centroid_scan_estimate": sum(scan_times) / n,
+                "average_a_to_a_plus_2_ratio": average_a_to_a_plus_2_ratio,
+                "average_signal_to_noise": average_signal_to_noise,
+                "charge_state_count": charge_state_count,
+                "modification_state_count": n_modification_states,
+                "total_volume": total_volume,
+                "scan_count": scan_count_total,
+                "peak_data": merged_peak_data,
+                "fingerprint": ':'.join(map(str, scan_times)),
+                "weighted_monoisotopic_mass": group_matches[0].weighted_monoisotopic_mass,
+                "hypothesis_sample_match_id": group_matches[0].hypothesis_sample_match_id,
+                "theoretical_match_id": group_matches[0].theoretical_match_id,
+                "theoretical_match_type": group_matches[0].theoretical_match_type,
+                "matched": group_matches[0].matched
+            }
+
+            results.append((
+                instance_dict, [p.id for p in group_matches]))
+    except Exception, e:
+        logging.exception("An exception occurred in _batch_merge_groups", exc_info=e)
+    conn = session.connection()
+    for instance_dict, member_ids in results:
+        joint_id = conn.execute(T_JointPeakGroupMatch.insert(), instance_dict).lastrowid
+        conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(),
+                     [{"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids])
+    session.commit()
+    return len(results)
+
+
+class MatchJoiner(PipelineModule):
+    def __init__(self, database_path, hypothesis_sample_match_id, minimum_abundance_ratio=0.01,
+                 grouping_error_tolerance=2e-5, n_processes=4):
+        self.manager = self.manager_type(database_path)
+        self.hypothesis_sample_match_id = hypothesis_sample_match_id
+        self.minimum_abundance_ratio = minimum_abundance_ratio
+        self.grouping_error_tolerance = grouping_error_tolerance
+        self.n_processes = n_processes
+
+    def stream_matched_ids(self):
+        session = self.manager()
+
+        gen = itertools.groupby(session.query(PeakGroupMatch.id, PeakGroupMatch.theoretical_match_id).filter(
+            PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
+            PeakGroupMatch.matched).order_by(PeakGroupMatch.theoretical_match_id).all(), operator.itemgetter(1))
+
+        getter = operator.itemgetter(0)
+
+        batch = []
+        i = 0
+        for key, group in gen:
+            batch.append([(getter(o),) for o in group])
+            i += 1
+
+            if i > 50:
+                yield batch
+                batch = []
+                i = 0
+        yield batch
+
+        # composition_id_q = session.query(PeakGroupMatch.theoretical_match_id).filter(
+        #     PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id).group_by(
+        #     PeakGroupMatch.theoretical_match_id)
+
+        # chunks = []
+        # batch = []
+        # i = 0
+        # for _composition_id in composition_id_q:
+        #     _composition_id = _composition_id[0]
+        #     if _composition_id is None:
+        #         continue
+
+        #     bunch = session.query(PeakGroupMatch.id).filter(
+        #         PeakGroupMatch.theoretical_match_id == _composition_id,
+        #         PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id).all()
+        #     if len(bunch) == 0:
+        #         continue
+
+        #     batch.append(bunch)
+        #     i += 1
+        #     if i > 50:
+        #         chunks.append(batch)
+        #         batch = []
+        #         i = 0
+        #         logger.info("Chunk! %d", len(chunks))
+        #     if len(chunks) > 300:
+        #         print "Spread"
+        #         for chunk in chunks:
+        #             yield chunk
+        #         chunks = []
+
+        # for chunk in chunks:
+        #     yield chunk
+        # chunks = []
+        session.close()
+
+    def stream_unmatched_ids(self):
+        session = self.manager()
+        unmatched = session.query(PeakGroupMatch).filter(
+            PeakGroupMatch.theoretical_match_id == None,
+            PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id).order_by(
+            PeakGroupMatch.weighted_monoisotopic_mass.desc()).all()
+        if len(unmatched) == 0:
+            raise StopIteration()
+
+        batch = []
+        i = 0
+        mass_shift_map = unmatched[0].hypothesis_sample_match.parameters['mass_shift_map']
+        for bunch in _group_unmatched_peak_groups_by_shifts(unmatched, mass_shift_map, self.grouping_error_tolerance):
+            if len(bunch) == 0:
+                continue
+            batch.append([(p.id,) for p in bunch])
+            i += 1
+            if i > 50:
+                yield batch
+                batch = []
+                i = 0
+        yield batch
+        session.close()
+
+    def prepare_task_fn(self):
+        return functools.partial(
+            _batch_merge_groups,
+            database_manager=self.manager,
+            minimum_abundance_ratio=self.minimum_abundance_ratio)
+
+    def run(self):
+        cntr = 0
+        last = 0
+        task_fn = self.prepare_task_fn()
+        if self.n_processes > 1:
+            self.inform("Merging Matched (Concurrent)")
+            pool = multiprocessing.Pool(self.n_processes)
+            for increment in pool.imap_unordered(task_fn, self.stream_matched_ids()):
+                cntr += increment
+                if cntr - last > 1000:
+                    logger.info("%d groups merged", cntr)
+                    last = cntr
+            
+            self.inform("Merging Unmatched (Concurrent)")
+            for increment in pool.imap_unordered(task_fn, self.stream_unmatched_ids()):
+                cntr += increment
+                if cntr - last > 1000:
+                    logger.info("%d groups merged", cntr)
+                    last = cntr
+
+            pool.close()
+            pool.terminate()
+
+
+        else:
+            self.inform("Merging Matched (Sequential)")
+            for increment in itertools.imap(task_fn, self.stream_matched_ids()):
+                cntr += increment
+                if cntr - last > 1000:
+                    logger.info("%d groups merged", cntr)
+                    last = cntr
+            
+            self.inform("Merging Unmatched (Sequential)")
+            for increment in itertools.imap(task_fn, self.stream_unmatched_ids()):
+                cntr += increment
+                if cntr - last > 1000:
+                    logger.info("%d groups merged", cntr)
+                    last = cntr
+
 
 
 def estimate_trends(session, hypothesis_sample_match_id):
@@ -283,13 +537,6 @@ def estimate_trends(session, hypothesis_sample_match_id):
     session.commit()
 
 
-def logit(X):
-    return np.log(X) - np.log(1 - X)
-
-
-def inverse_logit(X):
-    return np.exp(X) / (np.exp(X) + 1)
-
 
 class PeakGroupMassShiftJoiningClassifier(PipelineModule):
     features = [
@@ -329,14 +576,19 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
         self.n_processes = n_processes
 
     def create_joins(self):
-        session = self.manager.session()
-        self.inform("Joining Unmatched Peak Groups")
-        join_unmatched(session, self.hypothesis_sample_match_id,
-                       self.match_tolerance, self.minimum_abundance_ratio)
-        self.inform("Joining Matched Peak Groups")
-        join_matched(session, self.hypothesis_sample_match_id, self.minimum_abundance_ratio)
-        session.commit()
-        session.close()
+        # session = self.manager.session()
+        # self.inform("Joining Unmatched Peak Groups")
+        # join_unmatched(session, self.hypothesis_sample_match_id,
+        #                self.match_tolerance, self.minimum_abundance_ratio)
+        # self.inform("Joining Matched Peak Groups")
+        # join_matched(session, self.hypothesis_sample_match_id, self.minimum_abundance_ratio)
+        # session.commit()
+        # session.close()
+        task = MatchJoiner(
+            self.manager.path, self.hypothesis_sample_match_id,
+            self.minimum_abundance_ratio, self.match_tolerance,
+            self.n_processes)
+        task.start()
 
     def estimate_trends(self):
         '''

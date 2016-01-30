@@ -37,7 +37,7 @@
             </div>
         </div>
         <div class='row'>
-            <div class='col s6'>
+            <div class='col s5'>
                 <div class='row'>
                     <div class='input-field col s6'>
                         <label for='mass-matching-tolerance'>Mass Matching PPM Error Tolerance</label>
@@ -58,8 +58,13 @@
                         <input type='number' value='15000' id='maximum-mass' name='maximum-mass'>
                     </div>
                 </div>
-            </div>        
-            <div class='mass-shift-input-table col s6'>
+            </div>
+            <div class='col s2'>
+                <br>
+                <input type='checkbox' name='skip-grouping'/>
+                <label for="skip-grouping">Skip Peak Grouping</label>
+            </div>    
+            <div class='mass-shift-input-table col s5'>
                 
             </div>
         </div>
@@ -67,6 +72,7 @@
     </form>
 <script>
 MassShiftInputWidget($(".mass-shift-input-table"))
+materialCheckbox("label[for='skip-grouping']")
 ajaxForm($("form#match-sample-form"), function(){
     var currentAction = GlycReSoft.getShowingLayer()
     GlycReSoft.setShowingLayer("home-layer")
@@ -75,5 +81,5 @@ ajaxForm($("form#match-sample-form"), function(){
     console.log(arguments)
 })
 materialFileInput()
-</script>    
+</script>
 </div>

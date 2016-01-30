@@ -20,6 +20,7 @@ def build_glycopeptide_search_space():
 @app.route("/glycopeptide_search_space", methods=["POST"])
 def build_glycopeptide_search_space_post():
     values = request.values
+    print values
     constant_modifications = values.getlist("constant_modifications")
     variable_modifications = values.getlist("variable_modifications")
     enzyme = values.get("enzyme")
@@ -49,16 +50,16 @@ def build_glycopeptide_search_space_post():
 
     if glycan_database == "" or glycan_database is None:
         glycan_file_type = "txt"
-        glycan_options["glycan_file_type"] = glycan_file_type
+        glycan_options["glycomics_format"] = glycan_file_type
 
         secure_glycan_file = g.manager.get_temp_path(secure_filename(glycan_file.filename))
         glycan_file.save(secure_glycan_file)
 
-        glycan_options["glycan_file"] = secure_glycan_file
+        glycan_options["glycomics_path"] = secure_glycan_file
     else:
         option_type, option_id = glycan_database.split(",", 1)
         option_id = int(option_id)
-        glycan_options["glycan_file"] = g.manager.path
+        glycan_options["glycomics_path"] = g.manager.path
 
         if option_type == "Hypothesis":
             option_type = "hypothesis"
@@ -67,12 +68,13 @@ def build_glycopeptide_search_space_post():
             option_type = "hypothesis-sample-match"
             glycan_options["source_hypothesis_sample_match_id"] = option_id
 
-        glycan_options["glycan_file_type"] = option_type
+        glycan_options["glycomics_format"] = option_type
 
     task = None
     if protein_list_type == "mzIdentML":
+        protein_names = values.get("protein_names").split(",")
         task = IntegratedOmicsGlycopeptideHypothesisBuilderTask(
-            g.manager.path, hypothesis_name=hypothesis_name,
+            g.manager.path, hypothesis_name=hypothesis_name, protein_ids=protein_names,
             protein_file=secure_protein_list, site_list_file=secure_site_list_file,
             maximum_glycosylation_sites=maximum_glycosylation_sites,
             callback=lambda: 0, glycan_options=glycan_options)

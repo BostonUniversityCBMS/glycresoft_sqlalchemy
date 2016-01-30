@@ -128,6 +128,18 @@ ActionLayerManager = (function(superClass) {
     return -1;
   };
 
+  ActionLayerManager.prototype.setActiveLayerController = function(controller) {
+    var layer;
+    layer = this.getShowingLayer();
+    return layer.setController(controller);
+  };
+
+  ActionLayerManager.prototype.getActiveLayerController = function() {
+    var layer;
+    layer = this.getShowingLayer();
+    return layer.controller;
+  };
+
   return ActionLayerManager;
 
 })(EventEmitter);
@@ -167,6 +179,7 @@ ActionLayer = (function() {
     if (this.manager.getShowingLayer() === void 0) {
       this.show();
     }
+    this.controller = null;
   }
 
   ActionLayer.prototype.setup = function() {
@@ -229,6 +242,10 @@ ActionLayer = (function() {
     if (this.options.closeable) {
       return this.container.prepend("<div>\n<a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
     }
+  };
+
+  ActionLayer.prototype.setController = function(controller) {
+    return this.controller = controller;
   };
 
   ActionLayer.prototype.show = function() {
@@ -643,12 +660,13 @@ MzIdentMLProteinSelector = (function() {
 
   MzIdentMLProteinSelector.prototype.initializeContainer = function() {
     var self, template;
-    template = "<div class='display-control'>\n    <a class='toggle-visible-btn right' data-open=\"open\" style='cursor:hand;'>\n        <i class=\"material-icons\">keyboard_arrow_up</i>\n    </a>\n</div>\n<div class='hideable-container'>\n    <div class='row'>\n        <div class='col s4'>\n            <div class='input-field'>\n                <input value='' name=\"protein-regex\" type=\"text\" class=\"validate protein-regex\">\n                <label class=\"active\" for=\"protein-regex\">Protein Pattern</label>\n            </div>\n        </div>\n    </div>\n    <div class='row'>\n        <div class='col s8 protein-name-list'>\n\n        </div>\n    </div>\n</div>";
+    template = "<div class='display-control'>\n    <a class='toggle-visible-btn right' data-open=\"open\" style='cursor:hand;'>\n        <i class=\"material-icons\">keyboard_arrow_up</i>\n    </a>\n</div>\n<div class='hideable-container'>\n    <div class='row'>\n        <div class='col s4'>\n            <div class='input-field'>\n                <input value='' name=\"protein-regex\" type=\"text\" class=\"validate protein-regex\">\n                <label class=\"active\" for=\"protein-regex\">Protein Pattern</label>\n            </div>\n        </div>\n        <div class='col s2'>\n            <input type='checkbox' id='select-all-proteins-checkbox' name='select-all-proteins-checkbox'/>\n            <label for='select-all-proteins-checkbox'>Select All</label>\n        </div>\n    </div>\n    <div class='row'>\n        <div class='col s8 protein-name-list'>\n\n        </div>\n    </div>\n</div>";
     this.container.html(template);
     this.hideableContainer = this.container.find(".hideable-container");
     this.regex = this.container.find(".protein-regex");
     this.list = this.container.find(".protein-name-list");
     this.toggleVisible = this.container.find(".toggle-visible-btn");
+    this.selectAllChecker = this.container.find('#select-all-proteins-checkbox');
     self = this;
     this.toggleVisible.click(function() {
       var handle;
@@ -678,6 +696,15 @@ MzIdentMLProteinSelector = (function() {
         }
       };
     })(this));
+    this.selectAllChecker.click((function(_this) {
+      return function(e) {
+        if (_this.selectAllChecker.prop("checked")) {
+          return _this.container.find("input[type='checkbox']:visible").prop("checked", true);
+        } else {
+          return _this.container.find("input[type='checkbox']:visible").prop("checked", false);
+        }
+      };
+    })(this));
     return this.load();
   };
 
@@ -691,7 +718,7 @@ MzIdentMLProteinSelector = (function() {
           "display": 'inline-block',
           "width": 240
         }).addClass('input-field protein-name');
-        checker = $("<input />").attr("type", "checkbox").attr("name", name);
+        checker = $("<input />").attr("type", "checkbox").attr("name", name).addClass("protein-name-check");
         entryContainer.append(checker);
         entryContainer.append($("<label></label>").html(name).attr("for", name).click((function() {
           return checker.click();
@@ -723,11 +750,25 @@ MzIdentMLProteinSelector = (function() {
     return getProteinNamesFromMzIdentML(this.fileObject, (function() {}), callback);
   };
 
-  MzIdentMLProteinSelector.prototype.getChosenProtein = function() {
+  MzIdentMLProteinSelector.prototype.getChosenProteins = function() {
     var a;
     return (function() {
       var i, len, ref, results;
-      ref = this.container.find("input:checked");
+      ref = this.container.find("input.protein-name-check:checked");
+      results = [];
+      for (i = 0, len = ref.length; i < len; i++) {
+        a = ref[i];
+        results.push($(a).attr("name"));
+      }
+      return results;
+    }).call(this);
+  };
+
+  MzIdentMLProteinSelector.prototype.getAllProteins = function() {
+    var a;
+    return (function() {
+      var i, len, ref, results;
+      ref = this.container.find("input.protein-name-check");
       results = [];
       for (i = 0, len = ref.length; i < len; i++) {
         a = ref[i];
@@ -750,7 +791,7 @@ When these elements are added dynamically, they must be configured manually.
 
 This code is taken from https://github.com/Dogfalo/materialize/blob/master/js/forms.js#L156
  */
-var materialFileInput, materialRefresh;
+var materialCheckbox, materialFileInput, materialRefresh;
 
 materialRefresh = function() {
   try {
@@ -778,6 +819,15 @@ materialFileInput = function() {
     }
     path_input.val(file_names.join(', '));
     path_input.trigger('change');
+  });
+};
+
+materialCheckbox = function(selector) {
+  return $(selector).click(function(e) {
+    var handle, target;
+    handle = $(this);
+    target = handle.attr("for");
+    return $("input[name='" + target + "']").click();
   });
 };
 

@@ -56,6 +56,29 @@ def sequence_to_mass(sequence):
     return mass
 
 
+def find_o_glycosylation_sequons(sequence, allow_modified=frozenset()):
+    try:
+        iter(allow_modified)
+        allow_modified = set(allow_modified) | {Modification("HexNAc")}
+    except:
+        allow_modified = (Modification("HexNAc"),)
+
+    positions = []
+    ser = Residue("S")
+    thr = Residue("T")
+
+    site_set = (ser, thr)
+
+    if isinstance(sequence, basestring):
+        sequence = parse(sequence)
+
+    for i, position in enumerate(sequence):
+        if position[0] in site_set:
+            if ((len(position[1]) == 0) or position[1][0] in allow_modified):
+                positions.append(i)
+    return positions
+
+
 def find_n_glycosylation_sequons(sequence, allow_modified=frozenset()):
     try:
         iter(allow_modified)
@@ -63,17 +86,14 @@ def find_n_glycosylation_sequons(sequence, allow_modified=frozenset()):
     except:
         allow_modified = (Modification("HexNAc"),)
     state = "seek"  # [seek, n, ^p, st]
-    if(isinstance(sequence, Sequence)):
-        asn = "Asn"
-        pro = "Pro"
-        ser = "Ser"
-        thr = "Thr"
-    else:
-        sequence, mods, glycan, n_term, c_term = sequence_tokenizer(sequence)
-        asn = "N"
-        pro = "P"
-        ser = "S"
-        thr = "T"
+    if isinstance(sequence, basestring):
+        sequence = PeptideSequence(sequence)
+
+    asn = Residue("Asn")
+    pro = Residue("Pro")
+    ser = Residue("Ser")
+    thr = Residue("Thr")
+
     i = 0
     positions = []
     n_pos = None
@@ -83,8 +103,7 @@ def find_n_glycosylation_sequons(sequence, allow_modified=frozenset()):
             # A sequon starts with an Asn residue without modifications, or for counting
             # purposes one that has already been glycosylated
             if next_pos[0] == asn:
-                if ((len(next_pos[1]) == 0) or (next_pos[1][0] == '') or
-                        next_pos[1][0] in allow_modified):
+                if ((len(next_pos[1]) == 0) or next_pos[1][0] in allow_modified):
                     n_pos = i
                     state = "n"
         elif state == "n":
@@ -251,21 +270,16 @@ class PeptideSequence(PeptideSequenceBase):
         else:
             seq_list, modifications, glycan, n_term, c_term = sequence_tokenizer(sequence)
             for item in seq_list:
-                try:
-                    res = Residue(item[0])
-                    self.mass += res.mass
-                    mods = []
-                    for mod in item[1]:
-                        if mod != '':
-                            mod = Modification(mod)
-                            mods.append(mod)
-                            self.modification_index[mod.name] += 1
-                            self.mass += mod.mass
-                    self.seq.append(self.position_class([res, mods]))
-                except:
-                    print(sequence)
-                    print(item)
-                    raise
+                res = Residue(item[0])
+                self.mass += res.mass
+                mods = []
+                for mod in item[1]:
+                    if mod != '':
+                        mod = Modification(mod)
+                        mods.append(mod)
+                        self.modification_index[mod.name] += 1
+                        self.mass += mod.mass
+                self.seq.append(self.position_class([res, mods]))
 
             self.glycan = glycan if glycan != "" else None
             self.n_term = Modification(n_term) if isinstance(n_term, basestring) else n_term
@@ -346,7 +360,7 @@ class PeptideSequence(PeptideSequenceBase):
     def __iter__(self):
         '''Makes the sequence iterable'''
         for i in self.seq:
-            yield(i)
+            yield (i)
 
     def __getitem__(self, index):
         sub = self.seq[index]
@@ -378,7 +392,11 @@ class PeptideSequence(PeptideSequenceBase):
 
     def break_at(self, idx):
         b_shift = fragment_shift['b']
+        if self.n_term != structure_constants.N_TERM_DEFAULT:
+            b_shift = b_shift + self.n_term.mass
         y_shift = fragment_shift['y']
+        if self.c_term != structure_constants.C_TERM_DEFAULT:
+            y_shift = y_shift + self.c_term.mass
 
         mod_b = defaultdict(int)
         mass_b = 0
@@ -438,10 +456,14 @@ class PeptideSequence(PeptideSequenceBase):
             seq_list = self.seq
             # Hydrogen ionized is from terminal modification
             mass_shift = fragment_shift['b']
+            if self.n_term != structure_constants.N_TERM_DEFAULT:
+                mass_shift = mass_shift + self.n_term.mass
 
         elif kind is y_series:
             # y ions abstract a proton from the precursor
             mass_shift = fragment_shift['y']
+            if self.c_term != structure_constants.C_TERM_DEFAULT:
+                mass_shift = mass_shift + self.c_term.mass
             seq_list = list(reversed(self.seq))
 
         current_mass = mass_shift
@@ -553,6 +575,7 @@ class PeptideSequence(PeptideSequenceBase):
         inst.n_term = self.n_term.clone()
         inst.c_term = self.c_term.clone()
         inst.seq = [self.position_class([o[0], list(o[1])]) for o in self]
+        inst.mass = self.mass
         if self.glycan is not None:
             inst.glycan = self.glycan.clone()
         return inst
@@ -750,7 +773,7 @@ class PeptideSequence(PeptideSequenceBase):
 Sequence = PeptideSequence
 parse = Sequence
 
-get1 = operator.itemgetter(1)
+_get1 = operator.itemgetter(1)
 
 
 def cleave(sequence, rule, missed_cleavages=0, min_length=0, **kwargs):
@@ -769,7 +792,7 @@ def cleave(sequence, rule, missed_cleavages=0, min_length=0, **kwargs):
                 if min_length is None or sequence_length(seq) >= min_length:
                     peptides.append((seq, cleavage_sites[j], cleavage_sites[-1] if cleavage_sites[-1]
                                      is not None else sequence_length(sequence)))
-    return sorted(set(peptides), key=get1)
+    return sorted(set(peptides), key=_get1)
 
 
 def itercleave(sequence, rule, missed_cleavages=0, min_length=0, **kwargs):

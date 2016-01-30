@@ -1,0 +1,81 @@
+<!DOCTYPE html5>
+<html>
+<head>
+    <title></title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../dist/css/bundle.css">
+    <script src="../dist/js/vendor-bundle.js"></script>
+    <script src="../dist/js/lib-bundle.js"></script>
+    <script>
+
+var input
+var list
+
+function addProteinNameToList(name){
+    var container = $("<p></p>").css({"padding-left": 20, "display": 'inline-block', "width": 200}).addClass('input-field protein-name')
+    var checker = $("<input />").attr("type", "checkbox").attr("name", name)
+    container.append(checker)
+    container.append($("<label></label>").html(name).attr("for", name).click(function(){
+        checker.click()
+    }))
+    list.append(container)
+}
+
+function updateVisibleProteinNames(pattern){
+    var regex = new RegExp(pattern)
+    $('.protein-name').each(function(i){
+        var handle = $(this)
+        var name = handle.find("input").attr("name")
+        console.log(name, i, regex)
+        if(regex.test(name)){
+            handle.show()
+        } else {
+            handle.hide()
+        }
+    })
+}
+
+$(function(){
+    input = $("input[type='file']")
+    list = $("#list")
+
+    input.change(function(event){
+        var file = this.files[0]
+        getProteinNamesFromMzIdentML(file, function(){console.log(arguments)}, addProteinNameToList)
+    })
+})
+
+    </script>
+</head>
+<body>
+<div class='container'>
+    <div class='row'>
+        <h3>File Here</h3>
+        <div class='col s6'>
+            <div class="file-field input-field">
+                <div class="btn">
+                    <span>File</span>
+                    <input type="file">
+                </div>
+                <div class="file-path-wrapper">
+                    <input class="file-path validate" type="text">
+                </div>
+            </div>
+        </div>   
+        <div class='col s4'>
+            <div class='input-field'>
+                <input value=".*" id="protein-regex" type="text" class="validate">
+                <label class="active" for="protein-regex">Protein Pattern</label>
+            </div>
+        </div>     
+    </div>
+    <div class='row'>
+        <div class='col s8' id='list'>
+
+        </div> 
+    </div>
+</div>
+</body>
+</html>

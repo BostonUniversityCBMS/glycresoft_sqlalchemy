@@ -104,11 +104,22 @@ class SQLiteConnectionManager(ConnectionManager):
             # also stops it from emitting COMMIT before any DDL.
             iso_level = dbapi_connection.isolation_level
             dbapi_connection.isolation_level = None
-            dbapi_connection.execute("PRAGMA page_size = 5120;")
-            dbapi_connection.execute("PRAGMA cache_size = 4000;")
+            try:
+                dbapi_connection.execute("PRAGMA page_size = 5120;")
+                dbapi_connection.execute("PRAGMA cache_size = 4000;")
+                dbapi_connection.execute("PRAGMA foreign_keys = ON;")
+            except:
+                pass
             dbapi_connection.isolation_level = iso_level
 
         event.listens_for(connection, "connect")(do_connect)
+
+
+class NoConfigSQLiteConnectionManager(SQLiteConnectionManager):
+    connect_args = {"timeout": 5}
+
+    def _configure_creation(self, connection):
+        pass
 
 
 class LocalPostgresConnectionManager(ConnectionManager):

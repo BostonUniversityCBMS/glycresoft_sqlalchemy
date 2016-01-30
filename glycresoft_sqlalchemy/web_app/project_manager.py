@@ -2,26 +2,25 @@ import os
 from os import path
 import shutil
 import logging
+
 from glycresoft_sqlalchemy.data_model import (
-    DatabaseManager, Hypothesis, SampleRun, HypothesisSampleMatch,
+    DatabaseManager, Hypothesis, SampleRun,
     BUPIDDeconvolutedLCMSMSSampleRun, Decon2LSLCMSSampleRun,
     MS1GlycanHypothesis, MS1GlycanHypothesisSampleMatch,
     MS1GlycopeptideHypothesis, MS2GlycopeptideHypothesis,
-    PeakGroupMatch, MS1GlycopeptideHypothesisSampleMatch)
+    MS1GlycopeptideHypothesisSampleMatch)
 
 from task.task_process import TaskManager, pickle
-from task.dummy import DummyTask
-
-from glycresoft_sqlalchemy.web_app.common import logmethod
 from glycresoft_sqlalchemy.utils import sqlitedict
 
 logger = logging.getLogger("project_manager")
 
 
 class ProjectManager(DatabaseManager, TaskManager):
+    app_data_name = "app_data.db"
+
     def __init__(self, database_path, sample_dir=None, results_dir=None, temp_dir=None, task_dir=None):
         DatabaseManager.__init__(self, database_path)
-        print self.connection_manager
         self.initialize()
         if sample_dir is None:
             sample_dir = path.join(path.dirname(database_path), 'sample_dir')
@@ -38,14 +37,20 @@ class ProjectManager(DatabaseManager, TaskManager):
         self._ensure_paths_exist()
         self.sample_submanagers = []
         for sample in os.listdir(self.sample_dir):
-            manager = DatabaseManager(path.join(self.sample_dir, sample))
+            manager = DatabaseManager(
+                path.join(self.sample_dir, sample)
+                )
             try:
                 manager.connect()
                 self.sample_submanagers.append(manager)
             except:
                 pass
-        self.app_data = sqlitedict.SqliteDict(self.get_temp_path("app_data.db"), autocommit=True)
+        self.app_data = sqlitedict.SqliteDict(self.app_data_path, autocommit=True)
         TaskManager.__init__(self, task_dir)
+
+    @property
+    def app_data_path(self):
+        return self.get_temp_path(self.app_data_name)
 
     def _ensure_paths_exist(self):
         try:
@@ -122,7 +127,10 @@ class ProjectManager(DatabaseManager, TaskManager):
     def ms1_samples(self):
         results = []
         for manager in self.sample_submanagers:
-            results.extend(manager.session().query(Decon2LSLCMSSampleRun).all())
+            try:
+                results.extend(manager.session().query(Decon2LSLCMSSampleRun).all())
+            except:
+                pass
         return results
 
     def ms2_samples(self):

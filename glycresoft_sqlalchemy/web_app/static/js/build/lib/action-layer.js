@@ -128,6 +128,18 @@ ActionLayerManager = (function(superClass) {
     return -1;
   };
 
+  ActionLayerManager.prototype.setActiveLayerController = function(controller) {
+    var layer;
+    layer = this.getShowingLayer();
+    return layer.setController(controller);
+  };
+
+  ActionLayerManager.prototype.getActiveLayerController = function() {
+    var layer;
+    layer = this.getShowingLayer();
+    return layer.controller;
+  };
+
   return ActionLayerManager;
 
 })(EventEmitter);
@@ -167,6 +179,7 @@ ActionLayer = (function() {
     if (this.manager.getShowingLayer() === void 0) {
       this.show();
     }
+    this.controller = null;
   }
 
   ActionLayer.prototype.setup = function() {
@@ -229,6 +242,10 @@ ActionLayer = (function() {
     if (this.options.closeable) {
       return this.container.prepend("<div>\n<a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>\n</div>");
     }
+  };
+
+  ActionLayer.prototype.setController = function(controller) {
+    return this.controller = controller;
   };
 
   ActionLayer.prototype.show = function() {

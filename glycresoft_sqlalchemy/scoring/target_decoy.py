@@ -8,7 +8,7 @@ from collections import OrderedDict, defaultdict
 
 from sqlalchemy import func, distinct
 from ..data_model import (
-    GlycopeptideMatch, Protein, PipelineModule,
+    GlycopeptideMatch, Protein, PipelineModule, HypothesisSampleMatch,
     GlycopeptideSpectrumMatch, GlycopeptideSpectrumMatchScore)
 
 
@@ -39,6 +39,16 @@ class TargetDecoyAnalyzer(PipelineModule):
             GlycopeptideMatch).filter(
             GlycopeptideMatch.protein_id == Protein.id,
             Protein.hypothesis_id == self.decoy_id).count()
+
+        hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+        if hsm is not None:
+            hsm.parameters["target_decoy"] = {
+                "with_pit": with_pit,
+                "target_hypothesis_id": target_hypothesis_id,
+                "decoy_hypothesis_id": decoy_hypothesis_id,
+            }
+            session.add(hsm)
+            session.commit()
 
         session.close()
         self.n_targets_at = {}
@@ -232,6 +242,17 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
         self.decoy_count = session.query(
             GlycopeptideSpectrumMatch.id).filter(
             GlycopeptideSpectrumMatch.hypothesis_id == self.decoy_id).count()
+
+        hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+        if hsm is not None:
+            hsm.parameters["target_decoy"] = {
+                "with_pit": with_pit,
+                "target_hypothesis_id": target_hypothesis_id,
+                "decoy_hypothesis_id": decoy_hypothesis_id,
+                "score": score
+            }
+            session.add(hsm)
+            session.commit()
 
         session.close()
         self.n_targets_at = {}

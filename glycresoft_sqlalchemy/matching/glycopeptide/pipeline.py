@@ -47,7 +47,7 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
                     "%s @ %s%s" % (
                         target_hypothesis.name, sample_run.name, count_part)))
             session.add(hsm)
-            session.flush()
+            session.commit()
             self.hypothesis_sample_match_id = hsm.id
             hsm.parameters.update({
                 "observed_ions_path": self.observed_ions_path,
@@ -140,7 +140,8 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         tda = target_decoy.TargetDecoyAnalyzer(
             self.database_path,
             self.target_hypothesis_id,
-            self.decoy_hypothesis_id)
+            self.decoy_hypothesis_id,
+            self.hypothesis_sample_match_id)
         tda.start()
 
     def do_store_observed_data(self):

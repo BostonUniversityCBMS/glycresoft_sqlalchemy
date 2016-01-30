@@ -182,16 +182,13 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
             shift = mass_shift.mass
             for shift_count in range(1, count_range + 1):
                 total_mass = base_mass + (shift * shift_count)
-                # This query is recompiled every time, using up the majority of the time spent
-                # per call. Look into cached compilation with bind parameters and the BakedQuery
-                # pattern.
+
                 for mass_match in observed_ions_manager.ppm_match_tolerance_search(
                         total_mass, matching_tolerance, sample_run_id):
                     mass_error = ppm_error(mass_match.weighted_monoisotopic_mass, total_mass)
                     matches.append((mass_match, mass_error, mass_shift, shift_count))
         params = []
         for mass_match, mass_error, mass_shift, shift_count in matches:
-            # logger.debug("Peak data: %r", mass_match.peak_data)
             case = {
                 "hypothesis_sample_match_id": hypothesis_sample_match_id,
                 "theoretical_match_type": search_type.__name__,
@@ -216,8 +213,7 @@ def match_peak_group(search_id, search_type, database_manager, observed_ions_man
                 "peak_group_id": mass_match.id,
             }
             params.append(case)
-        # session.bulk_insert_mappings(PeakGroupMatch, params)
-        # session.commit()
+
         session.close()
         return params
     except Exception, e:
@@ -310,6 +306,7 @@ class PeakGroupMatching(PipelineModule):
                     session.bulk_insert_mappings(PeakGroupMatch, accumulator)
                     session.commit()
                     accumulator = []
+            pool.terminate()
         else:
             for res in itertools.imap(task_fn, self.stream_ids()):
                 counter += 1
@@ -430,7 +427,7 @@ class BatchPeakGroupMatchingSearchGroups(PeakGroupMatching):
                 if counter > (last + step):
                     last += step
                     logger.info("%d masses searched", counter)
-
+            pool.terminate()
         else:
             for res in itertools.imap(task_fn, self.stream_ids()):
                 counter += res

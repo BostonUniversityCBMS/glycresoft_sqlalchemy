@@ -55,11 +55,15 @@ def test_main():
         n_processes=n_processes)
     hypothesis_id = job.start()
 
+    # hypothesis_id = 2
+
     ec = os.system(
         ("glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db -p db "
          "-g 2e-5 --skip-grouping {db_file_name} {hypothesis_id}").format(
             db_file_name=db_file_name, hypothesis_id=hypothesis_id))
     assert ec == 0
+
+    # hsm_id = 3
 
     job = exact_search_space_builder.BatchingExactSearchSpaceBuilder.from_hypothesis_sample_match(
         db_file_name, 1, 6)
@@ -67,11 +71,8 @@ def test_main():
     job = make_decoys.BatchingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id], n_processes=6)
     decoy_hypothesis_id = job.start()[0]
 
-    # hypothesis_id = 2
-    # decoy_hypothesis_id = 3
-
-    frequency_counter = pair_counting.pickle.load(open('datafiles/Phil-82-Training-Data/pair_counts.pkl'))
-    scorer = pair_counting.FrequencyScorer(frequency_counter)
+    # hypothesis_id = 3
+    # decoy_hypothesis_id = 4
 
     job = GlycopeptideFragmentMatchingPipeline(
         db_file_name, "datafiles/20140918_01.db",
@@ -82,15 +83,15 @@ def test_main():
         n_processes=6)
     job.start()
 
-    job = GlycopeptideFragmentMatchingPipeline(
-        db_file_name, "datafiles/20140918_01.db",
-        target_hypothesis_id=hypothesis_id,
-        decoy_hypothesis_id=decoy_hypothesis_id,
-        sample_run_name="20140918_01.yaml",
-        scorer=scorer,
-        hypothesis_sample_match_name="End-to-End AGP @ 20140918_01 (Frequency Scorer)",
-        n_processes=6)
-    job.start()
+    # job = GlycopeptideFragmentMatchingPipeline(
+    #     db_file_name, "datafiles/20140918_01.db",
+    #     target_hypothesis_id=hypothesis_id,
+    #     decoy_hypothesis_id=decoy_hypothesis_id,
+    #     sample_run_name="20140918_01.yaml",
+    #     scorer=scorer,
+    #     hypothesis_sample_match_name="End-to-End AGP @ 20140918_01 (Frequency Scorer)",
+    #     n_processes=6)
+    # job.start()
 
 if __name__ == '__main__':
     test_main()

@@ -156,7 +156,7 @@ class Task(object):
         self.process = None
 
     def to_json(self):
-        return dict(id=self.id, state=self.state)
+        return dict(id=self.id, name=self.name, status=self.state)
 
     def messages(self):
         message = self.get_message()
@@ -304,6 +304,7 @@ class TaskManager(object):
                 if task.id in self.currently_running:
                     if self.running_lock.acquire(0):
                         self.currently_running.pop(task.id)
+                        self.messages.put(Message({"id": task.id, "name": task.name}, "task-error"))
                         self.tasks.pop(task.id)
                         self.n_running -= 1
                         self.running_lock.release()
@@ -358,3 +359,13 @@ class TaskManager(object):
 
     def add_message(self, message):
         self.messages.put(message)
+
+    def task_list(self):
+        tasks = []
+        for t_id, task in self.tasks.items():
+            tasks.append({
+                "name": task.name,
+                "id": task.id,
+                "status": task.state
+            })
+        return tasks

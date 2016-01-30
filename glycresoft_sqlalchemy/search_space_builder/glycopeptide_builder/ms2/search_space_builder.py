@@ -229,6 +229,19 @@ def get_peptide_modifications(peptide_mod_str, modification_table):
     return mod_list
 
 
+def extract_glycosites(ms1_result, site_list_map):
+    glycan_sites = set(site_list_map.get(ms1_result.protein_name, [])).intersection(
+            range(ms1_result.start_position, ms1_result.end_position))
+
+    # No recorded sites, skip this component.
+    if len(glycan_sites) == 0:
+        return None
+
+    # Adjust the glycan_sites to relative position
+    glycan_sites = [x - ms1_result.start_position for x in glycan_sites]
+    return glycan_sites
+
+
 def get_search_space(ms1_result, glycan_sites, mod_list):
     """Create a :class:`.sequence_space.SequenceSpace` object from the collection
     of information interpolated from the MS1 Results
@@ -336,16 +349,10 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map,
         mod_list = get_peptide_modifications(
             ms1_result.peptide_modifications, modification_table)
 
-        # Get the start and end positions of fragment relative to the
-        glycan_sites = set(site_list_map.get(ms1_result.protein_name, [])).intersection(
-            range(ms1_result.start_position, ms1_result.end_position))
-
-        # No recorded sites, skip this component.
-        if len(glycan_sites) == 0:
+        glycan_sites = extract_glycosites(ms1_result, site_list_map)
+        if glycan_sites is None:
             return 0
 
-        # Adjust the glycan_sites to relative position
-        glycan_sites = [x - ms1_result.start_position for x in glycan_sites]
         ss = get_search_space(
             ms1_result, glycan_sites, mod_list)
         seq_list = ss.get_theoretical_sequence(ms1_result.count_glycosylation_sites)
@@ -514,6 +521,24 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         for obj in self.ms1_results_reader:
             yield obj
 
+    def _remove_duplicates(self):
+        session = self.manager()
+        hypothesis_id = self.hypothesis.id
+
+        ids = session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.from_hypothesis(hypothesis_id)).group_by(
+            TheoreticalGlycopeptide.glycopeptide_sequence, TheoreticalGlycopeptide.protein_id)
+
+        q = session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == hypothesis_id,
+            ~TheoreticalGlycopeptide.id.in_(ids.correlate(None)))
+
+        conn = session.connection()
+        conn.execute(TheoreticalGlycopeptide.__table__.delete(
+            TheoreticalGlycopeptide.__table__.c.id.in_(q.selectable)))
+        session.commit()
+
     def run(self):
         '''
         Execute the algorithm on :attr:`n_processes` processes
@@ -536,6 +561,15 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
                 cntr += res
                 if (cntr % 1000) == 0:
                     logger.info("Committing, %d records made", cntr)
+
+        logger.info("Checking Integrity")
+        self._remove_duplicates()
+
+        final_count = self.session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == id).count()
+
+        logger.info("%d Theoretical Glycopeptides created", final_count)
         return self.hypothesis_id
 
 
@@ -609,7 +643,7 @@ parse_digest = msdigest_xml_parser.MSDigestParameters.parse
 @constructs.references(MS1GlycopeptideHypothesisSampleMatch)
 class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
 
-    def stream_results(self, batch_size=100):
+    def stream_results(self, batch_size=1000):
         for chunk in collectiontools.chunk_iterator2(
                 super(BatchingTheoreticalSearchSpaceBuilder, self).stream_results(), batch_size):
             yield chunk
@@ -647,6 +681,16 @@ class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
                 if (cntr > last + step):
                     last = cntr
                     logger.info("Committing, %d records made", cntr)
+
+        logger.info("Checking Integrity")
+        self._remove_duplicates()
+
+        final_count = self.session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == self.hypothesis_id).count()
+
+        logger.info("%d Theoretical Glycopeptides created", final_count)
+
         return self.hypothesis_id
 
 
@@ -678,22 +722,16 @@ def batch_process_predicted_ms1_ion(rows, modification_table, site_list_map,
         for row in rows:
             ms1_result = renderer.render(session, row)
             if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
-                return 0
+                continue
 
             # Compute the set of modifications that can occur.
             mod_list = get_peptide_modifications(
                 ms1_result.peptide_modifications, modification_table)
 
-            # Get the start and end positions of fragment relative to the
-            glycan_sites = set(site_list_map.get(ms1_result.protein_name, [])).intersection(
-                range(ms1_result.start_position, ms1_result.end_position))
+            glycan_sites = extract_glycosites(ms1_result, site_list_map)
+            if glycan_sites is None:
+                continue
 
-            # No recorded sites, skip this component.
-            if len(glycan_sites) == 0:
-                return 0
-
-            # Adjust the glycan_sites to relative position
-            glycan_sites = [x - ms1_result.start_position for x in glycan_sites]
             ss = get_search_space(
                 ms1_result, glycan_sites, mod_list)
             seq_list = ss.get_theoretical_sequence(ms1_result.count_glycosylation_sites)

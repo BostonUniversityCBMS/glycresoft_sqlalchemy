@@ -19,7 +19,7 @@
         </tr>
     </thead>
     <tbody class='glycopeptide-match-table-body' style='height:450px;'>
-    {% for gpm in glycopeptides %}    
+    {% for gpm in paginator.items %}    
         <tr class='glycopeptide-match-row' data-target="{{gpm.id}}">
             <td class='narrow'>{{"%0.4f"|format(gpm.observed_mass)}}</td>
             <td class='wide'><span>{{gpm.modified_peptide_sequence|glycopeptide_string}}</span></td>
@@ -45,3 +45,20 @@
 </table>    
 </div>
 <!-- On narrow screens, the above table may appear to have two horizontal scroll bars -->
+<ul class='pagination'>
+    <li class={{"disabled" if paginator.page == 1 else ""}}>
+        <a class='previous-page'><i class="material-icons">chevron_left</i></a>
+    </li>
+    {% for page in paginator.iter_pages() %}
+        {% if page is not none %}
+            <li class='{{"waves-effect" if page != paginator.page else "active teal"}}'>
+                <a data-index="{{page}}">{{page}}</a>
+            </li>
+        {% else %}
+            <li> ... </li>
+        {% endif %}
+    {% endfor %}
+    <li class={{"disabled" if paginator.page == paginator.pages else ""}}>
+        <a class='next-page '><i class="material-icons">chevron_right</i></a>
+    </li>
+</ul>

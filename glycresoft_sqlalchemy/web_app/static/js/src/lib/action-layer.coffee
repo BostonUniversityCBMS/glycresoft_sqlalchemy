@@ -84,6 +84,14 @@ class ActionLayerManager extends EventEmitter
                 return index
         return -1
 
+    setActiveLayerController: (controller) ->
+        layer = @getShowingLayer()
+        layer.setController(controller)
+
+    getActiveLayerController: ->
+        layer = @getShowingLayer()
+        return layer.controller
+
 
 class ActionLayer
     @actions = {}
@@ -112,6 +120,7 @@ class ActionLayer
         @hide()
         if @manager.getShowingLayer() == undefined
             @show()
+        @controller = null
 
     setup: () ->
         console.log("Setting up", @)
@@ -160,6 +169,9 @@ class ActionLayer
         <div>
         <a class='dismiss-layer mdi-content-clear' onclick='GlycReSoft.removeCurrentLayer()'></a>
         </div>""")
+
+    setController: (controller) ->
+        @controller = controller
 
     show: ->
         @container.fadeIn 100

@@ -122,11 +122,11 @@ def from_sequence(ms1_result, database_manager, protein_map, source_type):
         session.close()
         return product
     except Exception, e:
-        logger.exception("An error occurred, %r", ms1_result, exc_info=e)
+        logging.exception("An error occurred, %r", ms1_result, exc_info=e)
         raise
 
 
-#@constructs.references(ExactMS1GlycopeptideHypothesisSampleMatch)
+#  @constructs.references(ExactMS1GlycopeptideHypothesisSampleMatch)
 class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
     HypothesisType = ExactMS2GlycopeptideHypothesis
 
@@ -237,22 +237,26 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
 
 
 def batch_from_sequence(ms1_results, database_manager, protein_map, source_type):
-    session = database_manager.session()
-    working_set = WorkItemCollection(session)
-    i = 0
-    for ms1_result in ms1_results:
-        ms1_result = source_type.render(session, ms1_result)
-        if len(ms1_result.base_peptide_sequence) == 0:
-            return None
-        seq = Sequence(ms1_result.most_detailed_sequence)
-        seq.glycan = ''
-        product = generate_fragments(seq, ms1_result)
-        if not isinstance(product.protein_id, int):
-            product.protein_id = protein_map[product.protein_id]
-        working_set.add(product)
-        i += 1
-    working_set.commit()
-    return i
+    try:
+        session = database_manager.session()
+        working_set = WorkItemCollection(session)
+        i = 0
+        for ms1_result in ms1_results:
+            ms1_result = source_type.render(session, ms1_result)
+            if len(ms1_result.base_peptide_sequence) == 0:
+                return None
+            seq = Sequence(ms1_result.most_detailed_sequence)
+            seq.glycan = ''
+            product = generate_fragments(seq, ms1_result)
+            if not isinstance(product.protein_id, int):
+                product.protein_id = protein_map[product.protein_id]
+            working_set.add(product)
+            i += 1
+        working_set.commit()
+        return i
+    except Exception, e:
+        logging.exception("An error occurred in batch_from_sequence", exc_info=e)
+        raise e
 
 
 @constructs.references(ExactMS1GlycopeptideHypothesisSampleMatch)
@@ -323,20 +327,21 @@ class BatchingExactSearchSpaceBuilder(BatchingTheoreticalSearchSpaceBuilder):
         logger.info("Checking integrity")
 
         # Remove duplicates
-        ids = session.query(func.min(TheoreticalGlycopeptide.id)).filter(
-            TheoreticalGlycopeptide.protein_id == Protein.id,
-            Protein.hypothesis_id == id).group_by(
-            TheoreticalGlycopeptide.glycopeptide_sequence,
-            TheoreticalGlycopeptide.protein_id)
+        # ids = session.query(func.min(TheoreticalGlycopeptide.id)).filter(
+        #     TheoreticalGlycopeptide.protein_id == Protein.id,
+        #     Protein.hypothesis_id == id).group_by(
+        #     TheoreticalGlycopeptide.glycopeptide_sequence,
+        #     TheoreticalGlycopeptide.protein_id)
 
-        q = session.query(TheoreticalGlycopeptide.id).filter(
-            TheoreticalGlycopeptide.protein_id == Protein.id,
-            Protein.hypothesis_id == id,
-            ~TheoreticalGlycopeptide.id.in_(ids.correlate(None)))
-        conn = session.connection()
-        conn.execute(TheoreticalGlycopeptide.__table__.delete(
-            TheoreticalGlycopeptide.__table__.c.id.in_(q.selectable)))
-        session.commit()
+        # q = session.query(TheoreticalGlycopeptide.id).filter(
+        #     TheoreticalGlycopeptide.protein_id == Protein.id,
+        #     Protein.hypothesis_id == id,
+        #     ~TheoreticalGlycopeptide.id.in_(ids.correlate(None)))
+        # conn = session.connection()
+        # conn.execute(TheoreticalGlycopeptide.__table__.delete(
+        #     TheoreticalGlycopeptide.__table__.c.id.in_(q.selectable)))
+        # session.commit()
+        self._remove_duplicates()
         final_count = session.query(TheoreticalGlycopeptide.id).filter(
             TheoreticalGlycopeptide.protein_id == Protein.id,
             Protein.hypothesis_id == id).count()

@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from contextlib import contextmanager
+import operator
+
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (PickleType, Numeric, Unicode, Table,
@@ -12,7 +15,7 @@ from .hypothesis import (
     ExactMS2GlycopeptideHypothesis)
 
 from .base import Hierarchy, Base
-from .generic import MutableDict
+from .generic import MutableDict, ParameterStore
 from .json_type import tryjson, clean_dict
 from .observed_ions import SampleRun, TandemScan, ScanBase, Peak
 
@@ -30,12 +33,12 @@ hypothesis_sample_match_root = Hierarchy()
 
 
 @hypothesis_sample_match_root.references(Hypothesis)
-class HypothesisSampleMatch(Base):
+class HypothesisSampleMatch(Base, ParameterStore):
     __tablename__ = "HypothesisSampleMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(Unicode(128))
-    parameters = Column(MutableDict.as_mutable(PickleType))
+    name = Column(Unicode(128), unique=True)
+    # parameters = Column(MutableDict.as_mutable(PickleType))
     sample_run_name = Column(Unicode(128))
     target_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id))
     decoy_hypothesis_id = Column(Integer, ForeignKey(Hypothesis.id))

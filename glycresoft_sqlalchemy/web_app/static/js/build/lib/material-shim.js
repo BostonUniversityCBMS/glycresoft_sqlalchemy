@@ -5,7 +5,7 @@ When these elements are added dynamically, they must be configured manually.
 
 This code is taken from https://github.com/Dogfalo/materialize/blob/master/js/forms.js#L156
  */
-var materialFileInput, materialRefresh;
+var materialCheckbox, materialFileInput, materialRefresh;
 
 materialRefresh = function() {
   try {
@@ -33,6 +33,15 @@ materialFileInput = function() {
     }
     path_input.val(file_names.join(', '));
     path_input.trigger('change');
+  });
+};
+
+materialCheckbox = function(selector) {
+  return $(selector).click(function(e) {
+    var handle, target;
+    handle = $(this);
+    target = handle.attr("for");
+    return $("input[name='" + target + "']").click();
   });
 };
 
