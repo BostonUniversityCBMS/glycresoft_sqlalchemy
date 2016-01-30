@@ -100,7 +100,7 @@ class OtherGlycanHypothesisGlycanHypothesisBuilder(PipelineModule):
         if source_path is None:
             source_path = database_path
         self.manager = self.manager_type(database_path)
-        self.source_manager = self.manager_type(database_path)
+        self.source_manager = self.manager_type(source_path)
         self.source_hypothesis_id = source_hypothesis_id
         self.reduction = reduction
         self.derivatization = derivatization

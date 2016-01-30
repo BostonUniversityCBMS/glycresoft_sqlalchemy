@@ -19,7 +19,7 @@ from . import ResidueBase
 
 
 target_string_pattern = re.compile(
-    r'((?P<n_term>N-term)|(?P<c_term>C-term)|(?P<amino_acid>[A-Z]+))')
+    r'((?P<n_term>[Nn][-_][tT]erm)|(?P<c_term>[Cc][-_][tT]erm)|(?P<amino_acid>[A-Z]+))')
 title_cleaner = re.compile(
     r'(?P<name>.*)\s(?P<target>\(.+\))?$')
 
