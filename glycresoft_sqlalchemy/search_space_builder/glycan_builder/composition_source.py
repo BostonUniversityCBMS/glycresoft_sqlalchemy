@@ -95,9 +95,12 @@ class TextGlycanCompositionHypothesisBuilder(PipelineModule):
 class OtherGlycanHypothesisGlycanHypothesisBuilder(PipelineModule):
     HypothesisType = MS1GlycanHypothesis
 
-    def __init__(self, database_path, source_hypothesis_id, reduction=None, derivatization=None,
+    def __init__(self, database_path, source_hypothesis_id, source_path=None, reduction=None, derivatization=None,
                  hypothesis_id=None, **kwargs):
+        if source_path is None:
+            source_path = database_path
         self.manager = self.manager_type(database_path)
+        self.source_manager = self.manager_type(database_path)
         self.source_hypothesis_id = source_hypothesis_id
         self.reduction = reduction
         self.derivatization = derivatization
@@ -106,6 +109,7 @@ class OtherGlycanHypothesisGlycanHypothesisBuilder(PipelineModule):
 
     def run(self):
         session = self.manager.session()
+        source_session = self.source_manager.session()
         hypothesis = None
         if self.hypothesis_id is None:
             hypothesis = self.HypothesisType(name=self.options.get(
@@ -135,7 +139,7 @@ class OtherGlycanHypothesisGlycanHypothesisBuilder(PipelineModule):
                 pass
 
         i = 0
-        selection = session.query(TheoreticalGlycanComposition).filter(
+        selection = source_session.query(TheoreticalGlycanComposition).filter(
             TheoreticalGlycanComposition.hypothesis_id == self.source_hypothesis_id).all()
         monosaccharide_identities = set()
         for composition in selection:

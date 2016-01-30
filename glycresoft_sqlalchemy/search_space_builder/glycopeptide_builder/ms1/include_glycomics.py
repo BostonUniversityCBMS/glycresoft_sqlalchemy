@@ -29,7 +29,7 @@ glycan_file_type_map = {
    "txt": lambda database_path, glycan_path, id, options: GlycanCompositionHypothesisBuilder(
     database_path, glycan_path, "txt", hypothesis_id=id, **options),
    "hypothesis": lambda database_path, glycan_path, id, options: OtherGlycanHypothesisGlycanHypothesisBuilder(
-    database_path, hypothesis_id=id, **options)
+    database_path, hypothesis_id=id, source_path=glycan_path, **options)
 }
 
 

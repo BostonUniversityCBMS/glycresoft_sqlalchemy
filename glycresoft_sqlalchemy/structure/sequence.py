@@ -123,7 +123,7 @@ def find_n_glycosylation_sequons(sequence, allow_modified=frozenset()):
     return positions
 
 
-def golden_pair_map(sequence):
+def golden_pair_map(sequence):  # pragma: no cover
     seq_obj = Sequence(sequence)
     key_to_golden_pairs = {}
     fragments = map(seq_obj.break_at, range(1, len(seq_obj)))
