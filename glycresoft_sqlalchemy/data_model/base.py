@@ -6,7 +6,12 @@ Base2 = Base
 
 
 def _base_eq(self, other):
-    return self.id == other.id and self.__class__ == other.__class__
+    try:
+        if other is None:
+            return False
+        return self.id == other.id and self.__class__ == other.__class__
+    except AttributeError:
+        return False
 
 
 def _base_hash(self):

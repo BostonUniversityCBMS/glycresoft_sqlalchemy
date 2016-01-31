@@ -65,14 +65,12 @@ def run_ms2_glycoproteomics_search(
         ms2_tolerance=ms2_tolerance_default, **kwargs):
     manager = DatabaseManager(database_path)
     manager.initialize()
-    session = manager.session()
 
     n_processes = kwargs.get("n_processes", 4)
 
     if source_hypothesis_sample_match_id is not None:
-        source_hsm = session.query(HypothesisSampleMatch).get(source_hypothesis_sample_match_id)
         builder = TheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
-            database_path, source_hsm, n_processes=n_processes)
+            database_path, source_hypothesis_sample_match_id, n_processes=n_processes)
         target_hypothesis_id = builder.start()
         decoy_builder = BatchingDecoySearchSpaceBuilder(
             database_path, hypothesis_ids=[target_hypothesis_id], n_processes=n_processes)
@@ -141,10 +139,10 @@ with let(ms2_glycoproteomics_app) as c:
     c.add_argument("database_path")
 
     target_group = c.add_mutually_exclusive_group()
-    target_group.add_argument("-a", "--target-hypothesis-id",
+    target_group.add_argument("-a", "--target-hypothesis-id", type=int,
                               help='The identity of the target hypothesis, if it already exists')
     target_group.add_argument(
-        "-s", "--source-hypothesis-sample-match-id",
+        "-s", "--source-hypothesis-sample-match-id", type=int,
         help="The identity of the hypothesis sample match from which to build the MS2 Hypothesis")
 
     c.add_argument("-n", "--n-processes", default=4, required=False, type=int)

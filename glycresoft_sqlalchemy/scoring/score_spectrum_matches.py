@@ -63,7 +63,7 @@ class SimpleSpectrumAssignment(PipelineModule):
                 GlycopeptideMatch.protein_id == Protein.id,
                 Protein.hypothesis_id == self.hypothesis_id,
                 GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id):
-            batch.append(id_)
+            batch.append(id_[0])
             i += 1
             if i > chunk_size:
                 yield batch
