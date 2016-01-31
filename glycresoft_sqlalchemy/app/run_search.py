@@ -59,7 +59,7 @@ def index_bupid(file_path, database_path=None):
 
 
 def run_ms2_glycoproteomics_search(
-        database_path, observed_ions_path, target_hypothesis_id=None, hypothesis_sample_match_id=None,
+        database_path, observed_ions_path, target_hypothesis_id=None, source_hypothesis_sample_match_id=None,
         decoy_hypothesis_id=None, observed_ions_type='bupid_yaml', sample_run_id=None,
         ms1_tolerance=ms1_tolerance_default,
         ms2_tolerance=ms2_tolerance_default, **kwargs):
@@ -69,8 +69,8 @@ def run_ms2_glycoproteomics_search(
 
     n_processes = kwargs.get("n_processes", 4)
 
-    if hypothesis_sample_match_id is not None:
-        source_hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+    if source_hypothesis_sample_match_id is not None:
+        source_hsm = session.query(HypothesisSampleMatch).get(source_hypothesis_sample_match_id)
         builder = TheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
             database_path, source_hsm, n_processes=n_processes)
         target_hypothesis_id = builder.start()
