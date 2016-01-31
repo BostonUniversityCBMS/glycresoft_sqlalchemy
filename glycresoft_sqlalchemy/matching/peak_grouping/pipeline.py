@@ -91,10 +91,12 @@ class LCMSPeakClusterSearch(PipelineModule):
                 session.commit()
                 logger.info("Cleared? %r", hypothesis_sample_match.peak_group_matches.filter(
                     ~PeakGroupType.matched).count())
-        self.options.setdefault("hypothesis_sample_match_name", "{}_on_{}_ms1".format(
+        self.options.setdefault("hypothesis_sample_match_name", "{} @ {}_ms1".format(
             session.query(Hypothesis).get(self.hypothesis_id).name,
             sample_name))
-        hypothesis_sample_match.name = self.options["hypothesis_sample_match_name"]
+
+        hypothesis_sample_match.name = HypothesisSampleMatch.make_unique_name(
+            session, self.options["hypothesis_sample_match_name"])
 
         hypothesis_sample_match.parameters = dict(
             observed_ions_path=self.observed_ions_path,

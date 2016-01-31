@@ -386,6 +386,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
     '''
 
     HypothesisType = MS2GlycopeptideHypothesis
+    _do_remove_duplicates = True
 
     @classmethod
     def from_hypothesis_sample_match(cls, database_path, hypothesis_sample_match_id, n_processes=4, **kwargs):
@@ -400,7 +401,9 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
 
         builder = constructs[source_hypothesis_sample_match.__class__]
 
-        name = kwargs.get("hypothesis_name", source_hypothesis.name + " (MS2)")
+        name = Hypothesis.make_unique_name(
+            session,
+            kwargs.get("hypothesis_name", source_hypothesis.name + " (MS2)"))
 
         inst = builder(
             database_path, database_path, enzyme=[enzyme], site_list=None,
@@ -522,6 +525,8 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
             yield obj
 
     def _remove_duplicates(self):
+        if not self._do_remove_duplicates:
+            return
         session = self.manager()
         hypothesis_id = self.hypothesis.id
 

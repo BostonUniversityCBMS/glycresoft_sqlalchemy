@@ -98,9 +98,6 @@ def find_all_overlapping_peptides_task(protein_id, database_manager, decider_fn,
         InformedPeptide.__table__.c.id.in_(q.selectable)))
 
     session.commit()
-    total_unassigned = session.query(InformedPeptide).filter(
-        InformedPeptide.protein_id == None).count()
-    assert total_unassigned == 0
 
     return 1
 
@@ -150,9 +147,6 @@ class EnrichDistinctPeptides(PipelineModule):
         else:
             decider_fn = substring_edit_distance
 
-        assert session.query(InformedPeptide).filter(
-            InformedPeptide.protein_id == None).count() == 0
-
         for protein_id in protein_ids:
             target_protein = session.query(Protein).get(protein_id)
             i = 0
@@ -194,10 +188,6 @@ class EnrichDistinctPeptides(PipelineModule):
 
             session.commit()
 
-            total_unassigned = session.query(InformedPeptide).filter(
-                InformedPeptide.protein_id == None).count()
-            assert total_unassigned == 0
-
 
 class EnrichDistinctPeptidesMultiprocess(EnrichDistinctPeptides):
     def __init__(self, database_path, hypothesis_id, target_proteins=None, max_distance=0, n_processes=4):
@@ -223,9 +213,6 @@ class EnrichDistinctPeptidesMultiprocess(EnrichDistinctPeptides):
         else:
             decider_fn = substring_edit_distance
 
-        assert session.query(InformedPeptide).filter(
-            InformedPeptide.protein_id == None).count() == 0
-
         taskfn = functools.partial(
             find_all_overlapping_peptides_task,
             database_manager=self.manager,
@@ -238,6 +225,7 @@ class EnrichDistinctPeptidesMultiprocess(EnrichDistinctPeptides):
             for result in pool.imap_unordered(taskfn, protein_ids):
                 count += result
                 logger.info("%d proteins enriched", count)
+            pool.terminate()
         else:
             for result in itertools.imap(taskfn, protein_ids):
                 count += result

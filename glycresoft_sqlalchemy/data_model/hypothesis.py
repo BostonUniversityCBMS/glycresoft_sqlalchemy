@@ -7,20 +7,19 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy import (
     Column, Integer, ForeignKey, PickleType, Unicode, Boolean)
 
-from .generic import MutableDict, ParameterStore
+from .generic import ParameterStore, HasUniqueName
 from .base import Base
 
 from glycresoft_sqlalchemy.utils import classproperty
 
 
-class Hypothesis(Base, ParameterStore):
+class Hypothesis(Base, ParameterStore, HasUniqueName):
     '''
     Represents a database of theoretical sequences to search against.
     '''
     __tablename__ = "Hypothesis"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(Unicode(128), default=u"", unique=True)
     proteins = relationship("Protein", backref=backref("hypothesis", order_by=id),
                             collection_class=attribute_mapped_collection('name'),
                             cascade="delete")

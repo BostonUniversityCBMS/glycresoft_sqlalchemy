@@ -160,14 +160,14 @@ def has_glycan_composition(model, composition_attr):
             def __repr__(self):
                 return "<{} {}>".format(self.base_type, self.count)
 
-        @event.listens_for(getattr(model, composition_attr), "set")
+        @event.listens_for(getattr(model, composition_attr), "set", propagate=True)
         def convert_composition(target, value, oldvalue, initiator):
             if value == "{}" or value is None:
                 return
             for k, v in FrozenGlycanComposition.parse(value).items():
                 target.glycan_composition[k.name()] = v
 
-        @event.listens_for(model, "load")
+        @event.listens_for(model, "load", propagate=True)
         def convert_composition_load(target, context):
             value = getattr(target, composition_attr)
             if value == "{}" or value is None:
