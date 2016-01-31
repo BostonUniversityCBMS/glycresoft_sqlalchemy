@@ -23,7 +23,7 @@ from glypy.composition.glycan_composition import GlycanComposition, FrozenGlycan
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
     HypothesisSampleMatch, PeakGroupMatchType,
-    MS1GlycopeptideHypothesis, Protein,
+    MS1GlycopeptideHypothesis, Protein, slurp,
     TheoreticalGlycopeptide, Hierarchy, MS1GlycopeptideHypothesisSampleMatch)
 
 logger = logging.getLogger("search_space_builder")
@@ -719,8 +719,9 @@ def batch_process_predicted_ms1_ion(rows, modification_table, site_list_map,
     working_set = WorkItemCollection(session)
     try:
         i = 0
-        for row in rows:
-            ms1_result = renderer.render(session, row)
+
+        for ms1_result in [renderer.render(session, row) for row in rows]:
+
             if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
                 continue
 

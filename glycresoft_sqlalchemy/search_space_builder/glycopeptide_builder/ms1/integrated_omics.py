@@ -342,7 +342,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManage
 
         self.protein_ids = protein_ids
 
-    def stream_peptides(self, chunk_size=5):
+    def stream_peptides(self, chunk_size=15):
         session = self.manager.session()
         protein_ids = self.protein_ids
         try:

@@ -10,7 +10,7 @@ from .search_space_builder import TheoreticalSearchSpaceBuilder, constructs, Bat
 from ..utils import WorkItemCollectionFlat as WorkItemCollection, fragments
 
 from glycresoft_sqlalchemy.data_model import (
-    TheoreticalGlycopeptide, Protein,
+    TheoreticalGlycopeptide, Protein, slurp,
     ExactMS1GlycopeptideHypothesisSampleMatch,
     ExactMS2GlycopeptideHypothesis)
 
@@ -241,8 +241,8 @@ def batch_from_sequence(ms1_results, database_manager, protein_map, source_type)
         session = database_manager.session()
         working_set = WorkItemCollection(session)
         i = 0
-        for ms1_result in ms1_results:
-            ms1_result = source_type.render(session, ms1_result)
+        for ms1_result in [source_type.render(session, ms1_result) for ms1_result in ms1_results]:
+
             if len(ms1_result.base_peptide_sequence) == 0:
                 return None
             seq = Sequence(ms1_result.most_detailed_sequence)

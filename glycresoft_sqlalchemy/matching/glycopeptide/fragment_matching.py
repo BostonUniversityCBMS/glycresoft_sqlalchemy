@@ -14,7 +14,7 @@ from collections import defaultdict
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 
 from glycresoft_sqlalchemy import data_model as model
-from glycresoft_sqlalchemy.data_model import PipelineModule, MSMSSqlDB, TandemScan
+from glycresoft_sqlalchemy.data_model import PipelineModule, MSMSSqlDB, TandemScan, slurp
 from glycresoft_sqlalchemy.utils.common_math import ppm_error
 
 
@@ -80,10 +80,9 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
 
         glycopeptide_matches_spectrum_matches = []
 
-        for theoretical_id in theoretical_ids:
-            theoretical = session.query(TheoreticalGlycopeptide).get(theoretical_id)
-            if theoretical is None:
-                raise ValueError("No theoretical glycopeptide with id %r" % theoretical_id)
+        theoreticals = slurp(session, TheoreticalGlycopeptide, theoretical_ids, flatten=False)
+
+        for theoretical in theoreticals:
 
             # Containers for global theoretical peak matches
             oxonium_ions = []

@@ -8,7 +8,7 @@ from glycresoft_sqlalchemy.structure import sequence
 from glycresoft_sqlalchemy.structure.parser import sequence_tokenizer_respect_sequons, sequence_tokenizer
 
 from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide, Hypothesis, MS2GlycopeptideHypothesis, Protein
-from glycresoft_sqlalchemy.data_model import PipelineModule
+from glycresoft_sqlalchemy.data_model import PipelineModule, slurp
 
 from ..utils import fragments, WorkItemCollectionFlat
 
@@ -250,8 +250,8 @@ def batch_make_decoys(theoretical_ids, database_manager, prefix_len=0, suffix_le
     session = database_manager()
     working_set = WorkItemCollectionFlat(session)
     try:
-        for theoretical_id in theoretical_ids:
-            theoretical_sequence = session.query(TheoreticalGlycopeptide).get(theoretical_id)
+        theoretical_sequences = slurp(session, TheoreticalGlycopeptide, theoretical_ids, flatten=False)
+        for theoretical_sequence in theoretical_sequences:
 
             if protein_decoy_map is None:
                 protein_decoy_map = {}

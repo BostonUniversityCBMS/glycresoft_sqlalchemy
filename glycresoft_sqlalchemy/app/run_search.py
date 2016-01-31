@@ -139,11 +139,13 @@ subparsers = app.add_subparsers()
 ms2_glycoproteomics_app = subparsers.add_parser("ms2-glycoproteomics")
 with let(ms2_glycoproteomics_app) as c:
     c.add_argument("database_path")
-    c.add_argument("target_hypothesis_id")
 
     target_group = c.add_mutually_exclusive_group()
-    target_group.add_argument("-a", "--target-hypothesis-id", help='The identity of the target hypothesis, if it already exists')
-    target_group.add_argument("-s", "--source-hypothesis-sample-match-id", help="The ")
+    target_group.add_argument("-a", "--target-hypothesis-id",
+                              help='The identity of the target hypothesis, if it already exists')
+    target_group.add_argument(
+        "-s", "--source-hypothesis-sample-match-id",
+        help="The identity of the hypothesis sample match from which to build the MS2 Hypothesis")
 
     c.add_argument("-n", "--n-processes", default=4, required=False, type=int)
     c.add_argument("-i", "--observed-ions-path")

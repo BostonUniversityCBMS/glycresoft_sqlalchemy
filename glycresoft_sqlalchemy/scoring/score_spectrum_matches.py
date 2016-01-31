@@ -7,7 +7,8 @@ try:
 except:
     pass
 from ..data_model import (
-    TheoreticalGlycopeptide, GlycopeptideMatch, PipelineModule, GlycopeptideSpectrumMatch, func, Protein)
+    TheoreticalGlycopeptide, GlycopeptideMatch, PipelineModule, GlycopeptideSpectrumMatch, func, Protein,
+    slurp)
 from .simple_scoring_algorithm import evaluate, merge_ion_matches, split_ion_list
 
 
@@ -145,14 +146,13 @@ def score_on_limited_peak_matches(glycopeptide_match, database_manager, scorer, 
         session.close()
 
 
-def batch_score_on_limited_peak_matches(glycopeptide_spectrum_match_ids, database_manager, scorer, score_parameters):
+def batch_score_on_limited_peak_matches(glycopeptide_match_ids, database_manager, scorer, score_parameters):
     try:
         session = database_manager()
         batch = []
-        for gsm_id in glycopeptide_spectrum_match_ids:
-            session.query(GlycopeptideMatch).get(gsm_id[0])
+        glycopeptide_matches = slurp(session, GlycopeptideMatch, glycopeptide_match_ids, flatten=False)
+        for glycopeptide_match in glycopeptide_matches:
 
-            glycopeptide_match = session.query(GlycopeptideMatch).get(gsm_id)
             ion_matches = split_ion_list(
                 merge_ion_matches(itertools.chain.from_iterable(itertools.chain.from_iterable(
                     [gsm.peak_match_map.values() for gsm in glycopeptide_match.spectrum_matches
@@ -166,7 +166,7 @@ def batch_score_on_limited_peak_matches(glycopeptide_spectrum_match_ids, databas
             batch.append(glycopeptide_match)
         session.bulk_save_objects(batch)
         session.commit()
-        return len(glycopeptide_spectrum_match_ids)
+        return len(glycopeptide_match_ids)
     except Exception, e:
         logging.exception("An error occurred in batch_score_on_limited_peak_matches", exc_info=e)
         raise e

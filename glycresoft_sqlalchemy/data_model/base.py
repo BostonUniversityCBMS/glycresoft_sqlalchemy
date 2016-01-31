@@ -42,3 +42,17 @@ class Hierarchy(dict):
             return cls
         return wrapper
     register = references
+
+
+def slurp(session, model, ids, flatten=True):
+    if flatten:
+        ids = [i[0] for i in ids]
+    total = len(ids)
+    last = 0
+    step = 100
+    results = []
+    while last < total:
+        results.extend(session.query(model).filter(
+            model.id.in_(ids[last:last + step])))
+        last += step
+    return results

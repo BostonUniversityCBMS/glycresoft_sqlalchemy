@@ -5,7 +5,7 @@ from sqlalchemy.orm import make_transient
 
 Numeric.asdecimal = False
 
-from .base import Hierarchy, Namespace, Base
+from .base import Hierarchy, Namespace, Base, slurp
 
 from .pipeline_module import PipelineModule, PipelineException
 
