@@ -24,6 +24,9 @@ class ConnectionManager(object):
         self.database_uri_prefix = database_uri_prefix
         self.connect_args = connect_args or {}
 
+    def clear(self):
+        pass
+
     def connect(self):
         url = self.construct_url()
         engine = create_engine(
@@ -36,9 +39,6 @@ class ConnectionManager(object):
 
     def construct_url(self):
         return "{}{}".format(self.database_uri_prefix, self.database_uri)
-
-    def clear(self):
-        pass
 
     def bridge_address(self):
         '''
@@ -75,6 +75,7 @@ class SQLiteConnectionManager(ConnectionManager):
     def __init__(self, path, connect_args=None):
         if connect_args is None:
             connect_args = self.connect_args
+        self._path = path
         super(
             SQLiteConnectionManager,
             self).__init__(
@@ -82,17 +83,18 @@ class SQLiteConnectionManager(ConnectionManager):
             self.database_uri_prefix,
             connect_args)
 
-    def clear(self):
-        try:
-            os.remove(self.database_uri)
-        except:
-            pass
-
     def bridge_address(self):
         # SQLite doesn't support multiple writing
         # connections, so we should not allow other
         # components to bridge through this connection
         return None
+
+    def clear(self):
+        open(self._path, 'wb').write("")
+        try:
+            os.remove(self._path)
+        except:
+            pass
 
     def connect(self):
         engine = super(SQLiteConnectionManager, self).connect()
@@ -145,8 +147,14 @@ class DatabaseManager(object):
             self.connection_manager_type = connection_manager_type
         self.connection_manager = self.make_connection_manager(path)
         if clear:
-            self.connection_manager.clear()
+            self.clear()
         self.path = path
+
+    def clear(self, reinitialize=False):
+        Base.metadata.drop_all(bind=self.connect())
+        self.connection_manager.clear()
+        if reinitialize:
+            self.initialize()
 
     def make_connection_manager(self, path):
         if isinstance(path, ConnectionManager):

@@ -1,4 +1,7 @@
 import itertools
+import functools
+import multiprocessing
+
 import re
 import logging
 try:
@@ -46,6 +49,71 @@ def fast_exact_match(query_seq, target_seq, **kwargs):
     if match:
         return match.start(), match.end(), 0
     return False
+
+
+def find_all_overlapping_peptides_task(protein_id, database_manager, decider_fn, hypothesis_id):
+    session = database_manager()
+
+    target_protein = session.query(Protein).get(protein_id)
+    i = 0
+    logger.info("Enriching %r", target_protein)
+    target_protein_sequence = target_protein.protein_sequence
+    keepers = []
+    for peptide in stream_distinct_peptides(session, target_protein, hypothesis_id):
+
+        match = decider_fn(peptide.base_peptide_sequence, target_protein_sequence)
+
+        if match is not False:
+            start, end, distance = match
+            make_transient(peptide)
+            peptide.id = None
+            peptide.protein_id = protein_id
+            peptide.start_position = start
+            peptide.end_position = end
+            keepers.append(peptide)
+        i += 1
+        if i % 1000 == 0:
+            logger.info("%d peptides handled for %r", i, target_protein)
+        if len(keepers) > 1000:
+            session.add_all(keepers)
+            session.commit()
+            keepers = []
+
+    session.add_all(keepers)
+    session.commit()
+    ids = session.query(InformedPeptide.id).filter(
+        InformedPeptide.protein_id == Protein.id,
+        Protein.hypothesis_id == hypothesis_id).group_by(
+        InformedPeptide.modified_peptide_sequence,
+        InformedPeptide.peptide_modifications,
+        InformedPeptide.glycosylation_sites,
+        InformedPeptide.protein_id).order_by(InformedPeptide.peptide_score.desc())
+
+    q = session.query(InformedPeptide.id).filter(
+        InformedPeptide.protein_id == Protein.id,
+        Protein.hypothesis_id == hypothesis_id,
+        ~InformedPeptide.id.in_(ids.correlate(None)))
+    conn = session.connection()
+    conn.execute(InformedPeptide.__table__.delete(
+        InformedPeptide.__table__.c.id.in_(q.selectable)))
+
+    session.commit()
+    total_unassigned = session.query(InformedPeptide).filter(
+        InformedPeptide.protein_id == None).count()
+    assert total_unassigned == 0
+
+    return 1
+
+
+def stream_distinct_peptides(session, protein, hypothesis_id):
+    for i in session.query(InformedPeptide).join(Protein).filter(
+            Protein.hypothesis_id == hypothesis_id).group_by(
+            InformedPeptide.modified_peptide_sequence,
+            ~InformedPeptide.modified_peptide_sequence.in_(
+                session.query(InformedPeptide.modified_peptide_sequence).filter(
+                    InformedPeptide.protein_id == protein.id))
+            ).group_by(InformedPeptide.modified_peptide_sequence):
+        yield i
 
 
 class EnrichDistinctPeptides(PipelineModule):
@@ -129,3 +197,51 @@ class EnrichDistinctPeptides(PipelineModule):
             total_unassigned = session.query(InformedPeptide).filter(
                 InformedPeptide.protein_id == None).count()
             assert total_unassigned == 0
+
+
+class EnrichDistinctPeptidesMultiprocess(EnrichDistinctPeptides):
+    def __init__(self, database_path, hypothesis_id, target_proteins=None, max_distance=0, n_processes=4):
+        self.manager = self.manager_type(database_path)
+        self.target_proteins = target_proteins
+        self.hypothesis_id = hypothesis_id
+        self.max_distance = max_distance
+        self.n_processes = n_processes
+
+    def run(self):
+        session = self.manager()
+
+        protein_ids = self.target_proteins
+        hypothesis_id = self.hypothesis_id
+
+        if protein_ids is None:
+            protein_ids = flatten(session.query(Protein.id).filter(Protein.hypothesis_id == hypothesis_id))
+        elif isinstance(protein_ids[0], basestring):
+            protein_ids = flatten(session.query(Protein.id).filter(Protein.name == name).first()
+                                  for name in protein_ids)
+        if self.max_distance == 0:
+            decider_fn = fast_exact_match
+        else:
+            decider_fn = substring_edit_distance
+
+        assert session.query(InformedPeptide).filter(
+            InformedPeptide.protein_id == None).count() == 0
+
+        taskfn = functools.partial(
+            find_all_overlapping_peptides_task,
+            database_manager=self.manager,
+            decider_fn=decider_fn,
+            hypothesis_id=hypothesis_id)
+
+        count = 0
+        if self.n_processes > 1:
+            pool = multiprocessing.Pool(self.n_processes)
+            for result in pool.imap_unordered(taskfn, protein_ids):
+                count += result
+                logger.info("%d proteins enriched", count)
+        else:
+            for result in itertools.imap(taskfn, protein_ids):
+                count += result
+                logger.info("%d proteins enriched", count)
+
+
+EnrichDistinctPeptides = EnrichDistinctPeptidesMultiprocess

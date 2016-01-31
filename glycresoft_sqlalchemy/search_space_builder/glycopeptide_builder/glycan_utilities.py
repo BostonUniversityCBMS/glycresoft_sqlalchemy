@@ -6,7 +6,9 @@ from collections import deque, Counter, OrderedDict
 from sqlalchemy.sql import select
 
 from glycresoft_sqlalchemy.data_model import (
-    TheoreticalGlycanComposition, TheoreticalGlycanCombination, TheoreticalGlycanCombinationTheoreticalGlycanComposition)
+    DatabaseManager, Hypothesis,
+    TheoreticalGlycanComposition, TheoreticalGlycanCombination,
+    TheoreticalGlycanCombinationTheoreticalGlycanComposition)
 
 from glycresoft_sqlalchemy.utils.collectiontools import flatten
 
@@ -27,40 +29,51 @@ get_id_c = operator.itemgetter(id_c)
 get_composition_c = operator.itemgetter(composition_c)
 
 
-def _glycan_product(session, group, n, hypothesis_id, uniqueness_cache=None):
-    for glycan in session.query(TheoreticalGlycanComposition).filter(
-            TheoreticalGlycanComposition.hypothesis_id == hypothesis_id):
-        if uniqueness_cache is not None:
-            id_bunch = tuple(sorted(map(id_getter, group) + [glycan.id]))
-            if id_bunch in uniqueness_cache:
-                continue
-            uniqueness_cache.add(id_bunch)
-        group.append(glycan)
-        if n == 1:
-            yield tuple(group)
-        else:
-            for prod in _glycan_product(session, group, n - 1, hypothesis_id, uniqueness_cache):
-                yield prod
-        group.pop()
+def mirror_glycan_combinations(source_session, target_path, hypothesis_id):
+    manager = DatabaseManager(target_path)
+    manager.clear(reinitialize=True)
+    target_session = manager()
 
+    target_session.add(Hypothesis(id=hypothesis_id))
+    target_session.flush()
 
-def get_glycan_combinations_in_place(session, n, hypothesis_id, unique_unordered=True):
-    if n > 1:
-        logger.info("Combining glycans %d at a time", n)
-    group = deque(maxlen=n)
-    if unique_unordered:
-        seen_set = set()
-        for group in _glycan_product(session, group, n, hypothesis_id, set()):
-            composition = tuple(sorted(map(composition_getter, group)))
-            if composition in seen_set:
-                continue
-            seen_set.add(composition)
-            yield group
-    else:
-        for group in _glycan_product(session, group, n, hypothesis_id):
-            if n == 1:
-                group = [group]
-            yield group
+    # migrate over compositions
+    results = source_session.execute(
+        TheoreticalGlycanComposition.__table__.select().where(
+            TheoreticalGlycanComposition.hypothesis_id == hypothesis_id))
+    while True:
+        bunch = results.fetchmany(15000)
+        if len(bunch) == 0:
+            break
+        target_session.execute(TheoreticalGlycanComposition.__table__.insert(), bunch)
+
+    # migrate over combinations
+    results = source_session.execute(
+        TheoreticalGlycanCombination.__table__.select().where(
+            TheoreticalGlycanCombination.hypothesis_id == hypothesis_id))
+
+    while True:
+        bunch = results.fetchmany(15000)
+        if len(bunch) == 0:
+            break
+        target_session.execute(TheoreticalGlycanCombination.__table__.insert(), bunch)
+
+    junction = TheoreticalGlycanCombinationTheoreticalGlycanComposition.join(
+        TheoreticalGlycanCombination,
+        TheoreticalGlycanCombinationTheoreticalGlycanComposition.c.combination_id == TheoreticalGlycanCombination.id)
+    results = source_session.execute(
+        TheoreticalGlycanCombinationTheoreticalGlycanComposition.select().select_from(
+            junction).where(TheoreticalGlycanCombination.hypothesis_id == hypothesis_id))
+
+    while True:
+        bunch = results.fetchmany(15000)
+        if len(bunch) == 0:
+            break
+        target_session.execute(TheoreticalGlycanCombinationTheoreticalGlycanComposition.insert(), bunch)
+
+    target_session.commit()
+
+    return manager
 
 
 def merge_compositions(composition_list):
@@ -141,3 +154,31 @@ def get_glycan_combinations(session, n, hypothesis_id):
     return query_chunker(session.query(TheoreticalGlycanCombination).filter(
         TheoreticalGlycanCombination.count == n,
         TheoreticalGlycanCombination.hypothesis_id == hypothesis_id))
+
+
+class GlycanCombinationProvider(object):
+    """
+    A simple class wrapping a DatabaseManager + lazy Session to make
+    providing TheoreticalGlycanCombination values with state easier.
+
+    This class should be pickle-able before it is first invoked, as
+    the _session attribute won't be populated yet
+
+    Attributes
+    ----------
+    hypothesis_id : int
+        The Hypothesis.id value for the source hypothesis to draw combinations from
+    manager : DatabaseManager
+        The connection source to request data from
+    """
+    def __init__(self, manager, hypothesis_id):
+        self.manager = manager
+        self.hypothesis_id = hypothesis_id
+        self._session = None
+
+    def combinations(self, n):
+        if self._session is None:
+            self._session = self.manager()
+        return get_glycan_combinations(self._session, n, self.hypothesis_id)
+
+    __call__ = combinations

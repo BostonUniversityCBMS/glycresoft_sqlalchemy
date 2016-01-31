@@ -71,6 +71,18 @@ class Parser(MzIdentML):
         if multi is not None:
             raise multi
 
+    def _insert_param(self, info, param, **kwargs):
+        newinfo = self._handle_param(param, **kwargs)
+        if not ('name' in info and 'name' in newinfo):
+            info.update(newinfo)
+        else:
+            if not isinstance(info['name'], list):
+                info['name'] = [info['name']]
+            info['name'].append(newinfo.pop('name'))
+
+    def _find_immediate_params(self, element, **kwargs):
+        return element.xpath('./*[local-name()="{}" or local-name()="{}"]'.format("cvParam", "userParam"))
+
     def _get_info(self, element, **kwargs):
         """Extract info from element's attributes, possibly recursive.
         <cvParam> and <userParam> elements are treated in a special way."""
@@ -85,19 +97,16 @@ class Parser(MzIdentML):
             for child in element.iterchildren():
                 cname = _local_name(child)
                 if cname in {'cvParam', 'userParam'}:
-                    newinfo = self._handle_param(child, **kwargs)
-                    if not ('name' in info and 'name' in newinfo):
-                        info.update(newinfo)
-                    else:
-                        if not isinstance(info['name'], list):
-                            info['name'] = [info['name']]
-                        info['name'].append(newinfo.pop('name'))
+                    self._insert_param(info, child, **kwargs)
                 else:
                     if cname not in schema_info['lists']:
                         info[cname] = self._get_info_smart(child, **kwargs)
                     else:
                         info.setdefault(cname, []).append(
                                 self._get_info_smart(child, **kwargs))
+        else:
+            for param in self._find_immediate_params(element):
+                self._insert_param(info, param, **kwargs)
 
         # process element text
         if element.text and element.text.strip():

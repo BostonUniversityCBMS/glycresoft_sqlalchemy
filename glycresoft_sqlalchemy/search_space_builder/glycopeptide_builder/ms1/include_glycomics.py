@@ -1,11 +1,12 @@
 import logging
+import tempfile
 import os
 
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, DatabaseManager, Hypothesis)
 from ...glycan_builder.composition_source import (
     GlycanCompositionHypothesisBuilder, OtherGlycanHypothesisGlycanHypothesisBuilder)
-from ..glycan_utilities import create_combinations
+from ..glycan_utilities import create_combinations, mirror_glycan_combinations
 
 from glycresoft_sqlalchemy.utils.collectiontools import decoratordict
 from glycresoft_sqlalchemy.utils.database_utils import database_exists as db_exists
@@ -128,3 +129,10 @@ class MS1GlycanImportManager(object):
             importer.start()
         else:
             raise UnknownGlycomicsFormatError(self.glycomics_format)
+
+    def mirror_glycans_to_temporary_storage(self, path=None):
+        if path is None:
+            path = tempfile.mkstemp("mirrored_combinations.db")[1]
+        source_session = self.manager()
+        exported_manager = mirror_glycan_combinations(source_session, path, self.hypothesis_id)
+        return exported_manager

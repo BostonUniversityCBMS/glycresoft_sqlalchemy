@@ -22,7 +22,7 @@ from glycresoft_sqlalchemy.utils.database_utils import toggle_indices
 from .include_glycomics import MS1GlycanImporter, MS1GlycanImportManager
 from .include_proteomics import ProteomeImporter
 
-from ..glycan_utilities import get_glycan_combinations
+from ..glycan_utilities import get_glycan_combinations, GlycanCombinationProvider
 from ..utils import flatten
 
 
@@ -60,7 +60,7 @@ def make_name(mzid_path, glycan_path):
     return "integrated_omics-{}-{}-{}".format(mzid_part, glycan_part, tag)
 
 
-def glycosylate_callback(peptide, session, hypothesis_id, position_selector, max_sites=2):
+def glycosylate_callback(peptide, glycan_combinator, position_selector, max_sites=2):
     """
     Generate all glycoform combinations of `peptide` with up to `max_sites` glycosylations
 
@@ -88,7 +88,7 @@ def glycosylate_callback(peptide, session, hypothesis_id, position_selector, max
     modified_peptide_sequence = peptide.modified_peptide_sequence
     result = []
     for glycan_count in range(1, min(n_sites + 1, max_sites + 1)):
-        for glycans in get_glycan_combinations(session, glycan_count, hypothesis_id):
+        for glycans in glycan_combinator(glycan_count):
             for sites in position_selector(glycosylation_sites, glycan_count):
                 target = Sequence(modified_peptide_sequence)
 
@@ -106,15 +106,31 @@ def glycosylate_callback(peptide, session, hypothesis_id, position_selector, max
     return result
 
 
-def batch_make_theoretical_glycopeptides(peptide_ids, position_selector, database_manager, hypothesis_id, max_sites=2):
+def extract_peptides(session, ids):
+    ids = [i[0] for i in ids]
+    total = len(ids)
+    last = 0
+    step = 20
+    results = []
+    while last < total:
+        results.extend(session.query(InformedPeptide).filter(
+            InformedPeptide.id.in_(ids[last:last + step])))
+        last += step
+    return results
+
+
+def batch_make_theoretical_glycopeptides(peptide_ids, position_selector, database_manager,
+                                         hypothesis_id, glycan_combinator, max_sites=2):
     try:
         session = database_manager.session()
         glycopeptide_acc = []
         i = 0
-        for peptide_id in peptide_ids:
-            peptide_id = peptide_id[0]
-            peptide = session.query(InformedPeptide).get(peptide_id)
 
+        peptides = extract_peptides(session, peptide_ids)
+
+        for peptide in peptides:
+
+            peptide_id = peptide.id
             protein_id = peptide.protein_id
             base_peptide_sequence = peptide.base_peptide_sequence
             modified_peptide_sequence = peptide.modified_peptide_sequence
@@ -125,7 +141,7 @@ def batch_make_theoretical_glycopeptides(peptide_ids, position_selector, databas
             count_missed_cleavages = peptide.count_missed_cleavages
             other = peptide.other
 
-            glycoforms = glycosylate_callback(peptide, session, hypothesis_id, position_selector, max_sites=max_sites)
+            glycoforms = glycosylate_callback(peptide, glycan_combinator, position_selector, max_sites=max_sites)
             for glycoform, glycans in glycoforms:
                 glycan_ids = glycans.id
                 informed_glycopeptide = InformedTheoreticalGlycopeptideComposition(
@@ -326,22 +342,6 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManage
 
         self.protein_ids = protein_ids
 
-    def _stream_peptides(self):
-        session = self.manager.session()
-        protein_ids = self.protein_ids
-        try:
-            for protein_id in protein_ids:
-                protein = session.query(Protein).get(protein_id)
-                logger.info("Streaming Protein %s", protein.name)
-                for informed_peptide in session.query(InformedPeptide).filter(
-                        InformedPeptide.protein_id == protein_id,
-                        InformedPeptide.count_glycosylation_sites > 0):
-                    session.expunge(informed_peptide)
-                    yield informed_peptide
-        finally:
-            session.commit()
-            session.close()
-
     def stream_peptides(self, chunk_size=5):
         session = self.manager.session()
         protein_ids = self.protein_ids
@@ -369,22 +369,17 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManage
             hypothesis_id=self.hypothesis_id,
             position_selector=itertools.combinations,
             database_manager=self.manager,
-            max_sites=self.maximum_glycosylation_sites)
-        return task_fn
-
-    def _prepare_task_fn(self):
-        task_fn = functools.partial(
-            make_theoretical_glycopeptide,
-            hypothesis_id=self.hypothesis_id,
-            position_selector=itertools.combinations,
-            database_manager=self.manager,
-            max_sites=self.maximum_glycosylation_sites)
+            max_sites=self.maximum_glycosylation_sites,
+            glycan_combinator=self.glycan_combinator)
         return task_fn
 
     def run(self):
         self.bootstrap_hypothesis()
         subjob = EnrichDistinctPeptides(self.database_path, self.hypothesis_id, self.protein_ids, max_distance=0)
         subjob.start()
+
+        temporary_glycan_manager = self.mirror_glycans_to_temporary_storage()
+        self.glycan_combinator = GlycanCombinationProvider(temporary_glycan_manager, self.hypothesis_id)
 
         task_fn = self.prepare_task_fn()
         index_controller = toggle_indices(self.manager.session(), TheoreticalGlycopeptideComposition)
@@ -429,6 +424,8 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManage
 
         session.close()
         index_controller.create()
+        temporary_glycan_manager.clear()
+
         return self.hypothesis_id
 
 
