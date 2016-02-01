@@ -19,7 +19,7 @@ from . import ResidueBase
 
 
 target_string_pattern = re.compile(
-    r'(?P<amino_acid>[A-Z]+)?\s*?([@ ]?\s*?(?P<n_term>[Nn][-_][tT]erm)|(?P<c_term>[Cc][-_][tT]erm))')
+    r'(?P<amino_acid>[A-Z]+)?\s*?([@ ]?\s*?(?P<n_term>[Nn][-_][tT]erm)|(?P<c_term>[Cc][-_][tT]erm))?')
 title_cleaner = re.compile(
     r'(?P<name>.*)\s(?P<target>\(.+\))?$')
 
@@ -98,6 +98,7 @@ def extract_targets_from_string(target_string):
     position_modifiers = position_modifiers if len(
         position_modifiers) != 0 else None
 
+    assert not (amino_acid_targets is None and position_modifiers is None)
     target = ModificationTarget(amino_acid_targets, position_modifiers)
     return target
 
@@ -254,7 +255,7 @@ class ModificationRule(object):
                                 title=None, monoisotopic_mass=None):
         # If the specificity is a string, parse it into rules
         targets = None
-        if isinstance(amino_acid_specificity, str):
+        if isinstance(amino_acid_specificity, basestring):
             try:
                 targets = set(
                     [extract_targets_from_string(amino_acid_specificity)])
@@ -310,13 +311,12 @@ class ModificationRule(object):
         # so select the method correct for the passed type
 
         # If the specificity is a string, parse it into rules
-        if isinstance(amino_acid_specificity, str):
+        if isinstance(amino_acid_specificity, basestring):
             try:
                 self.targets = set([
                     extract_targets_from_string(amino_acid_specificity)])
             except TypeError:
-                print(self.name, amino_acid_specificity)
-                raise TypeError("Could not extract targets")
+                raise TypeError("Could not extract targets from %s" % amino_acid_specificity)
 
         # If the specificity is already a rule, store it as a list of one rules
         elif isinstance(amino_acid_specificity, ModificationTarget):
