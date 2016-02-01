@@ -8,7 +8,7 @@ import multiprocessing
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, MS1GlycopeptideHypothesis, Protein, NaivePeptide, make_transient,
     TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func,
-    TheoreticalGlycanCombination)
+    TheoreticalGlycanCombination, slurp)
 
 from .include_glycomics import MS1GlycanImporter, MS1GlycanImportManager
 
@@ -38,7 +38,6 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
         i = 0
 
         glycopeptide_acc = []
-        glycan_assoc_acc = []
 
         for glycan_set in get_glycan_combinations(
                 database_manager.session(), min(peptide.count_glycosylation_sites, max_sites), hypothesis_id):
@@ -65,15 +64,61 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
 
             glycopeptide_acc.append(glycoform)
 
-            session.add(glycoform)
-
             i += 1
             if i % 5000 == 0:
                 logger.info("Flushing %d for %r-%r", i, peptide, peptide.protein)
                 session.bulk_save_objects(glycopeptide_acc)
                 session.commit()
                 glycopeptide_acc = []
-                glycan_assoc_acc = []
+
+        session.bulk_save_objects(glycopeptide_acc)
+        session.commit()
+        session.close()
+        return i
+    except Exception, e:
+        logger.exception("%r", locals(), exc_info=e)
+        raise e
+    finally:
+        session.close()
+
+
+def batch_generate_glycopeptide_compositions(peptide_ids, database_manager, hypothesis_id,
+                                             glycan_combinator, max_sites=2):
+    try:
+        session = database_manager.session()
+        i = 0
+        glycopeptide_acc = []
+        for peptide in slurp(session, NaivePeptide, peptide_ids, flatten=True):
+
+            for glycan_set in glycan_combinator(min(peptide.count_glycosylation_sites, max_sites)):
+
+                glycan_composition_str = glycan_set.composition
+                glycan_mass = glycan_set.dehydrated_mass()
+                glycoform = TheoreticalGlycopeptideComposition(
+                    base_peptide_sequence=peptide.base_peptide_sequence,
+                    modified_peptide_sequence=peptide.modified_peptide_sequence,
+                    glycopeptide_sequence=peptide.modified_peptide_sequence + glycan_composition_str,
+                    protein_id=peptide.protein_id,
+                    start_position=peptide.start_position,
+                    end_position=peptide.end_position,
+                    peptide_modifications=peptide.peptide_modifications,
+                    count_missed_cleavages=peptide.count_missed_cleavages,
+                    count_glycosylation_sites=(glycan_set.count),
+                    glycosylation_sites=peptide.glycosylation_sites,
+                    sequence_length=peptide.sequence_length,
+                    calculated_mass=peptide.calculated_mass + glycan_mass,
+                    glycan_composition_str=glycan_composition_str,
+                    glycan_mass=glycan_mass,
+                    glycan_combination_id=glycan_set.id
+                )
+
+                glycopeptide_acc.append(glycoform)
+
+                i += 1
+                if i % 5000 == 0:
+                    session.bulk_save_objects(glycopeptide_acc)
+                    session.commit()
+                    glycopeptide_acc = []
 
         session.bulk_save_objects(glycopeptide_acc)
         session.commit()

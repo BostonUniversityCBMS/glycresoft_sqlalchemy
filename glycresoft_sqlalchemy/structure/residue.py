@@ -217,17 +217,17 @@ class Residue(ResidueBase):
         if self is other:
             return True
         try:
-            return self.name == other.name
+            return self.name == other.name or self.symbol == other.symbol
         except AttributeError:
-            return self.name == other
+            return self.name == other or self.symbol == other
 
     def __ne__(self, other):
         if self is other:
-            return True
+            return False
         try:
-            return self.name != other.name
+            return self.name != other.name and self.symbol != other.symbol
         except AttributeError:
-            return self.name != other
+            return self.name != other and self.symbol != other
 
     def __getstate__(self):
         return [self.name, self.symbol, self.mass, self.neutral_loss]

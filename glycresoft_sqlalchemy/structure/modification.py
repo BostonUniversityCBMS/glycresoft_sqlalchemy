@@ -166,9 +166,6 @@ class ModificationTarget(object):
     def valid_site(self, amino_acid=None, position_modifier=SequenceLocation.anywhere):
         '''Return if a given residue at a sequence position (N-term, C-term, None)
         is valid'''
-        # if isinstance(amino_acid, ResidueBase):
-        #     amino_acid = amino_acid.symbol
-        # amino_acid = residue_to_symbol.get(amino_acid, amino_acid)
         valid = False
 
         # Validate amino acid target target
@@ -180,13 +177,11 @@ class ModificationTarget(object):
         return valid
 
     def valid_site_seq(self, sequence, position, position_modifier=SequenceLocation.anywhere):
-        if(isinstance(sequence, PeptideSequenceBase)):
-            aa_mod_pair = sequence[position]
-            if len(aa_mod_pair[1]) > 0:
-                return False
-            amino_acid = aa_mod_pair[0].name
-        else:
-            amino_acid = sequence[position]
+        aa_mod_pair = sequence[position]
+        if len(aa_mod_pair[1]) > 0:
+            return False
+        amino_acid = aa_mod_pair[0]
+
         return self.valid_site(amino_acid, position_modifier)
 
     def __repr__(self):
@@ -620,7 +615,7 @@ class ModificationTable(dict):
     '''Represents the set of modification rules to apply when generating
     the theoretical sequence space.'''
 
-    # Class Constants`
+    # Class Constants
     # Path to the bootstrapping data file for Protein Prospector-defined
     # modifications
     _table_definition_file = staticmethod(lambda: resource_stream(__name__,
@@ -915,7 +910,7 @@ class Modification(ModificationBase):
     and when describing the total number of modifications of a type on a molecule, its
     position attributes are unused."""
 
-    _table = ModificationTable.bootstrap(False)
+    _table = ModificationTable()
 
     __slots__ = ["name", "mass", "position", "number", "rule", "composition"]
 

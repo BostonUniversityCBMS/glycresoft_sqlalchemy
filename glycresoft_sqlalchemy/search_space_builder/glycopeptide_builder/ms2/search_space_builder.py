@@ -433,6 +433,21 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         self.session = self.manager.session()
 
         self.ms1_results_file = ms1_results_file
+
+        self.constant_modifications = constant_modifications
+        self.variable_modifications = variable_modifications
+
+        self._site_list_input = site_list
+
+        self.create_restricted_modification_table(constant_modifications, variable_modifications)
+        self.n_processes = n_processes
+
+        self.enzyme = map(get_enzyme, enzyme)
+
+        self.options = kwargs
+
+    def bootstrap_hypothesis(self):
+        kwargs = self.options
         name = kwargs.get("hypothesis_name")
         if name is None:
             tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
@@ -441,9 +456,34 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         self.session.add(self.hypothesis)
         self.session.commit()
         self.hypothesis_id = self.hypothesis.id
-        logger.info("Building %r", self.hypothesis)
 
-        # We are reading data from separate files
+        self.configure_input_source()
+        self.save_parameters()
+
+    def bootstrap(self):
+        self.bootstrap_hypothesis()
+        self.configure_input_source()
+        self.save_parameters()
+
+    def save_parameters(self):
+        kwargs = self.options
+        self.hypothesis.parameters = {
+            "monosaccharide_identities": self.monosaccharide_identities,
+            "site_list_map": self.glycosylation_site_map,
+            "constant_modification_list": self.constant_modifications,
+            "variable_modification_list": self.variable_modifications,
+            "ms1_output_file": self.ms1_results_file,
+            "enzyme": self.enzyme,
+            "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS,
+            "source_hypothesis_id": kwargs.get("source_hypothesis_id"),
+            "source_hypothesis_sample_match_id": kwargs.get("source_hypothesis_sample_match_id")
+        }
+        self.session.add(self.hypothesis)
+        self.session.commit()
+
+    def configure_input_source(self):
+        kwargs = self.options
+        site_list = self._site_list_input
         if self.ms1_format is MS1ResultsFile:
             try:
                 site_list_map = parse_site_file(site_list)
@@ -464,28 +504,8 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
                 self.manager,
                 source_hypothesis_id,
                 source_hypothesis_sample_match_id)
-            site_list_map = self.glycosylation_site_map
-
-        self.create_restricted_modification_table(constant_modifications, variable_modifications)
-
-        self.n_processes = n_processes
 
         self.monosaccharide_identities = self.ms1_results_reader.monosaccharide_identities
-        enzyme = map(get_enzyme, enzyme)
-
-        self.hypothesis.parameters = {
-            "monosaccharide_identities": self.monosaccharide_identities,
-            "enzyme": enzyme,
-            "site_list_map": site_list_map,
-            "constant_modification_list": constant_modifications,
-            "variable_modification_list": variable_modifications,
-            "ms1_output_file": ms1_results_file,
-            "enzyme": enzyme,
-            "enable_partial_hexnac_match": constants.PARTIAL_HEXNAC_LOSS,
-            "source_hypothesis_id": kwargs.get("source_hypothesis_id"),
-            "source_hypothesis_sample_match_id": kwargs.get("source_hypothesis_sample_match_id")
-        }
-        self.session.add(self.hypothesis)
 
     def load_protein_from_sitelist(self, glycosylation_site_map):
         for name, sites in self.glycosylation_site_map.items():
@@ -514,6 +534,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         self.modification_table = modification_table
 
     def prepare_task_fn(self):
+        assert self.hypothesis_id is not None
         task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map,
                                     renderer=self.ms1_format,
@@ -548,6 +569,9 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         '''
         Execute the algorithm on :attr:`n_processes` processes
         '''
+        self.bootstrap()
+        print self.glycosylation_site_map
+
         task_fn = self.prepare_task_fn()
         cntr = 0
         if self.n_processes > 1:
@@ -664,6 +688,7 @@ class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         '''
         Execute the algorithm on :attr:`n_processes` processes
         '''
+        self.bootstrap()
         task_fn = self.prepare_task_fn()
         cntr = 0
         last = 0

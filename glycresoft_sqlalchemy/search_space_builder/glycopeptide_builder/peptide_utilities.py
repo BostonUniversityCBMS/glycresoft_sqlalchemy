@@ -2,6 +2,7 @@ import re
 import itertools
 import logging
 from collections import Counter
+import textwrap
 
 from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide
 from glycresoft_sqlalchemy.structure import sequence, modification
@@ -307,3 +308,14 @@ class FastaFileWriter(object):
     def writelines(self, iterable):
         for defline, seq in iterable:
             self.write(defline, seq)
+
+
+class ProteinFastFileWriter(FastaFileWriter):
+    def write(self, protein):
+        defline = ''.join([">", protein.name, " ", str(protein.glycosylation_sites)])
+        seq = '\n'.join(textwrap.wrap(protein.protein_sequence, 80))
+        super(ProteinFastFileWriter, self).write(defline, seq)
+
+    def writelines(self, iterable):
+        for protein in iterable:
+            self.write(protein)

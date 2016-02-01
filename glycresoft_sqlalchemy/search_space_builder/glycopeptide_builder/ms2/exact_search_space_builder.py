@@ -173,6 +173,8 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         -------
         int : The :attr:`id` of the constructed :class:`.MS2GlycopeptideHypothesis`
         """
+        self.bootstrap()
+
         session = self.session
         cntr = 0
         last = 0
