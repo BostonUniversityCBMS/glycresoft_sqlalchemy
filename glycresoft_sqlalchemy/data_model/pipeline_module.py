@@ -125,6 +125,13 @@ class PipelineModule(object):
         self.start_time = datetime.datetime.now()
         if verbose:
             logger.info("Begin %s\n%s\n", self.__class__.__name__, pprint.pformat(self.__dict__))
+        self.on_begin()
+
+    def on_begin(self):
+        pass
+
+    def on_end(self):
+        pass
 
     def set_runner(self, callable):
         self.run = callable
@@ -140,6 +147,7 @@ class PipelineModule(object):
         if verbose:
             logger.info("End %s", self.__class__.__name__)
             logger.info(self.summarize())
+        self.on_end()
 
     def summarize(self):
         chunks = [
@@ -154,6 +162,8 @@ class PipelineModule(object):
     @property
     def database_path(self):
         return self.manager.path
+
+
 
 
 class PipelineException(Exception):

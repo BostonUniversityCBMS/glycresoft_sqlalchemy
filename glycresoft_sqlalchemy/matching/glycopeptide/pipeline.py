@@ -34,19 +34,17 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
             sample_run = ion_session.query(SampleRun).get(self.sample_run_id)
             target_hypothesis = session.query(Hypothesis).get(self.target_hypothesis_id)
 
-            count = session.query(MS2GlycopeptideHypothesisSampleMatch).filter_by(
-                target_hypothesis_id=target_hypothesis.id, sample_run_name=sample_run.name).count()
-            if count > 1:
-                count_part = " (%d)" % (count)
-            else:
-                count_part = ""
+            name = self.options.get("hypothesis_sample_match_name")
+            if name is None:
+                name = "%s @ %s" % (target_hypothesis.name, sample_run.name)
+
+            name = HypothesisSampleMatch.make_unique_name(session, name)
+
             hsm = MS2GlycopeptideHypothesisSampleMatch(
                 target_hypothesis_id=self.target_hypothesis_id,
                 decoy_hypothesis_id=self.decoy_hypothesis_id,
                 sample_run_name=sample_run.name,
-                name=self.options.get("hypothesis_sample_match_name",
-                    "%s @ %s%s" % (
-                        target_hypothesis.name, sample_run.name, count_part)))
+                name=name)
 
             session.add(hsm)
             session.commit()

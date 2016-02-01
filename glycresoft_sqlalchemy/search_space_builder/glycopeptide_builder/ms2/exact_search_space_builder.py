@@ -296,6 +296,8 @@ class BatchingExactSearchSpaceBuilder(BatchingTheoreticalSearchSpaceBuilder):
             batch_from_sequence, database_manager=self.manager, protein_map=protein_map, source_type=self.ms1_format)
 
     def run(self):
+        self.bootstrap()
+
         task_fn = self.prepare_task_fn()
         cntr = 0
         last = 0
