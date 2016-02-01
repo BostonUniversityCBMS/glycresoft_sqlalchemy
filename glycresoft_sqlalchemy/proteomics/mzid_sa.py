@@ -334,10 +334,12 @@ class Proteome(object):
         self.hypothesis_id = hypothesis.id
         for protein in self.parser.iterfind(
                 "ProteinDetectionHypothesis", retrieve_refs=True, recursive=False, iterative=True):
+            seq = protein.pop('Seq')
             p = Protein(
-                name=protein['accession'],
-                protein_sequence=protein['Seq'],
-                glycosylation_sites=sequence.find_n_glycosylation_sequons(protein['Seq']),
+                name=protein.pop('accession'),
+                protein_sequence=seq,
+                glycosylation_sites=sequence.find_n_glycosylation_sequons(seq),
+                other=protein,
                 hypothesis_id=self.hypothesis_id)
             session.add(p)
         session.commit()

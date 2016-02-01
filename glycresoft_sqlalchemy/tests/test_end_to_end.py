@@ -16,7 +16,7 @@ from glycresoft_sqlalchemy.matching.glycopeptide.pipeline import GlycopeptideFra
 
 def test_main():
     db_file_name = "./datafiles/naive_glycopeptide.db"
-    # os.remove(db_file_name)
+    os.remove(db_file_name)
 
     rules_table = {
         "Hex": (3, 8),
@@ -45,7 +45,7 @@ def test_main():
         # glycomics_path='./datafiles/human_n_glycans.txt',
         # glycomics_format='txt',
         maximum_glycosylation_sites=1,
-        max_missed_cleavages=2,
+        max_missed_cleavages=1,
         n_processes=6)
     glycopeptide_hypothesis_id = job.start()
     glycopeptide_hypothesis_id = 2
@@ -53,6 +53,7 @@ def test_main():
         ("glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db %s %d "
          "-p db -g 2e-5 --skip-grouping") % (db_file_name, glycopeptide_hypothesis_id))
     assert ec == 0
+
     job = search_space_builder.BatchingTheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
         db_file_name, 1, 6)
     hypothesis_id = job.start()

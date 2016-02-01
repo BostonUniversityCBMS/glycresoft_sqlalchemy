@@ -19,7 +19,7 @@ from . import ResidueBase
 
 
 target_string_pattern = re.compile(
-    r'((?P<n_term>[Nn][-_][tT]erm)|(?P<c_term>[Cc][-_][tT]erm)|(?P<amino_acid>[A-Z]+))')
+    r'(?P<amino_acid>[A-Z]+)?\s*?([@ ]?\s*?(?P<n_term>[Nn][-_][tT]erm)|(?P<c_term>[Cc][-_][tT]erm))')
 title_cleaner = re.compile(
     r'(?P<name>.*)\s(?P<target>\(.+\))?$')
 
@@ -569,7 +569,7 @@ class NGlycanCoreGlycosylation(Glycosylation):
     def __init__(self, base_mass=_hexnac.mass()):
         self.name = "HexNAc"
         self.mass = base_mass
-        self.title = "NGlycanCoreGlycosylation"
+        self.title = "N-Glycan Core Glycosylation"
         self.unimod_name = "HexNAc"
         self.targets = [(ModificationTarget("N"))]
         self.composition = _hexnac.total_composition().clone()
