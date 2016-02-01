@@ -29,7 +29,7 @@ def test_main():
         db_file_name, rules_table=rules_table, constraints_list=[])
     combn_glycan_hypothesis_id = job.start()
 
-    constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (N)"])
+    constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (N)", "Pyro-glu from Q (Q@N-term)"])
     enzyme = 'trypsin'
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
         database_path=db_file_name,

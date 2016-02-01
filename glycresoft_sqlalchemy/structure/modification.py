@@ -19,16 +19,15 @@ from . import ResidueBase
 
 
 target_string_pattern = re.compile(
-    r'(?P<amino_acid>[A-Z]+)?\s*?([@ ]?\s*?(?P<n_term>[Nn][-_][tT]erm)|(?P<c_term>[Cc][-_][tT]erm))?')
+    r'(?P<amino_acid>[A-Z]+)?([@ ]?(?P<n_term>[Nn][-_][tT]erm)|(?P<c_term>[Cc][-_][tT]erm))?')
 title_cleaner = re.compile(
-    r'(?P<name>.*)\s(?P<target>\(.+\))?$')
+    r'(?P<name>.*)\s\((?P<target>.+)\)$')
 
 is_mass_delta = re.compile(r"^Delta:")
 
 
 class SequenceLocation(Enum):
     anywhere = None
-    internal = 0
     n_term = 1
     c_term = 2
     protein_n_term = 3
@@ -89,18 +88,20 @@ def extract_targets_from_string(target_string):
     :class:`ModificationTarget`
 
     '''
-    params = target_string_pattern.search(target_string).groupdict()
-    amino_acid_targets = params.pop("amino_acid", None)
-    amino_acid_targets = map(lambda x: residue_to_symbol.get(x, x), list(
-        amino_acid_targets)) if amino_acid_targets is not None else None
-    position_modifiers = [
-        SequenceLocation[pos] for pos, flag in params.items() if flag is not None] if len(params) != 0 else None
-    position_modifiers = position_modifiers if len(
-        position_modifiers) != 0 else None
-
-    assert not (amino_acid_targets is None and position_modifiers is None)
-    target = ModificationTarget(amino_acid_targets, position_modifiers)
-    return target
+    position_only = re.search(r"^([NnCc][-_][tT]erm)", target_string)
+    if position_only:
+        return ModificationTarget(None, SequenceLocation[position_only.groups()[0]])
+    else:
+        amino_acid_and_position = re.search(
+            r'(?P<amino_acid>[A-Z]+)([@ ]?(?P<n_term>[Nn][-_][tT]erm)|(?P<c_term>[Cc][-_][tT]erm))?', target_string)
+        params = amino_acid_and_position.groupdict()
+        aa = list(map(Residue, params["amino_acid"]))
+        if params['n_term']:
+            return ModificationTarget(aa, SequenceLocation.n_term)
+        elif params['c_term']:
+            return ModificationTarget(aa, SequenceLocation.c_term)
+        else:
+            return ModificationTarget(aa, SequenceLocation.anywhere)
 
 
 def get_position_modifier_rules_dict(sequence):
@@ -118,7 +119,7 @@ def get_position_modifier_rules_dict(sequence):
     ------
     defaultdict
     '''
-    return defaultdict(lambda: SequenceLocation.internal, **{
+    return defaultdict(lambda: SequenceLocation.anywhere, **{
         0: SequenceLocation.n_term,
         (len(sequence) - 1): SequenceLocation.c_term
     })
@@ -137,8 +138,8 @@ class ModificationTarget(object):
     amino_acid_targets: list
         The list of amino acid residues that this rule
         permits.
-    position_modifiers: list
-        The list of sequence-position specific filters
+    position_modifier: SequenceLocation
+        The sequence-position specific filter
         this rule enforces.
     '''
 
@@ -147,39 +148,38 @@ class ModificationTarget(object):
         amino_acid = specificity["site"]
         if amino_acid in set(["N-term", "C-term"]):
             amino_acid = None
-        position_modifiers = specificity["position"]
-        if position_modifiers == "Anywhere":
-            position_modifiers = SequenceLocation.anywhere
-        elif position_modifiers == "Protein N-term" or position_modifiers == "Any N-term":
-            position_modifiers = SequenceLocation.n_term
-        elif position_modifiers == "Protein C-term" or position_modifiers == "Any C-term":
-            position_modifiers = SequenceLocation.c_term
+        position_modifier = specificity["position"]
+        if position_modifier == "Anywhere":
+            position_modifier = SequenceLocation.anywhere
+        elif position_modifier == "Protein N-term" or position_modifier == "Any N-term":
+            position_modifier = SequenceLocation.n_term
+        elif position_modifier == "Protein C-term" or position_modifier == "Any C-term":
+            position_modifier = SequenceLocation.c_term
         else:
-            raise Exception("Undefined Position, " + position_modifiers)
-        return cls(amino_acid, position_modifiers)
+            raise Exception("Undefined Position, " + position_modifier)
+        return cls(amino_acid, position_modifier)
 
-    def __init__(self, site_targets=None, position_modifiers=None):
+    def __init__(self, site_targets=None, position_modifier=None):
         self.amino_acid_targets = site_targets
-        self.position_modifiers = position_modifiers
+        self.position_modifier = position_modifier
 
-    def valid_site(self, amino_acid=None, position_modifiers=None):
+    def valid_site(self, amino_acid=None, position_modifier=SequenceLocation.anywhere):
         '''Return if a given residue at a sequence position (N-term, C-term, None)
         is valid'''
-        if isinstance(amino_acid, ResidueBase):
-            amino_acid = amino_acid.symbol
-        amino_acid = residue_to_symbol.get(amino_acid, amino_acid)
+        # if isinstance(amino_acid, ResidueBase):
+        #     amino_acid = amino_acid.symbol
+        # amino_acid = residue_to_symbol.get(amino_acid, amino_acid)
         valid = False
 
         # Validate amino acid target target
         valid = (self.amino_acid_targets is None) or (
             amino_acid in self.amino_acid_targets)
-        valid = valid and ((self.position_modifiers is None) or
-                           ((position_modifiers is not None) and
-                            (position_modifiers in self.position_modifiers)))
+        valid = valid and ((self.position_modifier is SequenceLocation.anywhere) or
+                           (position_modifier == self.position_modifier))
 
         return valid
 
-    def valid_site_seq(self, sequence, position, position_modifiers=None):
+    def valid_site_seq(self, sequence, position, position_modifier=SequenceLocation.anywhere):
         if(isinstance(sequence, PeptideSequenceBase)):
             aa_mod_pair = sequence[position]
             if len(aa_mod_pair[1]) > 0:
@@ -187,10 +187,10 @@ class ModificationTarget(object):
             amino_acid = aa_mod_pair[0].name
         else:
             amino_acid = sequence[position]
-        return self.valid_site(amino_acid, position_modifiers)
+        return self.valid_site(amino_acid, position_modifier)
 
     def __repr__(self):
-        rep = "{amino_acid_targets}@{position_modifiers}".format(
+        rep = "{amino_acid_targets}@{position_modifier}".format(
             **self.__dict__)
         return rep
 
@@ -349,10 +349,7 @@ class ModificationRule(object):
 
     def find_valid_sites(self, sequence):
         valid_indices = []
-        position_modifier_rules = {
-            0: "N-term",
-            (len(sequence) - 1): "C-term"
-        }
+        position_modifier_rules = get_position_modifier_rules_dict(sequence)
         for index in range(len(sequence)):
             position = sequence[index]
             if len(position[1]) > 0:
@@ -715,8 +712,6 @@ class ModificationTable(dict):
         self.modification_rules.extend(
             ModificationTable.other_modifications.values())
 
-        # A simple look-up by Protein Prospector name to make populating from
-        # the GlycReSoft output easier
         self.by_title = {
             modification.title: modification for modification in self.modification_rules
         }

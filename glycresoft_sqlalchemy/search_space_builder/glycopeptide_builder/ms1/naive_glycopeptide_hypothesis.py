@@ -71,13 +71,11 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
             if i % 5000 == 0:
                 logger.info("Flushing %d for %r-%r", i, peptide, peptide.protein)
                 session.bulk_save_objects(glycopeptide_acc)
-                session.flush()
                 session.commit()
                 glycopeptide_acc = []
                 glycan_assoc_acc = []
 
         session.bulk_save_objects(glycopeptide_acc)
-        session.flush()
         session.commit()
         session.close()
         return i
