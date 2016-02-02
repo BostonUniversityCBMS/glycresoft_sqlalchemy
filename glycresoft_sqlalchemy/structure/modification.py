@@ -205,32 +205,38 @@ class ModificationTarget(object):
         return amino_acid_targets_count + position_modifiers_count
 
 
-class ModificationTargetPattern(ModificationTarget):
-
-    '''Specifies a modification target by regex'''
-
-    def __init__(self, site_targets=None, position_modifiers=None, target_offset=0):
-        super(ModificationTargetPattern, self).__init__(
-            site_targets, position_modifiers)
-        self.pattern = re.compile(self.site_targets)
-        self.offset = target_offset
-
-    def valid_site_seq(self, sequence, position, position_modifiers=None):
-        if position - self.offset < 0:
-            return False
-        if(isinstance(sequence, PeptideSequenceBase)):
-            target_slice = ''.join(
-                [pos for pos in sequence.get_sequence((position - self.offset))])
-        else:
-            target_slice = sequence[(position - self.offset):]
-        matched = self.pattern.search(target_slice)
-        return matched is not None
-
-
 class ModificationRule(object):
-
     '''Represent the name, mass, and position specifities associated with a given modification.
-    Additionally stores information on the represented modification in Protein Prospector.'''
+    Additionally stores information on metadata about this rule computed from these values and
+    categorical information from expert sources.
+
+    Attributes
+    ----------
+    categories : list
+        The list of named categories of PTMs that this modification
+        falls under. Examples are "artefact", "glycosylation", or "biological process"
+    mass : float
+        The mass of the modification defined by this rule
+    name : str
+        A common name for the modification defined by this rule
+    names : set
+        The set of all names used to refer to this modification, beyond those
+        commonly used and those for display purposes.
+    options : dict
+        Arbitrary information from external sources about this modification
+        rule and its phenomena.
+    preferred_name : str
+        The name for this modification preferred for using in user-facing
+        displays
+    title : str
+        A formal or "full" name for this modification that may be its chemical name
+        or some other more verbose representation which is used to identify it but
+        not convenient to read or write.
+    targets : set
+        All applicable :class:`.ModificationTarget` instances which apply to this
+        rule. This set may differ from instance to instance of the same rule by
+        configuration as per the :class:`RestrictedModificationTable`, for example
+    '''
 
     @staticmethod
     def reduce(rules):
@@ -245,8 +251,8 @@ class ModificationRule(object):
             reductions.append(accum)
         return reductions
 
-    @staticmethod
-    def from_protein_prospector(amino_acid_specificity, modification_name,
+    @classmethod
+    def from_protein_prospector(cls, amino_acid_specificity, modification_name,
                                 title=None, monoisotopic_mass=None):
         # If the specificity is a string, parse it into rules
         targets = None
@@ -267,16 +273,16 @@ class ModificationRule(object):
                 isinstance(iter(amino_acid_specificity).next(), ModificationTarget):
             targets = set(amino_acid_specificity)
 
-        return ModificationRule(targets, modification_name, title, monoisotopic_mass)
+        return cls(targets, modification_name, title, monoisotopic_mass)
 
-    @staticmethod
-    def from_unimod(unimod_entry):
+    @classmethod
+    def from_unimod(cls, unimod_entry):
         specificity = unimod_entry["specificity"]
         monoisotopic_mass = unimod_entry["mono_mass"]
         full_name = unimod_entry["full_name"]
         title = unimod_entry["title"]
         specificity = (map(ModificationTarget.from_unimod_specificity, specificity))
-        return ModificationRule(
+        return cls(
                 specificity, full_name, title, monoisotopic_mass,
                 composition=Composition({str(k): int(v) for k, v in unimod_entry['composition'].items()}))
 
@@ -530,6 +536,29 @@ _hexose = FrozenMonosaccharideResidue.from_iupac_lite("Hex")
 
 
 class Glycosylation(ModificationRule):
+    """
+    Incubator Idea - Represent occupied glycosylation sites
+    using the Modification interface.
+
+    Attributes
+    ----------
+    categories : list
+        Description
+    mass : TYPE
+        Description
+    name : TYPE
+        Description
+    names : TYPE
+        Description
+    options : dict
+        Description
+    parser : TYPE
+        Description
+    preferred_name : TYPE
+        Description
+    title : TYPE
+        Description
+    """
     parser = re.compile(r"@(?P<glycan_composition>\{[^\}]+\})")
 
     def __init__(self, glycan_composition):

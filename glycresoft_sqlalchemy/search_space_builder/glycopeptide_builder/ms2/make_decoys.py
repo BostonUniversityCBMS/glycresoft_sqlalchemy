@@ -302,7 +302,7 @@ def batch_make_decoys(theoretical_ids, database_manager, prefix_len=0, suffix_le
 
 
 class BatchingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
-    def stream_theoretical_glycopeptides(self, chunk_size=100):
+    def stream_theoretical_glycopeptides(self, chunk_size=1000):
         session = self.manager.session()
         i = 0
         batch = []

@@ -330,21 +330,6 @@ class BatchingExactSearchSpaceBuilder(BatchingTheoreticalSearchSpaceBuilder):
 
         logger.info("Checking integrity")
 
-        # Remove duplicates
-        # ids = session.query(func.min(TheoreticalGlycopeptide.id)).filter(
-        #     TheoreticalGlycopeptide.protein_id == Protein.id,
-        #     Protein.hypothesis_id == id).group_by(
-        #     TheoreticalGlycopeptide.glycopeptide_sequence,
-        #     TheoreticalGlycopeptide.protein_id)
-
-        # q = session.query(TheoreticalGlycopeptide.id).filter(
-        #     TheoreticalGlycopeptide.protein_id == Protein.id,
-        #     Protein.hypothesis_id == id,
-        #     ~TheoreticalGlycopeptide.id.in_(ids.correlate(None)))
-        # conn = session.connection()
-        # conn.execute(TheoreticalGlycopeptide.__table__.delete(
-        #     TheoreticalGlycopeptide.__table__.c.id.in_(q.selectable)))
-        # session.commit()
         self._remove_duplicates()
         final_count = session.query(TheoreticalGlycopeptide.id).filter(
             TheoreticalGlycopeptide.protein_id == Protein.id,

@@ -164,7 +164,5 @@ class PipelineModule(object):
         return self.manager.path
 
 
-
-
 class PipelineException(Exception):
     pass

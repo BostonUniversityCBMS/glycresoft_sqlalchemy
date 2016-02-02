@@ -104,20 +104,16 @@ class WorkItemCollection(object):
     def __init__(self, session):
         self.session = session
         self.accumulator = []
-        self.glycan_accumulator = []
 
     def add(self, glycopeptide_record):
         self.accumulator.append(glycopeptide_record)
 
     def reset(self):
-        self.session.expunge_all()
         self.accumulator = []
-        self.glycan_accumulator = []
 
     def commit(self):
         session = self.session
         session.add_all(self.accumulator)
-        session.flush()
         session.commit()
 
         self.reset()
