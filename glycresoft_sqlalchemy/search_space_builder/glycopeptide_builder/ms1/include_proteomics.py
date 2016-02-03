@@ -95,7 +95,8 @@ class ProteomeImporter(PipelineModule):
     def _remove_duplicates(self, session):
         ids = session.query(InformedPeptide.id).join(Protein, InformedPeptide.protein_id == Protein.id).filter(
             Protein.hypothesis_id == self.hypothesis_id).group_by(
-            InformedPeptide.modified_peptide_sequence, InformedPeptide.protein_id).having(
+            InformedPeptide.modified_peptide_sequence,
+            InformedPeptide.protein_id).having(
             InformedPeptide.peptide_score == func.max(InformedPeptide.peptide_score))
 
         q = session.query(InformedPeptide.id).filter(

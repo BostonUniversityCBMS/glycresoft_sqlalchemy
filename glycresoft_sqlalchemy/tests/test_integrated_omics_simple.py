@@ -12,7 +12,7 @@ from glycresoft_sqlalchemy.search_space_builder.glycan_builder import constraine
 
 
 def test_main():
-    db_file = "./datafiles/build_informed_hypothesis_test.db"
+    db_file = "./datafiles/build_informed_hypothesis_test2.db"
     # os.remove(db_file)
 
     rules_table = {
