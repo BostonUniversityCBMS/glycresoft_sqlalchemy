@@ -22,7 +22,7 @@ from glycresoft_sqlalchemy.utils.database_utils import toggle_indices
 from .include_glycomics import MS1GlycanImporter, MS1GlycanImportManager
 from .include_proteomics import ProteomeImporter
 
-from ..glycan_utilities import get_glycan_combinations, GlycanCombinationProvider
+from ..glycan_utilities import GlycanCombinationProvider
 from ..utils import flatten
 
 
@@ -89,21 +89,37 @@ def glycosylate_callback(peptide, glycan_combinator, position_selector, max_site
     result = []
     for glycan_count in range(1, min(n_sites + 1, max_sites + 1)):
         for glycans in glycan_combinator(glycan_count):
+            if len(result) > 10000:
+                for item in result:
+                    yield item
+                result = []
             for sites in position_selector(glycosylation_sites, glycan_count):
                 target = Sequence(modified_peptide_sequence)
-
-                glycan_iter = iter(glycans)
                 for site in sites:
-                    glycan = glycan_iter.next()
-                    hexnac = Modification("HexNAc")
-                    hexnac.mass = glycan.calculated_mass - water
                     for mod in target[site][1]:
                         target.drop_modification(site, mod)
+                mass = target.mass
+                for site in sites:
+                    hexnac = Modification("HexNAc")
                     target.add_modification(site, hexnac)
-                glycan_composition_string = glycans.composition
-                target.glycan = glycan_composition_string
-                result.append((target, glycans))
-    return result
+                mass += glycans.dehydrated_mass()
+                result.append((target, mass, glycans))
+
+                # glycan_iter = iter(glycans)
+                # for site in sites:
+                #     glycan = glycan_iter.next()
+                #     hexnac = Modification("HexNAc")
+                #     hexnac.mass = glycan.calculated_mass - water
+                #     for mod in target[site][1]:
+                #         target.drop_modification(site, mod)
+                #     target.add_modification(site, hexnac)
+                # glycan_composition_string = glycans.composition
+                # target.glycan = glycan_composition_string
+                # result.append((target, glycans))
+
+    # return result
+    for item in result:
+        yield item
 
 
 def extract_peptides(session, ids):
@@ -119,6 +135,27 @@ def extract_peptides(session, ids):
     return results
 
 
+def backprop_informed_attributes(session, peptide, hypothesis_id):
+    try:
+        ids = session.query(TheoreticalGlycopeptideComposition.id).join(
+            Protein, TheoreticalGlycopeptideComposition.protein_id == Protein.id).filter(
+            TheoreticalGlycopeptideComposition.modified_peptide_sequence == peptide.modified_peptide_sequence,
+            Protein.id == peptide.protein_id,
+            TheoreticalGlycopeptideComposition.protein_id == peptide.protein_id,
+            Hypothesis.id == hypothesis_id
+            ).all()
+        peptide_score = peptide.peptide_score
+        peptide_id = peptide.id
+        other = peptide.other
+        args = [{"id": i[0], "other": other, "peptide_score": peptide_score,
+                 "base_peptide_id": peptide_id} for i in ids]
+        session.execute(InformedTheoreticalGlycopeptideComposition.__table__.insert(), args)
+    except Exception, e:
+        logging.exception("An error ocurred in backprop_informed_attributes for %r, %r", peptide, hypothesis_id,
+                          exc_info=e)
+        raise e
+
+
 def batch_make_theoretical_glycopeptides(peptide_ids, position_selector, database_manager,
                                          hypothesis_id, glycan_combinator, max_sites=2):
     try:
@@ -130,117 +167,50 @@ def batch_make_theoretical_glycopeptides(peptide_ids, position_selector, databas
 
         for peptide in peptides:
 
-            peptide_id = peptide.id
             protein_id = peptide.protein_id
             base_peptide_sequence = peptide.base_peptide_sequence
             modified_peptide_sequence = peptide.modified_peptide_sequence
-            peptide_score = peptide.peptide_score
             start_position = peptide.start_position
             end_position = peptide.end_position
             count_glycosylation_sites = peptide.count_glycosylation_sites
             count_missed_cleavages = peptide.count_missed_cleavages
-            other = peptide.other
 
             glycoforms = glycosylate_callback(peptide, glycan_combinator, position_selector, max_sites=max_sites)
-            for glycoform, glycans in glycoforms:
+            for glycoform, total_mass, glycans in glycoforms:
                 glycan_ids = glycans.id
-                informed_glycopeptide = InformedTheoreticalGlycopeptideComposition(
+                informed_glycopeptide = dict(
                     protein_id=protein_id,
                     base_peptide_sequence=base_peptide_sequence,
                     modified_peptide_sequence=modified_peptide_sequence,
-                    glycopeptide_sequence=str(glycoform),
-                    calculated_mass=glycoform.mass,
+                    glycopeptide_sequence=str(glycoform) + (glycans.composition),
+                    calculated_mass=total_mass,
                     glycosylation_sites=list(glycoform.n_glycan_sequon_sites),
-                    peptide_score=peptide_score,
                     start_position=start_position,
                     end_position=end_position,
                     count_glycosylation_sites=count_glycosylation_sites,
                     count_missed_cleavages=count_missed_cleavages,
-                    other=other,
                     glycan_mass=glycans.calculated_mass,
-                    glycan_composition_str=glycoform.glycan,
+                    glycan_composition_str=glycans.composition,
                     glycan_combination_id=glycan_ids,
-                    base_peptide_id=peptide_id)
+                    sequence_type="InformedTheoreticalGlycopeptideComposition"
+                    )
 
                 glycopeptide_acc.append(informed_glycopeptide)
                 i += 1
-                if i % 10000 == 0:
-                    session.add_all(glycopeptide_acc)
+                if i % 50000 == 0:
+                    session.bulk_insert_mappings(TheoreticalGlycopeptideComposition, glycopeptide_acc)
                     session.commit()
                     glycopeptide_acc = []
                     i = 0
 
-        session.add_all(glycopeptide_acc)
-        session.commit()
-        glycopeptide_acc = []
+            session.bulk_insert_mappings(TheoreticalGlycopeptideComposition, glycopeptide_acc)
+            session.commit()
+            glycopeptide_acc = []
+            backprop_informed_attributes(session, peptide, hypothesis_id)
+            session.commit()
+
         i = 0
         return len(peptide_ids)
-    except Exception, e:
-        logging.exception("An error occurred in make_theoretical_glycopeptide", exc_info=e)
-
-        raise
-
-
-def make_theoretical_glycopeptide(peptide, position_selector, database_manager, hypothesis_id, max_sites=2):
-    """Multiprocessing task to create exact glycopeptides from `peptide`. An exact glycopeptide
-    has all of its non-glycan modifications positioned and unambiguous.
-
-    Parameters
-    ----------
-    peptide: InformedPeptide
-        The template peptide onto which glycans are added
-    position_selector: function
-        A function that controls the manner in which combinations or
-        permutations of glycans are added to the template
-    database_manager: DatabaseManager
-        The manager of database connections
-    hypothesis_id: int
-        The hypothesis to look up information in.
-
-    Returns
-    -------
-    int: The number  of glycopeptides produced.
-    """
-    try:
-        session = database_manager.session()
-        glycoforms = glycosylate_callback(peptide, session, hypothesis_id, position_selector, max_sites=max_sites)
-        # conn = session.connection()
-        glycopeptide_acc = []
-        i = 0
-
-        for glycoform, glycans in glycoforms:
-            glycan_ids = glycans.id
-            informed_glycopeptide = InformedTheoreticalGlycopeptideComposition(
-                protein_id=peptide.protein_id,
-                base_peptide_sequence=peptide.base_peptide_sequence,
-                modified_peptide_sequence=peptide.modified_peptide_sequence,
-                glycopeptide_sequence=str(glycoform),
-                calculated_mass=glycoform.mass,
-                glycosylation_sites=list(glycoform.n_glycan_sequon_sites),
-                peptide_score=peptide.peptide_score,
-                start_position=peptide.start_position,
-                end_position=peptide.end_position,
-                count_glycosylation_sites=peptide.count_glycosylation_sites,
-                count_missed_cleavages=peptide.count_missed_cleavages,
-                other=peptide.other,
-                glycan_mass=glycans.calculated_mass,
-                glycan_composition_str=glycoform.glycan,
-                glycan_combination_id=glycan_ids,
-                base_peptide_id=peptide.id)
-
-            glycopeptide_acc.append(informed_glycopeptide)
-            i += 1
-            if i % 5000 == 0:
-                logger.info("Flushing %d %r", i, peptide)
-                session.add_all(glycopeptide_acc)
-                session.commit()
-                glycopeptide_acc = []
-
-        session.add_all(glycopeptide_acc)
-        session.commit()
-        glycopeptide_acc = []
-        session.close()
-        return len(glycoforms)
     except Exception, e:
         logging.exception("An error occurred in make_theoretical_glycopeptide", exc_info=e)
 
@@ -373,28 +343,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManage
             glycan_combinator=self.glycan_combinator)
         return task_fn
 
-    def run(self):
-        self.bootstrap_hypothesis()
-        subjob = EnrichDistinctPeptides(self.database_path, self.hypothesis_id, self.protein_ids, max_distance=0)
-        subjob.start()
-
-        temporary_glycan_manager = self.mirror_glycans_to_temporary_storage()
-        self.glycan_combinator = GlycanCombinationProvider(temporary_glycan_manager, self.hypothesis_id)
-
-        task_fn = self.prepare_task_fn()
-        index_controller = toggle_indices(self.manager.session(), TheoreticalGlycopeptideComposition)
-        index_controller.drop()
-        cntr = 0
-        if self.n_processes > 1:
-            pool = Pool(self.n_processes)
-            async_worker_pool(pool, self.stream_peptides(), task_fn)
-            pool.terminate()
-        else:
-            for peptide in self.stream_peptides():
-                cntr += task_fn(peptide)
-                logger.info("Completed %d sequences", cntr)
-        logger.info("Checking Integrity")
-        session = self.manager.session()
+    def _remove_duplicates(self, session):
         ids = session.query(
             func.min(
                 TheoreticalGlycopeptideComposition.id)).filter(
@@ -423,6 +372,32 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManage
             Protein.hypothesis_id == self.hypothesis_id).count())
 
         session.close()
+
+    def run(self):
+        self.bootstrap_hypothesis()
+        subjob = EnrichDistinctPeptides(self.database_path, self.hypothesis_id, self.protein_ids, max_distance=0)
+        subjob.start()
+
+        temporary_glycan_manager = self.mirror_glycans_to_temporary_storage()
+        self.glycan_combinator = GlycanCombinationProvider(temporary_glycan_manager, self.hypothesis_id)
+
+        task_fn = self.prepare_task_fn()
+        index_controller = toggle_indices(self.manager.session(), TheoreticalGlycopeptideComposition)
+        index_controller.drop()
+        cntr = 0
+        if self.n_processes > 1:
+            pool = Pool(self.n_processes)
+            async_worker_pool(pool, self.stream_peptides(), task_fn)
+            pool.terminate()
+        else:
+            for peptide in self.stream_peptides():
+                cntr += task_fn(peptide)
+                logger.info("Completed %d sequences", cntr)
+        logger.info("Checking Integrity")
+        session = self.manager.session()
+
+        self._remove_duplicates(session)
+
         index_controller.create()
         temporary_glycan_manager.clear()
 

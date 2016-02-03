@@ -141,8 +141,7 @@ def composition_association_factory(lazy_collection, creator, value_attr, assoc_
 
 def has_glycan_composition(model, composition_attr):
     if hasattr(model, "GlycanCompositionAssociation"):
-        has_glycan_composition_listener(getattr(model, composition_attr))
-        return model
+        pass
     else:
         class MonosaccharideBaseCounter(Base):
             __tablename__ = "%s_GlycanCompositionAssociation" % model.__name__
@@ -165,7 +164,7 @@ def has_glycan_composition(model, composition_attr):
             if value == "{}" or value is None:
                 return
             for k, v in FrozenGlycanComposition.parse(value).items():
-                target.glycan_composition[k.name()] = v
+                target.glycan_composition[str(k)] = v
 
         @event.listens_for(model, "load", propagate=True)
         def convert_composition_load(target, context):
@@ -173,7 +172,7 @@ def has_glycan_composition(model, composition_attr):
             if value == "{}" or value is None:
                 return
             for k, v in FrozenGlycanComposition.parse(value).items():
-                target.glycan_composition[k.name()] = v
+                target.glycan_composition[str(k)] = v
 
         creator = functools.partial(
             association_composition_creator, reference_table=MonosaccharideBaseCounter)
@@ -233,8 +232,8 @@ def has_glycan_composition(model, composition_attr):
                                     symbol.c.count.between(minimum, maximum) |
                                     symbol.c.base_type.is_(None))
                             except Exception, e:
-                                logging.exception("An exception occurred in %r.glycan_composition_filters", cls, exc_info=e)
-                                
+                                logging.exception(
+                                    "An exception occurred in %r.glycan_composition_filters", cls, exc_info=e)
                     else:
                         q = q.join(symbol).filter(symbol.c.count.between(minimum, maximum))
                 else:

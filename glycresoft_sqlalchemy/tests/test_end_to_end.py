@@ -29,7 +29,7 @@ def test_main():
         db_file_name, rules_table=rules_table, constraints_list=[])
     combn_glycan_hypothesis_id = job.start()
 
-    constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Oxidation (M)", "Deamidated (N)", "Pyro-glu from Q (Q@N-term)"])
+    constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (N)"])
     enzyme = 'trypsin'
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
         database_path=db_file_name,
@@ -39,12 +39,12 @@ def test_main():
         constant_modifications=constant_mods,
         variable_modifications=variable_mods,
         enzyme=enzyme,
-        glycomics_path=db_file_name,
-        glycomics_format='hypothesis',
-        source_hypothesis_id=combn_glycan_hypothesis_id,
-        # glycomics_path='./datafiles/human_n_glycans.txt',
-        # glycomics_format='txt',
-        maximum_glycosylation_sites=1,
+        # glycomics_path=db_file_name,
+        # glycomics_format='hypothesis',
+        # source_hypothesis_id=combn_glycan_hypothesis_id,
+        glycomics_path='./datafiles/human_n_glycans.txt',
+        glycomics_format='txt',
+        maximum_glycosylation_sites=2,
         max_missed_cleavages=1,
         n_processes=6)
     glycopeptide_hypothesis_id = job.start()

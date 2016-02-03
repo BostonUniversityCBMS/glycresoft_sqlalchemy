@@ -13,22 +13,16 @@ from glycresoft_sqlalchemy.data_model import (
 from .include_glycomics import MS1GlycanImporter, MS1GlycanImportManager
 
 from ..peptide_utilities import generate_peptidoforms, ProteinFastaFileParser, SiteListFastaFileParser
-from ..glycan_utilities import get_glycan_combinations
+from ..glycan_utilities import get_glycan_combinations, GlycanCombinationProvider
 from ..utils import flatten
 
 from glycresoft_sqlalchemy.structure import composition
 from glycresoft_sqlalchemy.utils.worker_utils import async_worker_pool
+from glycresoft_sqlalchemy.utils.database_utils import toggle_indices
+
 Composition = composition.Composition
 
-format_mapping = {
-    "txt": "txt",
-    "hypothesis": None
-}
-
 logger = logging.getLogger("naive_glycopeptide_hypothesis")
-
-
-water = Composition("H2O").mass
 
 
 def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id, max_sites=2):
@@ -89,24 +83,34 @@ def batch_generate_glycopeptide_compositions(peptide_ids, database_manager, hypo
         i = 0
         glycopeptide_acc = []
         for peptide in slurp(session, NaivePeptide, peptide_ids, flatten=True):
+            base_peptide_sequence = peptide.base_peptide_sequence
+            modified_peptide_sequence = peptide.modified_peptide_sequence
+            protein_id = peptide.protein_id
+            start_position = peptide.start_position
+            end_position = peptide.end_position
+            peptide_modifications = peptide.peptide_modifications
+            count_missed_cleavages = peptide.count_missed_cleavages
+            glycosylation_sites = peptide.glycosylation_sites
+            sequence_length = peptide.sequence_length
+            calculated_mass = peptide.calculated_mass
 
             for glycan_set in glycan_combinator(min(peptide.count_glycosylation_sites, max_sites)):
 
                 glycan_composition_str = glycan_set.composition
                 glycan_mass = glycan_set.dehydrated_mass()
-                glycoform = TheoreticalGlycopeptideComposition(
-                    base_peptide_sequence=peptide.base_peptide_sequence,
-                    modified_peptide_sequence=peptide.modified_peptide_sequence,
-                    glycopeptide_sequence=peptide.modified_peptide_sequence + glycan_composition_str,
-                    protein_id=peptide.protein_id,
-                    start_position=peptide.start_position,
-                    end_position=peptide.end_position,
-                    peptide_modifications=peptide.peptide_modifications,
-                    count_missed_cleavages=peptide.count_missed_cleavages,
-                    count_glycosylation_sites=(glycan_set.count),
-                    glycosylation_sites=peptide.glycosylation_sites,
-                    sequence_length=peptide.sequence_length,
-                    calculated_mass=peptide.calculated_mass + glycan_mass,
+                glycoform = dict(
+                    base_peptide_sequence=base_peptide_sequence,
+                    modified_peptide_sequence=modified_peptide_sequence,
+                    glycopeptide_sequence=modified_peptide_sequence + glycan_composition_str,
+                    protein_id=protein_id,
+                    start_position=start_position,
+                    end_position=end_position,
+                    peptide_modifications=peptide_modifications,
+                    count_missed_cleavages=count_missed_cleavages,
+                    count_glycosylation_sites=glycan_set.count,
+                    glycosylation_sites=glycosylation_sites,
+                    sequence_length=sequence_length,
+                    calculated_mass=calculated_mass + glycan_mass,
                     glycan_composition_str=glycan_composition_str,
                     glycan_mass=glycan_mass,
                     glycan_combination_id=glycan_set.id
@@ -115,12 +119,16 @@ def batch_generate_glycopeptide_compositions(peptide_ids, database_manager, hypo
                 glycopeptide_acc.append(glycoform)
 
                 i += 1
-                if i % 5000 == 0:
-                    session.bulk_save_objects(glycopeptide_acc)
+                if (i % 5000) == 0:
+                    logging.info("Thunk, %d", i)
+                    session.bulk_insert_mappings(TheoreticalGlycopeptideComposition, glycopeptide_acc)
+                    # session.bulk_save_objects(glycopeptide_acc)
                     session.commit()
                     glycopeptide_acc = []
 
-        session.bulk_save_objects(glycopeptide_acc)
+        session.bulk_insert_mappings(TheoreticalGlycopeptideComposition, glycopeptide_acc)
+        # session.bulk_save_objects(glycopeptide_acc)
+
         session.commit()
         session.close()
         return i
@@ -209,19 +217,26 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule, MS1GlycanImportManager)
         self.hypothesis_id = hypothesis.id
 
     def prepare_task_fn(self):
-        return functools.partial(generate_glycopeptide_compositions,
-                                 database_manager=self.manager,
-                                 hypothesis_id=self.hypothesis.id,
-                                 max_sites=self.maximum_glycosylation_sites)
+        task_fn = functools.partial(
+            batch_generate_glycopeptide_compositions,
+            hypothesis_id=self.hypothesis_id,
+            database_manager=self.manager,
+            max_sites=self.maximum_glycosylation_sites,
+            glycan_combinator=self.glycan_combinator)
+        return task_fn
 
     def stream_proteins(self):
         return self.manager.session().query(Protein).filter(Protein.hypothesis_id == self.hypothesis.id)
 
-    def stream_peptides(self):
-        for item in self.manager.session().query(NaivePeptide.id).filter(
+    def batch_stream_peptides(self, chunk_size=20):
+        ids = self.manager.session().query(NaivePeptide.id).filter(
                 NaivePeptide.protein_id == Protein.id,
-                Protein.hypothesis_id == self.hypothesis.id):
-            yield item
+                Protein.hypothesis_id == self.hypothesis.id).all()
+        total = len(ids)
+        last = 0
+        while last <= total:
+            yield ids[last:(last + chunk_size)]
+            last += chunk_size
 
     def digest_proteins(self, session):
         protein_digest_task = functools.partial(
@@ -289,7 +304,13 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule, MS1GlycanImportManager)
 
         self.digest_proteins(session)
 
-        work_stream = self.stream_peptides()
+        temporary_glycan_manager = self.mirror_glycans_to_temporary_storage()
+        self.glycan_combinator = GlycanCombinationProvider(temporary_glycan_manager, self.hypothesis_id)
+
+        index_controller = toggle_indices(self.manager.session(), TheoreticalGlycopeptideComposition)
+        index_controller.drop()
+
+        work_stream = self.batch_stream_peptides(2)
         task_fn = self.prepare_task_fn()
 
         cntr = 0
@@ -303,27 +324,17 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule, MS1GlycanImportManager)
                 logger.info("%d done", cntr)
 
         session.commit()
-        logger.info("Checking integrity")
-        ids = session.query(func.min(TheoreticalGlycopeptideComposition.id)).filter(
-            TheoreticalGlycopeptideComposition.protein_id == Protein.id,
-            Protein.hypothesis_id == self.hypothesis.id).group_by(
-            TheoreticalGlycopeptideComposition.glycopeptide_sequence,
-            TheoreticalGlycopeptideComposition.peptide_modifications,
-            TheoreticalGlycopeptideComposition.glycosylation_sites,
-            TheoreticalGlycopeptideComposition.protein_id)
 
-        q = session.query(TheoreticalGlycopeptideComposition.id).filter(
-            TheoreticalGlycopeptideComposition.protein_id == Protein.id,
-            Protein.hypothesis_id == self.hypothesis.id,
-            ~TheoreticalGlycopeptideComposition.id.in_(ids.correlate(None)))
-        conn = session.connection()
-        conn.execute(TheoreticalGlycopeptideComposition.__table__.delete(
-            TheoreticalGlycopeptideComposition.__table__.c.id.in_(q.selectable)))
-        session.commit()
+        logger.info("Checking integrity")
+        self._remove_duplicates(session)
         logger.info("Naive Hypothesis Complete. %d theoretical glycopeptide compositions genreated.",
                     session.query(TheoreticalGlycopeptideComposition).filter(
                         TheoreticalGlycopeptideComposition.protein_id == Protein.id,
                         Protein.hypothesis_id == self.hypothesis.id).count())
+
+        index_controller.create()
+        temporary_glycan_manager.clear()
+
         return self.hypothesis.id
 
 

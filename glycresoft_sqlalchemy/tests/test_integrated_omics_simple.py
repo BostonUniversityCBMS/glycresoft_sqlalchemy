@@ -10,9 +10,10 @@ from glycresoft_sqlalchemy.search_space_builder import integrated_omics
 from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptideComposition, func
 from glycresoft_sqlalchemy.search_space_builder.glycan_builder import constrained_combinatorics
 
+
 def test_main():
     db_file = "./datafiles/build_informed_hypothesis_test.db"
-    os.remove(db_file)
+    # os.remove(db_file)
 
     rules_table = {
         "Hex": (3, 8),
@@ -35,11 +36,11 @@ def test_main():
         db_file,
         protein_ids=simple_proteome,
         mzid_path="datafiles/AGP_Proteomics2.mzid",
-        glycomics_path='./datafiles/human_n_glycans.txt',
-        glycomics_format='txt',
-        # glycomics_path=db_file,
-        # glycomics_format='hypothesis',
-        # source_hypothesis_id=1,
+        # glycomics_path='./datafiles/human_n_glycans.txt',
+        # glycomics_format='txt',
+        glycomics_path=db_file,
+        glycomics_format='hypothesis',
+        source_hypothesis_id=1,
         maximum_glycosylation_sites=1,
         include_all_baseline=True,
         n_processes=n_processes)

@@ -67,12 +67,44 @@ class ProteomeImporter(PipelineModule):
                     self.peptide_type.count_glycosylation_sites == None).delete("fetch")
                 session.commit()
 
+    def build_unmodified_peptides(self, session):
+        modification_table = modification.RestrictedModificationTable.bootstrap(
+            list(self.constant_modifications), [])
+        basic_peptides = []
+        for peptide in session.query(self.peptide_type).filter(
+                self.peptide_type.protein_id == Protein.id,
+                Protein.hypothesis_id == self.hypothesis_id).group_by(
+                self.peptide_type.base_peptide_sequence):
+            peptide = make_base_sequence(peptide, self.constant_modifications, modification_table)
+            basic_peptides.append(peptide)
+            if len(basic_peptides) > 1000:
+                session.add_all(basic_peptides)
+                session.commit()
+                basic_peptides = []
+
+        session.add_all(basic_peptides)
+        session.commit()
+
     def _display_protein_peptide_counts(self, session):
         peptide_counts = session.query(Protein.name, func.count(InformedPeptide.id)).filter(
             Protein.hypothesis_id == self.hypothesis_id).join(InformedPeptide).group_by(
             InformedPeptide.protein_id).all()
 
         logger.info("Peptide Counts: %r", peptide_counts)
+
+    def _remove_duplicates(self, session):
+        ids = session.query(InformedPeptide.id).join(Protein, InformedPeptide.protein_id == Protein.id).filter(
+            Protein.hypothesis_id == self.hypothesis_id).group_by(
+            InformedPeptide.modified_peptide_sequence, InformedPeptide.protein_id).having(
+            InformedPeptide.peptide_score == func.max(InformedPeptide.peptide_score))
+
+        q = session.query(InformedPeptide.id).filter(
+                    InformedPeptide.protein_id == Protein.id,
+                    Protein.hypothesis_id == self.hypothesis_id,
+                    ~InformedPeptide.id.in_(ids.correlate(None)))
+
+        session.execute(InformedPeptide.__table__.delete(
+                   InformedPeptide.__table__.c.id.in_(q.selectable)))
 
     def run(self):
         try:
@@ -126,26 +158,13 @@ class ProteomeImporter(PipelineModule):
 
             if not self.include_all_baseline:
                 logger.info("Building Unmodified Reference Peptides")
-                modification_table = modification.RestrictedModificationTable.bootstrap(
-                    list(self.constant_modifications), [])
-                basic_peptides = []
-                for peptide in session.query(self.peptide_type).filter(
-                        self.peptide_type.protein_id == Protein.id,
-                        Protein.hypothesis_id == self.hypothesis_id).group_by(
-                        self.peptide_type.base_peptide_sequence):
-                    peptide = make_base_sequence(peptide, self.constant_modifications, modification_table)
-                    basic_peptides.append(peptide)
-                    if len(basic_peptides) > 1000:
-                        session.add_all(basic_peptides)
-                        session.commit()
-                        basic_peptides = []
-
-                session.add_all(basic_peptides)
-                session.commit()
+                self.build_unmodified_peptides(session)
 
             assert session.query(InformedPeptide).filter(
                 InformedPeptide.protein_id == None).count() == 0
 
+            self._remove_duplicates(session)
+            session.commit()
             self._display_protein_peptide_counts(session)
 
             hypothesis.parameters.update({

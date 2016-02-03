@@ -42,7 +42,8 @@ def generate_fragments(seq, ms1_result):
      b_ions_hexnac, y_ions_hexnac,
      stub_ions) = fragments(seq)
 
-    theoretical_glycopeptide = TheoreticalGlycopeptide(
+    # theoretical_glycopeptide = TheoreticalGlycopeptide(
+    theoretical_glycopeptide = dict(
         ms1_score=ms1_result.ms1_score,
         observed_mass=ms1_result.observed_mass,
         calculated_mass=ms1_result.calculated_mass,
@@ -241,7 +242,7 @@ class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
 def batch_from_sequence(ms1_results, database_manager, protein_map, source_type):
     try:
         session = database_manager.session()
-        working_set = WorkItemCollection(session)
+        glycopeptide_acc = []
         i = 0
         for ms1_result in [source_type.render(session, ms1_result) for ms1_result in ms1_results]:
 
@@ -250,11 +251,12 @@ def batch_from_sequence(ms1_results, database_manager, protein_map, source_type)
             seq = Sequence(ms1_result.most_detailed_sequence)
             seq.glycan = ''
             product = generate_fragments(seq, ms1_result)
-            if not isinstance(product.protein_id, int):
-                product.protein_id = protein_map[product.protein_id]
-            working_set.add(product)
+            if not isinstance(product["protein_id"], int):
+                product["protein_id"] = protein_map[product["protein_id"]]
+            glycopeptide_acc.append(product)
             i += 1
-        working_set.commit()
+        session.bulk_insert_mappings(TheoreticalGlycopeptide, glycopeptide_acc)
+        session.commit()
         return i
     except Exception, e:
         logging.exception("An error occurred in batch_from_sequence", exc_info=e)

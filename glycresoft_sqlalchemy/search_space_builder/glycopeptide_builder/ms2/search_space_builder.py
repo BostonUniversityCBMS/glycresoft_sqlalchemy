@@ -290,7 +290,8 @@ def generate_fragments(seq, ms1_result):
      b_ions_hexnac, y_ions_hexnac,
      stub_ions) = fragments(seq)
 
-    theoretical_glycopeptide = TheoreticalGlycopeptide(
+    # theoretical_glycopeptide = TheoreticalGlycopeptide(
+    theoretical_glycopeptide = dict(
         ms1_score=ms1_result.ms1_score,
         observed_mass=ms1_result.observed_mass,
         calculated_mass=ms1_result.calculated_mass,
@@ -360,6 +361,7 @@ def process_predicted_ms1_ion(row, modification_table, site_list_map,
                      for seq in seq_list]
         i = 0
         for sequence in fragments:
+            sequence = TheoreticalGlycopeptide(**sequence)
             sequence.protein_id = proteins[ms1_result.protein_name].id
             session.add(sequence)
             i += 1
@@ -746,7 +748,7 @@ def batch_process_predicted_ms1_ion(rows, modification_table, site_list_map,
         Count of new TheoreticalGlycopeptide items
     """
     session = database_manager.session()
-    working_set = WorkItemCollection(session)
+    glycopeptide_acc = []
     try:
         i = 0
 
@@ -769,10 +771,11 @@ def batch_process_predicted_ms1_ion(rows, modification_table, site_list_map,
             fragments = [generate_fragments(seq, ms1_result)
                          for seq in seq_list]
             for sequence in fragments:
-                sequence.protein_id = proteins[ms1_result.protein_name].id
-                working_set.add(sequence)
+                sequence["protein_id"] = proteins[ms1_result.protein_name].id
+                glycopeptide_acc.append(sequence)
                 i += 1
-        working_set.commit()
+        session.bulk_insert_mappings(TheoreticalGlycopeptide, glycopeptide_acc)
+        session.commit()
         return i
     except Exception, e:
         logger.exception("An error occurred, %r", locals(), exc_info=e)

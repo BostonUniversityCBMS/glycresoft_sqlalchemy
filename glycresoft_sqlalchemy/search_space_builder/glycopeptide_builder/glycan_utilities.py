@@ -1,6 +1,8 @@
 import operator
 import logging
 import itertools
+import time
+
 from collections import deque, Counter, OrderedDict
 
 from sqlalchemy.sql import select
@@ -114,6 +116,8 @@ def create_combinations(session, n, hypothesis_id, unique_unordered=True):
     join_table_accumulator = []
     j = 0
     for i in range(1, n + 1):
+        if i > 1:
+            logger.info("Building combinations of size %d", i)
         for comb_compositions in itertools.combinations_with_replacement(compositions, i):
             j += 1
             counts = Counter(g[0] for g in comb_compositions)
@@ -125,7 +129,7 @@ def create_combinations(session, n, hypothesis_id, unique_unordered=True):
             pk = tgc.id
             for glyc in comb_compositions:
                 join_table_accumulator.append({"glycan_id": glyc[0], "combination_id": pk, "count": counts[glyc[0]]})
-            if len(join_table_accumulator) % 1000 == 0:
+            if len(join_table_accumulator) % 100000 == 0:
                 session.execute(
                     TheoreticalGlycanCombinationTheoreticalGlycanComposition.insert(),
                     join_table_accumulator)
@@ -136,6 +140,7 @@ def create_combinations(session, n, hypothesis_id, unique_unordered=True):
         join_table_accumulator)
     join_table_accumulator = []
     session.commit()
+    logger.info("%d combinations created", j)
     return j
 
 
