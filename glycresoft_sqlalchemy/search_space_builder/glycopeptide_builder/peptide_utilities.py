@@ -322,8 +322,12 @@ class ProteinFastFileWriter(FastaFileWriter):
 
 
 class ProteomeDigestor(object):
-    def __init__(self, database_path, constant_modifications, variable_modifications, enzyme, max_missed_cleavages):
+    def __init__(self, database_path, hypothesis_id, protein_ids, constant_modifications,
+                 variable_modifications, enzyme, max_missed_cleavages):
         self.manager = self.manager_type(database_path)
         self.constant_modifications = constant_modifications
         self.variable_modifications = variable_modifications
         self.enzyme = enzyme
+        self.max_missed_cleavages = max_missed_cleavages
+        self.hypothesis_id = hypothesis_id
+        self.protein_ids = protein_ids

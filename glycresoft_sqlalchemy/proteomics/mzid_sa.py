@@ -364,7 +364,6 @@ class Proteome(object):
             if i % 1000 == 0:
                 logger.info("%d spectrum matches processed.", i)
             if (counter - last) > 1000:
-                session.commit()
                 last = counter
                 logger.info("%d peptides saved.", counter)
         session.commit()

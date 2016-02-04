@@ -185,3 +185,6 @@ class HasUniqueName(object):
             return name
         else:
             return name
+
+
+_TemplateNumberStore = Table("_TemplateNumberStore", Base.metadata, Column("value", Integer))

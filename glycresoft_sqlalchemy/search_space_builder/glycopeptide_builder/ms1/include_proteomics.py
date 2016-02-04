@@ -12,11 +12,13 @@ from glycresoft_sqlalchemy.structure import sequence, modification
 
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Protein, make_transient, InformedPeptide,
-    ExactMS1GlycopeptideHypothesis, func)
+    ExactMS1GlycopeptideHypothesis, func, _TemplateNumberStore)
 
 from glycresoft_sqlalchemy.proteomics.mzid_sa import Proteome as MzIdentMLProteome
 
 from glycresoft_sqlalchemy.structure.sequence import find_n_glycosylation_sequons
+
+from glycresoft_sqlalchemy.utils.database_utils import temp_table
 
 
 def make_base_sequence(peptide, constant_modifications, modification_table):
@@ -31,6 +33,48 @@ def make_base_sequence(peptide, constant_modifications, modification_table):
     peptide.modified_peptide_sequence = str(seq)
     peptide.calculated_mass = seq.mass
     return peptide
+
+
+def find_best_peptides(session, hypothesis_id):
+    q = session.query(
+        InformedPeptide.id, InformedPeptide.peptide_score,
+        InformedPeptide.modified_peptide_sequence, InformedPeptide.protein_id).join(
+        Protein).filter(Protein.hypothesis_id == hypothesis_id).yield_per(10000)
+    keepers = dict()
+    for id, score, modified_peptide_sequence, protein_id in q:
+        try:
+            old_id, old_score = keepers[modified_peptide_sequence, protein_id]
+            if score > old_score:
+                keepers[modified_peptide_sequence, protein_id] = id, score
+        except KeyError:
+            keepers[modified_peptide_sequence, protein_id] = id, score
+    return keepers
+
+
+def store_best_peptides(session, keepers):
+    table = temp_table(_TemplateNumberStore)
+    conn = session.connection()
+    table.create(conn)
+    payload = [{"value": x[0]} for x in keepers.values()]
+    conn.execute(table.insert(), payload)
+    session.commit()
+    return table
+
+
+def remove_duplicates(session, hypothesis_id):
+    keepers = find_best_peptides(session, hypothesis_id)
+    table = store_best_peptides(session, keepers)
+    ids = session.query(table.c.value)
+    q = session.query(InformedPeptide.id).filter(
+                    InformedPeptide.protein_id == Protein.id,
+                    Protein.hypothesis_id == hypothesis_id,
+                    ~InformedPeptide.id.in_(ids.correlate(None)))
+
+    session.execute(InformedPeptide.__table__.delete(
+               InformedPeptide.__table__.c.id.in_(q.selectable)))
+    conn = session.connection()
+    table.drop(conn)
+    session.commit()
 
 
 class ProteomeImporter(PipelineModule):
@@ -60,7 +104,7 @@ class ProteomeImporter(PipelineModule):
                         protein, self.constant_modifications, [],
                         self.enzymes[0], missed_cleavages=self.baseline_missed_cleavages,
                         peptide_class=self.peptide_type,
-                        **{"count_variable_modifications": 0}):
+                        **{"count_variable_modifications": 0, "peptide_score": 0}):
                     peptidoform.count_variable_modifications = 0
                     session.add(peptidoform)
                 protein.informed_peptides.filter(
@@ -93,76 +137,72 @@ class ProteomeImporter(PipelineModule):
         logger.info("Peptide Counts: %r", peptide_counts)
 
     def _remove_duplicates(self, session):
-        ids = session.query(InformedPeptide.id).join(Protein, InformedPeptide.protein_id == Protein.id).filter(
-            Protein.hypothesis_id == self.hypothesis_id).group_by(
-            InformedPeptide.modified_peptide_sequence,
-            InformedPeptide.protein_id).having(
-            InformedPeptide.peptide_score == func.max(InformedPeptide.peptide_score))
+        remove_duplicates(session, self.hypothesis_id)
+        logger.info("Saved %d InformedPeptides", session.query(InformedPeptide).filter(
+            InformedPeptide.from_hypothesis(self.hypothesis_id)).count())
 
-        q = session.query(InformedPeptide.id).filter(
-                    InformedPeptide.protein_id == Protein.id,
-                    Protein.hypothesis_id == self.hypothesis_id,
-                    ~InformedPeptide.id.in_(ids.correlate(None)))
+    def _bootstrap_hypothesis(self, session):
+        self.manager.initialize()
+        tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
+        name = 'target-{}-{}'.format(
+                os.path.splitext(
+                    os.path.basename(self.mzid_path)
+                    )[0],
+                tag)
+        hypothesis = self.hypothesis_type(name=name, parameters={"protein_file": self.mzid_path})
+        session.add(hypothesis)
+        session.commit()
+        self.hypothesis_id = hypothesis.id
+        return hypothesis
 
-        session.execute(InformedPeptide.__table__.delete(
-                   InformedPeptide.__table__.c.id.in_(q.selectable)))
+    def load_proteome(self, session):
+        mzident_parser = MzIdentMLProteome(self.manager.path, self.mzid_path, self.hypothesis_id)
+        self._display_protein_peptide_counts(session)
+        self.constant_modifications = mzident_parser.constant_modifications
+        self.enzymes = mzident_parser.enzymes
+
+        logger.info("Constant Modifications: %r", self.constant_modifications)
+        logger.info("Enzyme: %r", self.enzymes)
+        if self.glycosylation_sites_file is None:
+            for protein in session.query(Protein).filter(Protein.hypothesis_id == self.hypothesis_id):
+                protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
+                session.add(protein)
+                session.flush()
+                if self.include_all_baseline:
+                    self.build_baseline_peptides(session, protein)
+
+        else:
+            site_list_gen = SiteListFastaFileParser(self.glycosylation_sites_file)
+            site_list_map = {d['name']: d["glycosylation_sites"] for d in site_list_gen}
+            for protein in session.query(Protein):
+                try:
+                    protein.glycosylation_sites = site_list_map[protein.name]
+                except KeyError:
+                    protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
+                session.add(protein)
+                session.flush()
+                if self.include_all_baseline:
+                    self.build_baseline_peptides(session, protein)
+
+        if not self.include_all_baseline:
+            logger.info("Building Unmodified Reference Peptides")
+            self.build_unmodified_peptides(session)
+
+        assert session.query(InformedPeptide).filter(
+            InformedPeptide.protein_id == None).count() == 0
 
     def run(self):
         try:
             session = self.manager.session()
             if self.hypothesis_id is None:
-                self.manager.initialize()
-                tag = datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d-%H%M%S")
-                name = 'target-{}-{}'.format(
-                        os.path.splitext(
-                            os.path.basename(self.mzid_path)
-                            )[0],
-                        tag)
-                hypothesis = self.hypothesis_type(name=name, parameters={"protein_file": self.mzid_path})
-                session.add(hypothesis)
-                session.commit()
-                self.hypothesis_id = hypothesis.id
+                hypothesis = self._bootstrap_hypothesis(session)
             else:
                 hypothesis = session.query(self.hypothesis_type).get(self.hypothesis_id)
 
-            mzident_parser = MzIdentMLProteome(self.manager.path, self.mzid_path, self.hypothesis_id)
-            self._display_protein_peptide_counts(session)
-            self.constant_modifications = mzident_parser.constant_modifications
-            self.enzymes = mzident_parser.enzymes
-
-            logger.info("Constant Modifications: %r", self.constant_modifications)
-            logger.info("Enzyme: %r", self.enzymes)
-
-            if self.glycosylation_sites_file is None:
-                for protein in session.query(Protein).filter(Protein.hypothesis_id == self.hypothesis_id):
-                    protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
-                    session.add(protein)
-                    session.flush()
-                    if self.include_all_baseline:
-                        self.build_baseline_peptides(session, protein)
-
-            else:
-                site_list_gen = SiteListFastaFileParser(self.glycosylation_sites_file)
-                site_list_map = {d['name']: d["glycosylation_sites"] for d in site_list_gen}
-                for protein in session.query(Protein):
-                    try:
-                        protein.glycosylation_sites = site_list_map[protein.name]
-                    except KeyError:
-                        protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
-                    session.add(protein)
-                    session.flush()
-                    if self.include_all_baseline:
-                        self.build_baseline_peptides(session, protein)
+            self.load_proteome(session)
 
             session.add(hypothesis)
             session.commit()
-
-            if not self.include_all_baseline:
-                logger.info("Building Unmodified Reference Peptides")
-                self.build_unmodified_peptides(session)
-
-            assert session.query(InformedPeptide).filter(
-                InformedPeptide.protein_id == None).count() == 0
 
             self._remove_duplicates(session)
             session.commit()
@@ -175,6 +215,8 @@ class ProteomeImporter(PipelineModule):
                 "include_all_baseline": self.include_all_baseline,
                 "variable_modifications": []
             })
+
+            session.add(hypothesis)
             session.close()
         except Exception, e:
             logger.exception("%r", locals(), exc_info=e)

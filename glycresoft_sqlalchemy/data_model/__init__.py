@@ -11,7 +11,8 @@ from .pipeline_module import PipelineModule, PipelineException
 
 from .generic import (
     MutableList, MutableDict, Taxon, HasTaxonomy,
-    ReferenceDatabase, ReferenceAccessionNumber, HasReferenceAccessionNumber)
+    ReferenceDatabase, ReferenceAccessionNumber, HasReferenceAccessionNumber,
+    _TemplateNumberStore)
 
 from .connection import (
     DatabaseManager, ConnectionManager, SQLiteConnectionManager, session)
