@@ -319,3 +319,11 @@ class ProteinFastFileWriter(FastaFileWriter):
     def writelines(self, iterable):
         for protein in iterable:
             self.write(protein)
+
+
+class ProteomeDigestor(object):
+    def __init__(self, database_path, constant_modifications, variable_modifications, enzyme, max_missed_cleavages):
+        self.manager = self.manager_type(database_path)
+        self.constant_modifications = constant_modifications
+        self.variable_modifications = variable_modifications
+        self.enzyme = enzyme

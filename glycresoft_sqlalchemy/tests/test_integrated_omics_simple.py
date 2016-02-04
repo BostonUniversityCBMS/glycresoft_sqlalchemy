@@ -13,7 +13,7 @@ from glycresoft_sqlalchemy.search_space_builder.glycan_builder import constraine
 
 def test_main():
     db_file = "./datafiles/build_informed_hypothesis_test2.db"
-    # os.remove(db_file)
+    os.remove(db_file)
 
     rules_table = {
         "Hex": (3, 8),
@@ -29,13 +29,14 @@ def test_main():
     n_processes = 6
 
     simple_proteome = [
-        "P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"
+        "sp|P02763|A1AG1_HUMAN", "sp|P19652|A1AG2_HUMAN"
     ]
 
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         db_file,
         protein_ids=simple_proteome,
-        mzid_path="datafiles/AGP_Proteomics2.mzid",
+        # mzid_path="datafiles/AGP_Proteomics2.mzid",
+        mzid_path="datafiles/modification-frequency-estimates/agp_20150728.mzid",
         # glycomics_path='./datafiles/human_n_glycans.txt',
         # glycomics_format='txt',
         glycomics_path=db_file,

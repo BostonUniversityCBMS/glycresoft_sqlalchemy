@@ -52,54 +52,59 @@ def fast_exact_match(query_seq, target_seq, **kwargs):
 
 
 def find_all_overlapping_peptides_task(protein_id, database_manager, decider_fn, hypothesis_id):
-    session = database_manager()
+    try:
+        session = database_manager()
 
-    target_protein = session.query(Protein).get(protein_id)
-    i = 0
-    logger.info("Enriching %r", target_protein)
-    target_protein_sequence = target_protein.protein_sequence
-    keepers = []
-    for peptide in stream_distinct_peptides(session, target_protein, hypothesis_id):
+        target_protein = session.query(Protein).get(protein_id)
+        i = 0
+        logger.info("Enriching %r", target_protein)
+        target_protein_sequence = target_protein.protein_sequence
+        keepers = []
+        for peptide in stream_distinct_peptides(session, target_protein, hypothesis_id):
 
-        match = decider_fn(peptide.base_peptide_sequence, target_protein_sequence)
+            match = decider_fn(peptide.base_peptide_sequence, target_protein_sequence)
 
-        if match is not False:
-            start, end, distance = match
-            make_transient(peptide)
-            peptide.id = None
-            peptide.protein_id = protein_id
-            peptide.start_position = start
-            peptide.end_position = end
-            keepers.append(peptide)
-        i += 1
-        if i % 1000 == 0:
-            logger.info("%d peptides handled for %r", i, target_protein)
-        if len(keepers) > 1000:
-            session.add_all(keepers)
-            session.commit()
-            keepers = []
+            if match is not False:
+                start, end, distance = match
+                make_transient(peptide)
+                peptide.id = None
+                peptide.protein_id = protein_id
+                peptide.start_position = start
+                peptide.end_position = end
+                keepers.append(peptide)
+            i += 1
+            if i % 1000 == 0:
+                logger.info("%d peptides handled for %r", i, target_protein)
+            if len(keepers) > 1000:
+                session.add_all(keepers)
+                session.commit()
+                keepers = []
 
-    session.add_all(keepers)
-    session.commit()
-    ids = session.query(InformedPeptide.id).filter(
-        InformedPeptide.protein_id == Protein.id,
-        Protein.hypothesis_id == hypothesis_id).group_by(
-        InformedPeptide.modified_peptide_sequence,
-        InformedPeptide.peptide_modifications,
-        InformedPeptide.glycosylation_sites,
-        InformedPeptide.protein_id).order_by(InformedPeptide.peptide_score.desc())
+        session.add_all(keepers)
+        session.commit()
+        ids = session.query(InformedPeptide.id).filter(
+            InformedPeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == hypothesis_id).group_by(
+            InformedPeptide.modified_peptide_sequence,
+            InformedPeptide.peptide_modifications,
+            InformedPeptide.glycosylation_sites,
+            InformedPeptide.protein_id).order_by(InformedPeptide.peptide_score.desc())
 
-    q = session.query(InformedPeptide.id).filter(
-        InformedPeptide.protein_id == Protein.id,
-        Protein.hypothesis_id == hypothesis_id,
-        ~InformedPeptide.id.in_(ids.correlate(None)))
-    conn = session.connection()
-    conn.execute(InformedPeptide.__table__.delete(
-        InformedPeptide.__table__.c.id.in_(q.selectable)))
+        q = session.query(InformedPeptide.id).filter(
+            InformedPeptide.protein_id == Protein.id,
+            Protein.hypothesis_id == hypothesis_id,
+            ~InformedPeptide.id.in_(ids.correlate(None)))
+        conn = session.connection()
+        conn.execute(InformedPeptide.__table__.delete(
+            InformedPeptide.__table__.c.id.in_(q.selectable)))
 
-    session.commit()
+        session.commit()
 
-    return 1
+        return 1
+    except Exception, e:
+        logging.exception(
+            "An exception occurred in find_all_overlapping_peptides_task, %r", database_manager, exc_info=e)
+        raise
 
 
 def stream_distinct_peptides(session, protein, hypothesis_id):
