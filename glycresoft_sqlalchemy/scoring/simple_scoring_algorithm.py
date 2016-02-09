@@ -162,7 +162,7 @@ def calculate_score2(matched, backbone_weight=0.5, hexnac_weight=0.5, stub_weigh
 
 
 def stream_backbone_coordinate(iterable):
-    return imap(int, chain.from_iterable(imap(bare_ion_pattern.findall, imap(key_getter, iterable))))
+    return set(imap(int, chain.from_iterable(imap(bare_ion_pattern.findall, imap(key_getter, iterable)))))
 
 
 def incvec_spread(vector, p, s=1):
@@ -288,11 +288,11 @@ def mean_coverage2(matched):
 
 
 def mean_hexnac_coverage(matched, theoretical):
-    b_observed = set(stream_backbone_coordinate(matched.glycosylated_b_ions))
-    y_observed = set(stream_backbone_coordinate(matched.glycosylated_y_ions))
+    b_observed = (stream_backbone_coordinate(matched.glycosylated_b_ions))
+    y_observed = (stream_backbone_coordinate(matched.glycosylated_y_ions))
 
-    b_enumerated = set(stream_backbone_coordinate(theoretical.glycosylated_b_ions))
-    y_enumerated = set(stream_backbone_coordinate(theoretical.glycosylated_y_ions))
+    b_enumerated = (stream_backbone_coordinate(theoretical.glycosylated_b_ions))
+    y_enumerated = (stream_backbone_coordinate(theoretical.glycosylated_y_ions))
     return (len(b_observed) + len(y_observed)) / float(len(b_enumerated) + len(y_enumerated))
 
 
