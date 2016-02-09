@@ -77,13 +77,13 @@ def batch_match_theoretical_composition(
                             mass=total_mass, tolerance=matching_tolerance,
                             hypothesis_id=hypothesis_id):
                         mass_error = ppm_error(mass_match.calculated_mass, total_mass)
-                        matches.append((mass_match, mass_error, mass_shift, shift_count))
-            for mass_match, mass_error, mass_shift, shift_count in matches:
-                # logger.debug("Peak data: %r", mass_match.peak_data)
+                        matches.append((mass_match.id, mass_error, mass_shift, shift_count))
+
+            for mass_match_id, mass_error, mass_shift, shift_count in matches:
                 case = {
                     "hypothesis_sample_match_id": hypothesis_sample_match_id,
                     "theoretical_match_type": search_type.__name__,
-                    "theoretical_match_id": mass_match.id,
+                    "theoretical_match_id": mass_match_id,
                     "charge_state_count": peak_group.charge_state_count,
                     "scan_count": peak_group.scan_count,
                     "first_scan_id": peak_group.first_scan_id,
@@ -135,7 +135,6 @@ def batch_match_peak_group(search_ids, search_type, database_manager, observed_i
                         mass_error = ppm_error(mass_match.weighted_monoisotopic_mass, total_mass)
                         matches.append((mass_match, mass_error, mass_shift, shift_count))
             for mass_match, mass_error, mass_shift, shift_count in matches:
-                # logger.debug("Peak data: %r", mass_match.peak_data)
                 case = {
                     "hypothesis_sample_match_id": hypothesis_sample_match_id,
                     "theoretical_match_type": search_type.__name__,

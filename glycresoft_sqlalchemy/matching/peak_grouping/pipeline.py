@@ -19,8 +19,8 @@ from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 from glycresoft_sqlalchemy.utils import pickle
 
 from .grouper import Decon2LSPeakGrouper
-from .mass_shift_offset_matching import PeakGroupMatching, BatchPeakGroupMatching
-from .classification import PeakGroupMassShiftJoiningClassifier, PeakGroupClassification
+from .mass_shift_offset_matching import BatchPeakGroupMatching
+from .classification import PeakGroupMassShiftJoiningClassifier
 
 
 query_oven = bakery()

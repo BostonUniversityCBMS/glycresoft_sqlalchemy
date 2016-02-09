@@ -28,6 +28,5 @@ class TestPeptideSequence(unittest.TestCase):
     #     self.assertAlmostEqual(case.mass, )
 
 
-
 if __name__ == '__main__':
     unittest.main()

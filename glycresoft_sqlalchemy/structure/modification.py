@@ -145,9 +145,11 @@ class ModificationTarget(object):
 
     @classmethod
     def from_unimod_specificity(cls, specificity):
-        amino_acid = specificity["site"]
+        amino_acid = (specificity["site"])
         if amino_acid in set(["N-term", "C-term"]):
             amino_acid = None
+        else:
+            amino_acid = {Residue(amino_acid)}
         position_modifier = specificity["position"]
         if position_modifier == "Anywhere":
             position_modifier = SequenceLocation.anywhere
@@ -173,6 +175,10 @@ class ModificationTarget(object):
             amino_acid in self.amino_acid_targets)
         valid = valid and ((self.position_modifier is SequenceLocation.anywhere) or
                            (position_modifier == self.position_modifier))
+
+        if valid and (position_modifier is not SequenceLocation.anywhere) and (
+                self.position_modifier is not SequenceLocation.anywhere):
+            return position_modifier
 
         return valid
 
@@ -332,7 +338,7 @@ class ModificationRule(object):
             raise Exception("Could not interpret target specificity")
 
     def valid_site(self, amino_acid=None, position_modifiers=None):
-        return any([target.valid_site(amino_acid, position_modifiers) for
+        return max([target.valid_site(amino_acid, position_modifiers) for
                     target in self.targets])
 
     def why_valid(self, amino_acid=None, position_modifiers=None):
@@ -357,20 +363,24 @@ class ModificationRule(object):
                 continue
             amino_acid = position[0].name
             position_modifiers = position_modifier_rules.get(index)
-            if(self.valid_site(amino_acid, position_modifiers)):
-                valid_indices.append(index)
+            is_valid = self.valid_site(amino_acid, position_modifiers)
+            if(is_valid):
+                if (is_valid is SequenceLocation.n_term) or (is_valid is SequenceLocation.c_term):
+                    valid_indices.append(is_valid)
+                else:
+                    valid_indices.append(index)
 
         return valid_indices
 
-    def find_valid_sites_seq(self, sequence):
-        valid_indices = []
-        position_modifier_rules = get_position_modifier_rules_dict(sequence)
-        for index in range(len(sequence)):
-            position_modifiers = position_modifier_rules.get(index)
-            if(self.valid_site_seq(sequence, index, position_modifiers)):
-                valid_indices.append(index)
+    # def find_valid_sites_seq(self, sequence):
+    #     valid_indices = []
+    #     position_modifier_rules = get_position_modifier_rules_dict(sequence)
+    #     for index in range(len(sequence)):
+    #         position_modifiers = position_modifier_rules.get(index)
+    #         if(self.valid_site_seq(sequence, index, position_modifiers)):
+    #             valid_indices.append(index)
 
-        return valid_indices
+    #     return valid_indices
 
     def serialize(self):
         '''A string representation for inclusion in sequences'''

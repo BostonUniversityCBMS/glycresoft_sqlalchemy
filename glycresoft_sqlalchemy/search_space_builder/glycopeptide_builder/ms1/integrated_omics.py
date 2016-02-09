@@ -105,19 +105,6 @@ def glycosylate_callback(peptide, glycan_combinator, position_selector, max_site
                 mass += glycans.dehydrated_mass()
                 result.append((target, mass, glycans))
 
-                # glycan_iter = iter(glycans)
-                # for site in sites:
-                #     glycan = glycan_iter.next()
-                #     hexnac = Modification("HexNAc")
-                #     hexnac.mass = glycan.calculated_mass - water
-                #     for mod in target[site][1]:
-                #         target.drop_modification(site, mod)
-                #     target.add_modification(site, hexnac)
-                # glycan_composition_string = glycans.composition
-                # target.glycan = glycan_composition_string
-                # result.append((target, glycans))
-
-    # return result
     for item in result:
         yield item
 
@@ -228,12 +215,6 @@ def load_proteomics(database_path, mzid_path, hypothesis_id=None, hypothesis_typ
     return task.hypothesis_id
 
 
-def load_glycomics_naive(database_path, glycan_path, hypothesis_id, format='txt', **kwargs):
-    task = MS1GlycanImporter(database_path, glycan_path, hypothesis_id, format, **kwargs)
-    task.start()
-    return task.hypothesis_id
-
-
 class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManager):
     hypothesis_type = ExactMS1GlycopeptideHypothesis
 
@@ -285,12 +266,9 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManage
             session.add(hypothesis)
             session.commit()
             self.hypothesis_id = hypothesis.id
-            load_proteomics(
-                self.database_path, self.mzid_path,
-                hypothesis_id=hypothesis.id,
-                hypothesis_type=self.hypothesis_type,
-                include_all_baseline=self.include_all_baseline,
-                target_proteins=self.protein_ids)
+
+            # Load Components
+            self.import_proteomics()
             self.import_glycans()
 
         if self.protein_ids is None:
@@ -311,6 +289,14 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManage
         session.close()
 
         self.protein_ids = protein_ids
+
+    def import_proteomics(self):
+        load_proteomics(
+            self.database_path, self.mzid_path,
+            hypothesis_id=self.hypothesis_id,
+            hypothesis_type=self.hypothesis_type,
+            include_all_baseline=self.include_all_baseline,
+            target_proteins=self.protein_ids)
 
     def stream_peptides(self, chunk_size=50):
         session = self.manager.session()

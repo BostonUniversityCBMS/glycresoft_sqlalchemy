@@ -10,7 +10,7 @@ from .search_space_builder import TheoreticalSearchSpaceBuilder, constructs, Bat
 from ..utils import WorkItemCollectionFlat as WorkItemCollection, fragments
 
 from glycresoft_sqlalchemy.data_model import (
-    TheoreticalGlycopeptide, Protein, slurp,
+    TheoreticalGlycopeptide, Protein,
     ExactMS1GlycopeptideHypothesisSampleMatch,
     ExactMS2GlycopeptideHypothesis)
 

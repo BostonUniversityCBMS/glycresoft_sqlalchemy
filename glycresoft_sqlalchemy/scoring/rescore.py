@@ -38,7 +38,7 @@ def do_glycopeptide_spectrum_match_scoring(
     collection = []
     try:
         for glycopeptide_spectrum_match_id in glycopeptide_spectrum_match_ids:
-            spectrum_match = session.query(GlycopeptideSpectrumMatch).get(glycopeptide_spectrum_match_id)
+            spectrum_match = session.query(GlycopeptideSpectrumMatch).get(glycopeptide_spectrum_match_id[0])
             theoretical = spectrum_match.glycopeptide_match.theoretical_reference
             match = spectrum_match.as_match_like()
             score = scorer(match, theoretical, **score_parameters)
@@ -48,10 +48,8 @@ def do_glycopeptide_spectrum_match_scoring(
 
         return len(collection)
     except Exception, e:
-        logger.exception("An error occurred processing %r", match, exc_info=e)
+        logger.exception("An error occurred processing %r", glycopeptide_spectrum_match_id, exc_info=e)
         raise e
-    finally:
-        session.close()
 
 
 def yield_ids(session, base_query, chunk_size=200):

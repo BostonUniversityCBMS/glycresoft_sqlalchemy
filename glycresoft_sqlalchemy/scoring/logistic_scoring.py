@@ -19,6 +19,8 @@ class LogisticModelScorer(object):
         self.intercept = intercept
         self.labels = labels
 
+    # Much taken from sklearn's LogisticRegression
+
     def decision_function(self, X):
         if X.shape[1] != self.coef.shape[1]:
             raise ValueError(

@@ -1,18 +1,15 @@
 import multiprocessing
-import logging
 import functools
 from collections import Counter, defaultdict
 
 from scipy.stats import poisson
 import numpy as np
 
-from glycresoft_sqlalchemy.structure import sequence, residue, fragment
+from glycresoft_sqlalchemy.structure import sequence
 from glycresoft_sqlalchemy.structure import sequence_composition
 from glycresoft_sqlalchemy.data_model import (
-    func,
-    PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
-    HypothesisSampleMatch, PeakGroupMatch, Protein, InformedPeptide,
-    TheoreticalGlycopeptide, GlycopeptideMatch)
+    func, PipelineModule, Protein, InformedPeptide,
+    GlycopeptideMatch)
 
 Sequence = sequence.Sequence
 Block = AminoAcidSequenceBuildingBlock = sequence_composition.AminoAcidSequenceBuildingBlock
@@ -27,7 +24,8 @@ def melt_sequence(sequence_string, counter=None):
     return counter
 
 
-def get_residues_from_sequences(sequence_ids, manager, source=GlycopeptideMatch, sequence_attr="glycopeptide_sequence"):
+def get_residues_from_sequences(sequence_ids, manager, source=GlycopeptideMatch,
+                                sequence_attr="glycopeptide_sequence"):
     session = manager.session()
     counter = Counter()
     for sid in sequence_ids:
@@ -96,7 +94,7 @@ class PTMFrequencyFilter(ResidueCounter):
         self.n_processes = n_processes
 
     def run(self):
-        counter = super(PTMProbabilityEstimator, self).run()
+        counter = super(PTMFrequencyFilter, self).run()
         mat = make_sparse_modification_matrix(counter)
         session = self.manager()
         modiform_counts = session.query(

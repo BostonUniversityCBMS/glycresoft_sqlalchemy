@@ -15,7 +15,7 @@ from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2.make_de
 from glycresoft_sqlalchemy.spectra.decon2ls_sa import Decon2LSIsosParser
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, MS2GlycopeptideHypothesisSampleMatch, SampleRun, Hypothesis,
-    MassShift, HypothesisSampleMatch)
+    MassShift, HypothesisSampleMatch, TheoreticalGlycanComposition, TheoreticalGlycopeptideComposition)
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 
 from glycresoft_sqlalchemy.app import let, fail
@@ -108,6 +108,17 @@ def run_ms1_search(
 
     manager = DatabaseManager(database_path)
     session = manager.session()
+
+    hypothesis = session.query(Hypothesis).get(hypothesis_id)
+    guess_search_type = hypothesis.theoretical_structure_type
+
+    if issubclass(guess_search_type, TheoreticalGlycanComposition):
+        search_type = "TheoreticalGlycanComposition"
+    elif issubclass(guess_search_type, TheoreticalGlycopeptideComposition):
+        search_type = "TheoreticalGlycopeptideComposition"
+    else:
+        raise Exception("Could not infer search type for %s" % guess_search_type)
+
     mass_shift_map = {}
     for shift_params in mass_shift:
         shift, flag = get_or_create(session, MassShift, name=shift_params[0], mass=shift_params[1])
@@ -164,7 +175,7 @@ with let(ms1_app) as c:
     c.add_argument("-i", "--observed-ions-path")
     c.add_argument("-p", "--observed-ions-type", default='isos', choices=["isos", "db"])
     c.add_argument("-t", "--match-tolerance", default=1e-5, required=False, type=float)
-    c.add_argument("-g", "--grouping-tolerance", default=8e-5, required=False, type=float)
+    c.add_argument("-g", "--grouping-tolerance", default=2e-5, required=False, type=float)
     c.add_argument("-s", "--search-type", default='glycopeptide', choices=['glycan', 'glycopeptide'])
     c.add_argument("-m", "--mass-shift", action=ParseMassShiftAction)
     c.add_argument('--skip-grouping', action='store_true', required=False)

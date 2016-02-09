@@ -13,17 +13,13 @@ from glycresoft_sqlalchemy.structure import constants
 from glycresoft_sqlalchemy.proteomics import get_enzyme, msdigest_xml_parser
 
 from ..peptide_utilities import SiteListFastaFileParser
-from ..utils import fragments, WorkItemCollection
+from ..utils import fragments
 
 from glycresoft_sqlalchemy.utils import collectiontools
 
-
-from glypy.composition.glycan_composition import GlycanComposition, FrozenGlycanComposition
-
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
-    HypothesisSampleMatch, PeakGroupMatchType,
-    MS1GlycopeptideHypothesis, Protein, slurp,
+    HypothesisSampleMatch, PeakGroupMatchType, Protein,
     TheoreticalGlycopeptide, Hierarchy, MS1GlycopeptideHypothesisSampleMatch)
 
 logger = logging.getLogger("search_space_builder")

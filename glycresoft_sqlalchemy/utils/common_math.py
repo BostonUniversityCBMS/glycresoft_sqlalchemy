@@ -38,6 +38,9 @@ except ImportError, e:
             self.rank = 0
             self.peak_relations = []
 
+        def clone(self):
+            return DPeak(self)
+
     OUT_OF_RANGE_INT = -999
 
     class MassOffsetFeature(object):

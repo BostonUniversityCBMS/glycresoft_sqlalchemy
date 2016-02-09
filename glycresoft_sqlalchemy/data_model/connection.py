@@ -3,7 +3,7 @@ import warnings
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import NullPool, SingletonThreadPool
 
 from .base import Base, Namespace
 from ..utils import database_utils
@@ -64,13 +64,14 @@ class ConnectionManager(object):
         pass
 
     def __repr__(self):
-        return '<{} {}{}>'.format(
-            self.__class__.__name__, self.database_uri_prefix, self.database_uri)
+        return '<{} {}>'.format(
+            self.__class__.__name__, self.construct_url())
 
 
 class SQLiteConnectionManager(ConnectionManager):
     connect_args = {"timeout": 300}
     database_uri_prefix = "sqlite:///"
+    _memory_database = "sqlite://"
 
     def __init__(self, path, connect_args=None):
         if connect_args is None:
@@ -82,6 +83,28 @@ class SQLiteConnectionManager(ConnectionManager):
             str(path),
             self.database_uri_prefix,
             connect_args)
+        self._is_memory = self._memory_database == self.construct_url()
+        self._saved_engine = None
+
+    def connect(self):
+        if self._is_memory:
+            if self._saved_engine is not None:
+                return self._saved_engine
+
+        url = self.construct_url()
+        if url == self._memory_database:
+            pool = SingletonThreadPool
+        else:
+            pool = NullPool
+        engine = create_engine(
+            url,
+            echo=self.echo,
+            connect_args=self.connect_args,
+            poolclass=pool)
+        self._configure_creation(engine)
+        if self._is_memory:
+            self._saved_engine = engine
+        return engine
 
     def bridge_address(self):
         # SQLite doesn't support multiple writing
@@ -95,10 +118,6 @@ class SQLiteConnectionManager(ConnectionManager):
             os.remove(self._path)
         except:
             pass
-
-    def connect(self):
-        engine = super(SQLiteConnectionManager, self).connect()
-        return engine
 
     def _configure_creation(self, connection):
         def do_connect(dbapi_connection, connection_record):
@@ -115,6 +134,12 @@ class SQLiteConnectionManager(ConnectionManager):
             dbapi_connection.isolation_level = iso_level
 
         event.listens_for(connection, "connect")(do_connect)
+
+    def construct_url(self):
+        if self.database_uri == self._memory_database or self.database_uri == "":
+            return self._memory_database
+        else:
+            return super(SQLiteConnectionManager, self).construct_url()
 
 
 class NoConfigSQLiteConnectionManager(SQLiteConnectionManager):
@@ -161,6 +186,8 @@ class DatabaseManager(object):
             return path
         try:
             path = str(path)
+            if path == "":
+                return SQLiteConnectionManager("sqlite://")
             # Ensure that the path is in fact a URI
             make_url(path)
             return ConnectionManager(path)

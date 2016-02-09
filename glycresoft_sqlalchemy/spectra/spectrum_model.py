@@ -27,3 +27,12 @@ def aggregate_spectra(spectra_collection, match_tolerance=2e-5):
             if not extended:
                 peak_collection[peak.mass_charge_ratio].append(peak)
     return peak_collection
+
+
+def normalize_spectrum(spectrum):
+    peaks = [p for p in list(spectrum)]
+    max_intensity = max([p.intensity for p in peaks])
+    cloned = [p.clone() for p in peaks]
+    for p in cloned:
+        p.intensity /= max_intensity
+    return cloned

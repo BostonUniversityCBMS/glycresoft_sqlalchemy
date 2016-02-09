@@ -101,8 +101,9 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 peak_list = [p for p in peak_list if p.intensity >= intensity_threshold]
                 peak_list = sorted(peak_list, key=neutral_mass_getter)
                 peak_match_map = defaultdict(list)
+                precursor_ppm_error = lppm_error(theoretical.calculated_mass, spectrum.precursor_neutral_mass)
 
-                c = 0
+                oxonium_ion_count = 0
                 collect = oxonium_ions.append
                 for theoretical_ion in theoretical.oxonium_ions:
                     query_mass = theoretical_ion['mass']
@@ -117,12 +118,12 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                                       'ppm_error': match_error, "peak_id": peak.scan_peak_index})
                             collect(match)
                             peak_match_map[peak.scan_peak_index].append(match)
-                            c += 1
+                            oxonium_ion_count += 1
                         elif protonated_mass > query_mass + 10:
                             break
 
                 # If no oxonium ions were found, skip this spectrum
-                if c < 1:
+                if oxonium_ion_count < 1:
                     continue
 
                 collect = bare_b_ions.append
@@ -210,12 +211,12 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
                         elif observed_mass > query_mass + 10:
                             break
 
-                spectrum_matches.append((spectrum, peak_match_map))
+                spectrum_matches.append((spectrum, peak_match_map, precursor_ppm_error, oxonium_ion_count))
 
             if len(spectrum_matches) > 0:
                 scan_ids = []
                 # session = database_manager.session()
-                for spectrum, peak_match_map in spectrum_matches:
+                for spectrum, peak_match_map, precursor_ppm_error, oxcount in spectrum_matches:
                     scan_ids.append(spectrum.time)
 
                 first_scan = min(scan_ids)
@@ -257,11 +258,12 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
 
                 spectrum_matches_objects = []
 
-                for spectrum, peak_match_map in spectrum_matches:
+                for spectrum, peak_match_map, precursor_ppm_error, oxcount in spectrum_matches:
                     spectrum_match_inst = GlycopeptideSpectrumMatch(
                         scan_time=spectrum.time, peak_match_map=peak_match_map,
                         precursor_charge_state=spectrum.precursor_charge_state,
-                        peaks_explained=len(peak_match_map),
+                        precursor_ppm_error=precursor_ppm_error,
+                        peaks_explained=len(peak_match_map) - oxcount,
                         peaks_unexplained=len(spectrum.tandem_data) - len(peak_match_map),
                         hypothesis_sample_match_id=hypothesis_sample_match_id,
                         hypothesis_id=hypothesis_id)
@@ -323,9 +325,10 @@ def batch_match_theoretical_ions(scan_ids, msmsdb_path, ms1_tolerance, ms2_toler
             peak_list = sorted(peak_list, key=neutral_mass_getter)
 
             for theoretical in query:
+                precursor_ppm_error = lppm_error(theoretical.calculated_mass, spectrum.precursor_neutral_mass)
                 peak_match_map = defaultdict(list)
 
-                c = 0
+                oxonium_ion_count = 0
                 collect = oxonium_ions.append
                 for theoretical_ion in theoretical.oxonium_ions:
                     query_mass = theoretical_ion['mass']
@@ -340,12 +343,12 @@ def batch_match_theoretical_ions(scan_ids, msmsdb_path, ms1_tolerance, ms2_toler
                                       'ppm_error': match_error, "peak_id": peak.scan_peak_index})
                             collect(match)
                             peak_match_map[peak.scan_peak_index].append(match)
-                            c += 1
+                            oxonium_ion_count += 1
                         elif protonated_mass > query_mass + 10:
                             break
 
                 # If no oxonium ions were found, skip this spectrum
-                if c < 1:
+                if oxonium_ion_count < 1:
                     continue
 
                 collect = bare_b_ions.append
@@ -436,11 +439,12 @@ def batch_match_theoretical_ions(scan_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 spectrum_matches.append((theoretical, peak_match_map))
 
             if len(spectrum_matches) > 0:
-                for theoretical, peak_match_map in spectrum_matches:
+                for theoretical, peak_match_map, precursor_ppm_error, oxcount in spectrum_matches:
                     spectrum_match_inst = GlycopeptideSpectrumMatch(
                         scan_time=spectrum.time, peak_match_map=peak_match_map,
                         precursor_charge_state=spectrum.precursor_charge_state,
-                        peaks_explained=len(peak_match_map),
+                        precursor_ppm_error=precursor_ppm_error,
+                        peaks_explained=len(peak_match_map) - oxcount,
                         peaks_unexplained=len(spectrum.tandem_data) - len(peak_match_map),
                         hypothesis_sample_match_id=hypothesis_sample_match_id,
                         theoretical_glycopeptide_id=theoretical.id,

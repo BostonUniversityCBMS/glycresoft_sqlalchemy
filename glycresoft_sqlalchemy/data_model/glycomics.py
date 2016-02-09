@@ -128,8 +128,19 @@ def association_composition_creator(k, v, reference_table):
     return reference_table(base_type=k, count=v)
 
 
+def tryattrgetter(attr):
+    getter = operator.attrgetter(attr)
+
+    def trygetter(obj):
+        if obj is None:
+            return None
+        else:
+            return getter(obj)
+    return trygetter
+
+
 def composition_association_factory(lazy_collection, creator, value_attr, assoc_prox):
-    _getter = operator.attrgetter(value_attr)
+    _getter = tryattrgetter(value_attr)
 
     def getter(target):
         return _getter(target) if target is not None else None

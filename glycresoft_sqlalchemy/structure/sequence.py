@@ -8,12 +8,13 @@ from . import PeptideSequenceBase, MoleculeBase
 from . import constants as structure_constants
 from .composition import Composition
 from .fragment import PeptideFragment, fragment_shift, SimpleFragment, IonSeries
-from .modification import Modification
+from .modification import Modification, SequenceLocation
 from .residue import Residue
 from glypy import GlycanComposition, Glycan, MonosaccharideResidue
 from glypy.composition.glycan_composition import FrozenGlycanComposition
 
 from .parser import sequence_tokenizer, sequence_length, strip_modifications
+from .glycan import GlycosylationType, GlycosylationManager, GlycosylationSite, glycosylation_site_detectors
 
 from ..utils.iterators import peekable
 from ..utils.memoize import memoize
@@ -56,6 +57,7 @@ def sequence_to_mass(sequence):
     return mass
 
 
+@glycosylation_site_detectors(GlycosylationType.o_linked)
 def find_o_glycosylation_sequons(sequence, allow_modified=frozenset()):
     try:
         iter(allow_modified)
@@ -79,6 +81,7 @@ def find_o_glycosylation_sequons(sequence, allow_modified=frozenset()):
     return positions
 
 
+@glycosylation_site_detectors(GlycosylationType.n_linked)
 def find_n_glycosylation_sequons(sequence, allow_modified=frozenset()):
     try:
         iter(allow_modified)
@@ -119,6 +122,52 @@ def find_n_glycosylation_sequons(sequence, allow_modified=frozenset()):
             i = n_pos
             n_pos = None
             state = "seek"
+        i += 1
+    return positions
+
+
+@glycosylation_site_detectors(GlycosylationType.glycosaminoglycan)
+def find_glycosaminoglycan_sequons(sequence, allow_modified=frozenset()):
+    try:
+        iter(allow_modified)
+        allow_modified = set(allow_modified) | {Modification("HexNAc")}
+    except:
+        allow_modified = (Modification("HexNAc"),)
+    state = "seek"  # [seek, s, g1, x, g2]
+    ser = Residue("Ser")
+    gly = Residue("Gly")
+
+    i = 0
+    positions = []
+
+    s_position = None
+    if isinstance(sequence, basestring):
+        sequence = PeptideSequence(sequence)
+    while(i < len(sequence)):
+        next_pos = sequence[i]
+        if state == "seek":
+            # A sequon starts with an Asn residue without modifications, or for counting
+            # purposes one that has already been glycosylated
+            if next_pos[0] == ser:
+                if ((len(next_pos[1]) == 0) or next_pos[1][0] in allow_modified):
+                    s_position = i
+                    state = "s"
+        elif state == "s":
+            if next_pos[0] == gly:
+                state = 'g1'
+            else:
+                state = "seek"
+                i = s_position
+                s_position = None
+        elif state == 'g1':
+            # Anything will satisfy this position pattern
+            state = 'x'
+        elif state == "x":
+            if next_pos[0] == gly:
+                positions.append(s_position)
+            state = "seek"
+            i = s_position
+            s_position = None
         i += 1
     return positions
 
@@ -506,6 +555,12 @@ class PeptideSequence(PeptideSequenceBase):
         Drop a modification by name from a specific residue
         '''
         dropped_index = None
+
+        if position is SequenceLocation.n_term:
+            self.n_term = Modification("H")
+        elif position is SequenceLocation.c_term:
+            self.c_term = Modification("OH")
+
         for i, mod in enumerate(self.seq[position][1]):
             if modification_type == mod.name:
                 dropped_index = i
@@ -530,9 +585,14 @@ class PeptideSequence(PeptideSequenceBase):
             mod = modification_type
         else:
             mod = Modification(rule=modification_type, mod_pos=position)
-        self.seq[position][1].append(mod)
-        self.mass += mod.mass
-        self.modification_index[mod.name] += 1
+        if position is SequenceLocation.n_term:
+            self.n_term = mod
+        elif position is SequenceLocation.c_term:
+            self.c_term = mod
+        else:
+            self.seq[position][1].append(mod)
+            self.mass += mod.mass
+            self.modification_index[mod.name] += 1
 
     def get_sequence(self, start=0, include_glycan=True, include_termini=True,
                      implicit_n_term=None, implicit_c_term=None):

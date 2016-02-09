@@ -94,20 +94,6 @@ def _group_unmatched_peak_groups_by_shifts(groups, mass_shift_map, grouping_erro
         groups = remaining_accumulator
 
 
-def _get_groups_by_composition_ids(session, hypothesis_sample_match_id):
-    composition_id_q = session.query(PeakGroupMatch.theoretical_match_id).filter(
-        PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id).group_by(
-        PeakGroupMatch.theoretical_match_id).order_by(
-        PeakGroupMatch.weighted_monoisotopic_mass.desc())
-    for _composition_id in composition_id_q:
-        _composition_id = _composition_id[0]
-        if _composition_id is None:
-            continue
-        yield session.query(PeakGroupMatch).filter(
-            PeakGroupMatch.theoretical_match_id == _composition_id,
-            PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id).all()
-
-
 def _merge_groups(group_matches, minimum_abundance_ratio=0.01):
     scan_count_total = 0
     min_scan = float("inf")
@@ -201,41 +187,6 @@ def _merge_groups(group_matches, minimum_abundance_ratio=0.01):
         "theoretical_match_id": group_matches[0].theoretical_match_id
     }
     return instance_dict, [p.id for p in group_matches]
-
-
-def join_unmatched(session, hypothesis_sample_match_id, grouping_error_tolerance=2e-5, minimum_abundance_ratio=0.01):
-    unmatched = session.query(PeakGroupMatch).filter(
-        PeakGroupMatch.theoretical_match_id == None,
-        PeakGroupMatch.hypothesis_sample_match_id == hypothesis_sample_match_id).order_by(
-        PeakGroupMatch.weighted_monoisotopic_mass.desc()).all()
-    if len(unmatched) == 0:
-        return
-
-    mass_shift_map = unmatched[0].hypothesis_sample_match.parameters['mass_shift_map']
-    conn = session.connection()
-    for bunch in _group_unmatched_peak_groups_by_shifts(unmatched, mass_shift_map, grouping_error_tolerance):
-        if len(bunch) == 0:
-            continue
-        group, member_ids = _merge_groups(bunch, minimum_abundance_ratio)
-        group['matched'] = False
-        group['theoretical_match_id'] = None
-        joint_id = conn.execute(T_JointPeakGroupMatch.insert(), group).lastrowid
-        conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(),
-                     [{"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids])
-
-
-def join_matched(session, hypothesis_sample_match_id, minimum_abundance_ratio=0.01):
-    conn = session.connection()
-    for bunch in _get_groups_by_composition_ids(session, hypothesis_sample_match_id):
-        if len(bunch) == 0:
-            continue
-        group, member_ids = _merge_groups(bunch, minimum_abundance_ratio)
-        group['matched'] = True
-        group['theoretical_match_id'] = bunch[0].theoretical_match_id
-        group['theoretical_match_type'] = bunch[0].theoretical_match_type
-        joint_id = conn.execute(T_JointPeakGroupMatch.insert(), group).lastrowid
-        conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(),
-                     [{"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids])
 
 
 def _batch_merge_groups(id_bunches, database_manager, minimum_abundance_ratio):
@@ -406,6 +357,7 @@ def _exactly_one_group_joiner(ids, database_manager, minimum_abundance_ratio=Non
         assert len(joint_id) == 1
         products.append({"peak_group_id": i, "joint_group_id": joint_id[0][0]})
     session.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), products)
+    session.commit()
     return len(ids)
 
 
@@ -421,7 +373,7 @@ class MatchJoiner(PipelineModule):
             HypothesisSampleMatch).get(
             hypothesis_sample_match_id).parameters['mass_shift_map']
 
-    def stream_matched_ids(self):
+    def stream_matched_ids(self, chunk_size=500):
         session = self.manager()
 
         gen = itertools.groupby(session.query(PeakGroupMatch.id, PeakGroupMatch.theoretical_match_id).filter(
@@ -436,7 +388,7 @@ class MatchJoiner(PipelineModule):
             batch.append([(getter(o),) for o in group])
             i += 1
 
-            if i > 50:
+            if i > chunk_size:
                 yield batch
                 batch = []
                 i = 0
@@ -444,7 +396,7 @@ class MatchJoiner(PipelineModule):
 
         session.close()
 
-    def stream_unmatched_ids(self):
+    def stream_unmatched_ids(self, chunk_size=500):
         session = self.manager()
         unmatched = session.query(PeakGroupMatch).filter(
             PeakGroupMatch.theoretical_match_id == None,
@@ -462,7 +414,7 @@ class MatchJoiner(PipelineModule):
                 continue
             batch.append([(p.id,) for p in bunch])
             i += 1
-            if i > 50:
+            if i > chunk_size:
                 yield batch
                 batch = []
                 i = 0
@@ -503,7 +455,6 @@ class MatchJoiner(PipelineModule):
             pool.close()
             pool.terminate()
 
-
         else:
             self.inform("Merging Matched (Sequential)")
             for increment in itertools.imap(task_fn, self.stream_matched_ids()):
@@ -511,7 +462,7 @@ class MatchJoiner(PipelineModule):
                 if cntr - last > 1000:
                     logger.info("%d groups merged", cntr)
                     last = cntr
-            
+
             self.inform("Merging Unmatched (Sequential)")
             for increment in itertools.imap(task_fn, self.stream_unmatched_ids()):
                 cntr += increment
@@ -606,14 +557,6 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
         self.n_processes = n_processes
 
     def create_joins(self):
-        # session = self.manager.session()
-        # self.inform("Joining Unmatched Peak Groups")
-        # join_unmatched(session, self.hypothesis_sample_match_id,
-        #                self.match_tolerance, self.minimum_abundance_ratio)
-        # self.inform("Joining Matched Peak Groups")
-        # join_matched(session, self.hypothesis_sample_match_id, self.minimum_abundance_ratio)
-        # session.commit()
-        # session.close()
         task = MatchJoiner(
             self.manager.path, self.hypothesis_sample_match_id,
             self.minimum_abundance_ratio, self.match_tolerance,
@@ -823,174 +766,3 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
         self.create_joins()
         self.estimate_trends()
         self.fit_and_score()
-
-
-class PeakGroupClassification(PipelineModule):
-    features = [
-        T_TempPeakGroupMatch.c.charge_state_count,
-        T_TempPeakGroupMatch.c.scan_density,
-        T_TempPeakGroupMatch.c.scan_count,
-        T_TempPeakGroupMatch.c.total_volume,
-        T_TempPeakGroupMatch.c.a_peak_intensity_error,
-        T_TempPeakGroupMatch.c.centroid_scan_error,
-        T_TempPeakGroupMatch.c.average_signal_to_noise
-    ]
-
-    def __init__(self, database_path, observed_ions_path, hypothesis_id,
-                 sample_run_id=None, hypothesis_sample_match_id=None,
-                 model_parameters=None):
-        self.database_manager = self.manager_type(database_path)
-        self.lcms_database = PeakGroupDatabase(observed_ions_path)
-        self.hypothesis_id = hypothesis_id
-        self.sample_run_id = sample_run_id
-        self.hypothesis_sample_match_id = hypothesis_sample_match_id
-        self.model_parameters = model_parameters
-        self.classifier = None
-
-    def transfer_peak_groups(self):
-        """Copy Decon2LSPeakGroup entries from :attr:`observed_ions_manager`
-        into :attr:`database_manager` across database boundaries so that they
-        may be involved in the same table queries.
-
-        Replicate the TempPeakGroupMatch rows for groups that did not match any
-        database entries as full PeakGroupMatch rows with :attr:`PeakGroupMatch.matched` == `False`
-        for post-processing.
-        """
-        self.clear_peak_groups()
-        data_model_session = self.database_manager.session()
-        lcms_database_session = self.lcms_database.session()
-        peak_group_labels = [
-            'id',
-            'sample_run_id',
-            'charge_state_count',
-            'scan_count',
-            'first_scan_id',
-            'last_scan_id',
-            'scan_density',
-            'weighted_monoisotopic_mass',
-            'total_volume',
-            'average_a_to_a_plus_2_ratio',
-            'a_peak_intensity_error',
-            'centroid_scan_estimate',
-            'centroid_scan_error',
-            'average_signal_to_noise',
-            'matched',
-            "peak_data"
-        ]
-
-        stmt = lcms_database_session.query(
-                *[getattr(Decon2LSPeakGroup, label) for label in peak_group_labels]).filter(
-                Decon2LSPeakGroup.sample_run_id == self.sample_run_id)
-        batch = lcms_database_session.connection().execute(stmt.selectable)
-
-        conn = data_model_session.connection()
-
-        # Move all Decon2LSPeakGroups, regardless of whether or not they matched to
-        # the temporary table.
-        while True:
-            items = batch.fetchmany(10000)
-            if len(items) == 0:
-                break
-            mapped_items = [dict(zip(peak_group_labels, row)) for row in items]
-            conn.execute(T_TempPeakGroupMatch.insert(), mapped_items)
-            data_model_session.commit()
-            conn = data_model_session.connection()
-
-        data_model_session.commit()
-        conn = data_model_session.connection()
-
-        id_stmt = data_model_session.query(
-            PeakGroupMatch.peak_group_id).filter(
-            PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-            PeakGroupMatch.matched).selectable
-
-        if not len(data_model_session.connection().execute(id_stmt).fetchmany(2)) == 2:
-            raise PipelineException("Hypothesis-Sample Match ID matches maps no PeakGroupMatches")
-
-        # Use the presence of a PeakGroupMatch.matched == True row to indicate whether something was a match
-        # and fill out the :attr:`TempPeakGroupMatch.matched` column
-        update_stmt = T_TempPeakGroupMatch.update().where(
-            T_TempPeakGroupMatch.c.id.in_(id_stmt)).values(matched=True)
-        data_model_session.connection().execute(update_stmt)
-
-        update_stmt = T_TempPeakGroupMatch.update().where(
-            ~T_TempPeakGroupMatch.c.id.in_(id_stmt)).values(matched=False)
-        data_model_session.connection().execute(update_stmt)
-
-        # Copy the Decon2LSPeakGroups that did not match anything as PeakGroupMatches
-        # with null theoretical group matches
-        move_stmt = data_model_session.query(
-            *[getattr(TempPeakGroupMatch, label) for label in peak_group_labels]).filter(
-            ~TempPeakGroupMatch.matched).selectable
-
-        def transform(row):
-            out = dict(zip(peak_group_labels, row))
-            peak_group_match_id = out.pop('id')
-            out["theoretical_match_type"] = None
-            out['matched'] = False
-            out['hypothesis_sample_match_id'] = self.hypothesis_sample_match_id
-            out['peak_group_id'] = peak_group_match_id
-            assert out['weighted_monoisotopic_mass'] is not None
-            return out
-
-        conn = data_model_session.connection()
-        batch = conn.execute(move_stmt)
-        while True:
-            items = batch.fetchmany(10000)
-            if len(items) == 0:
-                break
-            conn.execute(TPeakGroupMatch.insert(), list(map(transform, items)))
-        data_model_session.commit()
-
-    def fit_regression(self):
-        """Fit the L2 Logistic Regression Model against the temporary peak group table.
-        Computes scores for each TempPeakGroupMatch and maps them to the referent PeakGroupMatch.
-
-        .. warning::
-            The regression operation is carried out **in memory**, however space used is proportional
-            to the number of |Decon2LSPeakGroup| records in this hypothesis-sample match, not the total
-            number of matches + unmatched groups, which is almost certainly going to be much larger.
-
-        Returns
-        -------
-        sklearn.linear_model.LogisticRegression : The fitted model
-        """
-        features = self.features
-        label = [T_TempPeakGroupMatch.c.matched]
-        ids = [T_TempPeakGroupMatch.c.id]
-
-        data_model_session = self.database_manager.session()
-        conn = data_model_session.connection()
-        feature_matrix = np.array(conn.execute(select(ids + features)).fetchall(), dtype=np.float64)
-        # Drop all rows containing nan
-        mask = ~np.isnan(feature_matrix).any(axis=1)
-        feature_matrix = feature_matrix[mask]
-        label_vector = np.array(conn.execute(select(label)).fetchall())[mask]
-        classifier = ClassifierType()
-        if self.model_parameters is None:
-            classifier.fit(feature_matrix[:, 1:], label_vector.ravel())
-        else:
-            classifier.coef_ = np.asarray(self.model_parameters)
-        scores = classifier.predict_proba(feature_matrix[:, 1:])[:, 1]
-        for group_id, score in itertools.izip(feature_matrix[:, 0], scores):
-                conn.execute(
-                    TPeakGroupMatch.update().where(
-                        TPeakGroupMatch.c.peak_group_id == group_id).values(
-                        ms1_score=float(score)))
-        data_model_session.commit()
-        return classifier
-
-    def clear_peak_groups(self):
-        """Delete all TempPeakGroupMatch rows.
-        """
-        data_model_session = self.database_manager.session()
-        data_model_session.query(TempPeakGroupMatch).delete()
-        data_model_session.commit()
-        data_model_session.close()
-
-    def run(self):
-        self.transfer_peak_groups()
-        self.classifier = self.fit_regression()
-        logger.info("Classes: %r", self.classifier.classes_)
-        logger.info("Coefficients: %r", ([c.name for c in self.features], self.classifier.coef_))
-        self.clear_peak_groups()

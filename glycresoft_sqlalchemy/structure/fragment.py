@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 
 from .modification import Modification
 from .composition import Composition
@@ -103,13 +104,15 @@ class PeptideFragment(object):
         if modifications is None:
             modifications = self.concerned_mods
         mods = dict(self.modification_dict)
-        mods_of_interest = {k: v for k, v in mods.items() if k in modifications}
+        mods_of_interest = defaultdict(int, {k: v for k, v in mods.items() if k in modifications})
+        mods_of_interest["HexNAc"] *= 2  # Allow partial destruction of N-glycan core
 
         other_mods = {k: v for k, v in mods.items() if k not in modifications}
         for mod in descending_combination_counter(mods_of_interest):
             other_mods.update({k: v for k, v in mod.items() if v != 0})
-            yield Fragment(self.type, self.position, dict(other_mods), self.bare_mass,
-                           golden_pairs=self.golden_pairs, flanking_amino_acids=self.flanking_amino_acids)
+            yield PeptideFragment(
+                self.type, self.position, dict(other_mods), self.bare_mass,
+                golden_pairs=self.golden_pairs, flanking_amino_acids=self.flanking_amino_acids)
 
     def to_json(self):
         d = dict(self.__dict__)
@@ -120,11 +123,8 @@ class PeptideFragment(object):
         return self.get_fragment_name()
 
     def __repr__(self):
-        return "Fragment(%(type)s @ %(position)s %(mass)s\
-         %(modification_dict)s %(flanking_amino_acids)s)" % self.__dict__
-
-
-Fragment = PeptideFragment
+        return ("PeptideFragment(%(type)s @ %(position)s %(mass)s "
+                "%(modification_dict)s %(flanking_amino_acids)s)") % self.__dict__
 
 
 class SimpleFragment(object):

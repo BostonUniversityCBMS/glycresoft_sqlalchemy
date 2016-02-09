@@ -36,6 +36,7 @@ class SpectrumMatchBase(object):
     peaks_unexplained = Column(Integer)
     best_match = Column(Boolean, index=True)
     precursor_charge_state = Column(Integer)
+    precursor_ppm_error = Column(Numeric(10, 8, asdecimal=False))
 
     @declared_attr
     def hypothesis_sample_match_id(cls):

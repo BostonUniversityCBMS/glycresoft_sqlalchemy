@@ -468,6 +468,9 @@ cdef class DPeak(object):
         result.scan_peak_index = self.scan_peak_index
         return result
 
+    def clone(self):
+        return DPeak(self)
+
     def __getstate__(self):
         cdef dict d
         d = dict()

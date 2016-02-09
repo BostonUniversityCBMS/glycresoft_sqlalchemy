@@ -191,13 +191,13 @@ class SummaryMatchBuilder(PipelineModule):
             hypothesis_sample_match_id=self.hypothesis_sample_match_id,
             score_name=self.score_name)
 
-    def stream_theoretical_ids(self):
+    def stream_theoretical_ids(self, chunk_size=500):
         session = self.manager()
 
         ids = session.query(TheoreticalGlycopeptide.id).filter(
             TheoreticalGlycopeptide.hypothesis_id == self.hypothesis_id).all()
 
-        step = 500
+        step = chunk_size
         last = 0
         final = len(ids)
         while last <= final:

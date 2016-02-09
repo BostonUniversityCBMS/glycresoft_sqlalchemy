@@ -1,6 +1,8 @@
 import re
 import itertools
 import logging
+import functools
+import multiprocessing
 from collections import Counter
 import textwrap
 
@@ -323,11 +325,31 @@ class ProteinFastFileWriter(FastaFileWriter):
 
 class ProteomeDigestor(object):
     def __init__(self, database_path, hypothesis_id, protein_ids, constant_modifications,
-                 variable_modifications, enzyme, max_missed_cleavages):
+                 variable_modifications, enzyme, max_missed_cleavages, max_modifications=4,
+                 peptide_class=NaivePeptide, peptide_kwargs=None, n_processes=4):
         self.manager = self.manager_type(database_path)
         self.constant_modifications = constant_modifications
         self.variable_modifications = variable_modifications
         self.enzyme = enzyme
+        self.max_modifications = max_modifications
         self.max_missed_cleavages = max_missed_cleavages
         self.hypothesis_id = hypothesis_id
         self.protein_ids = protein_ids
+        self.n_processes = n_processes
+        self.peptide_class = peptide_class
+        self.peptide_kwargs = peptide_kwargs
+
+    def stream_proteins(self):
+        for i in self.protein_ids:
+            yield i
+
+    def prepare_task_fn(self):
+        return functools.partial(
+            generate_peptidoforms,
+            constant_modifications=self.constant_modifications,
+            variable_modifications=self.variable_modifications,
+            enzyme=self.enzyme,
+            max_missed_cleavages=self.max_missed_cleavages,
+            max_modifications=self.max_modifications,
+            peptide_class=self.peptide_class,
+            **self.peptide_kwargs)

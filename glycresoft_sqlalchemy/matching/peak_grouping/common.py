@@ -1,7 +1,4 @@
 import logging
-import multiprocessing
-import functools
-import itertools
 try:
     logger = logging.getLogger("peak_grouping")
     logging.basicConfig(level='DEBUG')
@@ -10,22 +7,11 @@ except Exception, e:
     raise e
 
 from sqlalchemy.ext.baked import bakery
-from sqlalchemy import func, bindparam, select
-from sqlalchemy.orm import make_transient
 
-import numpy as np
-
-from sklearn.linear_model import LogisticRegression
-
-from glycresoft_sqlalchemy.data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
-                          SampleRun, Hypothesis, MS1GlycanHypothesisSampleMatch, hypothesis_sample_match_type,
-                          TheoreticalCompositionMap, MassShift, HypothesisSampleMatch,
-                          PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch, JointPeakGroupMatch,
-                          PeakGroupMatchToJointPeakGroupMatch)
-
-from glycresoft_sqlalchemy.utils.database_utils import get_or_create, toggle_indices
-from glycresoft_sqlalchemy.utils import pickle
-from glycresoft_sqlalchemy.utils.collectiontools import flatten
+from glycresoft_sqlalchemy.data_model import (
+    Decon2LSPeakGroup,
+    PeakGroupMatch, TempPeakGroupMatch, JointPeakGroupMatch,
+    func)
 
 TDecon2LSPeakGroup = Decon2LSPeakGroup.__table__
 T_TempPeakGroupMatch = TempPeakGroupMatch.__table__

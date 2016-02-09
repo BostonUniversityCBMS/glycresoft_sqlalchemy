@@ -325,7 +325,6 @@ class NaiveGlycopeptideHypothesisBuilder(PipelineModule, MS1GlycanImportManager)
 
         session.commit()
 
-        logger.info("Checking integrity")
         self._remove_duplicates(session)
         logger.info("Naive Hypothesis Complete. %d theoretical glycopeptide compositions genreated.",
                     session.query(TheoreticalGlycopeptideComposition).filter(

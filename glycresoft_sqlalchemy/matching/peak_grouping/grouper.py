@@ -1,7 +1,10 @@
 import logging
 import multiprocessing
 import functools
-import itertools
+
+import bisect
+from collections import namedtuple
+
 try:
     logger = logging.getLogger("peak_grouping")
     logging.basicConfig(level='DEBUG')
@@ -13,28 +16,17 @@ from sqlalchemy.ext.baked import bakery
 from sqlalchemy import func, bindparam, select
 from sqlalchemy.orm import make_transient
 
-import numpy as np
 
-from sklearn.linear_model import LogisticRegression
+from glycresoft_sqlalchemy.data_model import (
+    Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap,
+    PipelineModule, MSScan)
 
-from glycresoft_sqlalchemy.data_model import (Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap, PipelineModule,
-                          SampleRun, Hypothesis, MS1GlycanHypothesisSampleMatch, hypothesis_sample_match_type,
-                          TheoreticalCompositionMap, MassShift, HypothesisSampleMatch,
-                          PeakGroupDatabase, PeakGroupMatch, TempPeakGroupMatch, JointPeakGroupMatch,
-                          PeakGroupMatchToJointPeakGroupMatch)
-
-from glycresoft_sqlalchemy.utils.database_utils import get_or_create, toggle_indices
-from glycresoft_sqlalchemy.utils import pickle
-from glycresoft_sqlalchemy.utils.collectiontools import flatten
+from glycresoft_sqlalchemy.utils.common_math import ppm_error
 
 from .common import (
     expanding_window, expected_a_peak_regression, centroid_scan_error_regression)
 
 TDecon2LSPeakGroup = Decon2LSPeakGroup.__table__
-T_TempPeakGroupMatch = TempPeakGroupMatch.__table__
-TPeakGroupMatch = PeakGroupMatch.__table__
-T_JointPeakGroupMatch = JointPeakGroupMatch.__table__
-
 
 query_oven = bakery()
 get_group_id_by_mass_window = query_oven(lambda session: session.query(Decon2LSPeakGroup.id))
@@ -400,3 +392,70 @@ def fill_out_group(group_id, database_manager, minimum_scan_count=1,
     except Exception, e:
         logger.exception("An error occured. %r", 1, exc_info=e)
         session.close()
+
+
+PeakCluster = namedtuple("PeakCluster", ["monoisotopic_mass", "intensity", "members"])
+
+
+def filter_peaks(session, minimum_mass, maximum_mass, max_charge_state, minimum_signal_to_noise, sample_run_id):
+    q = session.query(Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass, Decon2LSPeak.intensity).order_by(
+        Decon2LSPeak.intensity.desc()).filter(
+        Decon2LSPeak.monoisotopic_mass.between(minimum_mass, maximum_mass),
+        Decon2LSPeak.charge <= max_charge_state,
+        Decon2LSPeak.signal_to_noise >= minimum_signal_to_noise).join(MSScan).filter(
+        MSScan.sample_run_id == sample_run_id)
+    return list(q)
+
+
+def cluster_peaks(segment, tolerance=8e-5):
+    x = segment[0]
+    array = [PeakCluster(x.monoisotopic_mass, x.intensity, [x.id])]
+    last_intensity = x.intensity + 1
+    for peak in segment[1:]:
+        assert peak.intensity <= last_intensity
+        last_intensity = peak.intensity
+        group = binary_search(array, peak.monoisotopic_mass, tolerance)
+        if group is None:
+            new_group = PeakCluster(peak.monoisotopic_mass, peak.intensity, [peak.id])
+            bisect.insort_right(array, new_group)
+        else:
+            group.members.append(peak.id)
+    return array
+
+
+def _sweep_solution(array, value, lo, hi, tolerance, verbose=False):
+    best_index = -1
+    best_error = float('inf')
+    for i in range(hi - lo):
+        target = array[lo + i]
+        error = ppm_error(value, target.monoisotopic_mass)
+        abs_error = abs(error)
+        if abs_error < tolerance and abs_error < best_error:
+            best_index = lo + i
+            best_error = abs_error
+    if best_index == -1:
+        return None
+    else:
+        return array[best_index]
+
+
+def _binary_search(array, value, lo, hi, tolerance, verbose=False):
+    if (hi - lo) < 5:
+        return _sweep_solution(array, value, lo, hi, tolerance, verbose)
+    else:
+        mid = (hi + lo) / 2
+        target = array[mid]
+        target_value = target.monoisotopic_mass
+        error = ppm_error(value, target_value)
+
+        if abs(error) <= tolerance:
+            return _sweep_solution(array, value, max(mid - 5, lo), min(mid + 5, hi), tolerance, verbose)
+        elif target_value > value:
+            return _binary_search(array, value, lo, mid, tolerance, verbose)
+        elif target_value < value:
+            return _binary_search(array, value, mid, hi, tolerance, verbose)
+    raise Exception("No recursion found!")
+
+
+def binary_search(array, value, tolerance=8e-5, verbose=False):
+    return _binary_search(array, value, 0, len(array), tolerance, verbose)
