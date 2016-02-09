@@ -33,22 +33,36 @@ def do_glycopeptide_match_scoring(glycopeptide_match_ids, database_manager, scor
 
 
 def do_glycopeptide_spectrum_match_scoring(
-        glycopeptide_spectrum_match_ids, database_manager, scorer, score_parameters):
+        scan_times, database_manager, scorer, score_parameters, hypothesis_id):
     session = database_manager()
     collection = []
+    updates = []
     try:
-        for glycopeptide_spectrum_match_id in glycopeptide_spectrum_match_ids:
-            spectrum_match = session.query(GlycopeptideSpectrumMatch).get(glycopeptide_spectrum_match_id[0])
-            theoretical = spectrum_match.glycopeptide_match.theoretical_reference
-            match = spectrum_match.as_match_like()
-            score = scorer(match, theoretical, **score_parameters)
-            collection.append(score)
+        for scan_time in scan_times:
+            spectrum_matches = session.query(GlycopeptideSpectrumMatch).filter_by(
+                scan_time=scan_time[0], hypothesis_id=hypothesis_id).all()
+            best_match = spectrum_matches[0]
+            best_score = 0.
+            for spectrum_match in spectrum_matches:
+                theoretical = spectrum_match.glycopeptide_match.theoretical_reference
+                match = spectrum_match.as_match_like()
+                score = scorer(match, theoretical, **score_parameters)
+                spectrum_match.is_best = False
+
+                if score.value > best_score:
+                    best_match.is_best = False
+                    spectrum_match.is_best = True
+                    best_score = score.value
+
+                updates.append(spectrum_match)
+                collection.append(score)
         session.add_all(collection)
+        session.add_all(updates)
         session.commit()
 
         return len(collection)
     except Exception, e:
-        logger.exception("An error occurred processing %r", glycopeptide_spectrum_match_id, exc_info=e)
+        logger.exception("An error occurred processing %r", scan_time, exc_info=e)
         raise e
 
 
@@ -139,32 +153,43 @@ class RescoreSpectrumHypothesisSampleMatch(PipelineModule):
             score_parameters = {}
         self.manager = self.manager_type(database_path)
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
+
+        session = self.manager()
+        hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+        self.target_hypothesis_id = hsm.target_hypothesis_id
+        self.decoy_hypothesis_id = hsm.decoy_hypothesis_id
+
         self.scorer = scorer
         self.score_parameters = score_parameters
         self.n_processes = n_processes
         self.options = kwargs
 
+        session.close()
+
     def stream_ids(self, is_decoy=False):
         session = self.manager()
         if is_decoy:
-            q = session.query(GlycopeptideSpectrumMatch.id).filter(
+            q = session.query(GlycopeptideSpectrumMatch.scan_time).filter(
                 (GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) & (
                     GlycopeptideSpectrumMatch.is_decoy()))
         else:
-            q = session.query(GlycopeptideSpectrumMatch.id).filter(
+            q = session.query(GlycopeptideSpectrumMatch.scan_time).filter(
                 GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
                 GlycopeptideSpectrumMatch.is_not_decoy())
         for chunk in yield_ids(session, q, chunk_size=500):
             yield chunk
         session.close()
 
-    def prepare_scoring_fn(self):
+    def prepare_scoring_fn(self, hypothesis_id):
         return partial(
             do_glycopeptide_spectrum_match_scoring, database_manager=self.manager,
-            scorer=self.scorer, score_parameters=self.score_parameters)
+            scorer=self.scorer, score_parameters=self.score_parameters,
+            hypothesis_id=hypothesis_id)
 
     def do_score(self, session, is_decoy=False):
-        fn = self.prepare_scoring_fn()
+        fn = self.prepare_scoring_fn(self.target_hypothesis_id
+                                     if not is_decoy else
+                                     self.decoy_hypothesis_id)
         cntr = 0
         last = 0
         if self.n_processes > 1:
