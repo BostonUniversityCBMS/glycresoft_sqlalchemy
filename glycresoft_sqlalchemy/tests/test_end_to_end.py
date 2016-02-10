@@ -29,7 +29,7 @@ def test_main():
         db_file_name, rules_table=rules_table, constraints_list=[])
     combn_glycan_hypothesis_id = job.start()
 
-    constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (N)"])
+    constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (N)", "Pyro-glu from Q (Q@N-term)"])
     enzyme = 'trypsin'
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
         database_path=db_file_name,
@@ -39,12 +39,12 @@ def test_main():
         constant_modifications=constant_mods,
         variable_modifications=variable_mods,
         enzyme=enzyme,
-        # glycomics_path=db_file_name,
-        # glycomics_format='hypothesis',
-        # source_hypothesis_id=combn_glycan_hypothesis_id,
-        glycomics_path='./datafiles/human_n_glycans.txt',
-        glycomics_format='txt',
-        maximum_glycosylation_sites=2,
+        glycomics_path=db_file_name,
+        glycomics_format='hypothesis',
+        source_hypothesis_id=combn_glycan_hypothesis_id,
+        # glycomics_path='./datafiles/human_n_glycans.txt',
+        # glycomics_format='txt',
+        maximum_glycosylation_sites=1,
         max_missed_cleavages=1,
         n_processes=6)
     glycopeptide_hypothesis_id = job.start()
@@ -58,15 +58,18 @@ def test_main():
         db_file_name, 1, 6)
     hypothesis_id = job.start()
     job = make_decoys.BatchingDecoySearchSpaceBuilder(
-        db_file_name, hypothesis_ids=[hypothesis_id])
+        db_file_name, hypothesis_ids=[hypothesis_id], n_processes=6)
     decoy_hypothesis_id = job.start()[0]
+    # hypothesis_id = 3
+    # decoy_hypothesis_id = 4
 
     job = GlycopeptideFragmentMatchingPipeline(
         db_file_name, r"datafiles\20140918_01.db",
         target_hypothesis_id=hypothesis_id,
         decoy_hypothesis_id=decoy_hypothesis_id,
         sample_run_name="20140918_01.yaml",
-        hypothesis_sample_match_name="End-to-End AGP @ 20140918_01")
+        hypothesis_sample_match_name="End-to-End AGP @ 20140918_01",
+        n_processes=6)
     job.start()
 
 if __name__ == '__main__':

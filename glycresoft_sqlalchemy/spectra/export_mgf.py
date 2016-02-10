@@ -100,6 +100,7 @@ class BUPIDToMGFConverter(PipelineModule):
         }
 
         if self.output_path is None:
-            self.output_path = os.path.join(os.path.dirname(self.database_path), os.path.splitext(sample_run.name)[0] + '.mgf')
+            self.output_path = os.path.join(os.path.dirname(
+                self.database_path), os.path.splitext(sample_run.name)[0] + '.mgf')
 
         to_mgf(sample_run, self.output_path, header)

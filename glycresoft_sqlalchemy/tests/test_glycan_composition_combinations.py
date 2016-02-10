@@ -1,8 +1,8 @@
 import os
 
 from glycresoft_sqlalchemy.data_model import Hypothesis, DatabaseManager, get_or_create
+from glycresoft_sqlalchemy.utils import setup_logging
 from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms1 import include_glycomics
-from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder import glycan_utilities
 
 
 def testmain():
@@ -20,8 +20,8 @@ def testmain():
     session.commit()
 
     include_glycomics.MS1GlycanImporter(db_file_name, glycan_file_path, hypothesis_id=hypothesis.id).start()
-    glycan_utilities.create_combinations(session, 2, hypothesis.id)
 
 
 if __name__ == '__main__':
+    setup_logging()
     testmain()

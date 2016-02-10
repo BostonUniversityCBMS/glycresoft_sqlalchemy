@@ -1,7 +1,8 @@
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, MS2GlycopeptideHypothesisSampleMatch,
     SampleRun, Hypothesis, HypothesisSampleMatch)
-from glycresoft_sqlalchemy.matching.glycopeptide.fragment_matching import IonMatching
+from glycresoft_sqlalchemy.matching.glycopeptide.fragment_matching import IonMatching, SpectrumMatching
+from glycresoft_sqlalchemy.matching.glycopeptide.spectrum_assignment import SpectrumMatchAnalyzer
 from glycresoft_sqlalchemy.scoring import score_spectrum_matches, target_decoy
 
 
@@ -81,7 +82,7 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         session.commit()
 
     def do_target_matching(self):
-        task = IonMatching(
+        task = SpectrumMatching(
             self.database_path,
             self.target_hypothesis_id,
             self.observed_ions_path,
@@ -96,7 +97,7 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         task.start()
 
     def do_decoy_matching(self):
-        task = IonMatching(
+        task = SpectrumMatching(
             self.database_path,
             self.decoy_hypothesis_id,
             self.observed_ions_path,
@@ -114,27 +115,30 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         self.do_target_matching()
         self.do_decoy_matching()
 
-    def do_target_spectrum_assignment(self):
-        task = score_spectrum_matches.SimpleSpectrumAssignment(
-            self.database_path,
-            hypothesis_id=self.target_hypothesis_id,
-            scorer=self.scorer,
-            hypothesis_sample_match_id=self.hypothesis_sample_match_id,
-            n_processes=self.n_processes)
-        task.start()
+    # def do_target_spectrum_assignment(self):
+    #     task = score_spectrum_matches.SimpleSpectrumAssignment(
+    #         self.database_path,
+    #         hypothesis_id=self.target_hypothesis_id,
+    #         scorer=self.scorer,
+    #         hypothesis_sample_match_id=self.hypothesis_sample_match_id,
+    #         n_processes=self.n_processes)
+    #     task.start()
 
-    def do_decoy_spectrum_assignment(self):
-        task = score_spectrum_matches.SimpleSpectrumAssignment(
-            self.database_path,
-            hypothesis_id=self.decoy_hypothesis_id,
-            scorer=self.scorer,
-            hypothesis_sample_match_id=self.hypothesis_sample_match_id,
-            n_processes=self.n_processes)
-        task.start()
+    # def do_decoy_spectrum_assignment(self):
+    #     task = score_spectrum_matches.SimpleSpectrumAssignment(
+    #         self.database_path,
+    #         hypothesis_id=self.decoy_hypothesis_id,
+    #         scorer=self.scorer,
+    #         hypothesis_sample_match_id=self.hypothesis_sample_match_id,
+    #         n_processes=self.n_processes)
+    #     task.start()
 
     def do_spectrum_assignment(self):
-        self.do_target_spectrum_assignment()
-        self.do_decoy_spectrum_assignment()
+        # self.do_target_spectrum_assignment()
+        # self.do_decoy_spectrum_assignment()
+        task = SpectrumMatchAnalyzer(
+            self.database_path, self.hypothesis_sample_match_id, n_processes=self.n_processes)
+        task.start()
 
     def do_target_decoy_fdr_estimation(self):
         tda = target_decoy.TargetDecoyAnalyzer(
@@ -157,4 +161,4 @@ class GlycopeptideFragmentMatchingPipeline(PipelineModule):
         self.prepare_hypothesis_sample_match()
         self.do_matching()
         self.do_spectrum_assignment()
-        self.do_target_decoy_fdr_estimation()
+        # self.do_target_decoy_fdr_estimation()

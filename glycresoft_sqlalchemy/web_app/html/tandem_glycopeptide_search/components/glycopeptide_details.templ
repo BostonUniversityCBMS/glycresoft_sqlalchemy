@@ -18,7 +18,7 @@
                         <td>{{"%0.4f"|format(glycopeptide.ms1_score)}}</td>
                         <td>{{"%0.4f"|format(glycopeptide.ms2_score)}}</td>
                         <td>{{"%0.4f"|format(glycopeptide.q_value)}}</td>
-                        <td>{{glycopeptide.volume}}</td>
+                        <td>{{"%0.4e"|format(glycopeptide.volume)}}</td>
                     </tr>
                 </tbody>
             </table>
@@ -35,7 +35,7 @@
                 {% if spectrum_match.best_match %}
                 <div style='float:left;border:1px solid grey;margin:2px;text-align:center;'>
                     <div style='border-bottom:1px solid grey;border-collapse:collapse;padding:3px;'>{{spectrum_match.scan_time}}</div>
-                    {{spectrum_match.peak_match_map|length}}
+                    {{"%0.4f" | format(spectrum_match.scores['simple_ms2_score']) }}
                 </div>
                 {% endif %}
             {% endfor %}

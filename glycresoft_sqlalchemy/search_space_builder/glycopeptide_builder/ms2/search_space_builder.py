@@ -22,6 +22,10 @@ from glycresoft_sqlalchemy.data_model import (
     HypothesisSampleMatch, PeakGroupMatchType, Protein,
     TheoreticalGlycopeptide, Hierarchy, MS1GlycopeptideHypothesisSampleMatch)
 
+
+from glypy.composition.glycan_composition import FrozenGlycanComposition
+
+
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)([^\|]+)')
 g_colon_prefix = "G:"
@@ -455,9 +459,6 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         self.session.commit()
         self.hypothesis_id = self.hypothesis.id
 
-        self.configure_input_source()
-        self.save_parameters()
-
     def bootstrap(self):
         self.bootstrap_hypothesis()
         self.configure_input_source()
@@ -514,15 +515,22 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
         session = self.session
         site_list_map = {}
         hid = self.hypothesis.id
-        for protein in session.query(Protein).filter(Protein.hypothesis_id == hypothesis_id):
-            self.session.add(Protein(
+        source_count = 0
+        for protein in session.query(Protein).filter(Protein.hypothesis_id == hypothesis_id).group_by(
+                Protein.id).all():
+            source_count += 1
+            prot = (Protein(
                 name=protein.name,
                 protein_sequence=protein.protein_sequence,
                 glycosylation_sites=protein.glycosylation_sites,
                 hypothesis_id=hid))
+            session.add(prot)
+            session.flush()
+            logger.info("Adding %r to hypothesis, based on %r", prot, protein)
             site_list_map[protein.name] = protein.glycosylation_sites
         session.add(self.hypothesis)
         session.commit()
+
         self.glycosylation_site_map = site_list_map
 
     def create_restricted_modification_table(self, constant_modifications, variable_modifications):

@@ -503,13 +503,12 @@ class PeptideSequence(PeptideSequenceBase):
         kind = IonSeries(kind)
         if kind is b_series:
             seq_list = self.seq
-            # Hydrogen ionized is from terminal modification
+
             mass_shift = fragment_shift['b']
             if self.n_term != structure_constants.N_TERM_DEFAULT:
                 mass_shift = mass_shift + self.n_term.mass
 
         elif kind is y_series:
-            # y ions abstract a proton from the precursor
             mass_shift = fragment_shift['y']
             if self.c_term != structure_constants.C_TERM_DEFAULT:
                 mass_shift = mass_shift + self.c_term.mass
@@ -576,20 +575,21 @@ class PeptideSequence(PeptideSequenceBase):
         if position is None and isinstance(modification_type, Modification):
             position = modification_type.position
 
-        if (position == -1) or (position >= len(self.seq)):
-            raise IndexError(
-                "Invalid modification position. %s, %s, %s" %
-                (position, str(self.seq), modification_type))
-            return -1
         if isinstance(modification_type, Modification):
             mod = modification_type
         else:
             mod = Modification(rule=modification_type, mod_pos=position)
+
         if position is SequenceLocation.n_term:
             self.n_term = mod
         elif position is SequenceLocation.c_term:
             self.c_term = mod
         else:
+            if (position == -1) or (position >= len(self.seq)):
+                raise IndexError(
+                    "Invalid modification position. %s, %s, %s" %
+                    (position, str(self.seq), modification_type))
+
             self.seq[position][1].append(mod)
             self.mass += mod.mass
             self.modification_index[mod.name] += 1

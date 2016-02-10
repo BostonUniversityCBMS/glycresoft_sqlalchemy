@@ -212,7 +212,7 @@ class TargetDecoyAnalyzer(PipelineModule):
 
         q_map = self._calculate_q_values()
         for k in sorted(q_map):
-            logger.info("Updating entries with score %f -> %f", k, q_map[k])
+            logger.info("Updating entries with score %r -> %f", k, q_map[k])
             session.query(GlycopeptideMatch).filter(
                 GlycopeptideMatch.ms2_score == k,
                 GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id).update(

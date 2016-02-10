@@ -41,7 +41,7 @@ def do_glycopeptide_spectrum_match_scoring(
         for scan_time in scan_times:
             spectrum_matches = session.query(GlycopeptideSpectrumMatch).filter_by(
                 scan_time=scan_time[0], hypothesis_id=hypothesis_id).all()
-            best_match = spectrum_matches[0]
+            best_match = [spectrum_matches[0]]
             best_score = 0.
             for spectrum_match in spectrum_matches:
                 theoretical = spectrum_match.glycopeptide_match.theoretical_reference
@@ -50,12 +50,17 @@ def do_glycopeptide_spectrum_match_scoring(
                 spectrum_match.is_best = False
 
                 if score.value > best_score:
-                    best_match.is_best = False
-                    spectrum_match.is_best = True
+                    best_match = [spectrum_match]
                     best_score = score.value
+                elif score.value == best_score:
+                    best_match.append(spectrum_match)
 
                 updates.append(spectrum_match)
                 collection.append(score)
+
+            for match in best_match:
+                match.best_match = True
+
         session.add_all(collection)
         session.add_all(updates)
         session.commit()
@@ -169,13 +174,13 @@ class RescoreSpectrumHypothesisSampleMatch(PipelineModule):
     def stream_ids(self, is_decoy=False):
         session = self.manager()
         if is_decoy:
-            q = session.query(GlycopeptideSpectrumMatch.scan_time).filter(
+            q = session.query(GlycopeptideSpectrumMatch.scan_time.distinct()).filter(
                 (GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) & (
-                    GlycopeptideSpectrumMatch.is_decoy()))
+                 GlycopeptideSpectrumMatch.hypothesis_id == self.decoy_hypothesis_id))
         else:
-            q = session.query(GlycopeptideSpectrumMatch.scan_time).filter(
+            q = session.query(GlycopeptideSpectrumMatch.scan_time.distinct()).filter(
                 GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-                GlycopeptideSpectrumMatch.is_not_decoy())
+                GlycopeptideSpectrumMatch.hypothesis_id == self.target_hypothesis_id)
         for chunk in yield_ids(session, q, chunk_size=500):
             yield chunk
         session.close()

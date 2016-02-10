@@ -5,6 +5,17 @@ from glycresoft_sqlalchemy.data_model import GlycopeptideSpectrumMatchScore
 
 
 class ScorerBase(object):
+    """
+    This is an Abstract Base Class for objects which provide
+    a callable interface for evaluating match results.
+
+    Attributes
+    ----------
+    attr_name : str
+        The name of the generic score attribute this scorer should update
+    score_name : str
+        The unique name of this scorer.
+    """
     __meta__ = abc.ABCMeta
 
     def __init__(self, score_name, attr_name=None):
@@ -35,7 +46,8 @@ class ScoreReweighter(ScorerBase):
     def __init__(self, reweighter, scorer, prefix=""):
         self._reweighter = reweighter
         self._scorer = scorer
-        self.attr_name = '%s_%s' % (prefix, scorer.attr_name)
+        self.attr_name = scorer.attr_name
+        self.score_name = '%s_%s' % (prefix, scorer.score_name)
         self._prefix = prefix
 
     def evaluate(self, *args, **kwargs):

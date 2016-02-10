@@ -378,9 +378,15 @@ class StructureMotif(GlycanBase, HasReferenceAccessionNumber, Base):
     @classmethod
     def initialize(cls, session):
         for name, motif in glypy.motifs.items():
+            if "N-Glycan" in motif.motif_class:
+                motif_class = "N-Glycan"
+            elif "O-Glycan" in motif.motif_class:
+                motif_class = "O-Glycan"
+            else:
+                motif_class = motif.motif_class
             inst = cls.get(
                 session, name=name, canonical_sequence=str(motif),
-                motif_class=motif.motif_class, is_core_motif=motif.is_core_motif)
+                motif_class=motif_class, is_core_motif=motif.is_core_motif)
             session.add(inst)
         session.commit()
 
@@ -393,10 +399,19 @@ class TheoreticalGlycanComposition(GlycanBase, HasTaxonomy, HasReferenceAccessio
 
     structures = relationship("TheoreticalGlycanStructure", lazy='dynamic')
 
+    motifs = relationship(StructureMotif, secondary=lambda: TheoreticalGlycanCompositionToMotifTable)
+
     __mapper_args__ = {
         'polymorphic_identity': u'TheoreticalGlycanComposition',
         "concrete": True
     }
+
+
+TheoreticalGlycanCompositionToMotifTable = Table(
+    "TheoreticalGlycanCompositionToMotifTable", Base.metadata,
+    Column("glycan_id", Integer, ForeignKey("TheoreticalGlycanComposition.id"), index=True),
+    Column("motif_id", Integer, ForeignKey("StructureMotif.id"), index=True)
+    )
 
 
 @with_glycan_composition("composition")
@@ -459,10 +474,6 @@ class TheoreticalGlycanCombination(Base):
     r'''
     A class for storing combinations of glycan compositions for association
     with peptides.
-
-    .. note: This class is not yet integrated. It is a planned solution to
-        the complex join table system needed to map glycopeptides to their
-        glycans.
     '''
     __tablename__ = "TheoreticalGlycanCombination"
 

@@ -67,6 +67,47 @@ def yield_scan_ids(session, sample_run_id, chunk_size=100, filter=lambda q: q):
     yield chunk
 
 
+def _sweep_solution(array, value, lo, hi, tolerance, verbose=False):
+    best_index = -1
+    best_error = float('inf')
+    for i in range(hi - lo):
+        target = array[lo + i]
+        error = ppm_error(value, target.neutral_mass)
+        abs_error = abs(error)
+        if abs_error < tolerance and abs_error < best_error:
+            best_index = lo + i
+            best_error = abs_error
+    if best_index == -1:
+        return None
+    else:
+        return array[best_index]
+
+
+def _binary_search(array, value, lo, hi, tolerance, verbose=False):
+    if (hi - lo) < 5:
+        return _sweep_solution(array, value, lo, hi, tolerance, verbose)
+    else:
+        mid = (hi + lo) / 2
+        target = array[mid]
+        target_value = target.neutral_mass
+        error = ppm_error(value, target_value)
+
+        if abs(error) <= tolerance:
+            return _sweep_solution(array, value, max(mid - 5, lo), min(mid + 5, hi), tolerance, verbose)
+        elif target_value > value:
+            return _binary_search(array, value, lo, mid, tolerance, verbose)
+        elif target_value < value:
+            return _binary_search(array, value, mid, hi, tolerance, verbose)
+    raise Exception("No recursion found!")
+
+
+def binary_search(array, value, tolerance=2e-5, verbose=False):
+    size = len(array)
+    if size == 0:
+        return None
+    return _binary_search(array, value, 0, size, tolerance, verbose)
+
+
 def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_tolerance,
                           database_manager, hypothesis_sample_match_id, sample_run_id,
                           hypothesis_id, intensity_threshold=0.0):
@@ -436,7 +477,7 @@ def batch_match_theoretical_ions(scan_ids, msmsdb_path, ms1_tolerance, ms2_toler
                         elif observed_mass > query_mass + 10:
                             break
 
-                spectrum_matches.append((theoretical, peak_match_map))
+                spectrum_matches.append((theoretical, peak_match_map, precursor_ppm_error, oxonium_ion_count))
 
             if len(spectrum_matches) > 0:
                 for theoretical, peak_match_map, precursor_ppm_error, oxcount in spectrum_matches:
@@ -617,3 +658,90 @@ class IonMatching(PipelineModule):
                     last = cntr
         session.commit()
         session.close()
+
+
+class SpectrumMatching(PipelineModule):
+    def __init__(self, database_path, hypothesis_id,
+                 observed_ions_path,
+                 observed_ions_type='bupid_yaml',
+                 sample_run_id=None,
+                 hypothesis_sample_match_id=None,
+                 ms1_tolerance=ms1_tolerance_default,
+                 ms2_tolerance=ms2_tolerance_default,
+                 intensity_threshold=150.0,
+                 n_processes=4):
+        self.manager = self.manager_type(database_path)
+        self.session = self.manager.session()
+        self.hypothesis_id = hypothesis_id
+        self.n_processes = n_processes
+
+        self.ms1_tolerance = ms1_tolerance
+        self.ms2_tolerance = ms2_tolerance
+        self.observed_ions_path = observed_ions_path
+        self.observed_ions_type = observed_ions_type
+        self.intensity_threshold = intensity_threshold
+
+        self.hypothesis_sample_match_id = hypothesis_sample_match_id
+        self.sample_run_id = sample_run_id
+
+        self.msmsdb = MSMSSqlDB(observed_ions_path)
+
+    def prepare_task_fn(self):
+        task_fn = functools.partial(batch_match_theoretical_ions,
+                                    msmsdb_path=self.msmsdb.path,
+                                    ms1_tolerance=self.ms1_tolerance,
+                                    ms2_tolerance=self.ms2_tolerance,
+                                    database_manager=self.manager,
+                                    hypothesis_sample_match_id=self.hypothesis_sample_match_id,
+                                    sample_run_id=self.sample_run_id,
+                                    hypothesis_id=self.hypothesis_id,
+                                    intensity_threshold=self.intensity_threshold)
+        return task_fn
+
+    def stream_tandem_spectra(self, chunksize=100):
+        session = self.msmsdb.session()
+        try:
+            scan_ids = session.query(TandemScan.id).filter(TandemScan.sample_run_id == self.sample_run_id).all()
+            last = 0
+            total = len(scan_ids)
+            while last <= total:
+                yield scan_ids[last:(last + chunksize)]
+                last += chunksize
+
+        except Exception, e:
+            logger.exception("An error occurred in stream_tandem_spectra, %r", locals(), exc_info=e)
+            raise
+        finally:
+            session.close()
+
+    def run(self):
+        if self.hypothesis_sample_match_id is not None:
+            hsm = self.session.query(HypothesisSampleMatch).get(self.hypothesis_sample_match_id)
+            hsm.parameters.update({
+                    "ms1_ppm_tolerance": self.ms1_tolerance,
+                    "ms2_ppm_tolerance": self.ms2_tolerance,
+                    "intensity_threshold": self.intensity_threshold,
+                    "observed_ions_path": self.observed_ions_path
+            })
+            self.session.add(hsm)
+            self.session.commit()
+
+        task_fn = self.prepare_task_fn()
+        cntr = 0
+        last = 0
+        if self.n_processes > 1:
+            pool = multiprocessing.Pool(self.n_processes)
+            for res in pool.imap_unordered(task_fn, self.stream_tandem_spectra()):
+                cntr += res
+                if (cntr - last) > 100:
+                    logger.info("%d Searches Complete." % cntr)
+                    last = cntr
+            pool.close()
+            pool.join()
+            pool.terminate()
+        else:
+            for theoretical in self.stream_tandem_spectra():
+                cntr += task_fn(theoretical)
+                if (cntr - last) > 100:
+                    logger.info("%d Searches Complete." % cntr)
+                    last = cntr

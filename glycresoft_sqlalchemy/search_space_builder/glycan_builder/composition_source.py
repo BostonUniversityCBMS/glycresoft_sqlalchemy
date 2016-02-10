@@ -2,9 +2,9 @@ import datetime
 from functools import partial
 from glycresoft_sqlalchemy.data_model import (
     MS1GlycanHypothesis, Hypothesis, TheoreticalGlycanComposition, PipelineModule,
-    PeakGroupMatch)
+    PeakGroupMatch, StructureMotif)
 from glycresoft_sqlalchemy.search_space_builder.glycan_builder import (
-    constrained_combinatorics, glycomedb_utils, registry)
+    registry)
 
 from glypy.composition import glycan_composition, composition_transform
 
@@ -17,7 +17,26 @@ def composition_from_text_file(path, **kwargs):
     with open(path) as f:
         for line in f:
             line = line.replace("\n", "").replace("\r", "")
-            yield glycan_composition.parse(line), []  # No Motif Information
+            composition_motifs = line.split(",")
+            composition = composition_motifs[0]
+            try:
+                motifs = composition_motifs[1:]
+            except:
+                motifs = []
+            composition = composition.strip()
+            motifs = [motif.strip() for motif in motifs]
+            yield glycan_composition.parse(composition), motifs  # No Motif Information
+
+
+def make_motif_lookup_index(session):
+    motifs = session.query(StructureMotif).all()
+    motif_map = {}
+    for motif in motifs:
+        motif_map[motif.id] = motif
+        motif_map[motif.name] = motif
+        for reference in motif.references:
+            motif_map[reference.id] = motif
+    return motif_map
 
 
 @registry.composition_source_type.register("txt")
@@ -66,6 +85,7 @@ class TextGlycanCompositionHypothesisBuilder(PipelineModule):
                 pass
 
         i = 0
+        motif_map = make_motif_lookup_index(session)
         monosaccharide_identities = set()
         for composition, motifs in composition_from_text_file(self.composition_source, **self.options):
             reduction(composition)
@@ -77,6 +97,7 @@ class TextGlycanCompositionHypothesisBuilder(PipelineModule):
                 derivatization=self.derivatization,
                 hypothesis_id=hypothesis_id
             )
+            theoretical_composition.motifs = [motif_map[m] for m in motifs]
             # include motifs here
             monosaccharide_identities |= set(composition)
 

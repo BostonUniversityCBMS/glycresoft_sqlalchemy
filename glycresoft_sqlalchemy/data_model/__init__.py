@@ -57,7 +57,7 @@ from .observed_ions import (
 from .glycomics import (
     GlycanBase, with_glycan_composition, has_glycan_composition, has_glycan_composition_listener,
     TheoreticalGlycanComposition, TheoreticalGlycanCombination, TheoreticalGlycanStructure,
-    StructureMotif, TheoreticalGlycanStructureToMotifTable,
+    StructureMotif, TheoreticalGlycanStructureToMotifTable, TheoreticalGlycanCompositionToMotifTable,
     TheoreticalGlycanCombinationTheoreticalGlycanComposition, MassShift, glycoct_parser, FrozenGlycanComposition)
 
 from .json_type import (
@@ -68,6 +68,7 @@ from .sequence_model.sequencing import (
 
 from .scoring_model.peak_group_scoring import PeakGroupScoringModel
 
+from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 
 # Ensure that the PeptideBase relationship is manifest.
 # The attribute on Protein only seems to appear after the

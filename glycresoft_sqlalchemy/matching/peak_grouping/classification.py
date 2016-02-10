@@ -373,7 +373,7 @@ class MatchJoiner(PipelineModule):
             HypothesisSampleMatch).get(
             hypothesis_sample_match_id).parameters['mass_shift_map']
 
-    def stream_matched_ids(self, chunk_size=500):
+    def stream_matched_ids(self, chunk_size=2500):
         session = self.manager()
 
         gen = itertools.groupby(session.query(PeakGroupMatch.id, PeakGroupMatch.theoretical_match_id).filter(
@@ -396,7 +396,7 @@ class MatchJoiner(PipelineModule):
 
         session.close()
 
-    def stream_unmatched_ids(self, chunk_size=500):
+    def stream_unmatched_ids(self, chunk_size=2500):
         session = self.manager()
         unmatched = session.query(PeakGroupMatch).filter(
             PeakGroupMatch.theoretical_match_id == None,

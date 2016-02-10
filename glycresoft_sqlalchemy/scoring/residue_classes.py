@@ -16,6 +16,23 @@ Asparagine = R("N")
 Histidine = R("H")
 
 
+def classify_residue_frank(residue_):
+    if residue_ == Proline:
+        return "pro"
+    elif residue_ == Glycine:
+        return "gly"
+    elif residue_ in (Serine, Threonine):
+        return "ser/thr"
+    elif residue_ in (Leucine, Isoleucine, Valine):
+        return "leu/iso/val"
+    elif residue_ == Asparagine:
+        return "asn"
+    elif residue_ == Histidine:
+        return "his"
+    else:
+        return "X"
+
+
 def classify_amide_bond_frank(n_term, c_term):
     if n_term == Proline:
         return "pro", "X"

@@ -6,9 +6,8 @@ __all__ = [
     "modification",
     "composition",
     "fragment",
-    "glycans",
+    "glycan",
     "residue",
-    "stub_glycopeptides",
     "sequence_space"
 ]
 
