@@ -526,7 +526,6 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
                 hypothesis_id=hid))
             session.add(prot)
             session.flush()
-            logger.info("Adding %r to hypothesis, based on %r", prot, protein)
             site_list_map[protein.name] = protein.glycosylation_sites
         session.add(self.hypothesis)
         session.commit()
@@ -702,7 +701,7 @@ class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
-            for res in worker_pool.imap_unordered(task_fn, self.stream_results(), chunksize=1):
+            for res in worker_pool.imap_unordered(task_fn, self.stream_results(4000), chunksize=1):
                 cntr += res
                 if (cntr > last + step):
                     last = cntr

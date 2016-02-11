@@ -5,7 +5,7 @@ import re
 from pkg_resources import resource_stream
 
 from collections import defaultdict
-from collections import Sequence as Iterable
+from collections import Iterable
 from glypy.composition.glycan_composition import (
     FrozenMonosaccharideResidue, FrozenGlycanComposition)
 
@@ -28,21 +28,25 @@ is_mass_delta = re.compile(r"^Delta:")
 
 class SequenceLocation(Enum):
     anywhere = None
-    n_term = 1
-    c_term = 2
-    protein_n_term = 3
-    protein_c_term = 4
+    n_term = -1
+    c_term = -2
+    protein_n_term = -3
+    protein_c_term = -4
 
 
 SequenceLocation.n_term.add_name("N-term")
+SequenceLocation.n_term.add_name("N-Term")
 SequenceLocation.n_term.add_name("n-term")
 SequenceLocation.n_term.add_name("N_term")
 SequenceLocation.c_term.add_name("C-term")
+SequenceLocation.c_term.add_name("C-Term")
 SequenceLocation.c_term.add_name("c-term")
 SequenceLocation.c_term.add_name("C_term")
 SequenceLocation.anywhere.add_name("Anywhere")
 SequenceLocation.protein_n_term.add_name("Protein N-term")
 SequenceLocation.protein_c_term.add_name("Protein C-term")
+SequenceLocation.protein_n_term.add_name("Protein N-Term")
+SequenceLocation.protein_c_term.add_name("Protein C-Term")
 
 
 def composition_delta_parser(formula):
@@ -330,12 +334,22 @@ class ModificationRule(object):
             self.targets = set([amino_acid_specificity])
 
         # If the specificity is a collection of rules, store it as is
-        elif isinstance(amino_acid_specificity, Iterable) and\
-                isinstance(iter(amino_acid_specificity).next(), ModificationTarget):
+        elif isinstance(amino_acid_specificity, Iterable):
             self.targets = set(amino_acid_specificity)
         else:
             print(amino_acid_specificity, type(amino_acid_specificity))
             raise Exception("Could not interpret target specificity")
+
+    def clone(self, propagated_targets=None):
+        if propagated_targets is None:
+            propagated_targets = (self.targets)
+
+        dup = self.__class__(
+            set(propagated_targets), self.name,
+            self.title, self.mass, self.composition,
+            self.categories, **self.options)
+        dup.names.update(self.names)
+        return dup
 
     def valid_site(self, amino_acid=None, position_modifiers=None):
         return max([target.valid_site(amino_acid, position_modifiers) for
@@ -372,16 +386,6 @@ class ModificationRule(object):
 
         return valid_indices
 
-    # def find_valid_sites_seq(self, sequence):
-    #     valid_indices = []
-    #     position_modifier_rules = get_position_modifier_rules_dict(sequence)
-    #     for index in range(len(sequence)):
-    #         position_modifiers = position_modifier_rules.get(index)
-    #         if(self.valid_site_seq(sequence, index, position_modifiers)):
-    #             valid_indices.append(index)
-
-    #     return valid_indices
-
     def serialize(self):
         '''A string representation for inclusion in sequences'''
         return self.preferred_name
@@ -395,7 +399,7 @@ class ModificationRule(object):
         if(isinstance(other, ModificationRule)):
             if (other.targets) is (self.targets):
                 return self
-            dup = deepcopy(self)
+            dup = self.clone()
             dup.targets = (set(self.targets) | set(other.targets))
             dup.composition = self.composition or other.composition
             dup.names = self.names | other.names
@@ -405,6 +409,14 @@ class ModificationRule(object):
         else:
             raise TypeError(
                 "Unsupported types. Can only add two ModificationRules together.")
+
+    def __sub__(self, other):
+        if isinstance(other, ModificationRule):
+            dup = self.clone()
+            dup.targets = (set(self.targets) - set(other.targets))
+            return dup
+        else:
+            raise TypeError()
 
     def __call__(self, **kwargs):
         return Modification(self, **kwargs)
@@ -417,7 +429,7 @@ class ModificationRule(object):
         if self._n_term_target is None:
             solutions = []
             for target in self.targets:
-                if target.position_modifiers == "N-term":
+                if target.position_modifier == SequenceLocation.n_term:
                     solutions.append(target)
             self._n_term_target = solutions
         return self._n_term_target
@@ -427,7 +439,7 @@ class ModificationRule(object):
         if self._c_term_target is None:
             solutions = []
             for target in self.targets:
-                if target.position_modifiers == "C-term":
+                if target.position_modifier == SequenceLocation.c_term:
                     solutions.append(target)
             self._c_term_target = solutions
         return self._c_term_target
@@ -487,6 +499,10 @@ class AnonymousModificationRule(ModificationRule):
 
     def serialize(self):
         return "@" + self.name + "-" + str(self.mass)
+
+    def clone(self):
+        dup = self.__class__(self.name, self.mass, **self.options)
+        return dup
 
     def __repr__(self):
         rep = "{name}:{mass}".format(
@@ -587,6 +603,9 @@ class Glycosylation(ModificationRule):
         for i in []:
             yield i
 
+    def clone(self):
+        return self.__class__(FrozenGlycanComposition.parse(self.name[1:]))
+
 
 class NGlycanCoreGlycosylation(Glycosylation):
     mass_ladder = {
@@ -614,6 +633,8 @@ class NGlycanCoreGlycosylation(Glycosylation):
         for label_loss in self.mass_ladder.items():
             yield label_loss
 
+    def clone(self):
+        return self.__class__(self.mass)
 
 class OGlcNAcylation(Glycosylation):
     mass_ladder = {
@@ -635,6 +656,8 @@ class OGlcNAcylation(Glycosylation):
         for label_loss in self.mass_ladder.items():
             yield label_loss
 
+    def clone(self):
+        return self.__class__(self.mass)
 
 def load_from_csv(stream):
     modification_definitions = []
@@ -672,6 +695,10 @@ class ModificationTable(dict):
         "OH": ModificationRule(
             "C-term", "OH", "OH",
             composition_to_mass("OH"), composition=Composition("OH")),
+        "%": ModificationRule([
+            ModificationTarget(position_modifier=SequenceLocation.n_term),
+            ModificationTarget(position_modifier=SequenceLocation.c_term)],
+            "Terminal-Placeholder", "Terminal-Placeholder", monoisotopic_mass=0, composition=Composition()),
     }
 
     # Class Methods

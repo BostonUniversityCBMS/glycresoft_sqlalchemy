@@ -20,6 +20,8 @@ combinations = itertools.combinations
 product = itertools.product
 chain_iterable = itertools.chain.from_iterable
 
+SequenceLocation = modification.SequenceLocation
+
 
 def n_glycan_sequon_sites(peptide):
     sites = set(sequence.find_n_glycosylation_sequons(peptide.base_peptide_sequence))
@@ -96,6 +98,28 @@ class SiteCombinator(object):
                 self.reset_generator()
 
 
+def split_terminal_modifications(modifications):
+    n_terminal = []
+    c_terminal = []
+    internal = []
+
+    for mod in modifications:
+        n_term = mod.n_term_targets
+        if n_term:
+            n_term_rule = mod.clone(n_term)
+            mod = mod - n_term_rule
+            n_terminal.append(n_term_rule)
+        c_term = mod.c_term_targets
+        if c_term:
+            c_term_rule = mod.clone(c_term)
+            mod = mod - c_term_rule
+            c_terminal.append(c_term_rule)
+        if (mod.targets):
+            internal.append(mod)
+
+    return n_terminal, c_terminal, internal
+
+
 def all_combinations(site_assignments):
     all_positions = reduce(set().union, site_assignments.values(), set())
     if len(all_positions) > 10:
@@ -109,6 +133,10 @@ def all_combinations(site_assignments):
 
     combinations = [Counter()]
     for i, options in intersects.items():
+        if i == SequenceLocation.n_term or i == SequenceLocation.c_term:
+            for c in combinations:
+                c[i] = True
+
         if len(options) == 1:
             for c in combinations:
                 c[options[0]] += 1
@@ -144,13 +172,19 @@ def unpositioned_isoforms(
         variable_modifications = []
     if constant_modifications is None:
         constant_modifications = []
-    try:
-        sequence = Sequence(theoretical_peptide.base_peptide_sequence)
-    except KeyError:
-        raise StopIteration()
+
+    sequence = Sequence(theoretical_peptide.base_peptide_sequence)
+
+    has_fixed_n_term = False
+    has_fixed_c_term = False
+
     for mod in {modification_table[const_mod]
                 for const_mod in constant_modifications}:
         for site in mod.find_valid_sites(sequence):
+            if site == SequenceLocation.n_term:
+                has_fixed_n_term = True
+            elif site == SequenceLocation.c_term:
+                has_fixed_c_term = True
             sequence.add_modification(site, mod.name)
     try:
         sequons = theoretical_peptide.n_glycan_sequon_sites
@@ -158,24 +192,55 @@ def unpositioned_isoforms(
         sequons = n_glycan_sequon_sites(theoretical_peptide)
     variable_modifications = {
         modification_table[mod] for mod in variable_modifications}
+
+    (n_term_modifications, c_term_modifications,
+     variable_modifications) = split_terminal_modifications(variable_modifications)
+
+    n_term_modifications.append(None)
+    c_term_modifications.append(None)
+
     variable_sites = {
         mod.name: set(
             mod.find_valid_sites(sequence)) for mod in variable_modifications}
     counter = 0
     kept = 0
     strseq = str(sequence)
+    seq_map = {(None, None): sequence}
+    strseq_map = {(None, None): strseq}
+
+    for n_term, c_term in itertools.product(n_term_modifications, c_term_modifications):
+        seq = sequence.clone()
+        if has_fixed_n_term:
+            n_term = None
+
+        if n_term is not None:
+            seq.n_term = n_term()
+
+        if has_fixed_c_term:
+            c_term = None
+
+        if c_term is not None:
+            seq.c_term = c_term()
+
+        seq_map[n_term, c_term] = seq
+        strseq_map[n_term, c_term] = str(seq)
+
     solutions = SqliteSet()
     for i in range(len(sequons)):
         for sequons_occupied in (combinations(sequons, i + 1)):
             sequons_occupied = set(sequons_occupied)
             _sequons_occupied = list(sequons_occupied)
             yield strseq, {}, sequence.mass, _sequons_occupied
+            for n_term, c_term in itertools.product(n_term_modifications, c_term_modifications):
+                        if n_term is c_term is None:
+                            continue
+                        yield (strseq_map[n_term, c_term], {},
+                               seq_map[n_term, c_term].mass, _sequons_occupied)
             counter += 1
             kept += 1
             avail_sites = {
-                mod: sites -
-                sequons_occupied for mod,
-                sites in variable_sites.items()}
+                mod: sites - sequons_occupied
+                for mod, sites in variable_sites.items()}
             for modifications in all_combinations(avail_sites):
                 if counter % 1000 == 0:
                     logger.info("%d modification configurations computed, %d unique (%s)", counter, kept, strseq)
@@ -188,11 +253,22 @@ def unpositioned_isoforms(
                 else:
                     solutions.add(hashable)
                 mass = sequence.mass
+
+                modifications = dict(modifications)
+
+                mass_delta = 0
                 for name, count in modifications.items():
-                    mass += modification_table[name].mass * count
+                    mass_delta  += modification_table[name].mass * count
+
                 if len(modifications) > 0:
-                    yield strseq, dict(modifications), mass, _sequons_occupied
+                    yield strseq, modifications, mass + mass_delta, _sequons_occupied
                     kept += 1
+
+                    for n_term, c_term in itertools.product(n_term_modifications, c_term_modifications):
+                        if n_term is c_term is None:
+                            continue
+                        yield (strseq_map[n_term, c_term], modifications,
+                               seq_map[n_term, c_term].mass + mass_delta, _sequons_occupied)
 
 
 def generate_peptidoforms(reference_protein, constant_modifications,
