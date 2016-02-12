@@ -74,13 +74,13 @@ def mirror_glycan_combinations(source_session, target_path, hypothesis_id):
     return manager
 
 
-def merge_compositions(composition_list):
-    composition_list = list(composition_list)
-    first = GlycanComposition()
-    first.update(**composition_list[0])
-    for comp in composition_list[1:]:
-        first += comp
-    return first.serialize()
+# def merge_compositions(composition_list):
+#     composition_list = list(composition_list)
+#     first = GlycanComposition()
+#     first.update(**composition_list[0])
+#     for comp in composition_list[1:]:
+#         first += comp
+#     return first.serialize()
 
 
 def merge_compositions_frozen(composition_list):

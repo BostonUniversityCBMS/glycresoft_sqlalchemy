@@ -1,3 +1,4 @@
+import os
 try:
     import cPickle as pickle
 except:
@@ -9,6 +10,10 @@ from glypy.utils import classproperty
 from glypy.utils.enum import Enum
 
 from .vendor import appdir, pager, sqlitedict
+
+
+def get_scale():
+    return int(os.getenv('GLYCRESOFT_SCALE', 1))
 
 
 def simple_repr(self):  # pragma: no cover

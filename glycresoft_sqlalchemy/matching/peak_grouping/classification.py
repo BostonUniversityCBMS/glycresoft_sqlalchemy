@@ -23,6 +23,7 @@ from glycresoft_sqlalchemy.data_model import (
 
 from glycresoft_sqlalchemy.scoring import logistic_scoring
 
+from glycresoft_sqlalchemy.utils import get_scale
 from glycresoft_sqlalchemy.utils.collectiontools import flatten
 
 
@@ -36,7 +37,7 @@ T_JointPeakGroupMatch = JointPeakGroupMatch.__table__
 
 
 query_oven = bakery()
-SCALE = os.getenv("GLYCRESOFT_SCALE", 1)
+SCALE = get_scale()
 
 ClassifierType = logistic_scoring.LogisticModelScorer
 

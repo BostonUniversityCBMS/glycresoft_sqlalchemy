@@ -21,12 +21,13 @@ from glycresoft_sqlalchemy.data_model import (
 
 from .common import ppm_error
 
+from glycresoft_sqlalchemy.utils import get_scale
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create, toggle_indices
 
 TPeakGroupMatch = PeakGroupMatch.__table__
 
 
-SCALE = os.getenv("GLYCRESOFT_SCALE", 1)
+SCALE = get_scale()
 
 query_oven = bakery()
 

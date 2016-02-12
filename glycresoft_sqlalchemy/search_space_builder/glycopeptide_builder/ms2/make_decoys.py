@@ -11,14 +11,16 @@ from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide, Hypothesis
 from glycresoft_sqlalchemy.data_model import PipelineModule, slurp
 
 from ..utils import fragments, WorkItemCollectionFlat
+from glycresoft_sqlalchemy.utils import get_scale, Enum
 
-from glypy.utils.enum import Enum
 
 Sequence = sequence.Sequence
 
 strip_modifications = sequence.strip_modifications
 list_to_sequence = sequence.list_to_sequence
 logger = logging.getLogger("make_decoys")
+
+SCALE = get_scale()
 
 
 def pair_rotate(sequence):
@@ -308,6 +310,7 @@ def batch_make_decoys(theoretical_ids, database_manager, prefix_len=0, suffix_le
 
 class BatchingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
     def stream_theoretical_glycopeptides(self, chunk_size=4000):
+        chunk_size *= SCALE
         session = self.manager.session()
         i = 0
         batch = []

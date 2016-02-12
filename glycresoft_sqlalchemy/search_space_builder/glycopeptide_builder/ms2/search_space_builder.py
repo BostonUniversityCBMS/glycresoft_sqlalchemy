@@ -15,7 +15,7 @@ from glycresoft_sqlalchemy.proteomics import get_enzyme, msdigest_xml_parser
 from ..peptide_utilities import SiteListFastaFileParser
 from ..utils import fragments
 
-from glycresoft_sqlalchemy.utils import collectiontools
+from glycresoft_sqlalchemy.utils import collectiontools, get_scale
 
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
@@ -26,7 +26,7 @@ from glycresoft_sqlalchemy.data_model import (
 from glypy.composition.glycan_composition import FrozenGlycanComposition
 
 
-SCALE = os.getenv("GLYCRESOFT_SCALE", 1)
+SCALE = get_scale()
 
 
 logger = logging.getLogger("search_space_builder")
