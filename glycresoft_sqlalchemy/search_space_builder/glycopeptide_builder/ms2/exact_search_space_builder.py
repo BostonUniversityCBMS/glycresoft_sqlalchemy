@@ -127,7 +127,6 @@ def from_sequence(ms1_result, database_manager, protein_map, source_type):
         raise
 
 
-#  @constructs.references(ExactMS1GlycopeptideHypothesisSampleMatch)
 class ExactSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
     HypothesisType = ExactMS2GlycopeptideHypothesis
 
@@ -279,6 +278,9 @@ class BatchingExactSearchSpaceBuilder(BatchingTheoreticalSearchSpaceBuilder):
             ms1_results_file, db_file_name,
             constant_modifications=[], variable_modifications=[], enzyme=enzyme,
             site_list=site_list, n_processes=n_processes, **kwargs)
+
+    def stream_results(self, batch_size=5000):
+        return super(BatchingExactSearchSpaceBuilder, self).stream_results(batch_size)
 
     def prepare_task_fn(self):
         """Construct the partial function to be applied to each input in this step of

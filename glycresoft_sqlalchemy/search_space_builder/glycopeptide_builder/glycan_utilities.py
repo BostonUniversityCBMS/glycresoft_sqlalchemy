@@ -1,18 +1,14 @@
 import operator
 import logging
 import itertools
-import time
 
-from collections import deque, Counter, OrderedDict
+from collections import Counter
 
-from sqlalchemy.sql import select
 
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, Hypothesis,
     TheoreticalGlycanComposition, TheoreticalGlycanCombination,
     TheoreticalGlycanCombinationTheoreticalGlycanComposition)
-
-from glycresoft_sqlalchemy.utils.collectiontools import flatten
 
 from glypy import GlycanComposition
 from glypy.composition.glycan_composition import FrozenGlycanComposition

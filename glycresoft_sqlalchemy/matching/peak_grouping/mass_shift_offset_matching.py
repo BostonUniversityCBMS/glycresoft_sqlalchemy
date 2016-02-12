@@ -1,3 +1,4 @@
+import os
 import logging
 import multiprocessing
 import functools
@@ -24,6 +25,8 @@ from glycresoft_sqlalchemy.utils.database_utils import get_or_create, toggle_ind
 
 TPeakGroupMatch = PeakGroupMatch.__table__
 
+
+SCALE = os.getenv("GLYCRESOFT_SCALE", 1)
 
 query_oven = bakery()
 
@@ -331,6 +334,7 @@ class BatchPeakGroupMatching(PeakGroupMatching):
         super(BatchPeakGroupMatching, self).__init__(*args, **kwargs)
 
     def stream_ids(self, chunk_size=400):
+        chunk_size *= SCALE
         session = self.manager.session()
         try:
             for gids in yield_ids(session, self.search_type, self.hypothesis_id, chunk_size=chunk_size):
@@ -387,6 +391,7 @@ class BatchPeakGroupMatchingSearchGroups(PeakGroupMatching):
         super(BatchPeakGroupMatchingSearchGroups, self).__init__(*args, **kwargs)
 
     def stream_ids(self, chunk_size=400):
+        chunk_size *= SCALE
         session = self.lcms_database()
         try:
             for gids in yield_peak_group_ids(session, Decon2LSPeakGroup, self.sample_run_id, chunk_size=chunk_size):

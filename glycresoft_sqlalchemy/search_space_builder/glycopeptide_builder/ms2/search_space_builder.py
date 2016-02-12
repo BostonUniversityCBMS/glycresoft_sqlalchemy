@@ -26,6 +26,9 @@ from glycresoft_sqlalchemy.data_model import (
 from glypy.composition.glycan_composition import FrozenGlycanComposition
 
 
+SCALE = os.getenv("GLYCRESOFT_SCALE", 1)
+
+
 logger = logging.getLogger("search_space_builder")
 mod_pattern = re.compile(r'(\d+)([^\|]+)')
 g_colon_prefix = "G:"
@@ -678,6 +681,7 @@ parse_digest = msdigest_xml_parser.MSDigestParameters.parse
 class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
 
     def stream_results(self, batch_size=1000):
+        batch_size *= SCALE
         for chunk in collectiontools.chunk_iterator2(
                 super(BatchingTheoreticalSearchSpaceBuilder, self).stream_results(), batch_size):
             yield chunk

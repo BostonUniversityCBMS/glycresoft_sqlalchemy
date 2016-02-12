@@ -29,6 +29,29 @@ fragment_direction = {
     "z": -1,
 }
 
+generic_neutral_losses_composition = {
+    "-NH3": -Composition("NH3"),
+    "-H2O": -Composition("H2O"),
+    "-NH3-NH3": -Composition("(NH3)2"),
+    "-H2O-H2O": -Composition("(H2O)2"),
+    "-NH3-H2O": -Composition("NH3H2O")
+}
+
+
+class NeutralLoss(object):
+    def __init__(self, name, composition=None):
+        if composition is None:
+            composition = generic_neutral_losses_composition[name]
+        self.name = name
+        self.composition = composition
+        self.mass = composition.mass
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "NeutralLoss(name=%r)" % self.name
+
 
 class PeptideFragment(object):
     """Glycopeptide Fragment"""
@@ -55,7 +78,7 @@ class PeptideFragment(object):
         return "".join(name_block)
 
     def __init__(self, frag_type, position, modification_dict, mass, golden_pairs=None,
-                 flanking_amino_acids=None, glycosylation=None):
+                 flanking_amino_acids=None, glycosylation=None, neutral_loss=None):
         if golden_pairs is None:
             golden_pairs = []
         self.type = frag_type
@@ -74,6 +97,7 @@ class PeptideFragment(object):
 
         self.golden_pairs = golden_pairs
         self.glycosylation = glycosylation
+        self.neutral_loss = neutral_loss
 
     def base_name(self):
         """Simply return string like b2, y3 with no modificaiton information."""
@@ -97,6 +121,9 @@ class PeptideFragment(object):
                     fragment_name.extend(['+', mod_name])
                 else:
                     pass
+
+        if self.neutral_loss is not None:
+            fragment_name.append(str(self.neutral_loss))
 
         return ''.join(fragment_name)
 

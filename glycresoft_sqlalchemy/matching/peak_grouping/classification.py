@@ -1,3 +1,4 @@
+import os
 import logging
 import itertools
 import functools
@@ -22,7 +23,7 @@ from glycresoft_sqlalchemy.data_model import (
 
 from glycresoft_sqlalchemy.scoring import logistic_scoring
 
-from glycresoft_sqlalchemy.utils.collectiontools import flatten, groupby
+from glycresoft_sqlalchemy.utils.collectiontools import flatten
 
 
 from .common import (
@@ -35,7 +36,7 @@ T_JointPeakGroupMatch = JointPeakGroupMatch.__table__
 
 
 query_oven = bakery()
-
+SCALE = os.getenv("GLYCRESOFT_SCALE", 1)
 
 ClassifierType = logistic_scoring.LogisticModelScorer
 
@@ -307,14 +308,6 @@ def _batch_merge_groups(id_bunches, database_manager, minimum_abundance_ratio):
     return len(results)
 
 
-def iterchunks(collection, size=100):
-    total = len(collection)
-    last = 0
-    while last <= total:
-        yield collection[last:(last + size)]
-        last += size
-
-
 def _exactly_one_group_joiner(ids, database_manager, minimum_abundance_ratio=None):
     session = database_manager()
     results = []
@@ -374,6 +367,8 @@ class MatchJoiner(PipelineModule):
             hypothesis_sample_match_id).parameters['mass_shift_map']
 
     def stream_matched_ids(self, chunk_size=2500):
+        chunk_size *= SCALE
+
         session = self.manager()
 
         gen = itertools.groupby(session.query(PeakGroupMatch.id, PeakGroupMatch.theoretical_match_id).filter(
@@ -397,6 +392,8 @@ class MatchJoiner(PipelineModule):
         session.close()
 
     def stream_unmatched_ids(self, chunk_size=2500):
+        chunk_size *= SCALE
+
         session = self.manager()
         unmatched = session.query(PeakGroupMatch).filter(
             PeakGroupMatch.theoretical_match_id == None,

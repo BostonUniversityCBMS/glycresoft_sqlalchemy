@@ -6,11 +6,11 @@ import itertools
 import multiprocessing
 
 from glycresoft_sqlalchemy.data_model import (
-    DatabaseManager, MS1GlycopeptideHypothesis, Protein, NaivePeptide, make_transient,
-    TheoreticalGlycopeptideComposition, PipelineModule, PeptideBase, func,
-    TheoreticalGlycanCombination, slurp)
+    MS1GlycopeptideHypothesis, Protein, NaivePeptide,
+    TheoreticalGlycopeptideComposition, PipelineModule, func,
+    slurp)
 
-from .include_glycomics import MS1GlycanImporter, MS1GlycanImportManager
+from .include_glycomics import MS1GlycanImportManager
 
 from ..peptide_utilities import generate_peptidoforms, ProteinFastaFileParser, SiteListFastaFileParser
 from ..glycan_utilities import get_glycan_combinations, GlycanCombinationProvider
@@ -76,9 +76,13 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
         session.close()
 
 
+SCALE = os.getenv("GLYCRESOFT_SCALE", 1)
+
+
 def batch_generate_glycopeptide_compositions(peptide_ids, database_manager, hypothesis_id,
                                              glycan_combinator, max_sites=2):
     try:
+        checkpoint = SCALE * 50000
         session = database_manager.session()
         i = 0
         glycopeptide_acc = []
@@ -119,8 +123,7 @@ def batch_generate_glycopeptide_compositions(peptide_ids, database_manager, hypo
                 glycopeptide_acc.append(glycoform)
 
                 i += 1
-                if (i % 5000) == 0:
-                    logging.info("Thunk, %d", i)
+                if (i % checkpoint) == 0:
                     session.bulk_insert_mappings(TheoreticalGlycopeptideComposition, glycopeptide_acc)
                     # session.bulk_save_objects(glycopeptide_acc)
                     session.commit()

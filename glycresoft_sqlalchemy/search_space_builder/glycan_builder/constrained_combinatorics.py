@@ -154,12 +154,13 @@ class CombinatoricCompositionGenerator(object):
     def generate(self):
         for combin in descending_combination_counter(self.rules_table):
             passed = True
+            combin = Solution(combin)
             for constraint in self.constraints:
                 if not constraint(combin):
                     passed = False
                     break
             if passed:
-                yield GlycanComposition(**combin)
+                yield GlycanComposition(**combin.context)
 
     __iter__ = generate
 
@@ -189,18 +190,26 @@ class CompositionConstraint(object):
     def __call__(self, context):
         return self.operator(self.left, self.right, context)
 
+    def __and__(self, other):
+        return AndCompoundConstraint(self, other)
+
+    def __or__(self, other):
+        return OrCompoundConstraint(self, other)
+
 
 class SymbolNode(object):
     @classmethod
     def parse(cls, string):
         coef = []
         i = 0
-        while string[i].isdigit():
+        while i < len(string) and string[i].isdigit():
             coef.append(string[i])
             i += 1
-        coef_val = int(''.join(coef))
+        coef_val = int(''.join(coef) or 1)
         residue_sym = string[i:]
-        if string[i] == "(" and string[-1] == ")":
+        if residue_sym == "":
+            residue_sym = None
+        elif string[i] == "(" and string[-1] == ")":
             residue_sym = residue_sym[1:-1]
         return cls(residue_sym, coef_val)
 
@@ -221,10 +230,24 @@ class SymbolNode(object):
         return not self == other
 
     def __repr__(self):
-        return "{}({})".format(self.coefficient, self.symbol)
+        if self.symbol is not None:
+            return "{}({})".format(self.coefficient, self.symbol)
+        else:
+            return "{}".format(self.coefficient)
 
     def to_monosaccharide(self):
         return MonosaccharideResidue.from_monosaccharide(monosaccharides[self.symbol])
+
+
+class Solution(object):
+    def __init__(self, context):
+        self.context = context
+
+    def __getitem__(self, symbol_node):
+        if symbol_node.symbol is None:
+            return 1
+        else:
+            return self.context[symbol_node]
 
 
 operator_map = {}
@@ -300,3 +323,53 @@ class Equal(Operator):
         left_val = context[left] * left.coefficient
         right_val = context[right] * right.coefficient
         return left_val == right_val
+
+
+class OrCompoundConstraint(CompositionConstraint):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __call__(self, context):
+        return self.left(context) or self.right(context)
+
+    def __repr__(self):
+        return "(({}) | ({}))".format(self.left, self.right)
+
+
+class AndCompoundConstraint(CompositionConstraint):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __call__(self, context):
+        return self.left(context) and self.right(context)
+
+    def __repr__(self):
+        return "(({}) & ({}))".format(self.left, self.right)
+
+
+class ClassificationConstraint(object):
+    def __init__(self, classification, constraint):
+        self.classification = classification
+        self.constraint = constraint
+
+    def __call__(self, context):
+        return self.constraint(context)
+
+    def __repr__(self):
+        return "{}\n{}".format(self.classification, self.constraint)
+
+
+is_n_glycan_classifier = ClassificationConstraint(
+    "N-Glycan", (
+        CompositionConstraint.from_list(
+            ["HexNAc", ">=", "2"]) & CompositionConstraint.from_list(
+            ["Hex", ">=", "3"]))
+    )
+
+is_o_glycan_classifier = ClassificationConstraint(
+    "O-Glycan", ((CompositionConstraint.from_list(["HexNAc", ">=", "1"]) &
+                  CompositionConstraint.from_list(["Hex", ">=", "1"])) |
+                 (CompositionConstraint.from_list(["HexNAc", ">=", "2"])))
+    )

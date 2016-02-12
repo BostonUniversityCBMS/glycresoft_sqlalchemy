@@ -69,7 +69,7 @@ class ConnectionManager(object):
 
 
 class SQLiteConnectionManager(ConnectionManager):
-    connect_args = {"timeout": 300}
+    connect_args = {"timeout": 600}
     database_uri_prefix = "sqlite:///"
     _memory_database = "sqlite://"
 
@@ -127,7 +127,7 @@ class SQLiteConnectionManager(ConnectionManager):
             dbapi_connection.isolation_level = None
             try:
                 dbapi_connection.execute("PRAGMA page_size = 5120;")
-                dbapi_connection.execute("PRAGMA cache_size = 4000;")
+                dbapi_connection.execute("PRAGMA cache_size = 12000;")
                 dbapi_connection.execute("PRAGMA foreign_keys = ON;")
             except:
                 pass

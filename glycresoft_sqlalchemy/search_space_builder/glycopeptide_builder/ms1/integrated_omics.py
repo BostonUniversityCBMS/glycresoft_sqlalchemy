@@ -31,6 +31,7 @@ from glycresoft_sqlalchemy.structure import modification
 from glycresoft_sqlalchemy.structure import composition
 
 
+SCALE = os.getenv("GLYCRESOFT_SCALE", 1)
 logger = logging.getLogger("integrated_omics-ms1-search-space")
 
 Sequence = sequence.Sequence
@@ -150,6 +151,8 @@ def batch_make_theoretical_glycopeptides(peptide_ids, position_selector, databas
         glycopeptide_acc = []
         i = 0
 
+        checkpoint = SCALE * 50000
+
         peptides = extract_peptides(session, peptide_ids)
 
         for peptide in peptides:
@@ -184,7 +187,7 @@ def batch_make_theoretical_glycopeptides(peptide_ids, position_selector, databas
 
                 glycopeptide_acc.append(informed_glycopeptide)
                 i += 1
-                if i % 50000 == 0:
+                if i % checkpoint == 0:
                     session.bulk_insert_mappings(TheoreticalGlycopeptideComposition, glycopeptide_acc)
                     session.commit()
                     glycopeptide_acc = []
