@@ -53,7 +53,36 @@ class NeutralLoss(object):
         return "NeutralLoss(name=%r)" % self.name
 
 
-class PeptideFragment(object):
+class FragmentBase(object):
+    _neutral_loss = None
+    _glycosylation = None
+    _name = None
+
+    def get_neutral_loss(self):
+        return self._neutral_loss
+
+    def set_neutral_loss(self, neutral_loss):
+        if self._neutral_loss is not None:
+            self.mass -= self._neutral_loss.mass
+        self._neutral_loss = neutral_loss
+        if neutral_loss is not None:
+            self.mass += neutral_loss.mass
+
+    def get_fragment_name(self):
+        parts = [self._name]
+        neutral_loss = self.neutral_loss
+        if neutral_loss is not None:
+            parts.append(str(neutral_loss))
+        return ''.join(parts)
+
+    def set_name(self, name):
+        self._name = name
+
+    name = property(get_fragment_name, set_name)
+    neutral_loss = property(get_neutral_loss, set_neutral_loss)
+
+
+class PeptideFragment(FragmentBase):
     """Glycopeptide Fragment"""
 
     parser = re.compile(r"(?P<kind>[abcxyz])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
@@ -151,14 +180,15 @@ class PeptideFragment(object):
 
     def __repr__(self):
         return ("PeptideFragment(%(type)s @ %(position)s %(mass)s "
-                "%(modification_dict)s %(flanking_amino_acids)s)") % self.__dict__
+                "%(modification_dict)s %(flanking_amino_acids)s %(neutral_loss)r)") % self.__dict__
 
 
-class SimpleFragment(object):
-    def __init__(self, name, mass, kind):
+class SimpleFragment(FragmentBase):
+    def __init__(self, name, mass, kind, neutral_loss=None):
         self.name = name
         self.mass = mass
         self.kind = kind
+        self.neutral_loss = neutral_loss
 
     def __repr__(self):
         return "SimpleFragment(name={self.name}, mass={self.mass:.04f}, kind={self.kind})".format(self=self)

@@ -301,10 +301,12 @@ def _batch_merge_groups(id_bunches, database_manager, minimum_abundance_ratio):
     except Exception, e:
         logging.exception("An exception occurred in _batch_merge_groups", exc_info=e)
     conn = session.connection()
+    relations = []
     for instance_dict, member_ids in results:
         joint_id = conn.execute(T_JointPeakGroupMatch.insert(), instance_dict).lastrowid
-        conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(),
-                     [{"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids])
+        relations.extend({"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids)
+
+    conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), relations)
     session.commit()
     return len(results)
 
@@ -347,9 +349,10 @@ def _exactly_one_group_joiner(ids, database_manager, minimum_abundance_ratio=Non
         joint_id = session.query(JointPeakGroupMatch.id).filter(
             JointPeakGroupMatch.hypothesis_sample_match_id == hsm_id,
             JointPeakGroupMatch.theoretical_match_id == peak_group.theoretical_match_id,
-            JointPeakGroupMatch.fingerprint == peak_group.fingerprint).all()
-        assert len(joint_id) == 1
-        products.append({"peak_group_id": i, "joint_group_id": joint_id[0][0]})
+            (JointPeakGroupMatch.fingerprint == peak_group.fingerprint
+             if peak_group.theoretical_match_id is None else True)
+            ).first()
+        products.append({"peak_group_id": i, "joint_group_id": joint_id[0]})
     session.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), products)
     session.commit()
     return len(ids)

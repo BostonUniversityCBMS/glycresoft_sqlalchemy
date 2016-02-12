@@ -16,6 +16,8 @@ from ..peptide_utilities import SiteListFastaFileParser
 from ..utils import fragments
 
 from glycresoft_sqlalchemy.utils import collectiontools, get_scale
+from glycresoft_sqlalchemy.utils.database_utils import toggle_indices
+
 
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, Hypothesis, MS2GlycopeptideHypothesis,
@@ -702,6 +704,10 @@ class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         cntr = 0
         last = 0
         step = 1000
+
+        index_toggler = toggle_indices(self.session, TheoreticalGlycopeptide.__table__)
+        index_toggler.drop()
+
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
@@ -729,6 +735,7 @@ class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
             Protein.hypothesis_id == self.hypothesis_id).count()
 
         logger.info("%d Theoretical Glycopeptides created", final_count)
+        index_toggler.create()
 
         return self.hypothesis_id
 

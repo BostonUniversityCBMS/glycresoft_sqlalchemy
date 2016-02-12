@@ -1,11 +1,9 @@
-from collections import OrderedDict
-
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import relationship, backref, make_transient, Query, aliased
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from sqlalchemy import (PickleType, Numeric, Unicode, and_,
-                        Column, Integer, ForeignKey, UnicodeText, Boolean)
+from sqlalchemy import (Numeric, Unicode, and_,
+                        Column, Integer, ForeignKey, Boolean)
 
 from ..base import Base
 from ...structure import fragment
@@ -22,25 +20,28 @@ class IonDictFacade(object):
             raise KeyError(key)
 
 
-# OWNER = "TheoreticalGlycopeptide"
-OWNER = "Example"
-
-
-class TheoreticalPeptideProductIon(IonDictFacade, Base):
-    __tablename__ = "TheoreticalPeptideProductIon"
-
+class ProductIonBase(IonDictFacade):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(64), index=True)
     calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
+    neutral_loss = Column(Unicode(24))
+
+    @declared_attr
+    def theoretical_glycopeptide_id(self):
+        return Column(Integer, ForeignKey("TheoreticalGlycopeptide.id"), index=True)
+
+    @declared_attr
+    def theoretical_glycopeptide(self):
+        return relationship("TheoreticalGlycopeptide")
+
+
+class TheoreticalPeptideProductIon(ProductIonBase, Base):
+    __tablename__ = "TheoreticalPeptideProductIon"
 
     n_term = Column(Unicode(10))
     c_term = Column(Unicode(10))
     glycosylated = Column(Boolean, index=True)
     sequence_index = Column(Integer, index=True)
-    ion_series = Column(Unicode(10), index=True)
-
-    theoretical_glycopeptide_id = Column(Integer, ForeignKey("Example.id"), index=True)
-    theoretical_glycopeptide = relationship(OWNER)
 
     @classmethod
     def from_fragment(cls, frag):
@@ -51,7 +52,8 @@ class TheoreticalPeptideProductIon(IonDictFacade, Base):
             c_term=frag.flanking_amino_acids[1].name,
             glycosylated=('HexNAc' in frag.mod_dict),
             sequence_index=frag.position,
-            ion_series=frag.name[0]
+            ion_series=frag.name[0],
+            neutral_loss=str(fragment.neutral_loss)
             )
         return inst
 
@@ -60,17 +62,10 @@ class TheoreticalPeptideProductIon(IonDictFacade, Base):
             self.name, self.n_term, self.c_term, self.calculated_mass)
 
 
-class TheoreticalGlycopeptideStubIon(IonDictFacade, Base):
+class TheoreticalGlycopeptideStubIon(ProductIonBase, Base):
     __tablename__ = "TheoreticalGlycopeptideStubIon"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(Unicode(64), index=True)
-    calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
-    ion_series = Column(Unicode(10), index=True)
     includes_peptide = Column(Boolean)
-
-    theoretical_glycopeptide_id = Column(Integer, ForeignKey("Example.id"), index=True)
-    theoretical_glycopeptide = relationship(OWNER)
 
     def __repr__(self):
         return "<TheoreticalGlycopeptideStubIon %s %s %0.3f>" % (
@@ -82,7 +77,8 @@ class TheoreticalGlycopeptideStubIon(IonDictFacade, Base):
             name=frag.name,
             calculated_mass=frag.mass,
             ion_series=frag.kind,
-            includes_peptide=fragment.IonSeries(frag.kind).includes_peptide
+            includes_peptide=fragment.IonSeries(frag.kind).includes_peptide,
+            neutral_loss=str(fragment.neutral_loss)
             )
         return inst
 
@@ -156,8 +152,3 @@ class HasTheoreticalGlycopeptideProductIons(object):
         return and_((cls.id == TheoreticalPeptideProductIon.theoretical_glycopeptide_id),
                     (TheoreticalPeptideProductIon.ion_series == "y"),
                     (TheoreticalPeptideProductIon.glycosylated))
-
-
-class Example(HasTheoreticalGlycopeptideProductIons, Base):
-    __tablename__ = "Example"
-    id = Column(Integer, primary_key=True)

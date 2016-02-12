@@ -6,13 +6,15 @@ from sqlalchemy.engine.url import make_url
 from sqlalchemy.pool import NullPool, SingletonThreadPool
 
 from .base import Base, Namespace
-from ..utils import database_utils
+from ..utils import database_utils, get_scale
 
 import logging
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 logger = logging.getLogger("database_manager")
 logging.getLogger("sqlalchemy.pool.NullPool").disabled = True
+
+SCALE = get_scale()
 
 
 class ConnectionManager(object):
@@ -69,7 +71,7 @@ class ConnectionManager(object):
 
 
 class SQLiteConnectionManager(ConnectionManager):
-    connect_args = {"timeout": 600}
+    connect_args = {"timeout": 1200 * SCALE}
     database_uri_prefix = "sqlite:///"
     _memory_database = "sqlite://"
 

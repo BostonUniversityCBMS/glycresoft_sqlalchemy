@@ -12,6 +12,7 @@ from glycresoft_sqlalchemy.data_model import PipelineModule, slurp
 
 from ..utils import fragments, WorkItemCollectionFlat
 from glycresoft_sqlalchemy.utils import get_scale, Enum
+from glycresoft_sqlalchemy.utils.database_utils import toggle_indices
 
 
 Sequence = sequence.Sequence
@@ -309,7 +310,7 @@ def batch_make_decoys(theoretical_ids, database_manager, prefix_len=0, suffix_le
 
 
 class BatchingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
-    def stream_theoretical_glycopeptides(self, chunk_size=4000):
+    def stream_theoretical_glycopeptides(self, chunk_size=3000):
         chunk_size *= SCALE
         session = self.manager.session()
         i = 0
@@ -339,6 +340,9 @@ class BatchingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
         task_fn = self.prepare_task_fn()
         cntr = 0
         last = 0
+        session = self.manager()
+        index_toggle = toggle_indices(session, TheoreticalGlycopeptide.__table__)
+        index_toggle.drop()
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             for res in pool.imap_unordered(task_fn, self.stream_theoretical_glycopeptides(), chunksize=1):
@@ -353,4 +357,5 @@ class BatchingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
                 if (cntr - last) > 1000:
                     logger.info("%d Decoys Complete." % cntr)
                     last = cntr
+        index_toggle.create()
         return self.decoy_hypothesis_ids

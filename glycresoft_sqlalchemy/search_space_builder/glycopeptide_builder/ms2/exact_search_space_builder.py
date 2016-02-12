@@ -279,7 +279,7 @@ class BatchingExactSearchSpaceBuilder(BatchingTheoreticalSearchSpaceBuilder):
             constant_modifications=[], variable_modifications=[], enzyme=enzyme,
             site_list=site_list, n_processes=n_processes, **kwargs)
 
-    def stream_results(self, batch_size=5000):
+    def stream_results(self, batch_size=3000):
         return super(BatchingExactSearchSpaceBuilder, self).stream_results(batch_size)
 
     def prepare_task_fn(self):
