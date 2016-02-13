@@ -46,6 +46,9 @@ class NeutralLoss(object):
         self.composition = composition
         self.mass = composition.mass
 
+    def clone(self):
+        return self.__class__(self.name, self.composition.clone())
+
     def __str__(self):
         return self.name
 
@@ -81,30 +84,21 @@ class FragmentBase(object):
     name = property(get_fragment_name, set_name)
     neutral_loss = property(get_neutral_loss, set_neutral_loss)
 
+    def generate_neutral_losses(self, losses=None):
+        if losses is None:
+            losses = generic_neutral_losses_composition.keys()
+
+        for loss in losses:
+            frag = self.clone()
+            frag.neutral_loss = NeutralLoss(loss)
+            yield frag
+
 
 class PeptideFragment(FragmentBase):
     """Glycopeptide Fragment"""
 
-    parser = re.compile(r"(?P<kind>[abcxyz])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
+    # parser = re.compile(r"(?P<kind>[abcxyz])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
     concerned_mods = ['HexNAc']
-
-    @classmethod
-    def parse(cls, frag_name):
-        matches = cls.parser.search(frag_name)
-        data = matches.groupdict()
-        return data
-
-    @classmethod
-    def modification_name_block(cls, mod_dict):
-        name_block = []
-        for mod_name in cls.concerned_mods:
-            if mod_name in mod_dict:
-                if mod_dict[mod_name] > 1:
-                    name_block.extend(['+', str(mod_dict[mod_name]), mod_name])
-                elif mod_dict[mod_name] == 1:
-                    name_block.extend(['+', mod_name])
-
-        return "".join(name_block)
 
     def __init__(self, frag_type, position, modification_dict, mass, golden_pairs=None,
                  flanking_amino_acids=None, glycosylation=None, neutral_loss=None):
@@ -127,6 +121,16 @@ class PeptideFragment(FragmentBase):
         self.golden_pairs = golden_pairs
         self.glycosylation = glycosylation
         self.neutral_loss = neutral_loss
+
+    def clone(self):
+        corrected_mass = self.mass
+        if self._neutral_loss is not None:
+            corrected_mass - self.neutral_loss.mss
+        return self.__class__(
+            self.type, self.position, dict(self.modification_dict),
+            corrected_mass, self.golden_pairs, tuple(self.flanking_amino_acids),
+            self.glycosylation.clone() if self.glycosylation is not None else None,
+            self._neutral_loss.clone() if self._neutral_loss is not None else None)
 
     def base_name(self):
         """Simply return string like b2, y3 with no modificaiton information."""
@@ -179,8 +183,12 @@ class PeptideFragment(FragmentBase):
         return self.get_fragment_name()
 
     def __repr__(self):
-        return ("PeptideFragment(%(type)s @ %(position)s %(mass)s "
-                "%(modification_dict)s %(flanking_amino_acids)s %(neutral_loss)r)") % self.__dict__
+        return ("PeptideFragment(%(type)s %(position)s %(mass)s "
+                "%(modification_dict)s %(flanking_amino_acids)s %(neutral_loss)r)") % {
+            "type": self.type, "position": self.position, "mass": self.mass,
+            "modification_dict": self.modification_dict, "flanking_amino_acids": self.flanking_amino_acids,
+            "neutral_loss": self.neutral_loss
+        }
 
 
 class SimpleFragment(FragmentBase):

@@ -25,6 +25,7 @@ class ProductIonBase(IonDictFacade):
     name = Column(Unicode(64), index=True)
     calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
     neutral_loss = Column(Unicode(24))
+    ion_series = Column(Unicode(24))
 
     @declared_attr
     def theoretical_glycopeptide_id(self):
@@ -50,10 +51,10 @@ class TheoreticalPeptideProductIon(ProductIonBase, Base):
             calculated_mass=frag.mass,
             n_term=frag.flanking_amino_acids[0].name,
             c_term=frag.flanking_amino_acids[1].name,
-            glycosylated=('HexNAc' in frag.mod_dict),
+            glycosylated=('HexNAc' in frag.modification_dict),
             sequence_index=frag.position,
             ion_series=frag.name[0],
-            neutral_loss=str(fragment.neutral_loss)
+            neutral_loss=str(frag.neutral_loss if frag.neutral_loss is not None else "")
             )
         return inst
 
@@ -76,9 +77,9 @@ class TheoreticalGlycopeptideStubIon(ProductIonBase, Base):
         inst = cls(
             name=frag.name,
             calculated_mass=frag.mass,
-            ion_series=frag.kind,
+            ion_series=str(frag.kind),
             includes_peptide=fragment.IonSeries(frag.kind).includes_peptide,
-            neutral_loss=str(fragment.neutral_loss)
+            neutral_loss=str(frag.neutral_loss if frag.neutral_loss is not None else "")
             )
         return inst
 

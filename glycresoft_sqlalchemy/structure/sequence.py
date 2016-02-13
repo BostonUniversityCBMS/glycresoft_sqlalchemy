@@ -172,20 +172,6 @@ def find_glycosaminoglycan_sequons(sequence, allow_modified=frozenset()):
     return positions
 
 
-def golden_pair_map(sequence):  # pragma: no cover
-    seq_obj = Sequence(sequence)
-    key_to_golden_pairs = {}
-    fragments = map(seq_obj.break_at, range(1, len(seq_obj)))
-    for pair in fragments:
-        for frag in pair:
-            if isinstance(frag, list):
-                for item in frag:
-                    key_to_golden_pairs[item.name] = item.golden_pairs
-            else:
-                key_to_golden_pairs[frag.name] = frag.golden_pairs
-    return key_to_golden_pairs
-
-
 def total_composition(sequence):
     if isinstance(sequence, basestring):
         sequence = parse(sequence)
@@ -439,7 +425,7 @@ class PeptideSequence(PeptideSequenceBase):
             for mod in mods:
                 self.drop_modification(i, mod)
 
-    def break_at(self, idx):
+    def break_at(self, idx, neutral_loss=False):
         b_shift = fragment_shift['b']
         if self.n_term != structure_constants.N_TERM_DEFAULT:
             b_shift = b_shift + self.n_term.mass

@@ -545,10 +545,13 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
 
     def prepare_task_fn(self):
         assert self.hypothesis_id is not None
+        protein_id_map = {
+            prot.name: prot.id for prot in self.hypothesis.proteins.values()
+        }
         task_fn = functools.partial(process_predicted_ms1_ion, modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map,
                                     renderer=self.ms1_format,
-                                    database_manager=self.manager, proteins=self.hypothesis.proteins)
+                                    database_manager=self.manager, proteins=protein_id_map)
         return task_fn
 
     def stream_results(self):
@@ -689,10 +692,14 @@ class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
             yield chunk
 
     def prepare_task_fn(self):
+        protein_id_map = {
+            prot.name: prot.id for prot in self.hypothesis.proteins.values()
+        }
+
         task_fn = functools.partial(batch_process_predicted_ms1_ion, modification_table=self.modification_table,
                                     site_list_map=self.glycosylation_site_map,
                                     renderer=self.ms1_format,
-                                    database_manager=self.manager, proteins=self.hypothesis.proteins)
+                                    database_manager=self.manager, proteins=protein_id_map)
         return task_fn
 
     def run(self):
@@ -720,7 +727,7 @@ class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
             worker_pool.terminate()
         else:
             logger.debug("Building theoretical sequences sequentially")
-            for row in self.ms1_results_reader:
+            for row in self.stream_results(4000):
                 res = task_fn(row)
                 cntr += res
                 if (cntr > last + step):
@@ -765,7 +772,6 @@ def batch_process_predicted_ms1_ion(rows, modification_table, site_list_map,
     glycopeptide_acc = []
     try:
         i = 0
-
         for ms1_result in [renderer.render(session, row) for row in rows]:
 
             if (ms1_result.base_peptide_sequence == '') or (ms1_result.count_glycosylation_sites == 0):
@@ -785,12 +791,12 @@ def batch_process_predicted_ms1_ion(rows, modification_table, site_list_map,
             fragments = [generate_fragments(seq, ms1_result)
                          for seq in seq_list]
             for sequence in fragments:
-                sequence["protein_id"] = proteins[ms1_result.protein_name].id
+                sequence["protein_id"] = proteins[ms1_result.protein_name]
                 glycopeptide_acc.append(sequence)
                 i += 1
         session.bulk_insert_mappings(TheoreticalGlycopeptide, glycopeptide_acc)
         session.commit()
         return i
     except Exception, e:
-        logger.exception("An error occurred, %r", locals(), exc_info=e)
+        logger.exception("An error occurred, %r", i, exc_info=e)
         raise

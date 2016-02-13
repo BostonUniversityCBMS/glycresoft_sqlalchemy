@@ -54,9 +54,6 @@ float_pattern = re.compile(r":float$")
 
 class StreamingYAMLPusher(object):
     def __init__(self, file_handle):
-        logging.basicConfig(level="DEBUG")
-        global logger
-        logger = logging.getLogger("bupid_topdown_deconvoluter:StatefulYAMLPusher")
         self.file_handle = file_handle
         self.loader = Loader(file_handle)
         self.state = BEGIN
@@ -85,7 +82,6 @@ class StreamingYAMLPusher(object):
         """Step the parser through the scans section, eliminating as many
         object creation steps as possible to minimize memory consumption
         """
-        # logger.info("Process Scans (State: %r)", self.state)
         if self.state == BEGIN:
             loader = self.seek_scans()
         elif self.state == SCANS:

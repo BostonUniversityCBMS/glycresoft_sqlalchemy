@@ -506,61 +506,90 @@ def batch_match_theoretical_ions(scan_ids, msmsdb_path, ms1_tolerance, ms2_toler
             pass
 
 
-def bundle_spectrum_matches(theoretical_glycopeptide_ids, database_manager, hypothesis_sample_match_id):
-    session = database_manager()
-    matches = []
-    for theoretical_id in theoretical_glycopeptide_ids:
-        theoretical_id = theoretical_id[0]
+def search_spectrum(t_b_ions, t_glycosylated_b_ions, t_y_ions, t_glycosylated_y_ions, spectrum):
+    peak_list = spectrum.tandem_data
+    peak_list = [p for p in peak_list if p.intensity >= 150.]
+    peak_list = sorted(peak_list, key=neutral_mass_getter)
+    peak_match_map = defaultdict(list)
 
-        spectrum_matches = session.query(GlycopeptideSpectrumMatch).filter(
-            GlycopeptideSpectrumMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
-            GlycopeptideSpectrumMatch.theoretical_glycopeptide_id == theoretical_id).order_by(
-            GlycopeptideSpectrumMatch.scan_time).all()
+    bare_b_ions = []
+    bare_y_ions = []
+    glycosylated_b_ions = []
+    glycosylated_y_ions = []
 
-        if len(spectrum_matches) == 0:
-            continue
-        scan_ids = [scan.scan_time for scan in spectrum_matches]
-        first_scan = scan_ids[0]
-        last_scan = scan_ids[-1]
+    lppm_error = ppm_error
+    lfabs = abs
+    ms2_tolerance = 2e-5
 
-        theoretical = session.query(TheoreticalGlycopeptide).get(theoretical_id)
+    collect = bare_b_ions.append
+    for theoretical_ion in t_b_ions:
+        query_mass = theoretical_ion.mass
+        deprotonated_mass = query_mass  # - proton
+        for peak in peak_list:
+            observed_mass = peak.neutral_mass
+            match_error = lppm_error(observed_mass, deprotonated_mass)
+            if lfabs(match_error) <= ms2_tolerance:
+                match = ({'key': theoretical_ion.name,
+                          "intensity": peak.intensity,
+                          "observed_mass": observed_mass,
+                          'ppm_error': match_error, "peak_id": peak.scan_peak_index})
+                collect(match)
+                peak_match_map[peak.scan_peak_index].append(match)
+            elif observed_mass > query_mass + 10:
+                break
 
-        gpm = GlycopeptideMatch(
-                protein_id=theoretical.protein_id,
-                theoretical_glycopeptide_id=theoretical.id,
-                ms1_score=theoretical.ms1_score,
-                observed_mass=theoretical.observed_mass,
-                calculated_mass=theoretical.calculated_mass,
-                volume=theoretical.volume,
-                ppm_error=theoretical.ppm_error,
+    collect = bare_y_ions.append
+    for theoretical_ion in t_y_ions:
+        query_mass = theoretical_ion.mass
+        deprotonated_mass = query_mass  # - proton
+        for peak in peak_list:
+            observed_mass = peak.neutral_mass
+            match_error = lppm_error(observed_mass, deprotonated_mass)
+            if lfabs(match_error) <= ms2_tolerance:
+                match = ({'key': theoretical_ion.name,
+                          "observed_mass": observed_mass,
+                          "intensity": peak.intensity,
+                          'ppm_error': match_error, "peak_id": peak.scan_peak_index})
+                collect(match)
+                peak_match_map[peak.scan_peak_index].append(match)
+            elif observed_mass > query_mass + 10:
+                break
 
-                glycan_composition_str=theoretical.glycan_composition_str,
-                glycan_combination_id=theoretical.glycan_combination_id,
+    collect = glycosylated_b_ions.append
+    for theoretical_ion in t_glycosylated_b_ions:
+        query_mass = theoretical_ion.mass
+        deprotonated_mass = query_mass  # - proton
+        for peak in peak_list:
+            observed_mass = peak.neutral_mass
+            match_error = lppm_error(observed_mass, deprotonated_mass)
+            if lfabs(match_error) <= ms2_tolerance:
+                match = ({'key': theoretical_ion.name,
+                          "observed_mass": observed_mass,
+                          "intensity": peak.intensity,
+                          'ppm_error': match_error, "peak_id": peak.scan_peak_index})
+                collect(match)
+                peak_match_map[peak.scan_peak_index].append(match)
+            elif observed_mass > query_mass + 10:
+                break
 
-                base_peptide_sequence=theoretical.base_peptide_sequence,
-                modified_peptide_sequence=theoretical.modified_peptide_sequence,
-                glycopeptide_sequence=theoretical.glycopeptide_sequence,
-                sequence_length=theoretical.sequence_length,
-                peptide_modifications=theoretical.peptide_modifications,
-                count_glycosylation_sites=theoretical.count_glycosylation_sites,
-                count_missed_cleavages=theoretical.count_missed_cleavages,
-                glycosylation_sites=theoretical.glycosylation_sites,
-                start_position=theoretical.start_position,
-                end_position=theoretical.end_position,
-                # oxonium_ions=oxonium_ions,
-                # stub_ions=stub_ions,
-                # bare_b_ions=bare_b_ions,
-                # bare_y_ions=bare_y_ions,
-                # glycosylated_b_ions=glycosylated_b_ions,
-                # glycosylated_y_ions=glycosylated_y_ions,
-                scan_id_range=scan_ids,
-                first_scan=first_scan,
-                last_scan=last_scan,
-                hypothesis_sample_match_id=hypothesis_sample_match_id)
-        matches.append(gpm)
-    session.bulk_save_objects(gpm)
-    session.commit()
-    return len(theoretical_glycopeptide_ids)
+    collect = glycosylated_y_ions.append
+    for theoretical_ion in t_glycosylated_y_ions:
+        query_mass = theoretical_ion.mass
+        deprotonated_mass = query_mass  # - proton
+        for peak in peak_list:
+            observed_mass = peak.neutral_mass
+            match_error = lppm_error(observed_mass, deprotonated_mass)
+            if lfabs(match_error) <= ms2_tolerance:
+                match = ({'key': theoretical_ion.name,
+                          "observed_mass": observed_mass,
+                          "intensity": peak.intensity,
+                          'ppm_error': match_error, "peak_id": peak.scan_peak_index})
+                collect(match)
+                peak_match_map[peak.scan_peak_index].append(match)
+            elif observed_mass > query_mass + 10:
+                break
+
+    return peak_match_map
 
 
 class IonMatching(PipelineModule):

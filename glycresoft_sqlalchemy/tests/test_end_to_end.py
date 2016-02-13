@@ -31,6 +31,10 @@ def test_main():
 
     constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (N)", "Pyro-glu from Q (Q@N-term)"])
     enzyme = 'trypsin'
+
+    ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics"
+    ms2_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics-MS2"
+
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
         database_path=db_file_name,
         hypothesis_name="End-to-End Combinatorial",
@@ -50,8 +54,9 @@ def test_main():
     glycopeptide_hypothesis_id = job.start()
     glycopeptide_hypothesis_id = 2
     ec = os.system(
-        ("glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db %s %d "
-         "-p db -g 2e-5 --skip-grouping") % (db_file_name, glycopeptide_hypothesis_id))
+        ("glycresoft-database-search ms1 -n 6 -i %s %s %d "
+         "-p db -g 2e-5 --skip-grouping") % (ms1_data, db_file_name, glycopeptide_hypothesis_id))
+
     assert ec == 0
 
     job = search_space_builder.BatchingTheoreticalSearchSpaceBuilder.from_hypothesis_sample_match(
@@ -64,7 +69,7 @@ def test_main():
     # decoy_hypothesis_id = 4
 
     job = GlycopeptideFragmentMatchingPipeline(
-        db_file_name, r"datafiles\20140918_01.db",
+        db_file_name, ms2_data,
         target_hypothesis_id=hypothesis_id,
         decoy_hypothesis_id=decoy_hypothesis_id,
         sample_run_name="20140918_01.yaml",

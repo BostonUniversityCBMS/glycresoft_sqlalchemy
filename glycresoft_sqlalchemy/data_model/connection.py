@@ -131,6 +131,8 @@ class SQLiteConnectionManager(ConnectionManager):
                 dbapi_connection.execute("PRAGMA page_size = 5120;")
                 dbapi_connection.execute("PRAGMA cache_size = 12000;")
                 dbapi_connection.execute("PRAGMA foreign_keys = ON;")
+                dbapi_connection.execute("PRAGMA journal_mode=WAL;")
+
             except:
                 pass
             dbapi_connection.isolation_level = iso_level

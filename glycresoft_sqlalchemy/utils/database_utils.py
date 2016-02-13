@@ -235,7 +235,8 @@ class toggle_indices(object):
             try:
                 index.drop(conn)
             except OperationalError, e:
-                print e
+                pass
+                # print e
         try:
             self.session.commit()
         except:
@@ -247,7 +248,8 @@ class toggle_indices(object):
             try:
                 index.create(conn)
             except OperationalError, e:
-                print e
+                pass
+                # print e
         try:
             self.session.commit()
         except:

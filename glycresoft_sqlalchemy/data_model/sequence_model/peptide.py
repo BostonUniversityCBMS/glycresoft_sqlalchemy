@@ -172,7 +172,7 @@ class PeptideBase(object):
 
     @hybrid_property
     def is_not_decoy(self):
-        return ~self.protein.hypothesis.is_decoy        
+        return ~self.protein.hypothesis.is_decoy
 
     @is_not_decoy.expression
     def is_not_decoy(cls):

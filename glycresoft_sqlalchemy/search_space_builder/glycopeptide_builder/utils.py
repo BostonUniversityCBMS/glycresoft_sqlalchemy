@@ -1,14 +1,20 @@
 import re
 import itertools
+import functools
+import multiprocessing
 import operator
+import logging
 
 from glycresoft_sqlalchemy.structure import sequence, constants
 from glycresoft_sqlalchemy.utils import collectiontools
 from glycresoft_sqlalchemy.data_model import (
-    TheoreticalPeptideProductIon, TheoreticalGlycopeptideStubIon)
+    TheoreticalPeptideProductIon, TheoreticalGlycopeptideStubIon,
+    PipelineModule, TheoreticalGlycopeptide)
 
 Sequence = sequence.Sequence
 kind_getter = operator.attrgetter("kind")
+
+logger = logging.getLogger("fragment_generation")
 
 
 def oxonium_ions_and_stub_ions(seq, full=False):
@@ -23,7 +29,6 @@ def oxonium_ions_and_stub_ions(seq, full=False):
     g = collectiontools.groupby(itertools.chain.from_iterable(generators), kind_getter, transform_fn=dictify)
 
     r = g.get(sequence.oxonium_ion_series, []), g.get(sequence.stub_glycopeptide_series, [])
-    # print map(len, r)
     return r
 
 
@@ -50,7 +55,7 @@ def dbfragments(sequence, id=None, full=True):
 
 
 def fragments(sequence):
-    """Generate characteristic 'high energy' CID fragments for a given glycopeptide sequence
+    """Generate characteristic 'high energy' HCD fragments for a given glycopeptide sequence
 
     Parameters
     ----------
@@ -144,3 +149,102 @@ class WorkItemCollectionFlat(object):
 
 def flatten(iterable):
     return tuple(itertools.chain.from_iterable(iterable))
+
+
+def subslurp(ids, session):
+    total = len(ids)
+    last = 0
+    size = 150
+    while last <= total:
+        chunk = ids[last:(last + size)]
+        batch = session.query(
+            TheoreticalGlycopeptide.glycopeptide_sequence,
+            TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.id.in_(chunk)).all()
+        last += size
+        for glycopeptide_id_pair in batch:
+            yield glycopeptide_id_pair
+
+
+def generate_fragments_task(ids, database_manager, full=False, **kwargs):
+    session = database_manager()
+    items = list(subslurp(ids, session))
+
+    backbone_product_ions = []
+    stub_ion_container = []
+
+    for glycopeptide, id in items:
+        b_ions, y_ions, stub_ions = dbfragments(Sequence(glycopeptide), id=id, full=full)
+        backbone_product_ions.extend(b_ions)
+        backbone_product_ions.extend(y_ions)
+        stub_ion_container.extend(stub_ions)
+
+    session.bulk_save_objects(backbone_product_ions)
+    session.bulk_save_objects(stub_ion_container)
+    session.commit()
+    return len(ids)
+
+
+class GlycopeptideFragmentGenerator(PipelineModule):
+    def __init__(self, database_path, hypothesis_id, full=False, n_processes=4, **kwargs):
+        self.manager = self.manager_type(database_path)
+        self.hypothesis_id = hypothesis_id
+        self.full = full
+        self.n_processes = n_processes
+        self.options = kwargs
+
+    def clear_existing_fragments(self, session):
+
+        logger.info("Clearing existing fragments")
+        ids = session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.from_hypothesis(self.hypothesis_id))
+
+        x = session.query(TheoreticalPeptideProductIon).filter(
+            TheoreticalPeptideProductIon.theoretical_glycopeptide_id.in_(
+                ids)).first()
+        if x is None:
+            return
+        session.query(TheoreticalPeptideProductIon).filter(
+            TheoreticalPeptideProductIon.theoretical_glycopeptide_id.in_(
+                ids)).delete(synchronize_session=False)
+        session.query(TheoreticalGlycopeptideStubIon).filter(
+            TheoreticalGlycopeptideStubIon.theoretical_glycopeptide_id.in_(
+                ids)).delete(synchronize_session=False)
+
+        session.commit()
+
+    def stream_ids(self, chunk_size=500):
+        session = self.manager()
+        ids = session.query(TheoreticalGlycopeptide.id).filter(
+            TheoreticalGlycopeptide.from_hypothesis(
+                self.hypothesis_id)).all()
+        total = len(ids)
+        last = 0
+        while last <= total:
+            yield flatten(ids[last:(last + chunk_size)])
+            last += chunk_size
+        session.close()
+
+    def prepare_taskfn(self):
+        task_fn = functools.partial(
+            generate_fragments_task,
+            database_manager=self.manager,
+            full=self.full)
+        return task_fn
+
+    def run(self):
+        session = self.manager()
+        self.clear_existing_fragments(session)
+        session.close()
+        task_fn = self.prepare_taskfn()
+
+        count = 0
+        if self.n_processes > 1:
+            pool = multiprocessing.Pool(self.n_processes)
+            for c in pool.imap_unordered(task_fn, self.stream_ids()):
+                count += c
+                logger.info("%d sequences fragmented")
+        else:
+            for c in itertools.imap(task_fn, self.stream_ids()):
+                count += c
+                logger.info("%d sequences fragmented")
