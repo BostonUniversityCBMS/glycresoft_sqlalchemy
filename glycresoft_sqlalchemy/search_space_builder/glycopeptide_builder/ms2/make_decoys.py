@@ -251,7 +251,6 @@ class DecoySearchSpaceBuilder(PipelineModule):
 def batch_make_decoys(theoretical_ids, database_manager, prefix_len=0, suffix_len=1,
                       protein_decoy_map=None, permute_fn=reverse_preserve_sequon):
     session = database_manager()
-    working_set = WorkItemCollectionFlat(session)
     glycopeptide_acc = []
     try:
         theoretical_sequences = slurp(session, TheoreticalGlycopeptide, theoretical_ids, flatten=False)
@@ -296,7 +295,6 @@ def batch_make_decoys(theoretical_ids, database_manager, prefix_len=0, suffix_le
 
                 protein_id=protein_decoy_map[theoretical_sequence.protein_id]
             )
-            # working_set.add(decoy)
             glycopeptide_acc.append(decoy)
         i = len(glycopeptide_acc)
         session.bulk_insert_mappings(TheoreticalGlycopeptide, glycopeptide_acc)

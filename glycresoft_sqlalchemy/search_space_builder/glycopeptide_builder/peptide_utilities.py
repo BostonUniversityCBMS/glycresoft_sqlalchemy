@@ -190,11 +190,15 @@ def unpositioned_isoforms(
         sequons = theoretical_peptide.n_glycan_sequon_sites
     except:
         sequons = n_glycan_sequon_sites(theoretical_peptide)
+
     variable_modifications = {
         modification_table[mod] for mod in variable_modifications}
 
     (n_term_modifications, c_term_modifications,
      variable_modifications) = split_terminal_modifications(variable_modifications)
+
+    n_term_modifications = [mod for mod in n_term_modifications if mod.find_valid_sites(sequence)]
+    c_term_modifications = [mod for mod in c_term_modifications if mod.find_valid_sites(sequence)]
 
     n_term_modifications.append(None)
     c_term_modifications.append(None)
@@ -258,7 +262,7 @@ def unpositioned_isoforms(
 
                 mass_delta = 0
                 for name, count in modifications.items():
-                    mass_delta  += modification_table[name].mass * count
+                    mass_delta += modification_table[name].mass * count
 
                 if len(modifications) > 0:
                     yield strseq, modifications, mass + mass_delta, _sequons_occupied

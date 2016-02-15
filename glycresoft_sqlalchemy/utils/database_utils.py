@@ -234,9 +234,8 @@ class toggle_indices(object):
         for index in self.table.indexes:
             try:
                 index.drop(conn)
-            except OperationalError, e:
+            except OperationalError:
                 pass
-                # print e
         try:
             self.session.commit()
         except:
@@ -247,9 +246,8 @@ class toggle_indices(object):
         for index in self.table.indexes:
             try:
                 index.create(conn)
-            except OperationalError, e:
+            except OperationalError:
                 pass
-                # print e
         try:
             self.session.commit()
         except:

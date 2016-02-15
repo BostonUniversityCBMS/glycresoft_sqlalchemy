@@ -41,6 +41,9 @@ def test_main():
         "P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"
     ]
 
+    ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics"
+    ms2_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics-MS2"
+
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         db_file_name,
         protein_ids=simple_proteome,
@@ -58,8 +61,9 @@ def test_main():
     # hypothesis_id = 2
 
     ec = os.system(
-        ("glycresoft-database-search ms1 -n 6 -i datafiles/20140918_01_isos.db -p db "
+        ("glycresoft-database-search ms1 -n 6 -i {ms1_data} -p db "
          "-g 2e-5 --skip-grouping {db_file_name} {hypothesis_id}").format(
+            ms1_data=ms1_data,
             db_file_name=db_file_name, hypothesis_id=hypothesis_id))
     assert ec == 0
 
@@ -75,23 +79,13 @@ def test_main():
     # decoy_hypothesis_id = 4
 
     job = GlycopeptideFragmentMatchingPipeline(
-        db_file_name, "datafiles/20140918_01.db",
+        db_file_name, ms2_data,
         target_hypothesis_id=hypothesis_id,
         decoy_hypothesis_id=decoy_hypothesis_id,
         sample_run_name="20140918_01.yaml",
-        hypothesis_sample_match_name="End-to-End AGP @ 20140918_01 (Simple Scorer)",
+        hypothesis_sample_match_name="End-to-End AGP",
         n_processes=6)
     job.start()
-
-    # job = GlycopeptideFragmentMatchingPipeline(
-    #     db_file_name, "datafiles/20140918_01.db",
-    #     target_hypothesis_id=hypothesis_id,
-    #     decoy_hypothesis_id=decoy_hypothesis_id,
-    #     sample_run_name="20140918_01.yaml",
-    #     scorer=scorer,
-    #     hypothesis_sample_match_name="End-to-End AGP @ 20140918_01 (Frequency Scorer)",
-    #     n_processes=6)
-    # job.start()
 
 if __name__ == '__main__':
     test_main()

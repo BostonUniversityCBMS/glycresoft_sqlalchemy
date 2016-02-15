@@ -16,8 +16,12 @@ fragment_pairing = {
 }
 
 fragment_shift = {
-    'b': 0.,
-    'y': Composition('H2O').mass
+    'a': -Composition("CO").mass,
+    'b': Composition({}).mass,
+    'c': Composition("NH3").mass,
+    'x': Composition("CO2").mass,
+    'y': Composition('H2O').mass,
+    'z': (-Composition("HN") + Composition("O")).mass
 }
 
 fragment_direction = {
@@ -55,11 +59,16 @@ class NeutralLoss(object):
     def __repr__(self):
         return "NeutralLoss(name=%r)" % self.name
 
+    AllLosses = object()
+
 
 class FragmentBase(object):
     _neutral_loss = None
     _glycosylation = None
     _name = None
+
+    def clone(self):
+        raise NotImplementedError()
 
     def get_neutral_loss(self):
         return self._neutral_loss
@@ -84,13 +93,14 @@ class FragmentBase(object):
     name = property(get_fragment_name, set_name)
     neutral_loss = property(get_neutral_loss, set_neutral_loss)
 
-    def generate_neutral_losses(self, losses=None):
-        if losses is None:
+    def generate_neutral_losses(self, losses=NeutralLoss.AllLosses):
+        if losses is NeutralLoss.AllLosses:
             losses = generic_neutral_losses_composition.keys()
 
         for loss in losses:
             frag = self.clone()
-            frag.neutral_loss = NeutralLoss(loss)
+            if loss is not None:
+                frag.neutral_loss = NeutralLoss(loss)
             yield frag
 
 
@@ -197,6 +207,13 @@ class SimpleFragment(FragmentBase):
         self.mass = mass
         self.kind = kind
         self.neutral_loss = neutral_loss
+
+    def clone(self):
+        corrected_mass = self.mass
+        if self._neutral_loss is not None:
+            corrected_mass - self.neutral_loss.mss
+        return self.__class__(self.name, corrected_mass, self.kind,
+                              self._neutral_loss.clone() if self._neutral_loss is not None else None)
 
     def __repr__(self):
         return "SimpleFragment(name={self.name}, mass={self.mass:.04f}, kind={self.kind})".format(self=self)

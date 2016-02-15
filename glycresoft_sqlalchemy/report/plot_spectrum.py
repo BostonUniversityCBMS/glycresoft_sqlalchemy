@@ -55,11 +55,11 @@ def plot_scan(scan, ax=None, logscale=False, color='black', labels=None, **kwarg
 
     if labels is not None:
         for p in peaks:
-            if p.id in labels:
-                label = labels[p.id]
-                x = p.mass_charge_ratio - 75
-                y = p.intensity + 700
-                ax.text(x=x, y=y, s=label + " (+%d)" % p.charge, color=color)
+            if p.scan_peak_index in labels:
+                label = labels[p.scan_peak_index]
+                x = p.mass_charge_ratio
+                y = p.intensity
+                ax.text(x=x, y=y, s=label + (" (+%d)" % p.charge if p.charge != 1 else ""), color=color, ha='center')
 
     return ax
 

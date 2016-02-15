@@ -78,8 +78,6 @@ def fragments(sequence):
         for fm in b:
             key = fm.get_fragment_name()
             if re.search(r'b1\+', key) and constants.EXCLUDE_B1:
-                # b1 Ions aren't actually seen in reality, but are an artefact of the generation process
-                # so do not include them in the output
                 continue
             mass = fm.mass
             if "HexNAc" in key:

@@ -319,6 +319,7 @@ class PeptideSequence(PeptideSequenceBase):
             self.glycan = glycan if glycan != "" else None
             self.n_term = Modification(n_term) if isinstance(n_term, basestring) else n_term
             self.c_term = Modification(c_term) if isinstance(c_term, basestring) else c_term
+        self._fragments_map = {}
 
     def _patch_glycan_composition(self):
         occupied_sites = self.modification_index['HexNAc']
@@ -425,7 +426,7 @@ class PeptideSequence(PeptideSequenceBase):
             for mod in mods:
                 self.drop_modification(i, mod)
 
-    def break_at(self, idx, neutral_loss=False):
+    def break_at(self, idx, neutral_losses=None):
         b_shift = fragment_shift['b']
         if self.n_term != structure_constants.N_TERM_DEFAULT:
             b_shift = b_shift + self.n_term.mass
@@ -473,9 +474,13 @@ class PeptideSequence(PeptideSequenceBase):
             b_frag.golden_pairs = [y_frag.name]
             y_frag.golden_pairs = [b_frag.name]
 
+        if neutral_losses is not None:
+            b_frag = list(b_frag.generate_neutral_losses(neutral_losses))
+            y_frag = list(y_frag.generate_neutral_losses(neutral_losses))
+
         return b_frag, y_frag
 
-    def get_fragments(self, kind, **kwargs):
+    def get_fragments(self, kind, neutral_losses=None, **kwargs):
         """Return a list of mass values for each fragment of `kind`"""
 
         mass_shift = 0.0
@@ -487,18 +492,20 @@ class PeptideSequence(PeptideSequenceBase):
         # And the first element is always bare fragment.
         # The total number of HexNAc on the fragment should be recorded.
         kind = IonSeries(kind)
-        if kind is b_series:
+        if kind in (b_series, "a", "c"):
             seq_list = self.seq
 
-            mass_shift = fragment_shift['b']
+            mass_shift = fragment_shift[kind]
             if self.n_term != structure_constants.N_TERM_DEFAULT:
                 mass_shift = mass_shift + self.n_term.mass
 
-        elif kind is y_series:
-            mass_shift = fragment_shift['y']
+        elif kind in (y_series, 'x', 'z'):
+            mass_shift = fragment_shift[kind]
             if self.c_term != structure_constants.C_TERM_DEFAULT:
                 mass_shift = mass_shift + self.c_term.mass
             seq_list = list(reversed(self.seq))
+        else:
+            raise Exception("Can't recognize ion series %r" % kind)
 
         current_mass = mass_shift
         for idx in range(len(seq_list) - 1):
@@ -533,6 +540,14 @@ class PeptideSequence(PeptideSequenceBase):
                     kind, idx + structure_constants.FRAG_OFFSET, copy.copy(mod_dict), current_mass,
                     flanking_amino_acids=flanking_residues)
                 fragments_from_site.extend(frag.partial_loss())
+
+            if neutral_losses is not None:
+                all_frags = []
+                for frag in fragments_from_site:
+                    all_frags.append(frag)
+                    all_frags.extend(frag.generate_neutral_losses(neutral_losses))
+                fragments_from_site = all_frags
+
             yield fragments_from_site
 
     def drop_modification(self, position, modification_type):
@@ -579,6 +594,15 @@ class PeptideSequence(PeptideSequenceBase):
             self.seq[position][1].append(mod)
             self.mass += mod.mass
             self.modification_index[mod.name] += 1
+
+    def fragment(self, key):
+        try:
+            return self._fragments_map[key]
+        except KeyError:
+            for group in self.get_fragments(key[0]):
+                for frag in group:
+                    self._fragments_map[frag.name] = frag
+            return self._fragments_map[key]
 
     def get_sequence(self, start=0, include_glycan=True, include_termini=True,
                      implicit_n_term=None, implicit_c_term=None):
