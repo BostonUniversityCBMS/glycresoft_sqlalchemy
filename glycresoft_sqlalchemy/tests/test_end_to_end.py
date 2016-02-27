@@ -15,7 +15,7 @@ from glycresoft_sqlalchemy.matching.glycopeptide.pipeline import GlycopeptideFra
 
 
 def test_main():
-    db_file_name = "./datafiles/naive_glycopeptide.db"
+    db_file_name = "./datafiles/naive_glycopeptide-2.db"
     os.remove(db_file_name)
 
     rules_table = {
@@ -28,7 +28,7 @@ def test_main():
     job = constrained_combinatorics.ConstrainedCombinatoricsGlycanHypothesisBuilder(
         db_file_name, rules_table=rules_table, constraints_list=[])
     combn_glycan_hypothesis_id = job.start()
-
+    combn_glycan_hypothesis_id = 1
     constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (N)", "Pyro-glu from Q (Q@N-term)"])
     enzyme = 'trypsin'
 
@@ -55,7 +55,7 @@ def test_main():
     glycopeptide_hypothesis_id = 2
     ec = os.system(
         ("glycresoft-database-search ms1 -n 6 -i %s %s %d "
-         "-p db -g 2e-5 --skip-grouping") % (ms1_data, db_file_name, glycopeptide_hypothesis_id))
+         "-p db -g 2e-5") % (ms1_data, db_file_name, glycopeptide_hypothesis_id))
 
     assert ec == 0
 

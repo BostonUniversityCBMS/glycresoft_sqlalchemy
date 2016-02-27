@@ -13,18 +13,13 @@ from collections import defaultdict
 
 from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSMSYamlParser
 
-from glycresoft_sqlalchemy import data_model as model
-from glycresoft_sqlalchemy.data_model import PipelineModule, MSMSSqlDB, TandemScan, slurp
+from glycresoft_sqlalchemy.data_model import (
+    PipelineModule, MSMSSqlDB, TandemScan, slurp, HypothesisSampleMatch,
+    Protein, TheoreticalGlycopeptide, GlycopeptideSpectrumMatch,
+    GlycopeptideMatch,
+    )
+
 from glycresoft_sqlalchemy.utils.common_math import ppm_error
-
-
-HypothesisSampleMatch = model.HypothesisSampleMatch
-Hypothesis = model.Hypothesis
-SampleRun = model.SampleRun
-Protein = model.Protein
-TheoreticalGlycopeptide = model.TheoreticalGlycopeptide
-GlycopeptideSpectrumMatch = model.GlycopeptideSpectrumMatch
-GlycopeptideMatch = model.GlycopeptideMatch
 
 
 neutral_mass_getter = operator.attrgetter("neutral_mass")
@@ -39,32 +34,6 @@ PROTON = 1.007276035
 
 ms1_tolerance_default = 1e-5
 ms2_tolerance_default = 2e-5
-
-
-# def yield_ids(session, hypothesis_id, chunk_size=1000, filter=lambda q: q):
-#     base_query = filter(session.query(TheoreticalGlycopeptide.id).filter(
-#         TheoreticalGlycopeptide.protein_id == Protein.id,
-#         Protein.hypothesis_id == hypothesis_id))
-#     chunk = []
-
-#     for item in base_query:
-#         chunk.append(item)
-#         if len(chunk) == chunk_size:
-#             yield chunk
-#             chunk = []
-#     yield chunk
-
-
-# def yield_scan_ids(session, sample_run_id, chunk_size=100, filter=lambda q: q):
-#     base_query = filter(session.query(TandemScan.id).filter(TandemScan.sample_run_id == sample_run_id))
-#     chunk = []
-
-#     for item in base_query:
-#         chunk.append(item)
-#         if len(chunk) == chunk_size:
-#             yield chunk
-#             chunk = []
-#     yield chunk
 
 
 def _sweep_solution(array, value, lo, hi, tolerance, verbose=False):

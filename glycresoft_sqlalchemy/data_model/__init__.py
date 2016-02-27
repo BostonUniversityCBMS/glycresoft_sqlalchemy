@@ -15,7 +15,8 @@ from .generic import (
     _TemplateNumberStore)
 
 from .connection import (
-    DatabaseManager, ConnectionManager, SQLiteConnectionManager, session)
+    DatabaseManager, ConnectionManager, SQLiteConnectionManager, session,
+    instance_from_uri)
 
 from .hypothesis import (
     Hypothesis, MS1GlycanHypothesis, MS1GlycopeptideHypothesis,

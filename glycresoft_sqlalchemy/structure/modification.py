@@ -49,6 +49,11 @@ SequenceLocation.protein_n_term.add_name("Protein N-Term")
 SequenceLocation.protein_c_term.add_name("Protein C-Term")
 
 
+class ModificationCategory(Enum):
+    glycosylation = 1
+    artefact = 2
+
+
 def composition_delta_parser(formula):
     '''Parses a Unimod composition offset formula where
     the isotope specification is the 'opposite' of the
@@ -291,7 +296,7 @@ class ModificationRule(object):
         monoisotopic_mass = unimod_entry["mono_mass"]
         full_name = unimod_entry["full_name"]
         title = unimod_entry["title"]
-        specificity = (map(ModificationTarget.from_unimod_specificity, specificity))
+        specificity = list(map(ModificationTarget.from_unimod_specificity, specificity))
         return cls(
                 specificity, full_name, title, monoisotopic_mass,
                 composition=Composition({str(k): int(v) for k, v in unimod_entry['composition'].items()}))
@@ -413,10 +418,11 @@ class ModificationRule(object):
     def __sub__(self, other):
         if isinstance(other, ModificationRule):
             dup = self.clone()
-            dup.targets = (set(self.targets) - set(other.targets))
+            dup.targets = set(self.targets) - set(other.targets)
             return dup
         else:
-            raise TypeError()
+            raise TypeError(
+                "Unsupported types. Can only subtract two ModificationRules together.")
 
     def __call__(self, **kwargs):
         return Modification(self, **kwargs)
@@ -595,7 +601,7 @@ class Glycosylation(ModificationRule):
         self.mass = glycan_composition.mass()
         self.title = self.name
         self.preferred_name = self.name
-        self.categories = ["glycosylation"]
+        self.categories = [ModificationCategory.glycosylation]
         self.names = {self.name, self.title}
         self.options = {}
 
@@ -627,7 +633,7 @@ class NGlycanCoreGlycosylation(Glycosylation):
         self.names = {self.name}
         self.preferred_name = self.name
         self.options = {}
-        self.categories = ["glycosylation"]
+        self.categories = [ModificationCategory.glycosylation]
 
     def losses(self):
         for label_loss in self.mass_ladder.items():
@@ -635,6 +641,7 @@ class NGlycanCoreGlycosylation(Glycosylation):
 
     def clone(self):
         return self.__class__(self.mass)
+
 
 class OGlcNAcylation(Glycosylation):
     mass_ladder = {
@@ -650,6 +657,7 @@ class OGlcNAcylation(Glycosylation):
         self.composition = _hexnac.total_composition().clone()
         self.title = self.name
         self.preferred_name = self.name
+        self.categories = [ModificationCategory.glycosylation]
         self.options = {}
 
     def losses(self):
@@ -658,6 +666,7 @@ class OGlcNAcylation(Glycosylation):
 
     def clone(self):
         return self.__class__(self.mass)
+
 
 def load_from_csv(stream):
     modification_definitions = []
@@ -695,10 +704,6 @@ class ModificationTable(dict):
         "OH": ModificationRule(
             "C-term", "OH", "OH",
             composition_to_mass("OH"), composition=Composition("OH")),
-        "%": ModificationRule([
-            ModificationTarget(position_modifier=SequenceLocation.n_term),
-            ModificationTarget(position_modifier=SequenceLocation.c_term)],
-            "Terminal-Placeholder", "Terminal-Placeholder", monoisotopic_mass=0, composition=Composition()),
     }
 
     # Class Methods
@@ -1035,6 +1040,8 @@ class Modification(ModificationBase):
 
     __repr__ = serialize
 
+    __str__ = serialize
+
     def __hash__(self):
         return hash(str(self))
 
@@ -1055,3 +1062,6 @@ class Modification(ModificationBase):
 
     def clone(self):
         return self.__class__(self.rule)
+
+    def is_a(self, category):
+        return self.rule.is_a(category)

@@ -1,7 +1,9 @@
 import datetime
+import re
+
 from glycresoft_sqlalchemy.data_model import MS1GlycanHypothesis, TheoreticalGlycanComposition, PipelineModule
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
-from glypy import GlycanComposition, MonosaccharideResidue, monosaccharides
+from glypy import GlycanComposition
 from glycresoft_sqlalchemy.search_space_builder.glycan_builder import registry
 
 import logging
@@ -12,6 +14,30 @@ logger = logging.getLogger("glycan_composition_constrained_combinatorics")
 
 @registry.composition_source_type.register("constrained_combinatorics")
 class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
+    """
+    Summary
+    
+    Attributes
+    ----------
+    constraints_list : TYPE
+        Description
+    derivatization : TYPE
+        Description
+    hypothesis_id : TYPE
+        Description
+    HypothesisType : TYPE
+        Description
+    manager : TYPE
+        Description
+    options : TYPE
+        Description
+    reduction : TYPE
+        Description
+    rules_file : TYPE
+        Description
+    rules_table : TYPE
+        Description
+    """
     HypothesisType = MS1GlycanHypothesis
 
     def __init__(self, database_path, rules_file=None, hypothesis_id=None,
@@ -72,46 +98,6 @@ class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
         return hypothesis_id
 
 
-def parse_rules_from_file(path):
-    ranges = []
-    constraints = []
-    stream = open(path)
-
-    def cast(parts):
-        return parts[0], int(parts[1]), int(parts[2])
-
-    for line in stream:
-        parts = line.replace("\n", "").split(" ")
-        if len(parts) == 3:
-            ranges.append(cast(parts))
-        elif len(parts) == 1:
-            if parts[0] in ["\n", "\r", ""]:
-                break
-            else:
-                raise Exception("Could not interpret line '%r'" % parts)
-
-    def cast(parts):
-        a, op = parts[0], parts[1]
-        b = parts[2]
-        try:
-            b = int(b)
-        except:
-            pass
-        return a, op, b
-
-    for line in stream:
-        parts = line.replace("\n", "").split(" ")
-        if len(parts) == 3:
-            constraints.append(cast(parts))
-        elif len(parts) == 1:
-            if parts[0] in ["\n", "\r", ""]:
-                break
-            else:
-                raise Exception("Could not interpret line '%r'" % parts)
-    rules_table = CombinatoricCompositionGenerator.build_rules_table(*zip(*ranges))
-    return rules_table, constraints
-
-
 def descending_combination_counter(counter):
     keys = counter.keys()
     count_ranges = map(lambda lo_hi: range(lo_hi[0], lo_hi[1] + 1), counter.values())
@@ -120,6 +106,22 @@ def descending_combination_counter(counter):
 
 
 class CombinatoricCompositionGenerator(object):
+    """
+    Summary
+
+    Attributes
+    ----------
+    constraints : list
+        Description
+    lower_bound : list
+        Description
+    residue_list : list
+        Description
+    rules_table : dict
+        Description
+    upper_bound : list
+        Description
+    """
     @staticmethod
     def build_rules_table(residue_list, lower_bound, upper_bound):
         rules_table = {}
@@ -137,7 +139,7 @@ class CombinatoricCompositionGenerator(object):
         self.rules_table = rules_table
 
         if len(self.constraints) > 0 and not isinstance(self.constraints[0], CompositionConstraint):
-            self.constraints = map(CompositionConstraint.from_list, self.constraints)
+            self.constraints = list(map(CompositionConstraint.from_list, self.constraints))
 
         if rules_table is None:
             self._build_rules_table()
@@ -168,36 +170,149 @@ class CombinatoricCompositionGenerator(object):
         return repr(self.rules_table) + '\n' + repr(self.constraints)
 
 
+def tryopen(obj):
+    if hasattr(obj, "read"):
+        return obj
+    else:
+        return open(obj)
+
+
+def parse_rules_from_file(path):
+    """
+    Summary
+    
+    Parameters
+    ----------
+    path : TYPE
+        Description
+    
+    Raises
+    ------
+    Exception
+        Description
+    
+    Returns
+    -------
+    name : TYPE
+        Description
+    """
+    ranges = []
+    constraints = []
+    stream = tryopen(path)
+
+    def cast(parts):
+        return parts[0], int(parts[1]), int(parts[2])
+
+    for line in stream:
+        if line.startswith("#"):
+            continue
+        parts = line.replace("\n", "").split(" ")
+        if len(parts) == 3:
+            ranges.append(cast(parts))
+        elif len(parts) == 1:
+            if parts[0] in ["\n", "\r", ""]:
+                break
+            else:
+                raise Exception("Could not interpret line '%r'" % parts)
+
+    for line in stream:
+        if line.startswith("#"):
+            continue
+        line = line.replace("\n", "")
+        if line in ["\n", "\r", ""]:
+            break
+        constraints.append(CompositionConstraint.parse(line))
+
+    rules_table = CombinatoricCompositionGenerator.build_rules_table(*zip(*ranges))
+    return rules_table, constraints
+
+
 class CompositionConstraint(object):
+    """
+    A wrapper around an ExpressionNode that is callable
+    to test for satisfaction.
+
+    Attributes
+    ----------
+    expression : ExpressionNode
+        The symbolic expression that a composition must
+        satisfy in order to be retained.
+    """
+    @classmethod
+    def parse(cls, string):
+        return CompositionConstraint(ExpressionNode.parse(string))
 
     @classmethod
     def from_list(cls, sym_list):
-        assert len(sym_list) == 3
-        left, op, right = sym_list
-        left = SymbolNode.parse(left)
-        right = SymbolNode.parse(right)
-        op = Operator.operator_map[op]
-        return CompositionConstraint(left, op, right)
+        return cls.parse(' '.join(sym_list))
 
-    def __init__(self, left, operator, right):
-        self.left = left
-        self.operator = operator
-        self.right = right
+    def __init__(self, expression):
+        self.expression = expression
 
     def __repr__(self):
-        return "{} {} {}".format(self.left, self.operator, self.right)
+        return "{}".format(self.expression)
 
     def __call__(self, context):
-        return self.operator(self.left, self.right, context)
+        """
+        Test for satisfaction of :attr:`expression`
+
+        Parameters
+        ----------
+        context : Solution
+            Context to evaluate :attr:`expression` in
+
+        Returns
+        -------
+        bool
+        """
+        return context[self.expression]
 
     def __and__(self, other):
+        """
+        Construct an :class:`AndCompoundConstraint` from
+        `self` and `other`
+
+        Parameters
+        ----------
+        other : CompositionConstraint
+
+        Returns
+        -------
+        AndCompoundConstraint
+        """
         return AndCompoundConstraint(self, other)
 
     def __or__(self, other):
+        """
+        Construct an :class:`OrCompoundConstraint` from
+        `self` and `other`
+
+        Parameters
+        ----------
+        other : CompositionConstraint
+
+        Returns
+        -------
+        OrCompoundConstraint
+        """
         return OrCompoundConstraint(self, other)
 
 
 class SymbolNode(object):
+    """
+    A node representing a single symbol or variable with a scalar multiplication
+    coefficient. When evaluated in the context of a :class:`Solution`, it's value
+    will be substituted for the value hashed there.
+
+    A SymbolNode is equal to its symbol string and hashes the same way.
+
+    Attributes
+    ----------
+    coefficient : int
+        Multiplicative coefficient to scale the value by
+    symbol : str
+        A name
+    """
     @classmethod
     def parse(cls, string):
         coef = []
@@ -235,42 +350,301 @@ class SymbolNode(object):
         else:
             return "{}".format(self.coefficient)
 
-    def to_monosaccharide(self):
-        return MonosaccharideResidue.from_monosaccharide(monosaccharides[self.symbol])
+
+class ValueNode(object):
+    """
+    Represent a single numeric value in an ExpressionNode
+
+    Attributes
+    ----------
+    value : int
+        The value of this node
+    """
+    coefficient = 1
+
+    @classmethod
+    def parse(cls, string):
+        try:
+            value = int(string.replace(" ", ""))
+        except:
+            value = float(string.replace(" ", ""))
+        return cls(value)
+
+    def __init__(self, value):
+        self.value = value
+
+    def __hash__(self):
+        return hash(self.value)
+
+    def __eq__(self, other):
+        if isinstance(other, basestring):
+            return str(self.value) == other
+        else:
+            return self.value == other.value
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __repr__(self):
+        return str(self.value)
+
+
+def typify(node):
+    if isinstance(node, basestring):
+        if re.match(r"(\d+(.\d+)?)", node):
+            return ValueNode.parse(node)
+        else:
+            return SymbolNode.parse(node)
+    else:
+        return node
+
+
+def parse_expression(string):
+    i = 0
+    size = len(string)
+    paren_level = 0
+    current_symbol = ''
+    expression_stack = []
+    resolver_stack = []
+
+    while i < size:
+        c = string[i]
+        if c == " ":
+            if current_symbol != "":
+                expression_stack.append(current_symbol)
+            current_symbol = ""
+        elif c == "(":
+            paren_level += 1
+            if current_symbol != "":
+                expression_stack.append(current_symbol)
+            current_symbol = ""
+            resolver_stack.append(expression_stack)
+            expression_stack = []
+        elif c == ")":
+            paren_level -= 1
+            if current_symbol != "":
+                expression_stack.append(current_symbol)
+            current_symbol = ""
+            term = collapse_expression_sequence(expression_stack)
+            expression_stack = resolver_stack.pop()
+            expression_stack.append(term)
+        else:
+            current_symbol += c
+        i += 1
+
+    if current_symbol != "":
+        expression_stack.append(current_symbol)
+
+    if len(resolver_stack) > 0:
+        raise SyntaxError("Unpaired parenthesis")
+    return collapse_expression_sequence(expression_stack)
+
+
+class ExpressionNode(object):
+    """
+    Summary
+    
+    Attributes
+    ----------
+    coefficient : int
+        Description
+    left : TYPE
+        Description
+    op : TYPE
+        Description
+    parse : TYPE
+        Description
+    right : TYPE
+        Description
+    """
+    coefficient = 1
+
+    parse = staticmethod(parse_expression)
+
+    def __init__(self, left, op, right):
+        self.left = typify(left)
+        self.op = operator_map[op]
+        self.right = typify(right)
+
+    def __hash__(self):
+        return hash((self.left, self.op, self.right))
+
+    def __eq__(self, other):
+        if isinstance(other, basestring):
+            return str(self) == other
+        else:
+            return self.left == other.left and self.right == other.right and self.op == other.op
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __repr__(self):
+        return "{} {} {}".format(self.left, self.op, self.right)
+
+    def evaluate(self, context):
+        """
+        Execute :attr:`op` on :attr:`left` and :attr:`right` in `context`
+
+        Parameters
+        ----------
+        context : Solution
+
+        Returns
+        -------
+        bool or int
+        """
+        return self.op(self.left, self.right, context)
+
+
+def collapse_expression_sequence(expression_sequence):
+    stack = []
+    i = 0
+    size = len(expression_sequence)
+    if size == 1:
+        return typify(expression_sequence[0])
+
+    while i < size:
+        next_term = expression_sequence[i]
+        stack.append(next_term)
+        if len(stack) == 3:
+            node = ExpressionNode(*stack)
+            if hasattr(node.left, 'op'):
+                if node.left.op.precedence < node.op.precedence:
+                    node = ExpressionNode(
+                        left=node.left.left, op=node.left.op, right=ExpressionNode(
+                            left=node.left.right, op=node.op, right=node.right))
+            stack = [node]
+        i += 1
+    if len(stack) != 1:
+        raise SyntaxError("Incomplete Expression: %s" % ' '.join(expression_sequence))
+    return stack[0]
 
 
 class Solution(object):
+    """
+    Summary
+
+    Attributes
+    ----------
+    context : dict
+    """
     def __init__(self, context):
         self.context = context
 
-    def __getitem__(self, symbol_node):
-        if symbol_node.symbol is None:
-            return 1
+    def __getitem__(self, node):
+        """
+        Summary
+
+        Parameters
+        ----------
+        node : TYPE
+            Description
+
+        Returns
+        -------
+        name : TYPE
+            Description
+        """
+        if isinstance(node, SymbolNode):
+            if node.symbol is None:
+                return 1
+            else:
+                return self.context[node]
+        elif isinstance(node, ValueNode):
+            return node.value
         else:
-            return self.context[symbol_node]
+            return node.evaluate(self)
 
 
 operator_map = {}
 
 
 def register_operator(cls):
+    """
+    Summary
+    
+    Returns
+    -------
+    name : TYPE
+        Description
+    """
     operator_map[cls.symbol] = cls()
     return cls
 
 
 @register_operator
 class Operator(object):
+    """
+    Summary
+    
+    Attributes
+    ----------
+    operator_map : TYPE
+        Description
+    precedence : int
+        Description
+    symbol : str
+        Description
+    """
     symbol = "NoOp"
+    precedence = 0
 
     def __init__(self, symbol=None):
+        """
+        Summary
+
+        Parameters
+        ----------
+        symbol : TYPE, optional
+            Description
+        """
         if symbol is not None:
             self.symbol = symbol
 
     def __call__(self, left, right, context):
+        """
+        Summary
+
+        Parameters
+        ----------
+        left : TYPE
+            Description
+        right : TYPE
+            Description
+        context : TYPE
+            Description
+
+        Returns
+        -------
+        name : TYPE
+            Description
+        """
         return NotImplemented
 
     def __repr__(self):
         return self.symbol
+
+    def __eq__(self, other):
+        """
+        Summary
+
+        Parameters
+        ----------
+        other : TYPE
+            Description
+
+        Returns
+        -------
+        name : TYPE
+            Description
+        """
+        try:
+            return self.symbol == other.symbol
+        except AttributeError:
+            return self.symbol == other
+
+    def __hash__(self):
+        return hash(self.symbol)
 
     operator_map = operator_map
 
@@ -325,7 +699,64 @@ class Equal(Operator):
         return left_val == right_val
 
 
+@register_operator
+class Subtraction(Operator):
+    """
+    Summary
+    
+    Attributes
+    ----------
+    precedence : int
+        Description
+    symbol : str
+        Description
+    """
+    symbol = "-"
+    precedence = 1
+
+    def __call__(self, left, right, context):
+        left_val = context[left] * left.coefficient
+        right_val = context[right] * right.coefficient
+        return left_val - right_val
+
+
+@register_operator
+class Addition(Operator):
+    symbol = "+"
+    precedence = 1
+
+    def __call__(self, left, right, context):
+        left_val = context[left] * left.coefficient
+        right_val = context[right] * right.coefficient
+        return left_val + right_val
+
+
+@register_operator
+class Or(Operator):
+    symbol = 'or'
+
+    def __call__(self, left, right, context):
+        return context[left] or context[right]
+
+
+@register_operator
+class And(Operator):
+    symbol = "and"
+
+    def __call__(self, left, right, context):
+        return context[left] and context[right]
+
+
 class OrCompoundConstraint(CompositionConstraint):
+    """
+    A combination of CompositionConstraint instances which
+    is satisfied if either of its components are satisfied.
+
+    Attributes
+    ----------
+    left : CompositionConstraint
+    right : CompositionConstraint
+    """
     def __init__(self, left, right):
         self.left = left
         self.right = right
@@ -334,11 +765,20 @@ class OrCompoundConstraint(CompositionConstraint):
         return self.left(context) or self.right(context)
 
     def __repr__(self):
-        return "(({}) | ({}))".format(self.left, self.right)
+        return "(({}) or ({}))".format(self.left, self.right)
 
 
 class AndCompoundConstraint(CompositionConstraint):
-    def __init__(self, left, right):
+    """
+    A combination of CompositionConstraint instances which
+    is only satisfied if both of its components are satisfied.
+    
+    Attributes
+    ----------
+    left : CompositionConstraint
+    right : CompositionConstraint
+    """
+    def __init__(self, left=None, right=None):
         self.left = left
         self.right = right
 
@@ -346,15 +786,38 @@ class AndCompoundConstraint(CompositionConstraint):
         return self.left(context) and self.right(context)
 
     def __repr__(self):
-        return "(({}) & ({}))".format(self.left, self.right)
+        return "(({}) and ({}))".format(self.left, self.right)
 
 
 class ClassificationConstraint(object):
+    """
+    Express a classification (label) of a solution by satisfaction
+    of a boolean Expression
+
+    Attributes
+    ----------
+    classification : str
+        The label to grant on satisfaction of `constraints`
+    constraint : CompositionConstraint
+        The constraint that must be satisfied.
+    """
     def __init__(self, classification, constraint):
         self.classification = classification
         self.constraint = constraint
 
     def __call__(self, context):
+        """
+        Test for satisfaction.
+
+        Parameters
+        ----------
+        context : Solution
+
+        Returns
+        -------
+        bool
+            Whether the constraint is satisfied
+        """
         return self.constraint(context)
 
     def __repr__(self):

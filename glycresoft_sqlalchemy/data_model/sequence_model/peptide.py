@@ -30,6 +30,30 @@ class Protein(Base):
     hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id", ondelete="CASCADE"))
     glycosylation_sites = Column(MutableList.as_mutable(PickleType))
 
+    _n_glycan_sequon_sites = None
+
+    @property
+    def n_glycan_sequon_sites(self):
+        if self._n_glycan_sequon_sites is None:
+            self._n_glycan_sequon_sites = sequence.find_n_glycosylation_sequons(self.protein_sequence)
+        return self.n_glycan_sequon_sites
+
+    _o_glycan_sequon_sites = None
+
+    @property
+    def o_glycan_sequon_sites(self):
+        if self.o_glycan_sequon_sites is None:
+            self.o_glycan_sequon_sites = sequence.find_o_glycosylation_sequons(self.protein_sequence)
+        return self.o_glycan_sequon_sites
+
+    _glycosaminoglycan_sequon_sites = None
+
+    @property
+    def glycosaminoglycan_sequon_sites(self):
+        if self._glycosaminoglycan_sequon_sites is None:
+            self._glycosaminoglycan_sequon_sites = sequence.find_glycosaminoglycan_sequons(self.protein_sequence)
+        return self._glycosaminoglycan_sequon_sites
+
     def __repr__(self):
         return "<Protein {0} {1} {2} {3}...>".format(
             self.id, self.name, self.glycosylation_sites,
@@ -65,7 +89,8 @@ class PeptideBase(object):
 
     @declared_attr
     def protein_id(self):
-        return Column(Integer, ForeignKey(Protein.id, ondelete="CASCADE"), index=True)
+        return Column(Integer, ForeignKey(
+            Protein.id, ondelete="CASCADE"), index=True)
 
     @declared_attr
     def protein(self):
@@ -152,7 +177,7 @@ class PeptideBase(object):
         sites = set(sequence.find_n_glycosylation_sequons(peptide.base_peptide_sequence))
         try:
             if peptide.protein is not None:
-                sites |= set(site - peptide.start_position for site in peptide.protein.glycosylation_sites
+                sites |= set(site - peptide.start_position for site in peptide.protein.n_glycan_sequon_sites
                              if peptide.start_position <= site < peptide.end_position)
         except AttributeError:
             pass
@@ -194,6 +219,9 @@ class PeptideBase(object):
 
     def __repr__(self):
         return "<{} {} {}>".format(self.__class__.__name__, self.id, self.most_detailed_sequence)
+
+    def as_peptide_sequence(self):
+        return sequence.PeptideSequence(self.most_detailed_sequence)
 
 
 class GlycopeptideBase(PeptideBase):
@@ -331,16 +359,22 @@ class HasTheoreticalFragments(object):
 class TheoreticalGlycopeptide(GlycopeptideBase, Base, HasMS1Information, HasTheoreticalFragments):
     __tablename__ = "TheoreticalGlycopeptide"
 
-    base_composition_id = Column(Integer, ForeignKey(TheoreticalGlycopeptideComposition.id), index=True)
+    base_composition_id = Column(Integer, ForeignKey(
+        TheoreticalGlycopeptideComposition.id), index=True)
 
     def __repr__(self):
-        rep = "<TheoreticalGlycopeptide {} {}>".format(self.glycopeptide_sequence, self.observed_mass)
+        rep = "<TheoreticalGlycopeptide {} {}>".format(
+            self.glycopeptide_sequence, self.calculated_mass)
         return rep
 
     @classmethod
     def is_not_decoy(cls):
-        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy))
+        return ((cls.protein_id == Protein.id) & (
+            Protein.hypothesis_id == Hypothesis.id) & (
+            ~Hypothesis.is_decoy))
 
     @classmethod
     def is_decoy(cls):
-        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (Hypothesis.is_decoy))
+        return ((cls.protein_id == Protein.id) & (
+            Protein.hypothesis_id == Hypothesis.id) & (
+            Hypothesis.is_decoy))

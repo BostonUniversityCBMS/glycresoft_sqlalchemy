@@ -13,12 +13,12 @@ from openmp cimport omp_get_num_threads, omp_get_thread_num, omp_in_parallel
 from libc.string cimport strcmp
 from libc.stdlib cimport malloc, free, realloc
 from libc cimport *
+cdef extern from * nogil:
+    int printf   (const char *template, ...)
 
 from collections import Counter, namedtuple
 
 
-cdef extern from * nogil:
-    int printf   (const char *template, ...)
 
 from glycresoft_sqlalchemy.utils.ccommon_math cimport (
     DPeak, MassOffsetFeature,

@@ -19,7 +19,7 @@ from sqlalchemy.orm import make_transient
 
 from glycresoft_sqlalchemy.data_model import (
     Decon2LSPeak, Decon2LSPeakGroup, Decon2LSPeakToPeakGroupMap,
-    PipelineModule, MSScan)
+    PipelineModule, MSScan, ScanBase)
 
 from glycresoft_sqlalchemy.utils.common_math import ppm_error
 
@@ -44,7 +44,7 @@ class Decon2LSPeakGrouper(PipelineModule):
                  minimum_scan_count=1, max_charge_state=8,
                  minimum_abundance_ratio=0.01, minimum_mass=1200.,
                  maximum_mass=15000., minimum_signal_to_noise=1.,
-                 n_processes=4):
+                 n_processes=4, minimum_scan_id=0, maximum_scan_id=float('inf')):
         self.manager = self.manager_type(database_path)
         self.grouping_error_tolerance = grouping_error_tolerance
         self.minimum_scan_count = minimum_scan_count
@@ -52,9 +52,12 @@ class Decon2LSPeakGrouper(PipelineModule):
         self.sample_run_id = sample_run_id
         self.max_charge_state = max_charge_state
         self.minimum_signal_to_noise = minimum_signal_to_noise
-        self.minimum_mass = minimum_mass
-        self.maximum_mass = maximum_mass
+        self.minimum_mass = minimum_mass or 1200.
+        self.maximum_mass = maximum_mass or 15000.
         self.minimum_abundance_ratio = minimum_abundance_ratio
+
+        self.minimum_scan_id = minimum_scan_id
+        self.maximum_scan_id = maximum_scan_id
 
     def group_peaks(self):
         '''
@@ -84,13 +87,17 @@ class Decon2LSPeakGrouper(PipelineModule):
         logger.info("Cleared? %r", session.query(Decon2LSPeakGroup).count())
         conn = session.connection()
         map_items = []
-        for count, row in enumerate(Decon2LSPeak.from_sample_run(session.query(
-                Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass).filter(
+
+        for count, row in enumerate(session.query(Decon2LSPeak.id, Decon2LSPeak.monoisotopic_mass).join(
+                ScanBase).filter(
+                ScanBase.time.between(self.minimum_scan_id, self.maximum_scan_id),
+                ScanBase.sample_run_id == self.sample_run_id).filter(
                 Decon2LSPeak.charge <= self.max_charge_state,
                 Decon2LSPeak.signal_to_noise >= self.minimum_signal_to_noise,
-                Decon2LSPeak.monoisotopic_mass.between(self.minimum_mass, self.maximum_mass)
-                ).order_by(
-                Decon2LSPeak.intensity.desc()), self.sample_run_id)):
+                Decon2LSPeak.monoisotopic_mass.between(
+                    self.minimum_mass, self.maximum_mass)).order_by(
+                Decon2LSPeak.intensity.desc())):
+
             peak_id, monoisotopic_mass = row
 
             # Calculate the window around which to group peaks

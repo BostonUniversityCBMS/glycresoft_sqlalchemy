@@ -1,5 +1,6 @@
 from glycresoft_sqlalchemy.utils import Bundle
 from sqlalchemy.ext.declarative import declarative_base
+from glycresoft_sqlalchemy.utils import database_utils
 
 Base = declarative_base()
 Base2 = Base
@@ -18,8 +19,13 @@ def _base_hash(self):
     return hash((self.id, self.__class__))
 
 
+def _base_get_uri(self):
+    return database_utils.get_uri_for_instance(self)
+
+
 Base.__eq__ = _base_eq
 Base.__hash__ = _base_hash
+Base.uri = _base_get_uri
 
 
 class _Namespace(Bundle):

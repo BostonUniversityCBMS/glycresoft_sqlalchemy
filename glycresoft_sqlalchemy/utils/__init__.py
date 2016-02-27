@@ -1,10 +1,13 @@
 import os
+import logging
+import urlparse
+import urllib
+
 try:
     import cPickle as pickle
 except:
     import pickle
 
-import logging
 
 from glypy.utils import classproperty
 from glypy.utils.enum import Enum
@@ -23,6 +26,15 @@ def simple_repr(self):  # pragma: no cover
             self.__dict__.items(), key=lambda x: x[0])
         if not k.startswith("_") and not callable(v)]
     return template.format(self=self, d=', '.join(d))
+
+
+def path2url(path):
+    return urlparse.urljoin(
+      'file:', urllib.pathname2url(path))
+
+
+def file_uri(path):
+    return path2url(os.path.abspath(path))
 
 
 class ItemsAsAttributes(object):

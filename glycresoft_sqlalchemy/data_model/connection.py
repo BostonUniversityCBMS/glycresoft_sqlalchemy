@@ -268,3 +268,10 @@ def initialize(database_path, clear=False):
 def session(database_path):
     manager = DatabaseManager(database_path)
     return manager.session()
+
+
+def instance_from_uri(uri):
+    database_uri, model_name, pk = database_utils.get_parts_from_uri(uri)
+    model_type = Base._decl_class_registry[model_name]
+    db = session(database_uri)
+    return db.query(model_type).get(int(pk))

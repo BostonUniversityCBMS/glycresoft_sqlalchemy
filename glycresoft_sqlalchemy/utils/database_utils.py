@@ -102,6 +102,35 @@ def database_exists(url):
             return False
 
 
+def get_absolute_uri_for_session(session):
+    engine = session.get_bind()
+    url_ = engine.url
+    if url_.drivername.startswith('sqlite'):
+        database_path = url_.database
+        abs_database_path = os.path.abspath(database_path)
+        abs_database_path = '/'.join(abs_database_path.split(os.sep))
+        return make_url("sqlite:///%s" % abs_database_path)
+    else:
+        return make_url(url_)
+
+
+def get_uri_for_instance(model_obj):
+    session = object_session(model_obj)
+    uri = get_absolute_uri_for_session(session)
+    model_name = model_obj.__class__.__name__
+    model_key = model_obj.id
+
+    qstring = "?%s=%d" % (model_name, model_key)
+
+    return str(uri) + qstring
+
+
+def get_parts_from_uri(uri):
+    database, spec = uri.split("?", 1)
+    model, pk = spec.split("=")
+    return database, model, pk
+
+
 def create_database(url, encoding='utf8', template=None):
     """Issue the appropriate CREATE DATABASE statement.
 

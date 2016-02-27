@@ -1,4 +1,5 @@
 from constants import constants
+from composition import Composition
 
 
 __all__ = [

@@ -234,7 +234,7 @@ class GlycopeptideMatch(GlycopeptideBase, Base, HasMS1Information):
         return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (Hypothesis.is_decoy))
 
     def __repr__(self):
-        rep = "<GlycopeptideMatch {} {} {}>".format(self.glycopeptide_sequence, self.ms2_score, self.observed_mass)
+        rep = "<GlycopeptideMatch {} {} {}>".format(self.glycopeptide_sequence, self.ms2_score, self.calculated_mass)
         return rep
 
     def fragments(self, kind=('ox', 'b', 'y', 'gb', 'gy', 'stub')):

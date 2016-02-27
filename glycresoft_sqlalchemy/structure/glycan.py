@@ -1,5 +1,5 @@
 '''
-Deprecated Simplisitic Glycan Implementation
+Simplisitic Glycan Implementation
 '''
 from glycresoft_sqlalchemy.utils import Enum
 from glycresoft_sqlalchemy.utils.collectiontools import decoratordict
@@ -8,18 +8,6 @@ from .modification import AnonymousModificationRule
 import glypy
 from glypy.structure.glycan import NamedGlycan
 from glypy import Composition
-
-oxonium_ions = {
-    "HexNAc": 204.0864,
-    "HexNAc-H2O": 186.0754,
-    "HexNAc-2H2O": 168.0650,
-    "FragmentOfHexNAc": 138.0542,
-    "dHex": 146.05791,
-    "Hex": 163.0601,
-    "HexHexNAc": 366.1394,
-    "NeuAc": 292.1026,
-    "NeuAc-H2O": 274.0920,
-}
 
 
 class allset(object):

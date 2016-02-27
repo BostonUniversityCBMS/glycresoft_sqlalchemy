@@ -17,7 +17,16 @@ class IonDictFacade(object):
         elif key == 'mass':
             return self.calculated_mass
         else:
-            raise KeyError(key)
+            try:
+                return getattr(self, key)
+            except AttributeError:
+                raise KeyError(key)
+
+
+class ProductIonSet(Base):
+    __tablename__ = "ProductIonSet"
+
+    id = Column(Integer, primary_key=True)
 
 
 class ProductIonBase(IonDictFacade):
@@ -28,12 +37,12 @@ class ProductIonBase(IonDictFacade):
     ion_series = Column(Unicode(24))
 
     @declared_attr
-    def theoretical_glycopeptide_id(self):
-        return Column(Integer, ForeignKey("TheoreticalGlycopeptide.id"), index=True)
+    def owner_id(self):
+        return Column(Integer, ForeignKey("ProductIonSet.id"), index=True)
 
     @declared_attr
-    def theoretical_glycopeptide(self):
-        return relationship("TheoreticalGlycopeptide")
+    def owner(self):
+        return relationship("ProductIonSet")
 
 
 class TheoreticalPeptideProductIon(ProductIonBase, Base):

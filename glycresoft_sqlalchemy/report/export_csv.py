@@ -183,14 +183,13 @@ def export_theoretical_glycopeptide_hypothesis(glycopeptides, monosaccharide_ide
 
 
 class CSVExportDriver(PipelineModule):
-    def __init__(self, database_path, hypothesis_sample_match_ids=None, output_path=None, filterfunc=lambda q: q):
+    def __init__(self, database_path, hypothesis_ids=None, hypothesis_sample_match_ids=None,
+                 output_path=None, filterfunc=lambda q: q):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
 
-        if hypothesis_sample_match_ids is None or len(hypothesis_sample_match_ids) == 0:
-            hypothesis_sample_match_ids = [hsm.id for hsm in self.session.query(
-                HypothesisSampleMatch.id)]
-            self.hypothesis_sample_match_ids = hypothesis_sample_match_ids
+        if hypothesis_sample_match_ids is None:
+            self.hypothesis_sample_match_ids = []
         else:
             try:
                 iter(hypothesis_sample_match_ids)
@@ -198,12 +197,21 @@ class CSVExportDriver(PipelineModule):
             except:
                 self.hypothesis_sample_match_ids = [hypothesis_sample_match_ids]
 
+        if hypothesis_ids is None:
+            self.hypothesis_ids = []
+        else:
+            try:
+                iter(hypothesis_ids)
+                self.hypothesis_ids = hypothesis_ids
+            except:
+                self.hypothesis_ids = [hypothesis_ids]
+
         if output_path is None:
             output_path = os.path.splitext(database_path)[0]
         self.output_path = output_path
         self.filterfunc = filterfunc
 
-    def dispatch_export(self, hypothesis_sample_match_id):
+    def dispatch_export_hypothesis_sample_match(self, hypothesis_sample_match_id):
         session = self.session
         hsm = session.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
 
@@ -247,23 +255,56 @@ class CSVExportDriver(PipelineModule):
                 pass
         return outputs
 
+    def dispatch_export_hypothesis(self, hypothesis_id):
+        session = self.session
+        hypothesis = session.query(Hypothesis).get(hypothesis_id)
+        outputs = []
+
+        def getname(hypothesis):
+            try:
+                return os.path.splitext(hypothesis.name)[0]
+            except:
+                return str(hypothesis.name)
+
+        if hypothesis.theoretical_structure_type == TheoreticalGlycanComposition:
+            output_path = self.output_path + ".{}.glycan_compositions.csv".format(getname(hypothesis))
+            outputs.append(output_path)
+            base_types = session.query(
+                TheoreticalGlycanComposition.GlycanCompositionAssociation.base_type.distinct()).join(
+                TheoreticalGlycanComposition).filter(
+                TheoreticalGlycanComposition.hypothesis_id == hypothesis.id)
+            monosaccharide_identities = [b for q in base_types for b in q]
+            export_glycan_composition_hypothesis(
+                session.query(TheoreticalGlycanComposition).filter(
+                    TheoreticalGlycanComposition.hypothesis_id == hypothesis.id).yield_per(1000),
+                monosaccharide_identities,
+                output_path
+                )
+        return output_path
+
     def run(self):
-        return map(self.dispatch_export, self.hypothesis_sample_match_ids)
+        hsm_exports = map(self.dispatch_export_hypothesis_sample_match, self.hypothesis_sample_match_ids)
+        hypothesis_exports = map(self.dispatch_export_hypothesis, self.hypothesis_ids)
+        return hsm_exports, hypothesis_exports
 
 app = argparse.ArgumentParser("export-csv")
 
 app.add_argument("database_path", help="path to the database file to export")
-app.add_argument("-e", "--hypothesis-sample-match-id",  action="append", type=int, help="The hypothesis sample match to export.")
+app.add_argument("-d", "--hypothesis-id", action="append", type=int, help="The hypothesis to export.")
+app.add_argument("-e", "--hypothesis-sample-match-id",  action="append", type=int,
+                 help="The hypothesis sample match to export.")
 app.add_argument("-o", "--out", default=None, help="Where to save the result")
 
 
-def main(database_path, hypothesis_id, out):
-    return CSVExportDriver(database_path, hypothesis_id, out).start()
+def main(database_path, hypothesis_ids, hypothesis_sample_match_ids, out):
+    return CSVExportDriver(
+        database_path, hypothesis_ids=hypothesis_ids,
+        hypothesis_sample_match_ids=hypothesis_sample_match_ids, output_path=out).start()
 
 
 def taskmain():
     args = app.parse_args()
-    main(args.database_path, args.hypothesis_sample_match_id, args.out)
+    main(args.database_path, args.hypothesis_id, args.hypothesis_sample_match_id, args.out)
 
 
 if __name__ == '__main__':

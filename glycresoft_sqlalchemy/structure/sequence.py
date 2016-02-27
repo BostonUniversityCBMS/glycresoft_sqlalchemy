@@ -8,7 +8,7 @@ from . import PeptideSequenceBase, MoleculeBase
 from . import constants as structure_constants
 from .composition import Composition
 from .fragment import PeptideFragment, fragment_shift, SimpleFragment, IonSeries
-from .modification import Modification, SequenceLocation
+from .modification import Modification, SequenceLocation, ModificationCategory
 from .residue import Residue
 from glypy import GlycanComposition, Glycan, MonosaccharideResidue
 from glypy.composition.glycan_composition import FrozenGlycanComposition
@@ -421,8 +421,10 @@ class PeptideSequence(PeptideSequenceBase):
         return str(self) != str(other)
 
     def deglycosylate(self):
+        _glycosylation_enum = ModificationCategory.glycosylation
         for i, pos in enumerate(self):
-            mods = [mod.name for mod in pos[1] if mod.name == "HexNAc" or "Glycan" in mod.name]
+            mods = [mod.name for mod in pos[1] if mod.is_a(
+                _glycosylation_enum)]
             for mod in mods:
                 self.drop_modification(i, mod)
 
@@ -681,6 +683,14 @@ class PeptideSequence(PeptideSequenceBase):
     def n_glycan_sequon_sites(self):
         return find_n_glycosylation_sequons(self, structure_constants.ALLOW_MODIFIED_ASPARAGINE)
 
+    @property
+    def o_glycan_sequon_sites(self):
+        return find_o_glycosylation_sequons(self)
+
+    @property
+    def glycosaminoglycan_sequon_sites(self):
+        return find_glycosaminoglycan_sequons(self)
+
     def stub_fragments(self):
         if isinstance(self.glycan, Glycan):
             glycan = GlycanComposition.from_glycan(self.glycan)
@@ -794,7 +804,7 @@ class PeptideSequence(PeptideSequenceBase):
                     name=key + "-2H2O", mass=mass - 2 * WATER, kind=oxonium_ion_series)
                 yield SimpleFragment(
                     name=key + "-2H2O-CH2O", mass=mass - (2 * WATER) - TAIL, kind=oxonium_ion_series)
-            for kk in itertools.combinations(glycan, 2):
+            for kk in itertools.combinations(glycan, 4):
                 key = ''.join(map(str, kk))
                 mass = sum(k.mass() for k in kk)
                 yield SimpleFragment(
@@ -830,7 +840,14 @@ class PeptideSequence(PeptideSequenceBase):
                 composition = FrozenGlycanComposition(composition)
                 if sum(composition.values()) > 2:
                     yield SimpleFragment(
-                        name=composition.serialize(), mass=composition.mass() - WATER, kind=oxonium_ion_series)
+                        name=composition.serialize(), mass=composition.mass(),
+                        kind=oxonium_ion_series)
+                    yield SimpleFragment(
+                        name=composition.serialize() + "-H2O", mass=composition.mass() - (WATER),
+                        kind=oxonium_ion_series)
+                    yield SimpleFragment(
+                        name=composition.serialize() + "-H2O-H2O", mass=composition.mass() - (WATER * 2),
+                        kind=oxonium_ion_series)
                 yield SimpleFragment(
                     name="peptide+" + str(total - composition), mass=stub_mass + total.mass() - composition.mass(),
                     kind=stub_glycopeptide_series)

@@ -344,17 +344,17 @@ def _exactly_one_group_joiner(ids, database_manager, minimum_abundance_ratio=Non
     conn = session.connection()
     conn.execute(T_JointPeakGroupMatch.insert(), results)
     session.commit()
-    products = []
-    for peak_group in items:
-        joint_id = session.query(JointPeakGroupMatch.id).filter(
-            JointPeakGroupMatch.hypothesis_sample_match_id == hsm_id,
-            JointPeakGroupMatch.theoretical_match_id == peak_group.theoretical_match_id,
-            (JointPeakGroupMatch.fingerprint == peak_group.fingerprint
-             if peak_group.theoretical_match_id is None else True)
-            ).first()
-        products.append({"peak_group_id": i, "joint_group_id": joint_id[0]})
-    session.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), products)
-    session.commit()
+    # products = []
+    # for peak_group in items:
+    #     joint_id = session.query(JointPeakGroupMatch.id).filter(
+    #         JointPeakGroupMatch.hypothesis_sample_match_id == hsm_id,
+    #         JointPeakGroupMatch.theoretical_match_id == peak_group.theoretical_match_id,
+    #         (JointPeakGroupMatch.fingerprint == peak_group.fingerprint
+    #          if peak_group.theoretical_match_id is None else True)
+    #         ).first()
+    #     products.append({"peak_group_id": i, "joint_group_id": joint_id[0]})
+    # session.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), products)
+    # session.commit()
     return len(ids)
 
 
@@ -709,11 +709,6 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
 
         data_model_session.commit()
         conn = data_model_session.connection()
-
-        id_stmt = data_model_session.query(
-            PeakGroupMatch.peak_group_id).filter(
-            PeakGroupMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-            PeakGroupMatch.matched).selectable
 
         if not len(data_model_session.connection().execute(id_stmt).fetchmany(2)) == 2:
             raise PipelineException("Hypothesis-Sample Match ID matches maps no PeakGroupMatches")

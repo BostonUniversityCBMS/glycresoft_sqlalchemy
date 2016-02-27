@@ -16,7 +16,7 @@ from glycresoft_sqlalchemy.data_model import (
     PipelineModule,
     SampleRun, Decon2LSPeakGroup,
     TheoreticalCompositionMap, MassShift, HypothesisSampleMatch,
-    PeakGroupDatabase, PeakGroupMatch,
+    PeakGroupDatabase, PeakGroupMatch, JointPeakGroupMatch
 )
 
 from .common import ppm_error
