@@ -43,7 +43,7 @@ def index_isos(
         file_path, database_path, grouping_tolerance=8e-5,
         minimum_scan_count=1, max_charge_state=8,
         minimum_abundance_ratio=0.01, minimum_mass=1200., maximum_mass=15000.,
-        start_scan=0, end_scan=float('inf'),
+        begin_scan=0, end_scan=float('inf'),
         n_processes=4):
     parser = Decon2LSIsosParser(file_path, database_path)
     database_path = parser.manager.path
@@ -51,7 +51,7 @@ def index_isos(
     grouper = peak_grouping.Decon2LSPeakGrouper(
         database_path, sample_run_id=sample_run_id, max_charge_state=max_charge_state,
         minimum_abundance_ratio=minimum_abundance_ratio, grouping_error_tolerance=grouping_tolerance,
-        minimum_mass=minimum_mass, maximum_mass=maximum_mass, minimum_scan_id=start_scan,
+        minimum_mass=minimum_mass, maximum_mass=maximum_mass, minimum_scan_id=begin_scan,
         maximum_scan_id=end_scan, n_processes=n_processes)
     grouper.start()
 
@@ -204,6 +204,9 @@ with let(index_isos_app) as c:
                    help="Only consider peaks with a neutral mass < this. Default"
                         " = 15000 Da, reasonable for glycopeptides and glycans.")
     c.add_argument("-g", "--grouping-tolerance", default=2e-5, required=False, type=float)
+    c.add_argument("-b", "--begin-scan", type=int, default=0, required=False, help="The scan to start grouping from")
+    c.add_argument("-e", "--end-scan", type=int, default=float('inf'), required=False,
+                   help="The scan to stop grouping at")
     c.set_defaults(task=index_isos)
 
 
