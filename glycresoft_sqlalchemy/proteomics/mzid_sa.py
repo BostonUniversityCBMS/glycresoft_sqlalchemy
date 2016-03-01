@@ -273,7 +273,8 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                     if insertion:
                         insert_sites.append((mod['location'] - 1, None))
                     elif deletion:
-                        deleteion_sites.append((mod['location'] - 1, mod['residues'][0]))
+                        sym = Residue(deletion.groups()[0]).symbol
+                        deleteion_sites.append((mod['location'] - 1, sym))
                     else:
                         raise
                 else:
