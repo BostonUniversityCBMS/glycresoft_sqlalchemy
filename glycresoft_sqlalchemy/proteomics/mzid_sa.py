@@ -194,7 +194,7 @@ def remove_peptide_sequence_alterations(base_sequence, insert_sites, delete_site
             sequence_copy.pop(position - shift)
             shift += 1
         else:
-            sequence_copy.insert(position - shift, residue_)
+            sequence_copy.insert(position - shift + 1, residue_)
             shift -= 1
     sequence_copy = ''.join(sequence_copy)
     return sequence_copy
