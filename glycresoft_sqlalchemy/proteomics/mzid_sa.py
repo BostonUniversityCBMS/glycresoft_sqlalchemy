@@ -170,6 +170,7 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
         return 0
 
     insert_sites = []
+    deleteion_sites = []
     counter = 0
 
     # Keep a count of the number of variable modifications.
@@ -229,15 +230,23 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                 if "unknown modification" in mod:
                     mod_description = mod["unknown modification"]
                     insertion = re.search(r"(\S{3})\sinsertion", mod_description)
+                    deletion = re.search(r"(\S{3})\sdeletion", mod_description)
                     modification_counter += 1
                     if insertion:
                         insert_sites.append(mod['location'] - 1)
+                    elif deletion:
+                        deleteion_sites.append(mod['location'] - 1)
                     else:
                         raise
                 else:
                     raise
 
     insert_sites.sort()
+    deleteion_sites.sort()
+
+    for i, position in enumerate(deleteion_sites):
+        peptide_sequence.delete(position - i)
+
     evidence_list = sequence_dict["PeptideEvidenceRef"]
     # Flatten the evidence list if it has extra nesting because of alternative
     # mzid parsing

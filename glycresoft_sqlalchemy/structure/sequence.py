@@ -652,6 +652,20 @@ class PeptideSequence(PeptideSequenceBase):
             inst.glycan = self.glycan.clone()
         return inst
 
+    def insert(self, position, residue, modifications=None):
+        if modifications is None:
+            modifications = []
+        self.seq.insert(position, [residue, modifications])
+        self.mass += residue.mass
+        for mod in modifications:
+            self.mass += mod.mass
+
+    def delete(self, position):
+        residue, mods = self.seq.pop(position)
+        self.mass -= residue.mass
+        for mod in mods:
+            self.mass -= mod.mass
+
     def append(self, residue, modification=None):
         self.mass += residue.mass
         next_pos = [residue]
