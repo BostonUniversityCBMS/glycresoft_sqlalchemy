@@ -277,7 +277,10 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
         sequence_copy = ''.join(sequence_copy)
         found = parent_protein.protein_sequence.find(sequence_copy)
         if found == -1:
-            raise ValueError("Peptide not found in Protein")
+            raise ValueError("Peptide not found in Protein\n%s\n%s\n\n%s" % (
+                parent_protein.name, parent_protein.protein_sequence, (
+                    sequence_copy, sequence_dict
+                    )))
         if found != start:
             start = found
             end = start + len(base_sequence)
