@@ -207,9 +207,9 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                             else:
                                 modification = Modification(_name)
                         except ModificationNameResolutionError:
-                            raise e
+                            raise KeyError("Cannot find key %s in %r" % (e, mod))
                     else:
-                        raise e
+                        raise KeyError("Cannot find key %s in %r" % (e, mod))
 
                 try:
                     rule_text = "%s (%s)" % (_name, mod["residues"][0])
