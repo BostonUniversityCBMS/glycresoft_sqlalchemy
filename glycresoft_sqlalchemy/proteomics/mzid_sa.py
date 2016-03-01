@@ -162,6 +162,44 @@ class Parser(MzIdentML):
         return out
 
 
+def remove_peptide_sequence_alterations(base_sequence, insert_sites, delete_sites):
+    """
+    Remove all the sequence insertions and deletions in order to reconstruct the
+    original peptide sequence.
+
+    Parameters
+    ----------
+    base_sequence : str
+        The peptide sequence string which contains a combination
+        of insertion and deletions
+    insert_sites : list
+        A list of (position, None) pairs indicating the position of
+        an amino acid insertion to be removed.
+    delete_sites : list
+        A list of (position, residue) pairs indicating the position
+        and identity of amino acids that were deleted and need to be
+        re-inserted.
+
+    Returns
+    -------
+    str
+    """
+    sequence_copy = list(base_sequence)
+
+    alteration_sites = insert_sites + delete_sites
+    alteration_sites.sort()
+    shift = 0
+    for position, residue_ in alteration_sites:
+        if residue_ is None:
+            sequence_copy.pop(position - shift)
+            shift += 1
+        else:
+            sequence_copy.insert(position - shift, residue_)
+            shift -= 1
+    sequence_copy = ''.join(sequence_copy)
+    return sequence_copy
+
+
 def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None, **kwargs):
     base_sequence = sequence_dict["PeptideSequence"]
     try:
@@ -233,9 +271,9 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                     deletion = re.search(r"(\S{3})\sdeletion", mod_description)
                     modification_counter += 1
                     if insertion:
-                        insert_sites.append(mod['location'] - 1)
+                        insert_sites.append((mod['location'] - 1, None))
                     elif deletion:
-                        deleteion_sites.append(mod['location'] - 1)
+                        deleteion_sites.append((mod['location'] - 1, mod['residues'][0]))
                     else:
                         raise
                 else:
@@ -244,8 +282,8 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
     insert_sites.sort()
     deleteion_sites.sort()
 
-    for i, position in enumerate(deleteion_sites):
-        peptide_sequence.delete(position - i)
+    alteration_sites = insert_sites + deleteion_sites
+    alteration_sites.sort()
 
     evidence_list = sequence_dict["PeptideEvidenceRef"]
     # Flatten the evidence list if it has extra nesting because of alternative
@@ -271,10 +309,14 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
             continue
         start = evidence["start"] - 1
         end = evidence["end"]
-        sequence_copy = list(base_sequence)
-        for i, position in enumerate(insert_sites):
-            sequence_copy.pop(position - i)
-        sequence_copy = ''.join(sequence_copy)
+
+        sequence_copy = remove_peptide_sequence_alterations(
+            base_sequence, insert_sites, deleteion_sites)
+
+        # sequence_copy = list(base_sequence)
+        # for i, position in enumerate(insert_sites):
+        #     sequence_copy.pop(position - i)
+        # sequence_copy = ''.join(sequence_copy)
         found = parent_protein.protein_sequence.find(sequence_copy)
         if found == -1:
             raise ValueError("Peptide not found in Protein\n%s\n%s\n\n%s" % (
