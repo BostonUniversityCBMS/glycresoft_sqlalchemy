@@ -36,7 +36,7 @@ class Protein(Base):
     def n_glycan_sequon_sites(self):
         if self._n_glycan_sequon_sites is None:
             self._n_glycan_sequon_sites = sequence.find_n_glycosylation_sequons(self.protein_sequence)
-        return self.n_glycan_sequon_sites
+        return self._n_glycan_sequon_sites
 
     _o_glycan_sequon_sites = None
 
@@ -44,7 +44,7 @@ class Protein(Base):
     def o_glycan_sequon_sites(self):
         if self.o_glycan_sequon_sites is None:
             self.o_glycan_sequon_sites = sequence.find_o_glycosylation_sequons(self.protein_sequence)
-        return self.o_glycan_sequon_sites
+        return self._o_glycan_sequon_sites
 
     _glycosaminoglycan_sequon_sites = None
 
