@@ -258,6 +258,8 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
         parent_protein = session.query(Protein).filter(
             Protein.name == evidence['accession'],
             Protein.hypothesis_id == hypothesis_id).first()
+        if parent_protein is None:
+            continue
         start = evidence["start"] - 1
         end = evidence["end"]
         sequence_copy = list(base_sequence)
