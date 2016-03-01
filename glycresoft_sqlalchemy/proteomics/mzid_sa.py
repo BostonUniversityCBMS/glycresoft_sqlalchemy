@@ -335,13 +335,16 @@ class Proteome(object):
         for protein in self.parser.iterfind(
                 "ProteinDetectionHypothesis", retrieve_refs=True, recursive=False, iterative=True):
             seq = protein.pop('Seq')
-            p = Protein(
-                name=protein.pop('accession'),
-                protein_sequence=seq,
-                glycosylation_sites=sequence.find_n_glycosylation_sequons(seq),
-                other=protein,
-                hypothesis_id=self.hypothesis_id)
-            session.add(p)
+            try:
+                p = Protein(
+                    name=protein.pop('accession'),
+                    protein_sequence=seq,
+                    glycosylation_sites=sequence.find_n_glycosylation_sequons(seq),
+                    other=protein,
+                    hypothesis_id=self.hypothesis_id)
+                session.add(p)
+            except residue.UnknownAminoAcidException:
+                continue
         session.commit()
 
     def _load_spectrum_matches(self):

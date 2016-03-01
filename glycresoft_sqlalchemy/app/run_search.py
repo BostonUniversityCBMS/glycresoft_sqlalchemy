@@ -15,7 +15,8 @@ from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2.make_de
 from glycresoft_sqlalchemy.spectra.decon2ls_sa import Decon2LSIsosParser
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, MS2GlycopeptideHypothesisSampleMatch, SampleRun, Hypothesis,
-    MassShift, HypothesisSampleMatch, TheoreticalGlycanComposition, TheoreticalGlycopeptideComposition)
+    MassShift, HypothesisSampleMatch, TheoreticalGlycanComposition,
+    TheoreticalGlycopeptideComposition)
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 
 from glycresoft_sqlalchemy.app import let, fail

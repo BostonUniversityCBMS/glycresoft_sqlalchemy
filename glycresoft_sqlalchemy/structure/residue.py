@@ -143,6 +143,10 @@ class MemoizedResidueMetaclass(type):
                 raise UnknownAminoAcidException("Cannot find a Residue for %r" % ((symbol, name),))
 
 
+class UnknownAminoAcidException(Exception):
+    pass
+
+
 class Residue(ResidueBase):
     '''
     Represent a single Amino Acid residue which compose peptide sequences. The
@@ -173,10 +177,13 @@ class Residue(ResidueBase):
         self.symbol = symbol
         self.name = name
         self.mass = 0.0
-        if symbol is not None:
-            self.by_symbol(symbol)
-        elif name is not None:
-            self.by_name(name)
+        try:
+            if symbol is not None:
+                self.by_symbol(symbol)
+            elif name is not None:
+                self.by_name(name)
+        except KeyError:
+            raise UnknownAminoAcidException("No definition for Amino Acid %s" (symbol if symbol is not None else name))
         self.neutral_loss = residue_to_neutral_loss[self.name]
 
     def by_name(self, name):
