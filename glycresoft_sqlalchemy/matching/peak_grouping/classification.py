@@ -314,47 +314,50 @@ def _batch_merge_groups(id_bunches, database_manager, minimum_abundance_ratio):
 def _exactly_one_group_joiner(ids, database_manager, minimum_abundance_ratio=None):
     session = database_manager()
     results = []
-
-    ids = [bunch[0] for bunch in ids]
-    items = [session.query(PeakGroupMatch).get(i) for i in ids]
-    hsm_id = items[0].hypothesis_sample_match_id
-    for peak_group in items:
-        fingerprint = peak_group.fingerprint = ':'.join(map(str, peak_group.peak_data['scan_times']))
-        instance_dict = {
-                "first_scan_id": peak_group.first_scan_id,
-                "last_scan_id": peak_group.last_scan_id,
-                "scan_density": peak_group.scan_density,
-                "ppm_error": peak_group.ppm_error,
-                "centroid_scan_estimate": peak_group.centroid_scan_estimate,
-                "average_a_to_a_plus_2_ratio": peak_group.average_a_to_a_plus_2_ratio,
-                "average_signal_to_noise": peak_group.average_signal_to_noise,
-                "charge_state_count": peak_group.charge_state_count,
-                "modification_state_count": 1,
-                "total_volume": peak_group.total_volume,
-                "scan_count": peak_group.scan_count,
-                "peak_data": peak_group.peak_data,
-                "fingerprint": fingerprint,
-                "weighted_monoisotopic_mass": peak_group.weighted_monoisotopic_mass,
-                "hypothesis_sample_match_id": hsm_id,
-                "theoretical_match_id": peak_group.theoretical_match_id,
-                "theoretical_match_type": peak_group.theoretical_match_type,
-                "matched": peak_group.matched
-            }
-        results.append(instance_dict)
-    conn = session.connection()
-    conn.execute(T_JointPeakGroupMatch.insert(), results)
-    session.commit()
-    # products = []
-    # for peak_group in items:
-    #     joint_id = session.query(JointPeakGroupMatch.id).filter(
-    #         JointPeakGroupMatch.hypothesis_sample_match_id == hsm_id,
-    #         JointPeakGroupMatch.theoretical_match_id == peak_group.theoretical_match_id,
-    #         (JointPeakGroupMatch.fingerprint == peak_group.fingerprint
-    #          if peak_group.theoretical_match_id is None else True)
-    #         ).first()
-    #     products.append({"peak_group_id": i, "joint_group_id": joint_id[0]})
-    # session.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), products)
-    # session.commit()
+    try:
+        ids = [bunch[0] for bunch in ids]
+        items = [session.query(PeakGroupMatch).get(i) for i in ids]
+        hsm_id = items[0].hypothesis_sample_match_id
+        for peak_group in items:
+            fingerprint = peak_group.fingerprint = ':'.join(map(str, peak_group.peak_data['scan_times']))
+            instance_dict = {
+                    "first_scan_id": peak_group.first_scan_id,
+                    "last_scan_id": peak_group.last_scan_id,
+                    "scan_density": peak_group.scan_density,
+                    "ppm_error": peak_group.ppm_error,
+                    "centroid_scan_estimate": peak_group.centroid_scan_estimate,
+                    "average_a_to_a_plus_2_ratio": peak_group.average_a_to_a_plus_2_ratio,
+                    "average_signal_to_noise": peak_group.average_signal_to_noise,
+                    "charge_state_count": peak_group.charge_state_count,
+                    "modification_state_count": 1,
+                    "total_volume": peak_group.total_volume,
+                    "scan_count": peak_group.scan_count,
+                    "peak_data": peak_group.peak_data,
+                    "fingerprint": fingerprint,
+                    "weighted_monoisotopic_mass": peak_group.weighted_monoisotopic_mass,
+                    "hypothesis_sample_match_id": hsm_id,
+                    "theoretical_match_id": peak_group.theoretical_match_id,
+                    "theoretical_match_type": peak_group.theoretical_match_type,
+                    "matched": peak_group.matched
+                }
+            results.append(instance_dict)
+        conn = session.connection()
+        conn.execute(T_JointPeakGroupMatch.insert(), results)
+        session.commit()
+        products = []
+        for peak_group in items:
+            joint_id = session.query(JointPeakGroupMatch.id).filter(
+                JointPeakGroupMatch.hypothesis_sample_match_id == hsm_id,
+                JointPeakGroupMatch.theoretical_match_id == peak_group.theoretical_match_id,
+                (JointPeakGroupMatch.fingerprint == peak_group.fingerprint
+                 if peak_group.theoretical_match_id is None else True)
+                ).first()
+            products.append({"peak_group_id": i, "joint_group_id": joint_id[0]})
+        session.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), products)
+        session.commit()
+    except Exception, e:
+        logger.exception("An error occurred in _exactly_one_group_joiner", exc_info=e)
+        raise e
     return len(ids)
 
 

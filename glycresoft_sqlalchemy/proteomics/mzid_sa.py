@@ -201,6 +201,35 @@ def remove_peptide_sequence_alterations(base_sequence, insert_sites, delete_site
 
 
 def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None, **kwargs):
+    """
+    Convert a dictionary extracted from mzIdentML for a SpectrumIdentificationItem
+    into one (or more) InformedPeptide objects.
+
+    Parameters
+    ----------
+    sequence_dict : dict
+        Sequence identification information as a series of nested dictionaries
+        and lists.
+    session : sqlalchemy.orm.Session
+        An active database session used to look up parent Proteins
+        and insert newly created InformedPeptides
+    hypothesis_id : int
+        The id value of the Hypothesis to perform all operatons in the context
+        of.
+    enzyme : str, optional
+        The enzyme to use for determining mis-cleavages.
+    **kwargs
+        Description
+
+    Raises
+    ------
+    KeyError
+        When a Modification cannot be properly interpretted, a KeyError
+        is raised.
+    ValueError
+        When the identified peptide cannot be found in the parent Protein's
+        sequence.
+    """
     base_sequence = sequence_dict["PeptideSequence"]
     try:
         peptide_sequence = Sequence(sequence_dict["PeptideSequence"])

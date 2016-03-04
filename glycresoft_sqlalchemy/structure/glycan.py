@@ -23,12 +23,12 @@ class GlycosylationType(Enum):
 
 GlycosylationType.n_linked.add_name("N-Linked")
 GlycosylationType.n_linked.add_name("N-linked")
-GlycosylationType.n_linked.add_name("n-inked")
+GlycosylationType.n_linked.add_name("n-linked")
 GlycosylationType.n_linked.name = "N-Linked"
 
 GlycosylationType.o_linked.add_name("O-Linked")
 GlycosylationType.o_linked.add_name("O-linked")
-GlycosylationType.o_linked.add_name("o-inked")
+GlycosylationType.o_linked.add_name("o-linked")
 GlycosylationType.o_linked.name = "O-Linked"
 
 GlycosylationType.glycosaminoglycan.add_name("Glycosaminoglycan")
