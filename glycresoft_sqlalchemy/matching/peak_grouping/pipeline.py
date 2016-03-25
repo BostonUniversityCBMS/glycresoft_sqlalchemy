@@ -10,10 +10,10 @@ from sqlalchemy.ext.baked import bakery
 
 
 from glycresoft_sqlalchemy.data_model import (
-    PipelineModule,
+    PipelineModule, MassShift,
     SampleRun, Hypothesis,
     TheoreticalCompositionMap, HypothesisSampleMatch,
-    PeakGroupMatch)
+    PeakGroupMatch, JointPeakGroupMatch)
 
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 from glycresoft_sqlalchemy.utils import pickle
@@ -24,7 +24,7 @@ from .classification import PeakGroupMassShiftJoiningClassifier
 
 
 query_oven = bakery()
-PeakGroupType = PeakGroupMatch
+PeakGroupType = JointPeakGroupMatch
 
 
 class LCMSPeakClusterSearch(PipelineModule):
@@ -45,6 +45,13 @@ class LCMSPeakClusterSearch(PipelineModule):
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
         self.search_type = TheoreticalCompositionMap[search_type]
         self.match_tolerance = match_tolerance
+
+        session = self.manager()
+
+        if mass_shift_map is None:
+            no_shift, created = get_or_create(session, MassShift, mass=0.0, name=u"NoShift")
+            mass_shift_map = {no_shift: 1}
+
         self.mass_shift_map = mass_shift_map
         self.n_processes = n_processes
         self.regression_parameters = regression_parameters

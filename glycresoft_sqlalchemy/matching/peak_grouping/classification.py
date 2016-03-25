@@ -1,3 +1,4 @@
+import csv
 import os
 import logging
 import itertools
@@ -10,6 +11,11 @@ try:
 except Exception, e:
     logging.exception("Logger could not be initialized", exc_info=e)
     raise e
+
+try:
+    from cPickle import Pickler, Unpickler
+except:
+    from pickle import Pickler, Unpickler
 
 from sqlalchemy.ext.baked import bakery
 from sqlalchemy import func, bindparam, select
@@ -298,17 +304,17 @@ def _batch_merge_groups(id_bunches, database_manager, minimum_abundance_ratio):
 
             results.append((
                 instance_dict, [p.id for p in group_matches]))
+        conn = session.connection()
+        relations = []
+        for instance_dict, member_ids in results:
+            joint_id = conn.execute(T_JointPeakGroupMatch.insert(), instance_dict).lastrowid
+            relations.extend({"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids)
+
+        conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), relations)
+        session.commit()
+        return len(results)
     except Exception, e:
         logging.exception("An exception occurred in _batch_merge_groups", exc_info=e)
-    conn = session.connection()
-    relations = []
-    for instance_dict, member_ids in results:
-        joint_id = conn.execute(T_JointPeakGroupMatch.insert(), instance_dict).lastrowid
-        relations.extend({"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids)
-
-    conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), relations)
-    session.commit()
-    return len(results)
 
 
 def _exactly_one_group_joiner(ids, database_manager, minimum_abundance_ratio=None):
@@ -318,30 +324,32 @@ def _exactly_one_group_joiner(ids, database_manager, minimum_abundance_ratio=Non
         ids = [bunch[0] for bunch in ids]
         items = [session.query(PeakGroupMatch).get(i) for i in ids]
         hsm_id = items[0].hypothesis_sample_match_id
+
         for peak_group in items:
             fingerprint = peak_group.fingerprint = ':'.join(map(str, peak_group.peak_data['scan_times']))
             instance_dict = {
-                    "first_scan_id": peak_group.first_scan_id,
-                    "last_scan_id": peak_group.last_scan_id,
-                    "scan_density": peak_group.scan_density,
-                    "ppm_error": peak_group.ppm_error,
-                    "centroid_scan_estimate": peak_group.centroid_scan_estimate,
-                    "average_a_to_a_plus_2_ratio": peak_group.average_a_to_a_plus_2_ratio,
-                    "average_signal_to_noise": peak_group.average_signal_to_noise,
-                    "charge_state_count": peak_group.charge_state_count,
-                    "modification_state_count": 1,
-                    "total_volume": peak_group.total_volume,
-                    "scan_count": peak_group.scan_count,
-                    "peak_data": peak_group.peak_data,
-                    "fingerprint": fingerprint,
-                    "weighted_monoisotopic_mass": peak_group.weighted_monoisotopic_mass,
-                    "hypothesis_sample_match_id": hsm_id,
-                    "theoretical_match_id": peak_group.theoretical_match_id,
-                    "theoretical_match_type": peak_group.theoretical_match_type,
-                    "matched": peak_group.matched
-                }
+                "first_scan_id": peak_group.first_scan_id,
+                "last_scan_id": peak_group.last_scan_id,
+                "scan_density": peak_group.scan_density,
+                "ppm_error": peak_group.ppm_error,
+                "centroid_scan_estimate": peak_group.centroid_scan_estimate,
+                "average_a_to_a_plus_2_ratio": peak_group.average_a_to_a_plus_2_ratio,
+                "average_signal_to_noise": peak_group.average_signal_to_noise,
+                "charge_state_count": peak_group.charge_state_count,
+                "modification_state_count": 1,
+                "total_volume": peak_group.total_volume,
+                "scan_count": peak_group.scan_count,
+                "peak_data": peak_group.peak_data,
+                "fingerprint": fingerprint,
+                "weighted_monoisotopic_mass": peak_group.weighted_monoisotopic_mass,
+                "hypothesis_sample_match_id": hsm_id,
+                "theoretical_match_id": peak_group.theoretical_match_id,
+                "theoretical_match_type": peak_group.theoretical_match_type,
+                "matched": peak_group.matched
+            }
             results.append(instance_dict)
         conn = session.connection()
+
         conn.execute(T_JointPeakGroupMatch.insert(), results)
         session.commit()
         products = []
@@ -352,7 +360,7 @@ def _exactly_one_group_joiner(ids, database_manager, minimum_abundance_ratio=Non
                 (JointPeakGroupMatch.fingerprint == peak_group.fingerprint
                  if peak_group.theoretical_match_id is None else True)
                 ).first()
-            products.append({"peak_group_id": i, "joint_group_id": joint_id[0]})
+            products.append({"peak_group_id": peak_group.id, "joint_group_id": joint_id[0]})
         session.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), products)
         session.commit()
     except Exception, e:

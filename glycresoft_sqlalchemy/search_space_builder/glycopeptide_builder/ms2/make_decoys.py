@@ -10,7 +10,7 @@ from glycresoft_sqlalchemy.structure.parser import sequence_tokenizer_respect_se
 from glycresoft_sqlalchemy.data_model import TheoreticalGlycopeptide, Hypothesis, MS2GlycopeptideHypothesis, Protein
 from glycresoft_sqlalchemy.data_model import PipelineModule, slurp
 
-from ..utils import fragments, WorkItemCollectionFlat
+from ..utils import fragments
 from glycresoft_sqlalchemy.utils import get_scale, Enum
 from glycresoft_sqlalchemy.utils.database_utils import toggle_indices
 

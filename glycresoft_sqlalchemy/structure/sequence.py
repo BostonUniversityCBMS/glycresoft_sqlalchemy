@@ -7,7 +7,7 @@ from collections import defaultdict, deque, Counter, namedtuple
 from . import PeptideSequenceBase, MoleculeBase
 from . import constants as structure_constants
 from .composition import Composition
-from .fragment import PeptideFragment, fragment_shift, SimpleFragment, IonSeries
+from .fragment import PeptideFragment, fragment_shift, fragment_shift_composition, SimpleFragment, IonSeries
 from .modification import Modification, SequenceLocation, ModificationCategory
 from .residue import Residue
 from glypy import GlycanComposition, Glycan, MonosaccharideResidue
@@ -494,20 +494,36 @@ class PeptideSequence(PeptideSequenceBase):
         # And the first element is always bare fragment.
         # The total number of HexNAc on the fragment should be recorded.
         kind = IonSeries(kind)
+        running_composition = Composition()
+
         if kind in (b_series, "a", "c"):
             seq_list = self.seq
 
             mass_shift = fragment_shift[kind]
+            running_composition += fragment_shift_composition[kind]
             if self.n_term != structure_constants.N_TERM_DEFAULT:
                 mass_shift = mass_shift + self.n_term.mass
+            running_composition += self.n_term.composition
 
         elif kind in (y_series, 'x', 'z'):
             mass_shift = fragment_shift[kind]
+            running_composition += fragment_shift_composition[kind]
             if self.c_term != structure_constants.C_TERM_DEFAULT:
                 mass_shift = mass_shift + self.c_term.mass
             seq_list = list(reversed(self.seq))
+            running_composition += self.c_term.composition
+
         else:
             raise Exception("Can't recognize ion series %r" % kind)
+
+        def composition_of_position(position):
+            residue, modifications = position[0], position[1]
+            composition = Composition(residue.composition)
+            for mod in modifications:
+                composition += mod.composition
+            return composition
+
+        hexnac_composition = Modification("HexNAc").composition
 
         current_mass = mass_shift
         for idx in range(len(seq_list) - 1):
@@ -520,6 +536,8 @@ class PeptideSequence(PeptideSequenceBase):
 
             current_mass += seq_list[idx][0].mass
 
+            running_composition += composition_of_position(seq_list[idx])
+
             fragments_from_site = []
             flanking_residues = [seq_list[idx][0], seq_list[idx + 1][0]]
             if kind is y_series:
@@ -527,20 +545,24 @@ class PeptideSequence(PeptideSequenceBase):
             # If incremental loss of HexNAc is not allowed, only one fragment of a given type is generated
             if not structure_constants.PARTIAL_HEXNAC_LOSS:
                 frag = PeptideFragment(
-                    kind, idx + structure_constants.FRAG_OFFSET, copy.copy(mod_dict), current_mass,
-                    flanking_amino_acids=flanking_residues)
+                    kind, idx + structure_constants.FRAG_OFFSET, dict(mod_dict), current_mass,
+                    flanking_amino_acids=flanking_residues, composition=running_composition)
                 fragments_from_site.append(frag)
-                bare_dict = copy.copy(mod_dict)
+                bare_dict = dict(mod_dict)
+
+                lost_composition = running_composition - mod_dict['HexNAc'] * hexnac_composition
+
                 bare_dict["HexNAc"] = 0
+
                 frag = PeptideFragment(
-                    kind, idx + structure_constants.FRAG_OFFSET, copy.copy(bare_dict), current_mass,
-                    flanking_amino_acids=flanking_residues)
+                    kind, idx + structure_constants.FRAG_OFFSET, dict(bare_dict), current_mass,
+                    flanking_amino_acids=flanking_residues, composition=lost_composition)
                 fragments_from_site.append(frag)
             # Else a fragment for each incremental loss of HexNAc must be generated
             else:
                 frag = PeptideFragment(
-                    kind, idx + structure_constants.FRAG_OFFSET, copy.copy(mod_dict), current_mass,
-                    flanking_amino_acids=flanking_residues)
+                    kind, idx + structure_constants.FRAG_OFFSET, dict(mod_dict), current_mass,
+                    flanking_amino_acids=flanking_residues, composition=running_composition)
                 fragments_from_site.extend(frag.partial_loss())
 
             if neutral_losses is not None:
@@ -560,8 +582,10 @@ class PeptideSequence(PeptideSequenceBase):
 
         if position is SequenceLocation.n_term:
             self.n_term = Modification("H")
+            return
         elif position is SequenceLocation.c_term:
             self.c_term = Modification("OH")
+            return
 
         for i, mod in enumerate(self.seq[position][1]):
             if modification_type == mod.name:

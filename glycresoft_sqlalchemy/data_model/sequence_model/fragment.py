@@ -2,7 +2,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from sqlalchemy import (Numeric, Unicode, and_,
+from sqlalchemy import (Numeric, Unicode, and_, Table,
                         Column, Integer, ForeignKey, Boolean)
 
 from ..base import Base
@@ -27,6 +27,15 @@ class ProductIonSet(Base):
     __tablename__ = "ProductIonSet"
 
     id = Column(Integer, primary_key=True)
+
+
+class ProductIonSetToTheoreticalGlycopeptide(Base):
+    __tablename__ = "ProductIonSetToTheoreticalGlycopeptide"
+
+    product_ion_set_it = Column(Integer, ForeignKey(
+        "ProductIonSet.id", ondelete="CASCADE"), primary_key=True)
+    theoretical_glycopeptide_id = Column(Integer, ForeignKey(
+        "TheoreticalGlycopeptide.id", ondelete="CASCADE"), primary_key=True)
 
 
 class ProductIonBase(IonDictFacade):
@@ -162,3 +171,18 @@ class HasTheoreticalGlycopeptideProductIons(object):
         return and_((cls.id == TheoreticalPeptideProductIon.theoretical_glycopeptide_id),
                     (TheoreticalPeptideProductIon.ion_series == "y"),
                     (TheoreticalPeptideProductIon.glycosylated))
+
+
+class BackboneIonTransition(Base):
+    __tablename__ = "BackboneIonTransition"
+
+    id = Column(Integer, primary_key=True)
+    mass_transition = Column(Numeric(12, 6, asdecimal=False), index=True)
+
+    @declared_attr
+    def owner_id(self):
+        return Column(Integer, ForeignKey("ProductIonSet.id"), index=True)
+
+    @declared_attr
+    def owner(self):
+        return relationship("ProductIonSet")

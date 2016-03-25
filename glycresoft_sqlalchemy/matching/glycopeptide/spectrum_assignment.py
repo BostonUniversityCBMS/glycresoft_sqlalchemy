@@ -3,11 +3,11 @@ import functools
 import multiprocessing
 import logging
 
-from sqlalchemy import distinct
+from sqlalchemy import distinct, bindparam
 
 from glycresoft_sqlalchemy.data_model import (
-    TheoreticalGlycopeptide, GlycopeptideMatch, PipelineModule, GlycopeptideSpectrumMatch,
-    HypothesisSampleMatch)
+    TheoreticalGlycopeptide, GlycopeptideMatch, PipelineModule,
+    GlycopeptideSpectrumMatch, HypothesisSampleMatch, slurp)
 
 from glycresoft_sqlalchemy.scoring import simple_scoring_algorithm, target_decoy
 
@@ -141,12 +141,12 @@ def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id,
         return match.scores[score_name]
 
     summary_matches = []
+    spectrum_matches_by_theoretical_id = {}
 
-    for theoretical_id in theoretical_ids:
-        theoretical = session.query(TheoreticalGlycopeptide).get(theoretical_id[0])
-
+    for theoretical in slurp(session, TheoreticalGlycopeptide, theoretical_ids, flatten=True):
+        theoretical_id = theoretical.id
         spectrum_matches = session.query(GlycopeptideSpectrumMatch).filter(
-            GlycopeptideSpectrumMatch.theoretical_glycopeptide_id == theoretical_id[0],
+            GlycopeptideSpectrumMatch.theoretical_glycopeptide_id == theoretical_id,
             GlycopeptideSpectrumMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
             GlycopeptideSpectrumMatch.best_match).order_by(GlycopeptideSpectrumMatch.scan_time.asc()).all()
 
@@ -157,6 +157,8 @@ def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id,
         match_total.scan_id_range = [s.scan_time for s in spectrum_matches]
         match_total.first_scan = match_total.scan_id_range[0]
         match_total.last_scan = match_total.scan_id_range[-1]
+
+        spectrum_matches_by_theoretical_id[theoretical_id] = spectrum_matches
 
         best_scoring = max(spectrum_matches, key=best_scoring_key)
 
@@ -179,15 +181,30 @@ def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id,
             pass
         summary_matches.append(match_total)
     session.add_all(summary_matches)
-    session.flush()
-    conn = session.connection()
-    T_GlycopeptideSpectrumMatch = GlycopeptideSpectrumMatch.__table__
-    for summary in summary_matches:
-        conn.execute(T_GlycopeptideSpectrumMatch.update().where(
-            (T_GlycopeptideSpectrumMatch.c.theoretical_glycopeptide_id == summary.theoretical_glycopeptide_id) and
-            (T_GlycopeptideSpectrumMatch.c.hypothesis_sample_match_id == summary.hypothesis_sample_match_id)).values(
-            glycopeptide_match_id=summary.id))
     session.commit()
+
+    spectrum_match_updates = []
+
+    for summary in summary_matches:
+        matches = spectrum_matches_by_theoretical_id[summary.theoretical_glycopeptide_id]
+        for match in matches:
+            if match.id is None:
+                continue
+            spectrum_match_updates.append({"b_id": match.id, "glycopeptide_match_id": summary.id})
+
+    if spectrum_match_updates:
+        conn = session.connection()
+        T_GlycopeptideSpectrumMatch = GlycopeptideSpectrumMatch.__table__
+        # for summary in summary_matches:
+        #     conn.execute(T_GlycopeptideSpectrumMatch.update().where(
+        #         (T_GlycopeptideSpectrumMatch.c.theoretical_glycopeptide_id == summary.theoretical_glycopeptide_id) and
+        #         (T_GlycopeptideSpectrumMatch.c.hypothesis_sample_match_id == summary.hypothesis_sample_match_id)).values(
+        #         glycopeptide_match_id=summary.id))
+        stmt = T_GlycopeptideSpectrumMatch.update().where(
+            T_GlycopeptideSpectrumMatch.c.id == bindparam("b_id")).values(
+            glycopeptide_match_id=bindparam("glycopeptide_match_id"))
+        conn.execute(stmt, spectrum_match_updates)
+        session.commit()
     return len(theoretical_ids)
 
 

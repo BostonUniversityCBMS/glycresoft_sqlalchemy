@@ -90,9 +90,9 @@ residue_to_neutral_loss.update({
     })
 
 residue_to_neutral_loss.update({
-    "Arg": Composition("H2O"),
-    "His": Composition("H2O"),
-    "Lys": Composition("H2O")
+    "Arg": -Composition("H2O"),
+    "His": -Composition("H2O"),
+    "Lys": -Composition("H2O")
     })
 
 
@@ -179,7 +179,8 @@ class Residue(ResidueBase):
             elif name is not None:
                 self.by_name(name)
         except KeyError:
-            raise UnknownAminoAcidException("No definition for Amino Acid %s" % (symbol if symbol is not None else name))
+            raise UnknownAminoAcidException(
+                "No definition for Amino Acid %s" % (symbol if symbol is not None else name))
         self.neutral_loss = residue_to_neutral_loss[self.name]
 
     def by_name(self, name):

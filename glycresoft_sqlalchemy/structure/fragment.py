@@ -15,14 +15,19 @@ fragment_pairing = {
     "z": "c",
 }
 
-fragment_shift = {
-    'a': -Composition("CO").mass,
-    'b': Composition({}).mass,
-    'c': Composition("NH3").mass,
-    'x': Composition("CO2").mass,
-    'y': Composition('H2O').mass,
-    'z': (-Composition("HN") + Composition("O")).mass
+fragment_shift_composition = {
+    'a': -Composition("CO"),
+    'b': Composition({}),
+    'c': Composition("NH3"),
+    'x': Composition("CO2"),
+    'y': Composition('H2O'),
+    'z': (-Composition("HN") + Composition("O"))
 }
+
+fragment_shift = {
+    k: v.mass for k, v in fragment_shift_composition.items()
+}
+
 
 fragment_direction = {
     "a": 1,
@@ -111,7 +116,8 @@ class PeptideFragment(FragmentBase):
     concerned_mods = ['HexNAc']
 
     def __init__(self, frag_type, position, modification_dict, mass, golden_pairs=None,
-                 flanking_amino_acids=None, glycosylation=None, neutral_loss=None):
+                 flanking_amino_acids=None, glycosylation=None, neutral_loss=None,
+                 composition=None):
         if golden_pairs is None:
             golden_pairs = []
         self.type = frag_type
@@ -119,6 +125,7 @@ class PeptideFragment(FragmentBase):
         self.bare_mass = mass
 
         self.mass = mass
+        self.composition = composition
 
         self.flanking_amino_acids = flanking_amino_acids
 
@@ -175,14 +182,22 @@ class PeptideFragment(FragmentBase):
             modifications = self.concerned_mods
         mods = dict(self.modification_dict)
         mods_of_interest = defaultdict(int, {k: v for k, v in mods.items() if k in modifications})
+
+        delta_composition = sum((Modification(k).composition * v for k, v in mods_of_interest.items()), Composition())
+        base_composition = self.composition - delta_composition
+
         mods_of_interest["HexNAc"] *= 2  # Allow partial destruction of N-glycan core
 
         other_mods = {k: v for k, v in mods.items() if k not in modifications}
-        for mod in descending_combination_counter(mods_of_interest):
-            other_mods.update({k: v for k, v in mod.items() if v != 0})
+        for varied_modifications in descending_combination_counter(mods_of_interest):
+            other_mods.update({k: v for k, v in varied_modifications.items() if v != 0})
             yield PeptideFragment(
                 self.type, self.position, dict(other_mods), self.bare_mass,
-                golden_pairs=self.golden_pairs, flanking_amino_acids=self.flanking_amino_acids)
+                golden_pairs=self.golden_pairs,
+                flanking_amino_acids=self.flanking_amino_acids,
+                composition=base_composition + sum(
+                    (Modification(k).composition * v for k, v in varied_modifications.items()),
+                    Composition()))
 
     def to_json(self):
         d = dict(self.__dict__)

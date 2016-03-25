@@ -266,6 +266,7 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
 
     def calculate_thresholds(self):
         session = self.manager.session()
+        logger.info("Loading Targets")
         targets = session.query(GlycopeptideSpectrumMatchScore.value, func.count(
             GlycopeptideSpectrumMatchScore.value)).join(
             GlycopeptideSpectrumMatch).group_by(
@@ -277,6 +278,7 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
             GlycopeptideSpectrumMatch.hypothesis_id == self.target_id).all()
 
         running_total = 0
+        logger.info("Cumulating Counts At Threshold")
         targets_above = OrderedDict()
         for score, at in targets:
             targets_above[score] = running_total
@@ -285,6 +287,7 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
         for score, at in list(targets_above.items()):
             targets_above[score] = running_total - targets_above[score]
 
+        logger.info("Loading Decoys")
         decoys = session.query(GlycopeptideSpectrumMatchScore.value, func.count(
             GlycopeptideSpectrumMatchScore.value)).join(
             GlycopeptideSpectrumMatch).group_by(
@@ -296,6 +299,7 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
             GlycopeptideSpectrumMatch.hypothesis_id == self.decoy_id).all()
 
         running_total = 0
+        logger.info("Cumulating Counts At Threshold")
         decoys_above = OrderedDict()
         for score, at in decoys:
             decoys_above[score] = running_total
@@ -307,6 +311,7 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
         self.n_targets_at = targets_above
         self.n_decoys_at = decoys_above
 
+        logger.info("Tabulation Complete")
         return targets_above, decoys_above
 
     def n_decoys_above_threshold(self, threshold):
@@ -364,17 +369,19 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
 
     def _calculate_q_values(self):
         session = self.manager.session()
+        logger.info("Calculating Thresholds")
         thresholds = chain.from_iterable(session.query(distinct(
             GlycopeptideSpectrumMatchScore.value)).join(
             GlycopeptideSpectrumMatch).filter(
             GlycopeptideSpectrumMatch.hypothesis_id == self.target_id,
             GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
             GlycopeptideSpectrumMatchScore.name == self.score).order_by(
-            GlycopeptideSpectrumMatchScore.value.asc()))
+            GlycopeptideSpectrumMatchScore.value.asc())).all()
 
         mapping = {}
         last_score = 1
         last_q_value = 0
+        i = 0
         for threshold in thresholds:
             try:
                 q_value = self.fdr_with_percent_incorrect_targets(threshold)
@@ -386,7 +393,11 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
                 last_score = threshold
                 mapping[threshold] = q_value
             except ZeroDivisionError:
-                mapping[threshold] = 1.
+                q_value = 1.
+                mapping[threshold] = q_value
+            i += 1
+            if i % 1000 == 0:
+                logger.info("Scored %dth threshold (%f -> %f)", i, threshold, q_value)
         session.close()
         return mapping
 
@@ -396,6 +407,7 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
 
         q_map = self._calculate_q_values()
         accumulator = []
+        logger.info("Assigning q-values")
         for k in sorted(q_map):
             ids = [x[0] for x in session.query(GlycopeptideSpectrumMatch.id).join(
                 GlycopeptideSpectrumMatchScore).filter(

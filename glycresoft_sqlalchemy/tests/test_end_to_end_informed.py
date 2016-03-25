@@ -31,22 +31,23 @@ def test_main():
 
     n_processes = 6
 
-    # complex_proteome = [
-    #     "P02763|A1AG1_HUMAN",
-    #     "P19652|A1AG2_HUMAN",
-    #     "P00738|HPT_HUMAN"
-    # ]
+    complex_proteome = [
+        "P02763|A1AG1_HUMAN",
+        "P19652|A1AG2_HUMAN",
+        "P00738|HPT_HUMAN"
+    ]
 
     simple_proteome = [
         "P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"
     ]
 
-    ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics"
+    # ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics"
+    ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/MS1-Reduced"
     ms2_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics-MS2"
 
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         db_file_name,
-        protein_ids=simple_proteome,
+        protein_ids=complex_proteome,
         mzid_path="datafiles/AGP_Proteomics2.mzid",
         # glycomics_path='./datafiles/human_n_glycans.txt',
         # glycomics_format='txt',
@@ -66,7 +67,6 @@ def test_main():
             ms1_data=ms1_data,
             db_file_name=db_file_name, hypothesis_id=hypothesis_id))
     assert ec == 0
-
     # hsm_id = 3
 
     job = exact_search_space_builder.BatchingExactSearchSpaceBuilder.from_hypothesis_sample_match(

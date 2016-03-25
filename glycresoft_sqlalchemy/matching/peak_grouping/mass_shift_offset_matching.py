@@ -391,7 +391,7 @@ class BatchPeakGroupMatchingSearchGroups(PeakGroupMatching):
     def __init__(self, *args, **kwargs):
         super(BatchPeakGroupMatchingSearchGroups, self).__init__(*args, **kwargs)
 
-    def stream_ids(self, chunk_size=400):
+    def stream_ids(self, chunk_size=200):
         chunk_size *= SCALE
         session = self.lcms_database()
         try:
