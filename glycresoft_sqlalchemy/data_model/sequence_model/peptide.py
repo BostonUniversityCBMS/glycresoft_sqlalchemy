@@ -8,7 +8,7 @@ from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
                         Column, Integer, ForeignKey, UnicodeText, Boolean)
 from sqlalchemy.orm.exc import DetachedInstanceError
-from ..generic import MutableDict, MutableList
+from ..generic import MutableDict, MutableList, HasClassBakedQueries
 from ..base import Base
 from ..hypothesis import Hypothesis
 from ..glycomics import (
@@ -82,7 +82,7 @@ def _convert_class_name_to_collection_name(name):
     return '_'.join(parts) + 's'
 
 
-class PeptideBase(object):
+class PeptideBase(HasClassBakedQueries):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     sequence_type = Column(Unicode(45))
@@ -126,7 +126,7 @@ class PeptideBase(object):
         upper = mass + width
         if hypothesis_id is not None:
             if cls._query_ppm_tolerance_search is None:
-                q = peptide_bakery(lambda session: session.query(cls).join(Protein))
+                q = cls.getbakery()(lambda session: session.query(cls).join(Protein))
                 q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
                 q += lambda q: q.filter(
                     cls.protein_id == Protein.id, Protein.hypothesis_id == bindparam("hypothesis_id"))
@@ -135,7 +135,7 @@ class PeptideBase(object):
                 lower=lower, upper=upper, hypothesis_id=hypothesis_id)
         else:
             if cls._query_ppm_tolerance_search_no_hypothesis_id is None:
-                q = peptide_bakery(lambda session: session.query(cls))
+                q = cls.getbakery()(lambda session: session.query(cls))
                 q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
                 cls._query_ppm_tolerance_search_no_hypothesis_id = q
             return cls._query_ppm_tolerance_search_no_hypothesis_id(session).params(lower=lower, upper=upper)

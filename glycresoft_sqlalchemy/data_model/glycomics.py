@@ -21,7 +21,8 @@ from glypy.algorithms import subtree_search
 from .base import Base, Namespace
 from .generic import (
     MutableDict, HasTaxonomy,
-    HasReferenceAccessionNumber)
+    HasReferenceAccessionNumber,
+    HasClassBakedQueries)
 
 from ..utils.database_utils import get_or_create
 from ..utils.memoize import memoclone
@@ -289,7 +290,7 @@ def has_glycan_composition_listener(attr):
             target.glycan_composition[str(k)] = v
 
 
-class GlycanBase(object):
+class GlycanBase(HasClassBakedQueries):
     id = Column(Integer, primary_key=True, autoincrement=True)
     calculated_mass = Column(Numeric(12, 6, asdecimal=False), index=True)
     derivatization = Column(Unicode(64), index=True)
@@ -307,7 +308,7 @@ class GlycanBase(object):
         upper = mass + width
         if hypothesis_id is not None:
             if cls._query_ppm_tolerance_search_hypothesis is None:
-                q = glycan_bakery(lambda session: session.query(cls))
+                q = cls.getbakery()(lambda session: session.query(cls))
                 q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
                 q += lambda q: q.filter(cls.hypothesis_id == bindparam('hypothesis_id'))
                 cls._query_ppm_tolerance_search_hypothesis = q
@@ -315,7 +316,7 @@ class GlycanBase(object):
                 lower=lower, upper=upper, hypothesis_id=hypothesis_id)
         else:
             if cls._query_ppm_tolerance_search is None:
-                q = glycan_bakery(lambda session: session.query(cls))
+                q = cls.getbakery()(lambda session: session.query(cls))
                 q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
                 cls._query_ppm_tolerance_search = q
             return cls._query_ppm_tolerance_search(session).params(

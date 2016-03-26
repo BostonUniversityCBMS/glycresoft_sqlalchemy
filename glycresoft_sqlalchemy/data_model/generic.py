@@ -4,6 +4,7 @@ import operator
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm import validates
 
+from sqlalchemy.ext.baked import bakery
 from sqlalchemy.ext.mutable import Mutable, MutableDict
 from sqlalchemy import (
     Table, Column, Integer, ForeignKey, Unicode, ForeignKeyConstraint,
@@ -188,3 +189,13 @@ class HasUniqueName(object):
 
 
 _TemplateNumberStore = Table("_TemplateNumberStore", Base.metadata, Column("value", Integer))
+
+
+class HasClassBakedQueries(object):
+    _bakery = None
+
+    @classmethod
+    def getbakery(cls):
+        if cls._bakery is None:
+            cls._bakery = staticmethod(bakery())
+        return cls._bakery

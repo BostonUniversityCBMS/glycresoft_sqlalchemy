@@ -195,11 +195,6 @@ def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id,
     if spectrum_match_updates:
         conn = session.connection()
         T_GlycopeptideSpectrumMatch = GlycopeptideSpectrumMatch.__table__
-        # for summary in summary_matches:
-        #     conn.execute(T_GlycopeptideSpectrumMatch.update().where(
-        #         (T_GlycopeptideSpectrumMatch.c.theoretical_glycopeptide_id == summary.theoretical_glycopeptide_id) and
-        #         (T_GlycopeptideSpectrumMatch.c.hypothesis_sample_match_id == summary.hypothesis_sample_match_id)).values(
-        #         glycopeptide_match_id=summary.id))
         stmt = T_GlycopeptideSpectrumMatch.update().where(
             T_GlycopeptideSpectrumMatch.c.id == bindparam("b_id")).values(
             glycopeptide_match_id=bindparam("glycopeptide_match_id"))
