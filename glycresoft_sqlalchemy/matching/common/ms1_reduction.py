@@ -41,6 +41,7 @@ class MS1Reduction(PipelineModule):
         out = self.output.session()
         make_transient(sample_run)
         out.add(sample_run)
+        out.commit()
         list(map(make_transient, reduced_peaks))
         out.add_all(reduced_peaks)
         out.commit()

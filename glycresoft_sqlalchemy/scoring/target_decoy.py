@@ -63,7 +63,7 @@ class TargetDecoyAnalyzer(PipelineModule):
             GlycopeptideMatch.ms2_score.asc()).filter(
             (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id),
             GlycopeptideMatch.protein_id == Protein.id,
-            Protein.hypothesis_id == self.target_id).all()
+            Protein.hypothesis_id == self.target_id)
 
         running_total = 0
         targets_above = OrderedDict()
@@ -370,13 +370,13 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
     def _calculate_q_values(self):
         session = self.manager.session()
         logger.info("Calculating Thresholds")
-        thresholds = chain.from_iterable(session.query(distinct(
+        thresholds = list(chain.from_iterable(session.query(distinct(
             GlycopeptideSpectrumMatchScore.value)).join(
             GlycopeptideSpectrumMatch).filter(
             GlycopeptideSpectrumMatch.hypothesis_id == self.target_id,
             GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
             GlycopeptideSpectrumMatchScore.name == self.score).order_by(
-            GlycopeptideSpectrumMatchScore.value.asc())).all()
+            GlycopeptideSpectrumMatchScore.value.asc())))
 
         mapping = {}
         last_score = 1
