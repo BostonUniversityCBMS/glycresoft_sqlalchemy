@@ -10,7 +10,6 @@ from glycresoft_sqlalchemy.data_model import (
     TheoreticalGlycanComposition, TheoreticalGlycanCombination,
     TheoreticalGlycanCombinationTheoreticalGlycanComposition)
 
-from glypy import GlycanComposition
 from glypy.composition.glycan_composition import FrozenGlycanComposition
 
 logger = logging.getLogger("glycan_utilities")

@@ -4,7 +4,7 @@ import functools
 
 from glycresoft_sqlalchemy.structure.sequence import Sequence, strip_modifications
 
-from glypy import GlycanComposition
+from glypy.composition.glycan_composition import FrozenGlycanComposition
 
 from .search_space_builder import TheoreticalSearchSpaceBuilder, constructs, BatchingTheoreticalSearchSpaceBuilder
 from ..utils import WorkItemCollectionFlat as WorkItemCollection, fragments
@@ -36,7 +36,7 @@ def generate_fragments(seq, ms1_result):
     -------
     TheoreticalGlycopeptide
     """
-    seq.glycan = GlycanComposition.parse(ms1_result.glycan_composition_str)
+    seq.glycan = FrozenGlycanComposition.parse(ms1_result.glycan_composition_str)
     seq_mod = seq.get_sequence(include_glycan=False)
     (oxonium_ions, b_ions, y_ions,
      b_ions_hexnac, y_ions_hexnac,
@@ -325,7 +325,7 @@ class BatchingExactSearchSpaceBuilder(BatchingTheoreticalSearchSpaceBuilder):
             worker_pool.terminate()
         else:
             logger.debug("Building theoretical sequences sequentially")
-            for row in self.ms1_results_reader:
+            for row in self.stream_results():
                 res = task_fn(row)
                 cntr += res
                 if (cntr > last + step):

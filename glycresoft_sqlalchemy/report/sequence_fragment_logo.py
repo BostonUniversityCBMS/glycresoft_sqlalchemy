@@ -117,7 +117,7 @@ class SequenceGlyph(object):
 
     def annotate_from_fragments(self, fragments, **kwargs):
         index = {}
-        for i in range(1, len(self.sequence) + 1):
+        for i in range(1, len(self.sequence)):
             for series in self.sequence.break_at(i):
                 for f in series:
                     index[f.name] = i

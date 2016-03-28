@@ -471,6 +471,7 @@ TheoreticalGlycanCombinationTheoreticalGlycanComposition = Table(
     )
 
 
+# TODO Add Class-Specific Bakery
 class TheoreticalGlycanCombination(Base):
     r'''
     A class for storing combinations of glycan compositions for association

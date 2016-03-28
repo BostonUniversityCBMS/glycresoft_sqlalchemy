@@ -295,3 +295,13 @@ def temp_table(table, metdata=None):
     cols = [c.copy() for c in table.columns]
     constraints = [c.copy() for c in table.constraints]
     return Table("TempTable_%s" % hex(int(time())), metadata, *(cols + constraints))
+
+
+def indices(table):
+    return {i.name: i for i in table.indexes}
+
+
+def get_index(table, col_name):
+    for i in table.indexes:
+        if col_name in i.columns:
+            return i

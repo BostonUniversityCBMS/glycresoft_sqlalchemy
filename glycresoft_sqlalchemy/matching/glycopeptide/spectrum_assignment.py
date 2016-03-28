@@ -11,6 +11,8 @@ from glycresoft_sqlalchemy.data_model import (
 
 from glycresoft_sqlalchemy.scoring import simple_scoring_algorithm, target_decoy
 
+from glycresoft_sqlalchemy.utils import database_utils
+
 logger = logging.getLogger('spectrum_assignment')
 
 
@@ -143,12 +145,20 @@ def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id,
     summary_matches = []
     spectrum_matches_by_theoretical_id = {}
 
+    index = database_utils.get_index(GlycopeptideSpectrumMatch.__table__, "theoretical_glycopeptide_id")
+    force_index = "indexed by " + index.name
+
     for theoretical in slurp(session, TheoreticalGlycopeptide, theoretical_ids, flatten=True):
         theoretical_id = theoretical.id
-        spectrum_matches = session.query(GlycopeptideSpectrumMatch).filter(
+        spectrum_matches_query = session.query(GlycopeptideSpectrumMatch).filter(
             GlycopeptideSpectrumMatch.theoretical_glycopeptide_id == theoretical_id,
             GlycopeptideSpectrumMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
-            GlycopeptideSpectrumMatch.best_match).order_by(GlycopeptideSpectrumMatch.scan_time.asc()).all()
+            GlycopeptideSpectrumMatch.best_match)
+
+        spectrum_matches_query = spectrum_matches_query.with_hint(
+            GlycopeptideSpectrumMatch, force_index, "sqlite")
+
+        spectrum_matches = spectrum_matches_query.all()
 
         if len(spectrum_matches) == 0:
             continue
@@ -221,10 +231,10 @@ class SummaryMatchBuilder(PipelineModule):
     def stream_theoretical_ids(self, chunk_size=500):
         session = self.manager()
 
-        ids = session.query(TheoreticalGlycopeptide.id.distinct()).join(
-            GlycopeptideSpectrumMatch).filter(
-            TheoreticalGlycopeptide.from_hypothesis(self.hypothesis_id),
-            GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id).all()
+        ids = session.query(GlycopeptideSpectrumMatch.theoretical_glycopeptide_id.distinct()).filter(
+            GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
+            GlycopeptideSpectrumMatch.hypothesis_id == self.hypothesis_id,
+            GlycopeptideSpectrumMatch.best_match).all()
 
         step = chunk_size
         last = 0
@@ -302,11 +312,11 @@ class SpectrumMatchAnalyzer(PipelineModule):
             score_name=self.scorer.score_name, n_processes=self.n_processes)
         task.start()
 
-        task = SummaryMatchBuilder(
-            self.database_path, hypothesis_id=self.decoy_hypothesis_id,
-            hypothesis_sample_match_id=self.hypothesis_sample_match_id,
-            score_name=self.scorer.score_name, n_processes=self.n_processes)
-        task.start()
+        # task = SummaryMatchBuilder(
+        #     self.database_path, hypothesis_id=self.decoy_hypothesis_id,
+        #     hypothesis_sample_match_id=self.hypothesis_sample_match_id,
+        #     score_name=self.scorer.score_name, n_processes=self.n_processes)
+        # task.start()
 
     def start(self):
         self.do_assignment()

@@ -29,6 +29,9 @@ from ..sequence_model.fragment import (
 from ..observed_ions import TandemScan, SampleRun
 
 
+from ...utils.database_utils import get_index
+
+
 class SpectrumMatchBase(object):
     scan_time = Column(Integer, index=True)
     peak_match_map = Column(MutableDict.as_mutable(PickleType))
@@ -107,12 +110,15 @@ class SpectrumMatchBase(object):
     def comatches(self, same_hypothesis=True):
         session = object_session(self)
         TYPE = self.__class__
-        comatches = session.query(TYPE).filter(
+        index = get_index(TYPE.__table__, "scan_time")
+        comatches = session.query(TYPE)
+        if same_hypothesis:
+            comatches = comatches.filter(TYPE.hypothesis_id == self.hypothesis_id)
+        comatches = comatches.filter(
             TYPE.id != self.id,
             TYPE.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
             TYPE.scan_time == self.scan_time)
-        if same_hypothesis:
-            comatches = comatches.filter(TYPE.hypothesis_id == self.hypothesis_id)
+        comatches = comatches.with_hint(TYPE, "indexed by " + index.name, "sqlite")
         return comatches
 
 

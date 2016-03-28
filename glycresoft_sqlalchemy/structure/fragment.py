@@ -183,7 +183,9 @@ class PeptideFragment(FragmentBase):
         mods = dict(self.modification_dict)
         mods_of_interest = defaultdict(int, {k: v for k, v in mods.items() if k in modifications})
 
-        delta_composition = sum((Modification(k).composition * v for k, v in mods_of_interest.items()), Composition())
+        mod_to_composition = {k: Modification(k).composition for k in modifications}
+
+        delta_composition = sum((mod_to_composition[k] * v for k, v in mods_of_interest.items()), Composition())
         base_composition = self.composition - delta_composition
 
         mods_of_interest["HexNAc"] *= 2  # Allow partial destruction of N-glycan core
@@ -196,7 +198,7 @@ class PeptideFragment(FragmentBase):
                 golden_pairs=self.golden_pairs,
                 flanking_amino_acids=self.flanking_amino_acids,
                 composition=base_composition + sum(
-                    (Modification(k).composition * v for k, v in varied_modifications.items()),
+                    (mod_to_composition[k] * v for k, v in varied_modifications.items()),
                     Composition()))
 
     def to_json(self):

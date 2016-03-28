@@ -11,7 +11,7 @@ from .fragment import PeptideFragment, fragment_shift, fragment_shift_compositio
 from .modification import Modification, SequenceLocation, ModificationCategory
 from .residue import Residue
 from glypy import GlycanComposition, Glycan, MonosaccharideResidue
-from glypy.composition.glycan_composition import FrozenGlycanComposition
+from glypy.composition.glycan_composition import FrozenGlycanComposition, FrozenMonosaccharideResidue
 
 from .parser import sequence_tokenizer, sequence_length, strip_modifications
 from .glycan import GlycosylationType, GlycosylationManager, GlycosylationSite, glycosylation_site_detectors
@@ -450,7 +450,7 @@ class PeptideSequence(PeptideSequenceBase):
             residues_in_b.append(self.seq[pos][0].symbol)
             mass_b += self.seq[pos][0].mass
 
-        flanking_residues = [self.seq[pos][0]]
+        flanking_residues = [self.seq[pos][0], self.seq[pos + 1][0]]
         b_frag = PeptideFragment(
             b_series, pos + structure_constants.FRAG_OFFSET, mod_b, mass_b + b_shift,
             flanking_amino_acids=flanking_residues)
@@ -462,7 +462,6 @@ class PeptideSequence(PeptideSequenceBase):
                 mod_y[mod.serialize()] += 1
             residues_in_y.append(self.seq[pos][0].symbol)
             mass_y += self.seq[pos][0].mass
-        flanking_residues.append(self.seq[pos][0])
 
         y_frag = PeptideFragment(
             y_series, len(self) - (break_point - 1 + structure_constants.FRAG_OFFSET),
@@ -741,9 +740,9 @@ class PeptideSequence(PeptideSequenceBase):
         core_count = self.modification_index['HexNAc']
 
         per_site_shifts = []
-        hexose_mass = MonosaccharideResidue.from_iupac_lite("Hex").mass()
-        hexnac_mass = MonosaccharideResidue.from_iupac_lite("HexNAc").mass()
-        fucose_mass = MonosaccharideResidue.from_iupac_lite("Fuc").mass()
+        hexose_mass = FrozenMonosaccharideResidue.from_iupac_lite("Hex").mass()
+        hexnac_mass = FrozenMonosaccharideResidue.from_iupac_lite("HexNAc").mass()
+        fucose_mass = FrozenMonosaccharideResidue.from_iupac_lite("Fuc").mass()
         base_mass = self.mass - (hexnac_mass * core_count) + Composition("H+").mass
         for i in range(core_count):
             core_shifts = []
@@ -828,7 +827,7 @@ class PeptideSequence(PeptideSequenceBase):
             if isinstance(self.glycan, Glycan):
                 glycan = FrozenGlycanComposition.from_glycan(self.glycan)
             elif isinstance(self.glycan, GlycanComposition):
-                glycan = self.glycan
+                glycan = FrozenGlycanComposition(self.glycan)
             else:
                 raise TypeError("Cannot infer monosaccharides from non-Glycan or\
                  GlycanComposition {}".format(self.glycan))

@@ -15,6 +15,40 @@ from ..data_model import (
 ms2_score = GlycopeptideMatch.ms2_score
 
 
+def binsearch(array, value):
+    lo = 0
+    hi = len(array) - 1
+
+    while hi - lo:
+        i = (hi + lo) / 2
+        x = array[i]
+        if x == value:
+            return i
+        elif hi - lo == 1:
+            return i
+        elif x < value:
+            lo = i
+        elif x > value:
+            hi = i
+    return i
+
+
+class NearestKeyMapping(dict):
+    def __init__(self, mapping):
+        dict.__init__(self, mapping)
+        self.keylist = sorted(self.keys())
+
+    def __getitem__(self, key):
+        try:
+            return dict.__getitem__(self, key)
+        except KeyError:
+            next_lowest_key_index = binsearch(self.keylist, key)
+            next_key = self.keylist[next_lowest_key_index + 1]
+            if next_key < key:
+                return 0
+            return dict.__getitem__(self,  next_key)
+
+
 class TargetDecoyAnalyzer(PipelineModule):
     @classmethod
     def from_hypothesis_sample_match(cls, database_path, hsm, **kwargs):
@@ -90,38 +124,38 @@ class TargetDecoyAnalyzer(PipelineModule):
         for score, at in list(decoys_above.items()):
             decoys_above[score] = running_total - decoys_above[score]
 
-        self.n_targets_at = targets_above
-        self.n_decoys_at = decoys_above
+        self.n_targets_at = NearestKeyMapping(targets_above)
+        self.n_decoys_at = NearestKeyMapping(decoys_above)
 
-        return targets_above, decoys_above
+        return NearestKeyMapping(targets_above), NearestKeyMapping(decoys_above)
 
     def n_decoys_above_threshold(self, threshold):
-        if threshold in self.n_decoys_at:
+        # if threshold in self.n_decoys_at:
             return self.n_decoys_at[threshold]
-        else:
-            session = self.manager.session()
-            self.n_decoys_at[threshold] = session.query(
-                GlycopeptideMatch).filter(
-                GlycopeptideMatch.protein_id == Protein.id,
-                Protein.hypothesis_id == self.decoy_id).filter(
-                GlycopeptideMatch.ms2_score >= threshold,
-                (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
-                self.hypothesis_sample_match_id is not None else True).count()
-            return self.n_decoys_at[threshold]
+        # else:
+        #     session = self.manager.session()
+        #     self.n_decoys_at[threshold] = session.query(
+        #         GlycopeptideMatch).filter(
+        #         GlycopeptideMatch.protein_id == Protein.id,
+        #         Protein.hypothesis_id == self.decoy_id).filter(
+        #         GlycopeptideMatch.ms2_score >= threshold,
+        #         (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
+        #         self.hypothesis_sample_match_id is not None else True).count()
+        #     return self.n_decoys_at[threshold]
 
     def n_targets_above_threshold(self, threshold):
-        if threshold in self.n_targets_at:
+        # if threshold in self.n_targets_at:
             return self.n_targets_at[threshold]
-        else:
-            session = self.manager.session()
-            self.n_targets_at[threshold] = session.query(
-                GlycopeptideMatch).filter(
-                GlycopeptideMatch.protein_id == Protein.id,
-                Protein.hypothesis_id == self.target_id).filter(
-                GlycopeptideMatch.ms2_score >= threshold,
-                (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
-                self.hypothesis_sample_match_id is not None else True).count()
-            return self.n_targets_at[threshold]
+        # else:
+        #     session = self.manager.session()
+        #     self.n_targets_at[threshold] = session.query(
+        #         GlycopeptideMatch).filter(
+        #         GlycopeptideMatch.protein_id == Protein.id,
+        #         Protein.hypothesis_id == self.target_id).filter(
+        #         GlycopeptideMatch.ms2_score >= threshold,
+        #         (GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id) if
+        #         self.hypothesis_sample_match_id is not None else True).count()
+        #     return self.n_targets_at[threshold]
 
     def target_decoy_ratio(self, cutoff):
 
@@ -308,41 +342,42 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
         for score, at in list(decoys_above.items()):
             decoys_above[score] = running_total - decoys_above[score]
 
-        self.n_targets_at = targets_above
-        self.n_decoys_at = decoys_above
+        self.n_targets_at = NearestKeyMapping(targets_above)
+        self.n_decoys_at = NearestKeyMapping(decoys_above)
 
-        logger.info("Tabulation Complete")
-        return targets_above, decoys_above
+        return NearestKeyMapping(targets_above), NearestKeyMapping(decoys_above)
 
     def n_decoys_above_threshold(self, threshold):
-        if threshold in self.n_decoys_at:
+        # if threshold in self.n_decoys_at:
             return self.n_decoys_at[threshold]
-        else:
-            session = self.manager.session()
-            self.n_decoys_at[threshold] = session.query(
-                GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatchScore).filter(
-                GlycopeptideSpectrumMatch.best_match,
-                GlycopeptideSpectrumMatchScore.name == self.score,
-                GlycopeptideSpectrumMatch.hypothesis_id == self.decoy_id).filter(
-                GlycopeptideSpectrumMatchScore.value >= threshold,
-                (GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id)
-                ).count()
-            return self.n_decoys_at[threshold]
+        # else:
+        #     logger.debug("Missed %f in n_decoys_above_threshold", threshold)
+        #     session = self.manager.session()
+        #     self.n_decoys_at[threshold] = session.query(
+        #         GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatchScore).filter(
+        #         GlycopeptideSpectrumMatch.best_match,
+        #         GlycopeptideSpectrumMatchScore.name == self.score,
+        #         GlycopeptideSpectrumMatch.hypothesis_id == self.decoy_id).filter(
+        #         GlycopeptideSpectrumMatchScore.value >= threshold,
+        #         (GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id)
+        #         ).count()
+        #     return self.n_decoys_at[threshold]
 
     def n_targets_above_threshold(self, threshold):
-        if threshold in self.n_targets_at:
+        # if threshold in self.n_targets_at:
             return self.n_targets_at[threshold]
-        else:
-            session = self.manager.session()
-            self.n_targets_at[threshold] = session.query(
-                GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatchScore).filter(
-                GlycopeptideSpectrumMatch.best_match,
-                GlycopeptideSpectrumMatchScore.name == self.score,
-                GlycopeptideSpectrumMatch.hypothesis_id == self.target_id).filter(
-                GlycopeptideSpectrumMatchScore.value >= threshold,
-                (GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id)
-                ).count()
-            return self.n_targets_at[threshold]
+        # else:
+        #     logger.debug("Missed %f in n_targets_above_threshold", threshold)
+        #     session = self.manager.session()
+        #     self.n_targets_at[threshold] = session.query(
+        #         GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatchScore).filter(
+        #         GlycopeptideSpectrumMatch.best_match,
+        #         GlycopeptideSpectrumMatchScore.name == self.score,
+        #         GlycopeptideSpectrumMatch.hypothesis_id == self.target_id).filter(
+        #         GlycopeptideSpectrumMatchScore.value >= threshold,
+        #         (GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id)
+        #         ).count()
+        #     return self.n_targets_at[threshold]
 
     def target_decoy_ratio(self, cutoff):
 
