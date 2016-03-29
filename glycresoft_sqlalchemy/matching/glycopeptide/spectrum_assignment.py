@@ -20,14 +20,19 @@ from glycresoft_sqlalchemy.utils import collectiontools
 logger = logging.getLogger('spectrum_assignment')
 
 
-def score_spectrum_matches(times, database_manager, scorer, score_parameters):
+def score_spectrum_matches(times, database_manager, scorer, score_parameters, hypothesis_id,
+                           hypothesis_sample_match_id):
     try:
         scores_collection = []
         spectrum_match_collection = []
         session = database_manager()
-        for time in times:
-            matches = session.query(GlycopeptideSpectrumMatch).filter(
-                GlycopeptideSpectrumMatch.scan_time == time[0]).all()
+
+        def multislurp(session, times_ids):
+            return [slurp(session, GlycopeptideSpectrumMatch, ids, flatten=False) for ids in times_ids]
+
+        for matches in multislurp(session, times):
+            # matches = session.query(GlycopeptideSpectrumMatch).filter(
+            #     GlycopeptideSpectrumMatch.scan_time == time[0]).all()
             best_score = -(float('inf'))
             best_match = []
             for match in matches:
@@ -73,18 +78,32 @@ class SpectrumAssigner(PipelineModule):
             score_spectrum_matches,
             database_manager=self.manager,
             scorer=self.scorer,
-            score_parameters=self.score_parameters
+            score_parameters=self.score_parameters,
+            hypothesis_sample_match_id=self.hypothesis_sample_match_id,
+            hypothesis_id=self.hypothesis_id
             )
 
     def stream_spectrum_time_id(self, chunk_size=20):
         session = self.manager()
-        all_times = session.query(distinct(GlycopeptideSpectrumMatch.scan_time)).filter(
+
+        chunker = session.query(GlycopeptideSpectrumMatch.id, GlycopeptideSpectrumMatch.scan_time).filter(
             GlycopeptideSpectrumMatch.hypothesis_id == self.hypothesis_id,
-            GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id).all()
-        final = len(all_times)
+            GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id).order_by(
+            GlycopeptideSpectrumMatch.scan_time).all()
+
+        get1 = operator.itemgetter(1)
+        get0 = operator.itemgetter(0)
+
+        groups = collectiontools.groupby(chunker, get1).items()
+
+        # all_times = session.query(distinct(GlycopeptideSpectrumMatch.scan_time)).filter(
+        #     GlycopeptideSpectrumMatch.hypothesis_id == self.hypothesis_id,
+        #     GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id).all()
+        final = len(groups)
         last = 0
         while 1:
-            next_chunk = all_times[last:(last + chunk_size)]
+            next_chunk = groups[last:(last + chunk_size)]
+            next_chunk = [list(map(get0, group)) for group in map(get1, next_chunk)]
             if last <= final:
                 yield next_chunk
                 last += chunk_size
@@ -105,7 +124,7 @@ class SpectrumAssigner(PipelineModule):
             pool.terminate()
 
         else:
-            for step in self.self.stream_spectrum_time_id():
+            for step in self.stream_spectrum_time_id():
                 cntr += task_fn(step)
                 if (cntr - last) > 1000:
                     logger.info("%d Assignments Complete." % cntr)
@@ -251,7 +270,7 @@ class SummaryMatchBuilder(PipelineModule):
             GlycopeptideSpectrumMatch.best_match)
         ids_query = ids_query.with_hint(GlycopeptideSpectrumMatch, force_index, "sqlite")
         getter = operator.itemgetter(0)
-        ids_grouper = itertools.groupby(ids_query, getter)
+        ids_grouper = collectiontools.groupby(ids_query, getter).items()
         result = []
         for key, grouped in ids_grouper:
             gsm_ids = [gsm_id for key, gsm_id in grouped]
