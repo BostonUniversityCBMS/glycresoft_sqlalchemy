@@ -7,6 +7,7 @@ try:
 except:
     pass
 
+from glycresoft_sqlalchemy.data_model import GlycopeptideMatch, func
 from glycresoft_sqlalchemy.search_space_builder import integrated_omics
 from glycresoft_sqlalchemy.search_space_builder.glycan_builder import constrained_combinatorics
 from glycresoft_sqlalchemy.search_space_builder import exact_search_space_builder, make_decoys
@@ -93,6 +94,10 @@ def test_main():
         n_processes=6)
     job.start()
 
+    session = job.manager()
+    counts = session.query(func.count(GlycopeptideMatch.id)).group_by(
+        GlycopeptideMatch.theoretical_glycopeptide_id).all()
+    assert all([c == 1 for c in counts]), "TheoreticalGlycopeptide with multiple GlycopeptideMatch"
 
 if __name__ == '__main__':
     test_main()

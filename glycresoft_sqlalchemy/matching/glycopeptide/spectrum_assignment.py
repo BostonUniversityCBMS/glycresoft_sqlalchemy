@@ -83,7 +83,7 @@ class SpectrumAssigner(PipelineModule):
             hypothesis_id=self.hypothesis_id
             )
 
-    def stream_spectrum_time_id(self, chunk_size=20):
+    def stream_spectrum_time_id(self, chunk_size=200):
         session = self.manager()
 
         chunker = session.query(GlycopeptideSpectrumMatch.id, GlycopeptideSpectrumMatch.scan_time).filter(
