@@ -1,5 +1,6 @@
 import itertools
 import functools
+import operator
 import multiprocessing
 import logging
 
@@ -12,6 +13,9 @@ from glycresoft_sqlalchemy.data_model import (
 from glycresoft_sqlalchemy.scoring import simple_scoring_algorithm, target_decoy
 
 from glycresoft_sqlalchemy.utils import database_utils
+
+from glycresoft_sqlalchemy.utils import collectiontools
+
 
 logger = logging.getLogger('spectrum_assignment')
 
@@ -145,72 +149,78 @@ def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id,
     summary_matches = []
     spectrum_matches_by_theoretical_id = {}
 
-    index = database_utils.get_index(GlycopeptideSpectrumMatch.__table__, "theoretical_glycopeptide_id")
-    force_index = "indexed by " + index.name
+    def multislurp(session, theoretical_ids):
+        theoreticals = slurp(
+            session, TheoreticalGlycopeptide,
+            [theoretical_id for theoretical_id, spectrum_match_ids in theoretical_ids],
+            flatten=False)
+        matches = slurp(
+            session, GlycopeptideSpectrumMatch,
+            [group for theoretical_id, group in theoretical_ids], flatten=True)
 
-    for theoretical in slurp(session, TheoreticalGlycopeptide, theoretical_ids, flatten=True):
-        theoretical_id = theoretical.id
-        spectrum_matches_query = session.query(GlycopeptideSpectrumMatch).filter(
-            GlycopeptideSpectrumMatch.theoretical_glycopeptide_id == theoretical_id,
-            GlycopeptideSpectrumMatch.hypothesis_sample_match_id == hypothesis_sample_match_id,
-            GlycopeptideSpectrumMatch.best_match)
+        theoreticals = collectiontools.groupby(theoreticals, operator.attrgetter("id"))
+        matches = collectiontools.groupby(matches, lambda x: x.theoretical_glycopeptide_id)
+        indices = theoreticals.keys()
+        return zip([theoreticals[i][0] for i in indices], [matches[i] for i in indices])
 
-        spectrum_matches_query = spectrum_matches_query.with_hint(
-            GlycopeptideSpectrumMatch, force_index, "sqlite")
-
-        spectrum_matches = spectrum_matches_query.all()
-
-        if len(spectrum_matches) == 0:
-            continue
-
-        match_total = theoretical_to_match(theoretical, hypothesis_sample_match_id)
-        match_total.scan_id_range = [s.scan_time for s in spectrum_matches]
-        match_total.first_scan = match_total.scan_id_range[0]
-        match_total.last_scan = match_total.scan_id_range[-1]
-
-        spectrum_matches_by_theoretical_id[theoretical_id] = spectrum_matches
-
-        best_scoring = max(spectrum_matches, key=best_scoring_key)
-
-        ion_series_matches = simple_scoring_algorithm.split_ion_list(best_scoring.ion_matches())
-        match_total.bare_b_ions = ion_series_matches.get("bare_b_ions", [])
-        match_total.bare_y_ions = ion_series_matches.get("bare_y_ions", [])
-        match_total.glycosylated_b_ions = ion_series_matches.get("glycosylated_b_ions", [])
-        match_total.glycosylated_y_ions = ion_series_matches.get("glycosylated_y_ions", [])
-        match_total.oxonium_ions = ion_series_matches.get("oxonium_ions", [])
-        match_total.stub_ions = ion_series_matches.get("stub_ions", [])
-
-        match_total.mean_coverage = simple_scoring_algorithm.mean_coverage(match_total)
-        match_total.mean_hexnac_coverage = simple_scoring_algorithm.mean_hexnac_coverage(match_total, theoretical)
-
-        score = best_scoring_key(best_scoring)
-        match_total.ms2_score = score
-        try:
-            match_total.q_value = best_scoring.scores['q_value']
-        except KeyError:
-            pass
-        summary_matches.append(match_total)
-    session.add_all(summary_matches)
-    session.commit()
-
-    spectrum_match_updates = []
-
-    for summary in summary_matches:
-        matches = spectrum_matches_by_theoretical_id[summary.theoretical_glycopeptide_id]
-        for match in matches:
-            if match.id is None:
+    try:
+        for theoretical, spectrum_matches in multislurp(session, theoretical_ids):
+            theoretical_id = theoretical.id
+            if len(spectrum_matches) == 0:
                 continue
-            spectrum_match_updates.append({"b_id": match.id, "glycopeptide_match_id": summary.id})
 
-    if spectrum_match_updates:
-        conn = session.connection()
-        T_GlycopeptideSpectrumMatch = GlycopeptideSpectrumMatch.__table__
-        stmt = T_GlycopeptideSpectrumMatch.update().where(
-            T_GlycopeptideSpectrumMatch.c.id == bindparam("b_id")).values(
-            glycopeptide_match_id=bindparam("glycopeptide_match_id"))
-        conn.execute(stmt, spectrum_match_updates)
+            match_total = theoretical_to_match(theoretical, hypothesis_sample_match_id)
+            match_total.scan_id_range = [s.scan_time for s in spectrum_matches]
+            match_total.first_scan = match_total.scan_id_range[0]
+            match_total.last_scan = match_total.scan_id_range[-1]
+
+            spectrum_matches_by_theoretical_id[theoretical_id] = spectrum_matches
+
+            best_scoring = max(spectrum_matches, key=best_scoring_key)
+
+            ion_series_matches = simple_scoring_algorithm.split_ion_list(best_scoring.ion_matches())
+            match_total.bare_b_ions = ion_series_matches.get("bare_b_ions", [])
+            match_total.bare_y_ions = ion_series_matches.get("bare_y_ions", [])
+            match_total.glycosylated_b_ions = ion_series_matches.get("glycosylated_b_ions", [])
+            match_total.glycosylated_y_ions = ion_series_matches.get("glycosylated_y_ions", [])
+            match_total.oxonium_ions = ion_series_matches.get("oxonium_ions", [])
+            match_total.stub_ions = ion_series_matches.get("stub_ions", [])
+
+            match_total.mean_coverage = simple_scoring_algorithm.mean_coverage(match_total)
+            match_total.mean_hexnac_coverage = simple_scoring_algorithm.mean_hexnac_coverage(match_total, theoretical)
+
+            score = best_scoring_key(best_scoring)
+            match_total.ms2_score = score
+            try:
+                match_total.q_value = best_scoring.scores['q_value']
+            except KeyError:
+                pass
+            summary_matches.append(match_total)
+        session.add_all(summary_matches)
         session.commit()
-    return len(theoretical_ids)
+
+        spectrum_match_updates = []
+
+        for summary in summary_matches:
+            matches = spectrum_matches_by_theoretical_id[summary.theoretical_glycopeptide_id]
+            for match in matches:
+                if match.id is None:
+                    continue
+                spectrum_match_updates.append({"b_id": match.id, "glycopeptide_match_id": summary.id})
+
+        if spectrum_match_updates:
+            conn = session.connection()
+            T_GlycopeptideSpectrumMatch = GlycopeptideSpectrumMatch.__table__
+            stmt = T_GlycopeptideSpectrumMatch.update().where(
+                T_GlycopeptideSpectrumMatch.c.id == bindparam("b_id")).values(
+                glycopeptide_match_id=bindparam("glycopeptide_match_id"))
+            conn.execute(stmt, spectrum_match_updates)
+            session.commit()
+        return len(theoretical_ids)
+    except KeyboardInterrupt, e:
+        logger.exception("An exception occcured in build_matches", exc_info=e)
+        raise e
+        return -1
 
 
 class SummaryMatchBuilder(PipelineModule):
@@ -228,13 +238,26 @@ class SummaryMatchBuilder(PipelineModule):
             hypothesis_sample_match_id=self.hypothesis_sample_match_id,
             score_name=self.score_name)
 
-    def stream_theoretical_ids(self, chunk_size=500):
+    def stream_theoretical_ids(self, chunk_size=100):
         session = self.manager()
 
-        ids = session.query(GlycopeptideSpectrumMatch.theoretical_glycopeptide_id.distinct()).filter(
-            GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
+        index = database_utils.get_index(GlycopeptideSpectrumMatch.__table__, "theoretical_glycopeptide_id")
+        force_index = "indexed by " + index.name
+
+        ids_query = session.query(
+            GlycopeptideSpectrumMatch.theoretical_glycopeptide_id, GlycopeptideSpectrumMatch.id).filter(
             GlycopeptideSpectrumMatch.hypothesis_id == self.hypothesis_id,
-            GlycopeptideSpectrumMatch.best_match).all()
+            GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
+            GlycopeptideSpectrumMatch.best_match)
+        ids_query = ids_query.with_hint(GlycopeptideSpectrumMatch, force_index, "sqlite")
+        getter = operator.itemgetter(0)
+        ids_grouper = itertools.groupby(ids_query, getter)
+        result = []
+        for key, grouped in ids_grouper:
+            gsm_ids = [gsm_id for key, gsm_id in grouped]
+            result.append((key, gsm_ids))
+
+        ids = result
 
         step = chunk_size
         last = 0
@@ -247,21 +270,26 @@ class SummaryMatchBuilder(PipelineModule):
         task_fn = self.prepare_task_fn()
         cntr = 0
         last = 0
-
+        session = self.manager()
+        index_controller = database_utils.toggle_indices(session, GlycopeptideMatch)
+        logger.info("Begin GlycopeptideMatch Creation")
+        index_controller.drop()
         if self.n_processes > 1:
             pool = multiprocessing.Pool(self.n_processes)
             for increment in pool.imap_unordered(task_fn, self.stream_theoretical_ids()):
                 cntr += increment
-                if cntr - last > 1000:
+                if cntr - last > 200:
                     logger.info("%d records completed", cntr)
                     last = cntr
             pool.terminate()
         else:
             for increment in itertools.imap(task_fn, self.stream_theoretical_ids()):
                 cntr += increment
-                if cntr - last > 1000:
+                if cntr - last > 200:
                     logger.info("%d records completed", cntr)
                     last = cntr
+        logger.info("End GlycopeptideMatch Creation. Reconstructing Indices")
+        index_controller.create()
 
 
 class SpectrumMatchAnalyzer(PipelineModule):

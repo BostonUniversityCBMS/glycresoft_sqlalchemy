@@ -1,9 +1,9 @@
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, MS2GlycopeptideHypothesisSampleMatch,
     SampleRun, Hypothesis, HypothesisSampleMatch)
-from glycresoft_sqlalchemy.matching.glycopeptide.fragment_matching import IonMatching, SpectrumMatching
+from glycresoft_sqlalchemy.matching.glycopeptide.fragment_matching import SpectrumMatching
 from glycresoft_sqlalchemy.matching.glycopeptide.spectrum_assignment import SpectrumMatchAnalyzer
-from glycresoft_sqlalchemy.scoring import score_spectrum_matches, target_decoy
+from glycresoft_sqlalchemy.scoring import target_decoy
 
 
 class GlycopeptideFragmentMatchingPipeline(PipelineModule):

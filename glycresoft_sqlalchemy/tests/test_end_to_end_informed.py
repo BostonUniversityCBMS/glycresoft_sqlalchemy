@@ -11,6 +11,7 @@ from glycresoft_sqlalchemy.search_space_builder import integrated_omics
 from glycresoft_sqlalchemy.search_space_builder.glycan_builder import constrained_combinatorics
 from glycresoft_sqlalchemy.search_space_builder import exact_search_space_builder, make_decoys
 from glycresoft_sqlalchemy.matching.glycopeptide.pipeline import GlycopeptideFragmentMatchingPipeline
+from glycresoft_sqlalchemy.matching.glycopeptide.spectrum_assignment import SummaryMatchBuilder
 from glycresoft_sqlalchemy.scoring import pair_counting
 
 
@@ -24,6 +25,11 @@ def test_main():
         "Fuc": (0, 5),
         "NeuAc": (0, 4)
     }
+
+    constraints_list = [
+        "Fuc < (HexNAc)",
+        "NeuAc < (HexNAc - 1)"
+    ]
 
     job = constrained_combinatorics.ConstrainedCombinatoricsGlycanHypothesisBuilder(
         db_file_name, rules_table=rules_table, constraints_list=[])
@@ -67,7 +73,6 @@ def test_main():
             ms1_data=ms1_data,
             db_file_name=db_file_name, hypothesis_id=hypothesis_id))
     assert ec == 0
-    # hsm_id = 3
 
     job = exact_search_space_builder.BatchingExactSearchSpaceBuilder.from_hypothesis_sample_match(
         db_file_name, 1, 6)
@@ -75,6 +80,7 @@ def test_main():
     job = make_decoys.BatchingDecoySearchSpaceBuilder(db_file_name, hypothesis_ids=[hypothesis_id], n_processes=6)
     decoy_hypothesis_id = job.start()[0]
 
+    # hsm_id = 2
     # hypothesis_id = 3
     # decoy_hypothesis_id = 4
 
@@ -86,6 +92,7 @@ def test_main():
         hypothesis_sample_match_name="End-to-End AGP",
         n_processes=6)
     job.start()
+
 
 if __name__ == '__main__':
     test_main()

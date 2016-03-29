@@ -343,6 +343,10 @@ class PeptideSequence(PeptideSequenceBase):
         return len(self.seq)
 
     @property
+    def total_mass(self):
+        return self.total_composition().mass
+
+    @property
     def glycan(self):
         return self._glycan
 
@@ -743,7 +747,7 @@ class PeptideSequence(PeptideSequenceBase):
         hexose_mass = FrozenMonosaccharideResidue.from_iupac_lite("Hex").mass()
         hexnac_mass = FrozenMonosaccharideResidue.from_iupac_lite("HexNAc").mass()
         fucose_mass = FrozenMonosaccharideResidue.from_iupac_lite("Fuc").mass()
-        base_mass = self.mass - (hexnac_mass * core_count) + Composition("H+").mass
+        base_mass = self.mass - (hexnac_mass * core_count)
         for i in range(core_count):
             core_shifts = []
             for hexnac_count in range(3):
@@ -872,7 +876,7 @@ class PeptideSequence(PeptideSequenceBase):
             total = FrozenGlycanComposition(self.glycan)
             base = FrozenGlycanComposition(Hex=3, HexNAc=2)
             remainder = total - base
-            stub_mass = self.mass + total.mass() - WATER - MonosaccharideResidue.from_iupac_lite("HexNAc").mass()
+            stub_mass = self.mass + base.mass() - WATER - FrozenMonosaccharideResidue.from_iupac_lite("HexNAc").mass()
             for composition in descending_combination_counter(remainder):
                 composition = FrozenGlycanComposition(composition)
                 if sum(composition.values()) > 2:
@@ -885,9 +889,10 @@ class PeptideSequence(PeptideSequenceBase):
                     yield SimpleFragment(
                         name=composition.serialize() + "-H2O-H2O", mass=composition.mass() - (WATER * 2),
                         kind=oxonium_ion_series)
-                yield SimpleFragment(
-                    name="peptide+" + str(total - composition), mass=stub_mass + total.mass() - composition.mass(),
+                f = SimpleFragment(
+                    name="peptide+" + str(total - composition), mass=stub_mass + remainder.mass() - composition.mass(),
                     kind=stub_glycopeptide_series)
+                yield f
         elif all_series:
             raise TypeError("Cannot generate B/Y fragments from non-Glycan {}".format(self.glycan))
 
