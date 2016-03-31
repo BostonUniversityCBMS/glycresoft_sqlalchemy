@@ -348,36 +348,10 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
         return NearestKeyMapping(targets_above), NearestKeyMapping(decoys_above)
 
     def n_decoys_above_threshold(self, threshold):
-        # if threshold in self.n_decoys_at:
-            return self.n_decoys_at[threshold]
-        # else:
-        #     logger.debug("Missed %f in n_decoys_above_threshold", threshold)
-        #     session = self.manager.session()
-        #     self.n_decoys_at[threshold] = session.query(
-        #         GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatchScore).filter(
-        #         GlycopeptideSpectrumMatch.best_match,
-        #         GlycopeptideSpectrumMatchScore.name == self.score,
-        #         GlycopeptideSpectrumMatch.hypothesis_id == self.decoy_id).filter(
-        #         GlycopeptideSpectrumMatchScore.value >= threshold,
-        #         (GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id)
-        #         ).count()
-        #     return self.n_decoys_at[threshold]
+        return self.n_decoys_at[threshold]
 
     def n_targets_above_threshold(self, threshold):
-        # if threshold in self.n_targets_at:
-            return self.n_targets_at[threshold]
-        # else:
-        #     logger.debug("Missed %f in n_targets_above_threshold", threshold)
-        #     session = self.manager.session()
-        #     self.n_targets_at[threshold] = session.query(
-        #         GlycopeptideSpectrumMatch.id).join(GlycopeptideSpectrumMatchScore).filter(
-        #         GlycopeptideSpectrumMatch.best_match,
-        #         GlycopeptideSpectrumMatchScore.name == self.score,
-        #         GlycopeptideSpectrumMatch.hypothesis_id == self.target_id).filter(
-        #         GlycopeptideSpectrumMatchScore.value >= threshold,
-        #         (GlycopeptideSpectrumMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id)
-        #         ).count()
-        #     return self.n_targets_at[threshold]
+        return self.n_targets_at[threshold]
 
     def target_decoy_ratio(self, cutoff):
 
@@ -443,6 +417,7 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
         q_map = self._calculate_q_values()
         accumulator = []
         logger.info("Assigning q-values")
+        last_k = 0.1
         for k in sorted(q_map):
             ids = [x[0] for x in session.query(GlycopeptideSpectrumMatch.id).join(
                 GlycopeptideSpectrumMatchScore).filter(
@@ -452,10 +427,12 @@ class TargetDecoySpectrumMatchAnalyzer(TargetDecoyAnalyzer):
             accumulator.extend(
                 GlycopeptideSpectrumMatchScore(
                     name='q_value', value=q_map[k], spectrum_match_id=i) for i in ids)
-            if len(accumulator) > 200:
-                logger.info("Updating entries with score %f -> %f", k, q_map[k])
+            if len(accumulator) > 2000:
                 session.bulk_save_objects(accumulator)
                 accumulator = []
+            if k > last_k * 1.2:
+                logger.info("Updating entries with score %f -> %f", k, q_map[k])
+                last_k = k
 
         session.bulk_save_objects(accumulator)
         accumulator = []

@@ -37,6 +37,7 @@ glycan_bakery = bakery()
 
 class MassShift(Base):
     __tablename__ = "MassShift"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Unicode(128), index=True)
     mass = Column(Numeric(10, 6, asdecimal=False))

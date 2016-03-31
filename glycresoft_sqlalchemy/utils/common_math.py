@@ -224,3 +224,23 @@ except ImportError, e:
         low = 0
         high = len(peak_list) - 1
         return binary_search(mass, peak_list, tolerance=tolerance, low=low, high=high, solutions=[])
+
+
+def minmax(numbers):
+    lo = float('inf')
+    hi = -float('inf')
+    for i in numbers:
+        if i < lo:
+            lo = i
+        elif i > hi:
+            hi = i
+    return lo, hi
+
+
+def median(numbers):
+    numbers = sorted(numbers)
+    n = len(numbers)
+    if n % 2 == 0:
+        return (numbers[(n - 1) / 2] + numbers[((n - 1) / 2) + 1]) / 2.
+    else:
+        return numbers[(n - 1) / 2]

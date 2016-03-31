@@ -97,7 +97,7 @@ def test_main():
     session = job.manager()
     counts = session.query(func.count(GlycopeptideMatch.id)).group_by(
         GlycopeptideMatch.theoretical_glycopeptide_id).all()
-    assert all([c == 1 for c in counts]), "TheoreticalGlycopeptide with multiple GlycopeptideMatch"
+    assert all([c[0] == 1 for c in counts]), "TheoreticalGlycopeptide with multiple GlycopeptideMatch"
 
 if __name__ == '__main__':
     test_main()

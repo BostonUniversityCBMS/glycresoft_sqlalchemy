@@ -159,6 +159,24 @@ def theoretical_to_match(theoretical, hypothesis_sample_match_id):
     return match
 
 
+def multislurp(session, theoretical_ids):
+    theoreticals = slurp(
+        session, TheoreticalGlycopeptide,
+        [theoretical_id for theoretical_id, spectrum_match_ids in theoretical_ids],
+        flatten=False)
+
+    match_ids = [x for theoretical_id, group in theoretical_ids for x in group]
+
+    matches = slurp(
+        session, GlycopeptideSpectrumMatch,
+        match_ids, flatten=False)
+
+    theoreticals = collectiontools.groupby(theoreticals, operator.attrgetter("id"))
+    matches = collectiontools.groupby(matches, lambda x: x.theoretical_glycopeptide_id)
+    indices = theoreticals.keys()
+    return zip([theoreticals[i][0] for i in indices], [matches[i] for i in indices])
+
+
 def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id, score_name):
     session = database_manager()
 
@@ -173,9 +191,12 @@ def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id,
             session, TheoreticalGlycopeptide,
             [theoretical_id for theoretical_id, spectrum_match_ids in theoretical_ids],
             flatten=False)
+
+        match_ids = [x for theoretical_id, group in theoretical_ids for x in group]
+
         matches = slurp(
             session, GlycopeptideSpectrumMatch,
-            [group for theoretical_id, group in theoretical_ids], flatten=True)
+            match_ids, flatten=False)
 
         theoreticals = collectiontools.groupby(theoreticals, operator.attrgetter("id"))
         matches = collectiontools.groupby(matches, lambda x: x.theoretical_glycopeptide_id)
@@ -187,6 +208,12 @@ def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id,
             theoretical_id = theoretical.id
             if len(spectrum_matches) == 0:
                 continue
+
+            # if theoretical.glycopeptide_sequence == "SVQEIQATFFYFTPN(HexNAc)K{Hex:6; HexNAc:5; Neu5Ac:2}":
+            #     print theoretical
+            #     print spectrum_matches
+            #     print max(spectrum_matches, key=best_scoring_key)
+            #     raise Exception("Error")
 
             match_total = theoretical_to_match(theoretical, hypothesis_sample_match_id)
             match_total.scan_id_range = [s.scan_time for s in spectrum_matches]

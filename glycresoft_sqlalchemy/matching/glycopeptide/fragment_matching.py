@@ -19,7 +19,7 @@ from glycresoft_sqlalchemy.data_model import (
     GlycopeptideMatch,
     )
 
-from glycresoft_sqlalchemy.utils.common_math import ppm_error
+from glycresoft_sqlalchemy.utils.common_math import ppm_error, median
 
 
 neutral_mass_getter = operator.attrgetter("neutral_mass")
@@ -108,6 +108,7 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
 
             for spectrum in query:
                 peak_list = spectrum.tandem_data
+                intensity_threshold = median(p.intensity for p in peak_list)
                 peak_list = [p for p in peak_list if p.intensity >= intensity_threshold]
                 peak_list = sorted(peak_list, key=neutral_mass_getter)
                 peak_match_map = defaultdict(list)
@@ -331,6 +332,7 @@ def batch_match_theoretical_ions(scan_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 ms1_tolerance, hypothesis_id)
 
             peak_list = spectrum.tandem_data
+            intensity_threshold = median(p.intensity for p in peak_list)
             peak_list = [p for p in peak_list if p.intensity >= intensity_threshold]
             peak_list = sorted(peak_list, key=neutral_mass_getter)
 
@@ -516,7 +518,7 @@ class IonMatching(PipelineModule):
                  hypothesis_sample_match_id=None,
                  ms1_tolerance=ms1_tolerance_default,
                  ms2_tolerance=ms2_tolerance_default,
-                 intensity_threshold=150.0,
+                 intensity_threshold=0.0,
                  n_processes=4):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()
@@ -613,7 +615,7 @@ class SpectrumMatching(PipelineModule):
                  hypothesis_sample_match_id=None,
                  ms1_tolerance=ms1_tolerance_default,
                  ms2_tolerance=ms2_tolerance_default,
-                 intensity_threshold=150.0,
+                 intensity_threshold=0.0,
                  n_processes=4):
         self.manager = self.manager_type(database_path)
         self.session = self.manager.session()

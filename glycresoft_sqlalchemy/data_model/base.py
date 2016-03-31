@@ -57,7 +57,7 @@ class Hierarchy(dict):
 
 def slurp(session, model, ids, flatten=True):
     if flatten:
-        ids = [i[0] for i in ids]
+        ids = [j for i in ids for j in i]
     total = len(ids)
     last = 0
     step = 100
