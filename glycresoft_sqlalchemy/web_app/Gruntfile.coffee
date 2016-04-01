@@ -17,6 +17,11 @@ module.exports = (grunt) ->
                 expand: true
                 src: "static/font/material-design-icons/*"
                 dest: "static/dist/font/material-design-icons/"
+            icons2:
+                flatten: true
+                expand: true
+                src: "static/font/material-design-icons/*"
+                dest: "static/dist/css/material-design-icons/"
             font:
                 flatten: true
                 expand: true

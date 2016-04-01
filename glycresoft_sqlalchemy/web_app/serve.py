@@ -52,7 +52,6 @@ class StreamConsumingMiddleware(object):
                 app_iter.close()
 
 
-
 app = Flask(__name__)
 app.wsgi_app = StreamConsumingMiddleware(app.wsgi_app)
 # app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir='profiling')
@@ -97,14 +96,11 @@ def branch_ms1_ms2():
 # ----------------------------------------
 
 def shutdown_server():
-    if no_gevent:
-        func = request.environ.get('werkzeug.server.shutdown')
-        if func is None:
-            raise RuntimeError('Not running with the Werkzeug Server')
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
 
-        func()
-    else:
-        SERVER.stop()
+    func()
 
 
 @app.route('/internal/shutdown', methods=['POST'])

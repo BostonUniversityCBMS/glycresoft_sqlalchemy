@@ -108,6 +108,8 @@ def batch_match_fragments(theoretical_ids, msmsdb_path, ms1_tolerance, ms2_toler
 
             for spectrum in query:
                 peak_list = spectrum.tandem_data
+                if len(peak_list) == 0:
+                    continue
                 intensity_threshold = median(p.intensity for p in peak_list)
                 peak_list = [p for p in peak_list if p.intensity >= intensity_threshold]
                 peak_list = sorted(peak_list, key=neutral_mass_getter)
@@ -332,6 +334,8 @@ def batch_match_theoretical_ions(scan_ids, msmsdb_path, ms1_tolerance, ms2_toler
                 ms1_tolerance, hypothesis_id)
 
             peak_list = spectrum.tandem_data
+            if len(peak_list) == 0:
+                continue
             intensity_threshold = median(p.intensity for p in peak_list)
             peak_list = [p for p in peak_list if p.intensity >= intensity_threshold]
             peak_list = sorted(peak_list, key=neutral_mass_getter)

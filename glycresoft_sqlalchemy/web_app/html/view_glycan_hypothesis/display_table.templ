@@ -34,7 +34,9 @@
     <div class='col s5'>
     <ul class='pagination'>
         <li class={{"disabled" if paginator.page == 1 else ""}}>
-            <a class='previous-page'><i class="material-icons">chevron_left</i></a>
+            <a class='previous-page'>
+            <i class="material-icons">chevron_left</i>
+            </a>
         </li>
         {% for page in paginator.iter_pages() %}
             {% if page is not none %}
@@ -46,7 +48,7 @@
             {% endif %}
         {% endfor %}
         <li class={{"disabled" if paginator.page == paginator.pages else ""}}>
-            <a class='next-page '><i class="material-icons">chevron_right</i></a>
+            <a class='next-page'><i class="material-icons">chevron_right</i></a>
         </li>
     </ul>        
     </div>

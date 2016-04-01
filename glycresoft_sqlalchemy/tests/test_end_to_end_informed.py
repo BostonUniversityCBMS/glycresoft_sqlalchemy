@@ -48,8 +48,8 @@ def test_main():
         "P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"
     ]
 
-    # ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics"
-    ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/MS1-Reduced"
+    ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics"
+    # ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/MS1-Reduced"
     ms2_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics-MS2"
 
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(

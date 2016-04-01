@@ -209,12 +209,6 @@ def build_matches(theoretical_ids, database_manager, hypothesis_sample_match_id,
             if len(spectrum_matches) == 0:
                 continue
 
-            # if theoretical.glycopeptide_sequence == "SVQEIQATFFYFTPN(HexNAc)K{Hex:6; HexNAc:5; Neu5Ac:2}":
-            #     print theoretical
-            #     print spectrum_matches
-            #     print max(spectrum_matches, key=best_scoring_key)
-            #     raise Exception("Error")
-
             match_total = theoretical_to_match(theoretical, hypothesis_sample_match_id)
             match_total.scan_id_range = [s.scan_time for s in spectrum_matches]
             match_total.first_scan = match_total.scan_id_range[0]

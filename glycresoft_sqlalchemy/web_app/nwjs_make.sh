@@ -21,7 +21,7 @@ cat $nwjs_dir/nw.exe ./$app_name.nw > $build_app_dir/$app_name.exe && chmod +x $
 # move nw.pak to build folder
 mv ./nw.pak $build_app_dir/nw.pak
 mv ./icudtl.dat $build_app_dir/icudtl.dat
-cp -r ./static/css ./static/font ./static/js/dist $build_app_dir
+cp -r ./static/dist/* $build_app_dir
 
 # remove $app_name.nw
 rm ./$app_name.nw

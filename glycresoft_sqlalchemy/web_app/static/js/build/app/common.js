@@ -1,4 +1,4 @@
-var Application, options, renderTask,
+var Application, renderTask,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
 
@@ -10,6 +10,7 @@ Application = (function(superClass) {
     if (options == null) {
       options = {};
     }
+    console.log("Instantiating Application", this);
     Application.__super__.constructor.call(this, options.actionContainer, options);
     this.version = [0, 0, 1];
     this.context = {};
@@ -18,7 +19,7 @@ Application = (function(superClass) {
     this.sideNav = $('.side-nav');
     this.colors = new ColorManager();
     self = this;
-    this.eventStream = new EventSource('/stream');
+    this.connectEventSource();
     this.handleMessage('update', (function(_this) {
       return function(data) {
         Materialize.toast(data.replace(/"/g, ''), 4000);
@@ -92,6 +93,11 @@ Application = (function(superClass) {
       };
     })(this));
   }
+
+  Application.prototype.connectEventSource = function() {
+    console.log("Establishing EventSource connection");
+    return this.eventStream = new EventSource('/stream');
+  };
 
   Application.prototype.runInitializers = function() {
     var initializer, j, len, ref, results;
@@ -281,11 +287,11 @@ renderTask = function(task) {
   return '<li data-id=\'{id}\' data-status=\'{status}\'><b>{name}</b> ({status})</li>'.format(task);
 };
 
-window.GlycReSoft = new Application(options = {
-  actionContainer: ".action-layer-container"
-});
-
 $(function() {
+  var options;
+  window.GlycReSoft = new Application(options = {
+    actionContainer: ".action-layer-container"
+  });
   console.log("updating Application");
   GlycReSoft.runInitializers();
   GlycReSoft.updateSettings();

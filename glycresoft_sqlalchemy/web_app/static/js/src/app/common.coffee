@@ -1,5 +1,7 @@
 class Application extends ActionLayerManager
     constructor: (options={}) ->
+        console.log "Instantiating Application", this
+
         super options.actionContainer, options
 
         @version = [
@@ -13,7 +15,8 @@ class Application extends ActionLayerManager
         @sideNav = $('.side-nav')
         @colors = new ColorManager()
         self = this
-        @eventStream = new EventSource('/stream')
+        
+        @connectEventSource()
         
         @handleMessage 'update', (data) =>
             Materialize.toast data.replace(/"/g, ''), 4000
@@ -61,6 +64,9 @@ class Application extends ActionLayerManager
         @on "layer-change", (data) =>
             @colors.update()
 
+    connectEventSource: ->
+        console.log "Establishing EventSource connection"
+        @eventStream = new EventSource('/stream')
 
     runInitializers: ->
         for initializer in Application.initializers
@@ -177,9 +183,8 @@ renderTask = (task) ->
     '<li data-id=\'{id}\' data-status=\'{status}\'><b>{name}</b> ({status})</li>'.format task
 
 
-window.GlycReSoft = new Application(options={actionContainer: ".action-layer-container"})
-
 $(() ->
+    window.GlycReSoft = new Application(options={actionContainer: ".action-layer-container"})
     console.log("updating Application")
     GlycReSoft.runInitializers()
     GlycReSoft.updateSettings()
