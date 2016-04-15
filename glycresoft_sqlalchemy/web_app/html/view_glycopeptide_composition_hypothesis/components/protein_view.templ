@@ -1,9 +1,9 @@
 <div id='protein-overview'>
         <div>
             <h5>>{{protein.name}}</h5>
-            <code>
+            <code class='sequence-text'>
                 {{
-                protein.protein_sequence | highlight_sequence_site(protein.glycosylation_sites, "glycosylation-site") | n_per_row(50)
+                protein.protein_sequence | highlight_sequence_site(protein.glycosylation_sites, "glycosylation-site") | n_per_row(45)
                 }}
             </code>
         </div>

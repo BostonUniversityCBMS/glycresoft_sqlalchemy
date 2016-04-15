@@ -387,7 +387,7 @@ class StructureMotif(GlycanBase, HasReferenceAccessionNumber, Base):
             else:
                 motif_class = motif.motif_class
             inst = cls.get(
-                session, name=name, canonical_sequence=str(motif),
+                session, name=name, canonical_sequence=motif.serialize(),
                 motif_class=motif_class, is_core_motif=motif.is_core_motif)
             session.add(inst)
         session.commit()

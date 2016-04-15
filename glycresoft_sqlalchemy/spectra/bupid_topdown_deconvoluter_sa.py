@@ -315,6 +315,7 @@ class StreamingYAMLRenderer(object):
                         raise Exception("Expected an active sequence when recovering anchor")
 
         session.commit()
+        session.close()
 
 
 class BUPIDMSMSYamlParser(PipelineModule):

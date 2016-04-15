@@ -39,6 +39,8 @@ def export_csv_task(id):
     context = state['context']
     minimum_score = settings.get("minimum_ms2_score", 0.2)
 
+    print hypothesis_sample_match, id
+
     if isinstance(hypothesis_sample_match, (MS1GlycopeptideHypothesisSampleMatch,
                                             MS1GlycanHypothesisSampleMatch)):
         filterfunc = functools.partial(

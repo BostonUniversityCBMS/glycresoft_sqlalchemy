@@ -17,7 +17,7 @@ from glycresoft_sqlalchemy.utils.worker_utils import profile_task
 logger = logging.getLogger("pipeline_module")
 
 
-debug = True
+DEBUG = False
 
 
 class User(Base):
@@ -107,7 +107,7 @@ class PipelineModule(object):
         self._begin(*args, **kwargs)
         try:
             out = self.run()
-        except KeyboardInterrupt if debug else Exception, e:
+        except KeyboardInterrupt if DEBUG else Exception, e:
             logger.exception("An error occurred: %r", e, exc_info=e)
             out = self.error = e
             self.status = -1
@@ -124,7 +124,8 @@ class PipelineModule(object):
     def _begin(self, verbose=True, *args, **kwargs):
         self.start_time = datetime.datetime.now()
         if verbose:
-            logger.info("Begin %s\n%s\n", self.__class__.__name__, pprint.pformat(self.__dict__))
+            logger.info("Begin %s\n%s\n", self.__class__.__name__, pprint.pformat(
+                {k: v for k, v in self.__dict__.items() if not k.startswith("_")}))
         self.on_begin()
 
     def on_begin(self):

@@ -261,9 +261,9 @@ with let(subparsers.add_parser("glycomics-glycomedb")) as c:
         help="Path to project database.")
     c.add_argument(
         "-g", "--glycomedb-path", default=None, required=False)
-    c.add_argument("-t", "--taxon-id", default=[], action='append')
+    c.add_argument("-t", "--taxon-id", default=[], type=int, action='append')
     c.add_argument("-s", "--include-structures", required=False, action="store_true")
-    c.add_argument("-m", "--motif-family", choices=("N-Linked Glycans", "O-Linked Glycans"), required=True)
+    c.add_argument("-m", "--motif-family", choices=("N-Linked", "O-Linked"), required=True)
     c.add_argument("-x", "--taxonomy-path")
     c.add_argument("-i", "--include-descendent-taxa", action="store_true")
     c.add_argument("-e", "--derivatization")

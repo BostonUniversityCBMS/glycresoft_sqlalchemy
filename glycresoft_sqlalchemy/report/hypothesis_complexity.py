@@ -3,10 +3,7 @@ import os
 from glycresoft_sqlalchemy.data_model import DatabaseManager, Hypothesis, TheoreticalGlycopeptide, Protein
 
 import pandas as pd
-import matplotlib
 from matplotlib import pyplot as plt
-
-# matplotlib.rcParams['figure.figsize'] = 10, 8
 
 
 def fetch(database_path, hypothesis_id):

@@ -2,15 +2,15 @@ import os
 import operator
 import time
 import logging
-import json
 try:
     logger = logging.getLogger("web_app.report")
 except:
     pass
-from glycresoft_sqlalchemy.data_model import Hypothesis, Protein, TheoreticalGlycopeptide, GlycopeptideMatch, DatabaseManager
+from glycresoft_sqlalchemy.data_model import (
+    GlycopeptideMatch)
 from glycresoft_sqlalchemy.report.plot_glycoforms import plot_glycoforms_svg
 from glycresoft_sqlalchemy.report import colors
-from glycresoft_sqlalchemy.utils import data_files
+
 from glycresoft_sqlalchemy.structure.sequence import Sequence, FrozenGlycanComposition
 from glycresoft_sqlalchemy.report.chromatogram import draw_chromatogram
 from glycresoft_sqlalchemy.report.sequence_fragment_logo import glycopeptide_match_logo

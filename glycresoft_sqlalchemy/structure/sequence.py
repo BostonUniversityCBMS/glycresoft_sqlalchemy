@@ -579,7 +579,16 @@ class PeptideSequence(PeptideSequenceBase):
 
     def drop_modification(self, position, modification_type):
         '''
-        Drop a modification by name from a specific residue
+        Drop a modification by name from a specific residue. If the
+        position is the N-term or the C-term, the terminal modification will
+        be reset to the default.
+
+        Parameters
+        ----------
+        position: int
+            The position of the modification to drop
+        modification_type: str or Modification
+            The modification to drop
         '''
         dropped_index = None
 
@@ -636,7 +645,22 @@ class PeptideSequence(PeptideSequenceBase):
     def get_sequence(self, start=0, include_glycan=True, include_termini=True,
                      implicit_n_term=None, implicit_c_term=None):
         """
-        Generate human readable sequence string.
+        Generate human readable sequence string. Called by :meth:`__str__`
+
+        Parameters
+        ----------
+        start: int
+            The position to start from
+        include_glycan: bool
+            Whether to include the glycan in the resulting string. Defaults to `True`
+        include_termini: bool
+            Whether to include the N- and C-termini. Make sure this is `True` if you want non-standard
+            termini to be properly propagated.
+
+
+        Returns
+        -------
+        str
         """
         if implicit_n_term is None:
             implicit_n_term = structure_constants.N_TERM_DEFAULT
@@ -665,9 +689,6 @@ class PeptideSequence(PeptideSequenceBase):
         return rep
 
     __str__ = get_sequence
-
-    def get_sequence_list(self, start=0):
-        return self.seq[start:]
 
     def clone(self):
         inst = self.__class__()
@@ -783,7 +804,7 @@ class PeptideSequence(PeptideSequenceBase):
                         fucosylated['key']["Fuc"] = 1
                         core_shifts.append(fucosylated)
 
-                    for hexose_count in range(4):
+                    for hexose_count in range(1, 4):
                         shift = {
                             "mass": (hexnac_count * hexnac_mass) + (hexose_count * hexose_mass),
                             "key": {"HexNAc": hexnac_count, "Hex": hexose_count}
@@ -845,17 +866,21 @@ class PeptideSequence(PeptideSequenceBase):
                     name=key + "-2H2O", mass=mass - 2 * WATER, kind=oxonium_ion_series)
                 yield SimpleFragment(
                     name=key + "-2H2O-CH2O", mass=mass - (2 * WATER) - TAIL, kind=oxonium_ion_series)
-            for kk in itertools.combinations(glycan, 4):
-                key = ''.join(map(str, kk))
-                mass = sum(k.mass() for k in kk)
-                yield SimpleFragment(
-                    name=key, mass=mass, kind=oxonium_ion_series)
-                yield SimpleFragment(
-                    name=key + "-H2O", mass=mass - WATER, kind=oxonium_ion_series)
-                yield SimpleFragment(
-                    name=key + "-2H2O", mass=mass - 2 * WATER, kind=oxonium_ion_series)
-                yield SimpleFragment(
-                    name=key + "-2H2O-CH2O", mass=mass - (2 * WATER) - TAIL, kind=oxonium_ion_series)
+            for i in range(2, 4):
+                for kk in itertools.combinations_with_replacement(glycan, i):
+                    for k, v in Counter(kk).items():
+                        if glycan[k] < v:
+                            continue
+                    key = ''.join(map(str, kk))
+                    mass = sum(k.mass() for k in kk)
+                    yield SimpleFragment(
+                        name=key, mass=mass, kind=oxonium_ion_series)
+                    yield SimpleFragment(
+                        name=key + "-H2O", mass=mass - WATER, kind=oxonium_ion_series)
+                    yield SimpleFragment(
+                        name=key + "-2H2O", mass=mass - 2 * WATER, kind=oxonium_ion_series)
+                    yield SimpleFragment(
+                        name=key + "-2H2O-CH2O", mass=mass - (2 * WATER) - TAIL, kind=oxonium_ion_series)
 
         if isinstance(self.glycan, Glycan) and all_series:
             glycan = self.glycan
@@ -873,12 +898,17 @@ class PeptideSequence(PeptideSequenceBase):
                     yield SimpleFragment(
                         name=fragment.name, mass=fragment.mass, kind=oxonium_ion_series)
         elif allow_ambiguous and all_series:
+            _offset = Composition()
             total = FrozenGlycanComposition(self.glycan)
             base = FrozenGlycanComposition(Hex=3, HexNAc=2)
             remainder = total - base
+            # GlycanComposition's clone semantics do not propagate the
+            # composition_offset attribute yet. Should it?
+            remainder.composition_offset = _offset
             stub_mass = self.mass + base.mass() - WATER - FrozenMonosaccharideResidue.from_iupac_lite("HexNAc").mass()
             for composition in descending_combination_counter(remainder):
                 composition = FrozenGlycanComposition(composition)
+                composition.composition_offset = _offset
                 if sum(composition.values()) > 2:
                     yield SimpleFragment(
                         name=composition.serialize(), mass=composition.mass(),
@@ -890,7 +920,8 @@ class PeptideSequence(PeptideSequenceBase):
                         name=composition.serialize() + "-H2O-H2O", mass=composition.mass() - (WATER * 2),
                         kind=oxonium_ion_series)
                 f = SimpleFragment(
-                    name="peptide+" + str(total - composition), mass=stub_mass + remainder.mass() - composition.mass(),
+                    name="peptide+" + str(total - composition),
+                    mass=stub_mass + remainder.mass() - composition.mass(),
                     kind=stub_glycopeptide_series)
                 yield f
         elif all_series:

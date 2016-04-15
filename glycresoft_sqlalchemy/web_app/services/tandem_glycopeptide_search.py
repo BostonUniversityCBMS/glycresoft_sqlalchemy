@@ -40,8 +40,6 @@ def tandem_match_samples_post():
         job_parameters['target_hypothesis_id'] = None
         job_parameters['decoy_hypothesis_id'] = None
 
-    print request.values.__dict__
-
     for sample_name in request.values.getlist('samples'):
         instance_parameters = job_parameters.copy()
         sample_run, sample_manager = g.manager.find_sample(sample_name)
@@ -49,7 +47,7 @@ def tandem_match_samples_post():
         instance_parameters["sample_run_id"] = sample_run.id
         instance_parameters['callback'] = lambda: 0
         instance_parameters['observed_ions_type'] = 'db'
-        print instance_parameters
+
         task = TandemMSGlycoproteomicsSearchTask(**instance_parameters)
         g.manager.add_task(task)
     return jsonify(**dict(request.values))

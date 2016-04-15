@@ -121,7 +121,10 @@ class ProjectManager(DatabaseManager, TaskManager):
     def samples(self):
         results = []
         for manager in self.sample_submanagers:
-            results.extend(manager.session().query(SampleRun).all())
+            try:
+                results.extend(manager.session().query(SampleRun).all())
+            except:
+                pass
         return results
 
     def ms1_samples(self):

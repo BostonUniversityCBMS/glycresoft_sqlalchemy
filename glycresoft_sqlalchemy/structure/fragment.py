@@ -41,7 +41,7 @@ fragment_direction = {
 generic_neutral_losses_composition = {
     "-NH3": -Composition("NH3"),
     "-H2O": -Composition("H2O"),
-    "-NH3-NH3": -Composition("(NH3)2"),
+    # "-NH3-NH3": -Composition("(NH3)2"),
     "-H2O-H2O": -Composition("(H2O)2"),
     "-NH3-H2O": -Composition("NH3H2O")
 }

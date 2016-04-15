@@ -1,5 +1,5 @@
 from sqlalchemy.orm import make_transient
-import sqlitedict
+from .vendor import sqlitedict
 
 Incomplete = object()
 

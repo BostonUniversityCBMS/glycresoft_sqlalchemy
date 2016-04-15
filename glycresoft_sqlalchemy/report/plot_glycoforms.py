@@ -2,21 +2,6 @@ import argparse
 import os
 import re
 
-try:   # pragma: no cover
-    from cStringIO import StringIO
-except:  # pragma: no cover
-    try:
-        from StringIO import StringIO
-    except:
-        from io import StringIO
-try:  # pragma: no cover
-    from lxml import etree as ET
-except ImportError:  # pragma: no cover
-    try:
-        from xml.etree import cElementTree as ET
-    except:
-        from xml.etree import ElementTree as ET
-
 import matplotlib
 from matplotlib import font_manager
 from matplotlib import pyplot as plt
@@ -25,6 +10,8 @@ from matplotlib.textpath import TextPath
 
 from ..data_model import DatabaseManager, GlycopeptideMatch, Protein
 from ..structure import sequence
+
+from .svg_utils import ET, StringIO
 from .colors import lighten, darken, get_color
 
 

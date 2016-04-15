@@ -18,6 +18,8 @@ def post_add_sample():
     TYPE : Description
     """
     run_name = request.values['sample_name']
+    if run_name == "":
+        run_name = request.files['observed-ions-file'].filename
     secure_name = secure_filename(run_name)
 
     secure_name += ".%s" % request.values["file-type"]

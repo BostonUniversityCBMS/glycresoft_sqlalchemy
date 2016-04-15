@@ -280,7 +280,9 @@ class CSVExportDriver(PipelineModule):
                 monosaccharide_identities,
                 output_path
                 )
-        return output_path
+        else:
+            print("Unsupported Hypothesis Type: %s" % hypothesis.theoretical_structure_type.__name__)
+        return outputs
 
     def run(self):
         hsm_exports = map(self.dispatch_export_hypothesis_sample_match, self.hypothesis_sample_match_ids)

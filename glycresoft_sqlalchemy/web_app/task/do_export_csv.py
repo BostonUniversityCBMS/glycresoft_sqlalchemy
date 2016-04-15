@@ -8,12 +8,11 @@ def taskmain(database_path, hypothesis_sample_match_id, filterfunc=lambda q: q,
              tempdir=None, comm=NullPipe(), **kwargs):
     comm.send(Message("Begin CSV export", type='info'))
     job = export_csv.CSVExportDriver(
-        database_path, [hypothesis_sample_match_id], output_path=tempdir, filterfunc=filterfunc)
-    paths = job.start()
-    paths = [p for path_group in list(paths) for p in path_group]
+        database_path, hypothesis_sample_match_ids=[hypothesis_sample_match_id], output_path=tempdir, filterfunc=filterfunc)
+    hsm_exports, hypothesis_exports = job.start()
     comm.send(Message({
         "hypothesis_sample_match_id": hypothesis_sample_match_id,
-        "files": paths
+        "files": hsm_exports[0]
         }, "files-to-download"))
     return
 

@@ -22,6 +22,18 @@ $(function() {
         event.preventDefault()
         setupAjaxForm("/preferences", "#dialog-modal")
     })
+
+    var contentCenter = parseFloat($(".action-layer-container > :visible").css("margin-left"))
+    console.log(contentCenter, (contentCenter * .75) + 'px')
+    $(window).resize(function(){
+        contentCenter = parseFloat($(".action-layer-container > :visible").css("margin-left"))
+        console.log("Updated content left", contentCenter)
+        if(isNaN(contentCenter)){
+            contentCenter = 100.;
+        }
+        $(".toggle-sidebar").click()
+        $(".toggle-sidebar").click()    
+    })
     $(".toggle-sidebar").click(function(event){
         var handle = $(this)
         if(handle.attr('data-state') == 'open'){
@@ -33,7 +45,8 @@ $(function() {
         } else {
             handle.removeClass("mdi-navigation-chevron-right")
             handle.addClass("mdi-navigation-chevron-left")
-            $("#left-sidebar").css("width", "240px")            
+            
+            $("#left-sidebar").css("width", (contentCenter * .75) + 'px')
             $("#sidebar-content").show()
             handle.attr('data-state', 'open')
         }

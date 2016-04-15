@@ -1,10 +1,13 @@
 import csv
 import os
 import uuid
+import logging
 
 from glycresoft_sqlalchemy.data_model import PipelineModule
 from glycresoft_sqlalchemy.data_model.observed_ions import (
     Decon2LSLCMSSampleRun, MSScan, Decon2LSPeak)
+
+logger = logging.getLogger("decon2ls_parser")
 
 isos_to_db_map = {
     "abundance": "intensity",
@@ -80,10 +83,11 @@ class Decon2LSIsosParser(PipelineModule):
                 session.flush()
                 last_key = scan.id
                 last_scan_id = remap['scan_id']
-                if last + self.interval == i:
-                    session.commit()
-                    last = i
-                    conn = session.connection()
             remap['scan_id'] = last_key
             conn.execute(TDecon2LSPeak.insert().values(**remap))
+            if last + self.interval == i:
+                logger.info("Committing %d", i)
+                session.commit()
+                last = i
+                conn = session.connection()
         session.commit()

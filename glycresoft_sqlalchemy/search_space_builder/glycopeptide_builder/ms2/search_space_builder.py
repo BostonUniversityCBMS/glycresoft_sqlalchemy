@@ -718,7 +718,7 @@ class BatchingTheoreticalSearchSpaceBuilder(TheoreticalSearchSpaceBuilder):
         if self.n_processes > 1:
             worker_pool = multiprocessing.Pool(self.n_processes)
             logger.debug("Building theoretical sequences concurrently")
-            for res in worker_pool.imap_unordered(task_fn, self.stream_results(4000), chunksize=1):
+            for res in worker_pool.imap_unordered(task_fn, self.stream_results(2000), chunksize=1):
                 cntr += res
                 if (cntr > last + step):
                     last = cntr
@@ -794,6 +794,11 @@ def batch_process_predicted_ms1_ion(rows, modification_table, site_list_map,
                 sequence["protein_id"] = proteins[ms1_result.protein_name]
                 glycopeptide_acc.append(sequence)
                 i += 1
+                if len(glycopeptide_acc) > 5000:
+                    session.bulk_insert_mappings(TheoreticalGlycopeptide, glycopeptide_acc)
+                    session.commit()
+                    glycopeptide_acc = []
+
         session.bulk_insert_mappings(TheoreticalGlycopeptide, glycopeptide_acc)
         session.commit()
         return i

@@ -55,7 +55,7 @@ def test_main():
     glycopeptide_hypothesis_id = 2
     ec = os.system(
         ("glycresoft-database-search ms1 -n 6 -i %s %s %d "
-         "-p db -g 2e-5") % (ms1_data, db_file_name, glycopeptide_hypothesis_id))
+         "-p db -g 2e-5 --skip-grouping") % (ms1_data, db_file_name, glycopeptide_hypothesis_id))
 
     assert ec == 0
 

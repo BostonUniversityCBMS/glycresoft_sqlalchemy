@@ -205,7 +205,7 @@ def run(store_path, external, no_execute_tasks, port, **kwargs):
     app.debug = DEBUG
     app.secret_key = SECRETKEY
     # setup_logging()
-    app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=port, passthrough_errors=True)
+    SERVER = app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=port, passthrough_errors=True)
 
 
 def main():

@@ -126,7 +126,6 @@ class WorkItemCollectionFlat(object):
     def __init__(self, session):
         self.session = session
         self.accumulator = []
-        self.glycan_accumulator = []
 
     def add(self, glycopeptide_record):
         self.accumulator.append(glycopeptide_record)

@@ -29,9 +29,9 @@ random_string = get_random_string
 
 
 def get_random_hash(length=24):
-    hash = sha512()
-    hash.update(get_random_string())
-    return hash.hexdigest()[:length]
+    sha = sha512()
+    sha.update(get_random_string())
+    return sha.hexdigest()[:length]
 
 
 def intify(value, default=0):

@@ -1,4 +1,8 @@
 
+code.sequence-text {
+    font-family: Consolas, monospace !important;
+}
+
 .handle {
     cursor: hand;
 }
@@ -24,6 +28,10 @@
    display: block;
    height: 0;
    clear: both;
+}
+
+#save-csv-file {
+    line-height: 18px;
 }
 
 
