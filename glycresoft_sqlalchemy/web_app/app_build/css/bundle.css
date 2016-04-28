@@ -8545,6 +8545,10 @@ Monosaccharide Grid
 }
 
 
+code.sequence-text {
+    font-family: Consolas, monospace !important;
+}
+
 .handle {
     cursor: hand;
 }
@@ -8570,6 +8574,10 @@ Monosaccharide Grid
    display: block;
    height: 0;
    clear: both;
+}
+
+#save-csv-file {
+    line-height: 18px;
 }
 
 

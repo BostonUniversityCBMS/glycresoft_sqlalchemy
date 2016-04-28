@@ -69,6 +69,9 @@ class ConnectionManager(object):
         return '<{} {}>'.format(
             self.__class__.__name__, self.construct_url())
 
+    def interrupt(self):
+        return NotImplemented
+
 
 class SQLiteConnectionManager(ConnectionManager):
     connect_args = {"timeout": 1200 * SCALE}
@@ -131,7 +134,7 @@ class SQLiteConnectionManager(ConnectionManager):
                 dbapi_connection.execute("PRAGMA page_size = 5120;")
                 dbapi_connection.execute("PRAGMA cache_size = 12000;")
                 dbapi_connection.execute("PRAGMA foreign_keys = ON;")
-                dbapi_connection.execute("PRAGMA journal_mode=WAL;")
+                dbapi_connection.execute("PRAGMA journal_mode = WAL;")
 
             except:
                 pass
@@ -144,6 +147,11 @@ class SQLiteConnectionManager(ConnectionManager):
             return self._memory_database
         else:
             return super(SQLiteConnectionManager, self).construct_url()
+
+    def interrupt(self):
+        eng = self.connect()
+        fairy = eng.raw_connection()
+        fairy.connection.interrupt()
 
 
 class NoConfigSQLiteConnectionManager(SQLiteConnectionManager):
@@ -229,6 +237,9 @@ class DatabaseManager(object):
 
     def bridge_address(self):
         return self.connection_manager.bridge_address()
+
+    def interrupt(self):
+        self.connection_manager.interrupt()
 
     def __repr__(self):
         return '<{} {}>'.format(

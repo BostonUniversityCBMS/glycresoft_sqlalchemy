@@ -380,9 +380,11 @@ body.cython { font-family: courier; font-size: 12; }
 <pre class="cython line score-0">&#xA0;<span class="">013</span>: <span class="k">from</span> <span class="nn">libc.string</span> <span class="k">cimport</span> <span class="n">strcmp</span></pre>
 <pre class="cython line score-0">&#xA0;<span class="">014</span>: <span class="k">from</span> <span class="nn">libc.stdlib</span> <span class="k">cimport</span> <span class="n">malloc</span><span class="p">,</span> <span class="n">free</span><span class="p">,</span> <span class="n">realloc</span></pre>
 <pre class="cython line score-0">&#xA0;<span class="">015</span>: <span class="k">from</span> <span class="nn">libc</span> <span class="k">cimport</span> <span class="o">*</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">016</span>: </pre>
-<pre class="cython line score-29" onclick='toggleDiv(this)'>+<span class="">017</span>: <span class="k">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">namedtuple</span></pre>
-<pre class='cython code score-29 '>  __pyx_t_3 = <span class='py_c_api'>PyList_New</span>(2);<span class='error_goto'> if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
+<pre class="cython line score-0">&#xA0;<span class="">016</span>: <span class="k">cdef</span> <span class="kr">extern</span> <span class="k">from</span> <span class="o">*</span> <span class="k">nogil</span><span class="p">:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">017</span>:     <span class="nb">int</span> <span class="n">printf</span>   <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">template</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">018</span>: </pre>
+<pre class="cython line score-29" onclick='toggleDiv(this)'>+<span class="">019</span>: <span class="k">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">namedtuple</span></pre>
+<pre class='cython code score-29 '>  __pyx_t_3 = <span class='py_c_api'>PyList_New</span>(2);<span class='error_goto'> if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_n_s_Counter);
   <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_n_s_Counter);
@@ -390,22 +392,20 @@ body.cython { font-family: courier; font-size: 12; }
   <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_n_s_namedtuple);
   <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_n_s_namedtuple);
   <span class='py_macro_api'>PyList_SET_ITEM</span>(__pyx_t_3, 1, __pyx_n_s_namedtuple);
-  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_Import</span>(__pyx_n_s_collections, __pyx_t_3, -1);<span class='error_goto'> if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
+  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_Import</span>(__pyx_n_s_collections, __pyx_t_3, -1);<span class='error_goto'> if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_ImportFrom</span>(__pyx_t_4, __pyx_n_s_Counter);<span class='error_goto'> if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_ImportFrom</span>(__pyx_t_4, __pyx_n_s_Counter);<span class='error_goto'> if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_d, __pyx_n_s_Counter, __pyx_t_3) &lt; 0) <span class='error_goto'>{__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_d, __pyx_n_s_Counter, __pyx_t_3) &lt; 0) <span class='error_goto'>{__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_ImportFrom</span>(__pyx_t_4, __pyx_n_s_namedtuple);<span class='error_goto'> if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_ImportFrom</span>(__pyx_t_4, __pyx_n_s_namedtuple);<span class='error_goto'> if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_d, __pyx_n_s_namedtuple, __pyx_t_3) &lt; 0) <span class='error_goto'>{__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_d, __pyx_n_s_namedtuple, __pyx_t_3) &lt; 0) <span class='error_goto'>{__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">018</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">019</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">020</span>: <span class="k">cdef</span> <span class="kr">extern</span> <span class="k">from</span> <span class="o">*</span> <span class="k">nogil</span><span class="p">:</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">021</span>:     <span class="nb">int</span> <span class="n">printf</span>   <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">template</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span></pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">020</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">021</span>: </pre>
 <pre class="cython line score-0">&#xA0;<span class="">022</span>: </pre>
 <pre class="cython line score-0">&#xA0;<span class="">023</span>: <span class="k">from</span> <span class="nn">glycresoft_sqlalchemy.utils.ccommon_math</span> <span class="k">cimport</span> <span class="p">(</span></pre>
 <pre class="cython line score-0">&#xA0;<span class="">024</span>:     <span class="n">DPeak</span><span class="p">,</span> <span class="n">MassOffsetFeature</span><span class="p">,</span></pre>

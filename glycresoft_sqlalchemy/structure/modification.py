@@ -298,8 +298,8 @@ class ModificationRule(object):
         title = unimod_entry["title"]
         specificity = list(map(ModificationTarget.from_unimod_specificity, specificity))
         return cls(
-                specificity, full_name, title, monoisotopic_mass,
-                composition=Composition({str(k): int(v) for k, v in unimod_entry['composition'].items()}))
+            specificity, full_name, title, monoisotopic_mass,
+            composition=Composition({str(k): int(v) for k, v in unimod_entry['composition'].items()}))
 
     def __init__(self, amino_acid_specificity, modification_name,
                  title=None, monoisotopic_mass=None, composition=None,
@@ -593,9 +593,17 @@ class Glycosylation(ModificationRule):
     """
     parser = re.compile(r"@(?P<glycan_composition>\{[^\}]+\})")
 
+    @classmethod
+    def try_parse(cls, rule_string):
+        glycosylation = cls.parser.search(rule_string)
+        glycosylation = FrozenGlycanComposition.parse(glycosylation.group(0))
+        return cls(glycosylation)
+
     def __init__(self, glycan_composition):
         if isinstance(glycan_composition, basestring):
             glycan_composition = FrozenGlycanComposition.parse(glycan_composition)
+
+        glycan_composition.composition_offset = Composition()
 
         self.name = "@" + str(glycan_composition)
         self.mass = glycan_composition.mass()
@@ -1005,7 +1013,11 @@ class Modification(ModificationBase):
                 if anon is None:
                     aa_sub = AminoAcidSubstitution.try_parse(rule)
                     if aa_sub is None:
-                        raise ModificationNameResolutionError(rule)
+                        glycosylation = Glycosylation.try_parse(rule)
+                        if glycosylation is None:
+                            raise ModificationNameResolutionError(rule)
+                        else:
+                            rule = glycosylation
                     else:
                         rule = aa_sub
                 else:

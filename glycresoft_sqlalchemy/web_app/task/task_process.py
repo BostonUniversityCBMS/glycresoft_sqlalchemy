@@ -1,21 +1,11 @@
 import logging
-import sys
 import traceback
+from os import path
 from uuid import uuid4
-from multiprocessing import Process, Pipe, current_process
+from multiprocessing import Process, Pipe
 from threading import Event, Thread, RLock
 from Queue import Queue, Empty as QueueEmptyException
-try:
-    from gevent.queue import Queue
-except:
-    print "No gevent"
-try:
-    import cPickle as pickle
-except:
-    import pickle
-import os
-import glob
-from os import path
+
 
 logger = logging.getLogger("task_process")
 logger.setLevel("ERROR")
@@ -30,12 +20,16 @@ def noop():
     pass
 
 
+def printop(*args, **kwargs):
+    print(args, kwargs)
+
+
 def configure_log(log_file_path, callable, args):
     import logging
     logger = logging.getLogger()
     handler = logging.FileHandler(log_file_path)
     formatter = logging.Formatter(
-        "%(asctime)s - %(processName)s:%(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
+        "%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
         "%H:%M:%S")
     handler.setFormatter(formatter)
     logging.captureWarnings(True)
@@ -88,7 +82,37 @@ class CallInterval(object):
 
 
 class Task(object):
-    def __init__(self, task_fn, args, callback=noop, **kwargs):
+    """
+    Represents a separate process that is performing an long running operation against
+    the database with a distinct endpoint. This process is executing a series of function
+    launched from within Python as opposed to simply running a 3rd-party executable, and is
+    able to set up two-way communication between the main process and the "task" process.
+
+
+    Attributes
+    ----------
+    args : iterable
+        The list of arguments to the task's main function
+    callback : callable
+        A function to be called when the task's main function completes
+    id : str
+        A unique identifier for the task. Usually a UUID
+    log_file_path : str
+        The path for the task write all logging messages to
+    message_buffer : list
+        An accumulator for outbound messages from this task
+    name : str
+        A more human-readable description of this "task" process which may
+        be displayed to the user. Defaults to :attr:`id`.
+    process : multiprocessing.Process
+        The actual Process object doing the work
+    state : str
+        One of several constants describing whether task is new, has started,
+        has finished with an error, or has completed successfully
+    task_fn : callable
+        The function to call in the "task" process
+    """
+    def __init__(self, task_fn, args, callback=printop, **kwargs):
         self.id = str(uuid4())
         self.task_fn = task_fn
         self.pipe, child_conn = Pipe(True)
@@ -168,11 +192,13 @@ class Task(object):
         return "<Task {} {}>".format(self.id, self.state)
 
     def on_complete(self):
-        '''Implemented by subclass'''
-        pass
+        self.callback()
 
 
 class NullPipe(object):
+    """
+    A class to stub out multiprocessing.Pipe
+    """
     def send(self, *args, **kwargs):
         logger.info(*args, **kwargs)
 
@@ -184,7 +210,19 @@ class NullPipe(object):
 
 
 class Message(object):
+    """
+    Represent a message sent between a Task and the main process.
 
+    Attributes
+    ----------
+    message : object
+        Anything, but preveriably something JSON serializeable
+    source : object
+        Description
+    type : str
+        A constant similar to logging levels. Options in use include
+        ("info", "error", "update")
+    """
     def __init__(self, message, type="info", source=None):
         self.message = message
         self.source = source
@@ -232,6 +270,7 @@ class TaskManager(object):
         self.max_running = max_running
         self.task_queue = Queue()
         self.currently_running = {}
+        self.completed_tasks = set()
         self.timer = CallInterval(self.interval, self.tick)
         self.timer.start()
         self.messages = Queue()
@@ -299,7 +338,7 @@ class TaskManager(object):
                     task.callback()
                     self.messages.put(Message({"id": task.id, "name": task.name}, "task-complete"))
                     self.running_lock.release()
-                    print "\n\n\n\n{} Completed\n\n\n\n".format(task)
+                    self.completed_tasks.add(task.id)
             elif task.state == ERROR:
                 if task.id in self.currently_running:
                     if self.running_lock.acquire(0):
@@ -314,29 +353,30 @@ class TaskManager(object):
                 else:
                     print task.id, running
 
-        for task_id, task in list(self.currently_running.items()):
-            running = task.update()
-            logger.debug("Checking %r", task)
-            for message in task.messages():
-                self.messages.put(message)
+        # for task_id, task in list(self.currently_running.items()):
+        #     running = task.update()
+        #     logger.debug("Checking %r", task)
+        #     for message in task.messages():
+        #         self.messages.put(message)
 
-            if task.state == FINISHED:
-                self.currently_running.pop(task.id)
-                try:
-                    self.tasks.pop(task.id)
-                except KeyError:
-                    pass
-                self.n_running -= 1
-                task.callback()
-                self.messages.put(Message({"id": task.id, "name": task.name}, "task-complete"))
-            elif not running:
-                print task.id, "not running", task.state
+        #     if task.state == FINISHED:
+        #         self.currently_running.pop(task.id)
+        #         self.completed_tasks.add(task.id)
+        #         try:
+        #             self.tasks.pop(task.id)
+        #         except KeyError:
+        #             pass
+        #         self.n_running -= 1
+        #         task.callback()
+        #         self.messages.put(Message({"id": task.id, "name": task.name}, "task-complete"))
+        #     elif not running:
+        #         print task.id, "not running", task.state
 
     def launch_new_tasks(self):
         while((self.n_running < self.max_running) and (self.task_queue.qsize() > 0)):
             try:
                 task = self.task_queue.get(False)
-                if task.state != NEW:
+                if task.state != NEW or task.id in self.completed_tasks:
                     continue
                 self.run_task(task)
             except QueueEmptyException:

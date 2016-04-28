@@ -187,22 +187,6 @@ class PeptideBase(HasClassBakedQueries):
     def hypothesis_id(self):
         return self.protein.hypothesis_id
 
-    @hybrid_property
-    def is_decoy(self):
-        return self.protein.hypothesis.is_decoy
-
-    @is_decoy.expression
-    def is_decoy(cls):
-        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (Hypothesis.is_decoy))
-
-    @hybrid_property
-    def is_not_decoy(self):
-        return ~self.protein.hypothesis.is_decoy
-
-    @is_not_decoy.expression
-    def is_not_decoy(cls):
-        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy))
-
     def __hash__(self):
         return hash((self.most_detailed_sequence, self.protein_id))
 

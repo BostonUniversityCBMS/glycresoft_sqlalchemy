@@ -26,6 +26,10 @@ class LRUDict(dict):
             dict.__setitem__(self, key, value)
             self.counts[key] = 1
 
+    def __delitem__(self, key):
+        dict.__delitem__(self, key)
+        del self.counts[key]
+
     def shrink(self):
         size = self.size
         total_items = len(self)
@@ -39,8 +43,8 @@ class LRUDict(dict):
 
 
 class ApplicationDataCache(object):
-    def __init__(self):
-        self.app_data = LRUDict()
+    def __init__(self, size=20):
+        self.app_data = LRUDict(size)
 
     def __getitem__(self, key):
         return self.app_data[key]
@@ -64,20 +68,6 @@ class ApplicationDataCache(object):
             self[source_id, source_type, callpath, tuple(args), frozenset(kwargs.items())] = value
             return value
 
-    def cache_querycount(self, source, query=None, filter=None):
-        source_id, source_type = source.id, source.__class__.__name__
-
-        try:
-            return self[(source_id, source_type, query, filter)]
-        except KeyError:
-            if query is not None:
-                if isinstance(query, basestring):
-                    query_obj = getattr(source, query)
-                else:
-                    query_obj = query
-            value = self[(source_id, source_type, query, filter)] = filter(query_obj).count()
-            return value
-
     @contextmanager
     def transaction(self):
         yield
@@ -85,6 +75,9 @@ class ApplicationDataCache(object):
             self.app_data.commit()
         except:
             pass
+
+    def invalidate(self, key):
+        del self.app_data[key]
 
 
 class CachablePartialFunction(partial):
@@ -97,55 +90,3 @@ class CachablePartialFunction(partial):
 
     def __eq__(self, other):
         return (self.func == other.func) and (self.args == other.args) and (self.keywords == other.keywords)
-
-
-class MonosaccharideFilterSet(object):
-    def __init__(self, constraints=None):
-        if constraints is None:
-            constraints = tuple()
-        self.constraints = constraints
-
-    def __eq__(self, other):
-        return self.constraints == other.constraints
-
-    def __hash__(self):
-        return hash(self.constraints)
-
-    def items(self):
-        for constraint in self.constraints:
-            yield constraint.monosaccharide, constraint
-
-    @classmethod
-    def fromdict(cls, filters):
-        filters = [MonosaccharideFilter(monosaccharide=monosaccharide, **constraint)
-                   for monosaccharide, constraint in filters.items()]
-        filters = tuple(filters)
-        return cls(filters)
-
-    def __repr__(self):
-        return "MonosaccharideFilterSet(%r)" % (self.constraints,)
-
-
-class MonosaccharideFilter(object):
-    def __init__(self, monosaccharide, minimum, maximum, include):
-        self.monosaccharide = monosaccharide
-        self.minimum = minimum
-        self.maximum = maximum
-        self.include = include
-
-    def __eq__(self, other):
-        return self.monosaccharide == other.monosaccharide and\
-            self.minimum == other.minimum and\
-            self.maximum == other.maximum and\
-            self.include == other.include
-
-    def __hash__(self):
-        return hash((self.monosaccharide, self.minimum, self.maximum,
-                     self.include))
-
-    def __getitem__(self, key):
-        return self.__dict__[key]
-
-    def __repr__(self):
-        return "MonosaccharideFilter(monosaccharide=%r, minimum=%d, maximum=%d, include=%r)" % (
-            self.monosaccharide, self.minimum, self.maximum, self.include)

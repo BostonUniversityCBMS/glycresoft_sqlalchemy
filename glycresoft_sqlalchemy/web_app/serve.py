@@ -117,8 +117,14 @@ def shutdown():
 
 @app.route("/internal/show_cache")
 def show_cache():
-    print cache.app_data
+    print dict(g.manager.app_data)
     return Response("Printed")
+
+
+@app.route("/internal/interrupt_query")
+def interrupt_query():
+    g.manager.interrupt()
+    return Response("interrupting")
 
 
 def connect_db():
@@ -141,6 +147,14 @@ def teardown_request(exception):
     db = getattr(g, 'db', None)
     if db is not None:
         db.close()
+
+
+@app.context_processor
+def inject_info():
+    from glycresoft_sqlalchemy.version import version
+    return {
+        "application_version": version
+    }
 
 
 @app.context_processor

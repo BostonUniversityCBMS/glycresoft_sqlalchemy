@@ -10,7 +10,7 @@ from .composition import Composition
 from .fragment import PeptideFragment, fragment_shift, fragment_shift_composition, SimpleFragment, IonSeries
 from .modification import Modification, SequenceLocation, ModificationCategory
 from .residue import Residue
-from glypy import GlycanComposition, Glycan, MonosaccharideResidue
+from glypy import GlycanComposition, Glycan, MonosaccharideResidue, Substituent, ReducedEnd
 from glypy.composition.glycan_composition import FrozenGlycanComposition, FrozenMonosaccharideResidue
 
 from .parser import sequence_tokenizer, sequence_length, strip_modifications
@@ -356,8 +356,7 @@ class PeptideSequence(PeptideSequenceBase):
         if isinstance(value, GlycanComposition):
             self._patch_glycan_composition()
         elif isinstance(value, Glycan):
-            pass
-            # TODO: Make this attach the reducing end to a substituent
+            value.reducing_end = ReducedEnd(-Composition("H2O"), valence=0)
 
     @property
     def n_term(self):
@@ -776,13 +775,13 @@ class PeptideSequence(PeptideSequenceBase):
                     shift = {
                         "mass": 0,
                         "key": ""
-                        }
+                    }
                     core_shifts.append(shift)
                 elif hexnac_count == 1:
                     shift = {
                         "mass": (hexnac_count * hexnac_mass),
                         "key": {"HexNAc": hexnac_count}
-                        }
+                    }
                     core_shifts.append(shift)
                     if i < fucose_count:
                         fucosylated = shift.copy()
@@ -794,7 +793,7 @@ class PeptideSequence(PeptideSequenceBase):
                     shift = {
                         "mass": (hexnac_count * hexnac_mass),
                         "key": {"HexNAc": hexnac_count}
-                        }
+                    }
                     core_shifts.append(shift)
 
                     if i < fucose_count:
@@ -808,7 +807,7 @@ class PeptideSequence(PeptideSequenceBase):
                         shift = {
                             "mass": (hexnac_count * hexnac_mass) + (hexose_count * hexose_mass),
                             "key": {"HexNAc": hexnac_count, "Hex": hexose_count}
-                            }
+                        }
                         core_shifts.append(shift)
                         if i < fucose_count:
                             fucosylated = shift.copy()
@@ -943,10 +942,10 @@ def cleave(sequence, rule, missed_cleavages=0, min_length=0, **kwargs):
     peptides = []
     if isinstance(sequence, Sequence):
         sequence = str(sequence)
-    cleavage_sites = deque([0], maxlen=missed_cleavages+2)
+    cleavage_sites = deque([0], maxlen=missed_cleavages + 2)
     for i in itertools.chain(map(lambda x: x.end(), re.finditer(rule, sequence)), [None]):
         cleavage_sites.append(i)
-        for j in range(len(cleavage_sites)-1):
+        for j in range(len(cleavage_sites) - 1):
             seq = sequence[cleavage_sites[j]:cleavage_sites[-1]]
             if seq:
                 if min_length is None or sequence_length(seq) >= min_length:
@@ -959,10 +958,10 @@ def itercleave(sequence, rule, missed_cleavages=0, min_length=0, **kwargs):
     if isinstance(sequence, Sequence):
         sequence = str(sequence)
     seen = set()
-    cleavage_sites = deque([0], maxlen=missed_cleavages+2)
+    cleavage_sites = deque([0], maxlen=missed_cleavages + 2)
     for i in itertools.chain(map(lambda x: x.end(), re.finditer(rule, sequence)), [None]):
         cleavage_sites.append(i)
-        for j in range(len(cleavage_sites)-1):
+        for j in range(len(cleavage_sites) - 1):
             seq = sequence[cleavage_sites[j]:cleavage_sites[-1]]
             if seq:
                 if min_length is None or sequence_length(seq) >= min_length:
@@ -972,3 +971,31 @@ def itercleave(sequence, rule, missed_cleavages=0, min_length=0, **kwargs):
                         continue
                     seen.add(case)
                     yield case
+
+
+class FragmentationStrategyBase(object):
+    def __init__(self, name, *args, **kwargs):
+        self.name = name
+
+    def handle_modification(self, fragment_state, modification):
+        raise NotImplementedError()
+
+    def handle_peptide_backbone(self, fragment_state, position):
+        raise NotImplementedError()
+
+
+class FragmentationState(object):
+    def __init__(self, peptide):
+        self.peptide = peptide
+
+    def __repr__(self):
+        return "FragmentationState(%s)" % self.peptide
+
+
+class ExDFragmentationStrategy(FragmentationStrategyBase):
+
+    def __init__(self):
+        super(ExDFragmentationStrategy, self).__init__("ExDFragmentationStrategy")
+
+    def handle_peptide_backbone(self, fragment_state, position):
+        pass

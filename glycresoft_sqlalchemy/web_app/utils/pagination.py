@@ -45,7 +45,7 @@ class Pagination(object):
         """Returns a :class:`Pagination` object for the previous page."""
         assert self.query is not None, 'a query object is required ' \
                                        'for this method to work'
-        return paginate(self.query, self.page - 1, self.per_page, error_out)
+        return paginate(self.query, self.page - 1, self.per_page, error_out, self.total)
 
     @property
     def prev_num(self):
@@ -61,7 +61,7 @@ class Pagination(object):
         """Returns a :class:`Pagination` object for the next page."""
         assert self.query is not None, 'a query object is required ' \
                                        'for this method to work'
-        return paginate(self.query, self.page + 1, self.per_page, error_out)
+        return paginate(self.query, self.page + 1, self.per_page, error_out, self.total)
 
     @property
     def has_next(self):
@@ -92,7 +92,7 @@ class Pagination(object):
                 last = num
 
 
-def paginate(query, page=None, per_page=None, error_out=True):
+def paginate(query, page=None, per_page=None, error_out=True, total=None):
         """Returns `per_page` items from page `page`.  By default it will
         abort with 404 if no items were found and the page was larger than
         1.  This behavor can be disabled by setting `error_out` to `False`.
@@ -137,11 +137,12 @@ def paginate(query, page=None, per_page=None, error_out=True):
         if not items and page != 1 and error_out:
             abort(404)
 
-        # No need to count if we're on the first page and there are fewer
-        # items than we expected.
-        if page == 1 and len(items) < per_page:
-            total = len(items)
-        else:
-            total = query.order_by(None).count()
+        if total is None:
+            # No need to count if we're on the first page and there are fewer
+            # items than we expected.
+            if page == 1 and len(items) < per_page:
+                total = len(items)
+            else:
+                total = query.count()
 
         return Pagination(query, page, per_page, total, items)
