@@ -5,6 +5,8 @@
             <h6><b>Putative Glycopeptide Sequence</b></h6>
             <div class='sequence-emphasis'>{{theoretical.glycopeptide_sequence|glycopeptide_string(True)}}</div>
             <b>Start Position</b>: {{theoretical.start_position}} <b>End Position</b>: {{theoretical.end_position}}
+            <br>
+            {{theoretical.as_peptide_sequence().total_composition() | formula}}
             <table class='center-align'>
                 <thead>
                     <tr>
@@ -30,10 +32,12 @@
             {% if ambiguous_with|length > 0 %}
                 <h6>Ambiguous with: </h6>
                 {% for group in ambiguous_with %}
+                    {% if group.theoretical_match is not none %}
                     <div>
                         {% set o_theoretical=group.theoretical_match %}
                         <small>{{o_theoretical.glycopeptide_sequence|glycopeptide_string}}:{{o_theoretical.protein.name}}</small>
                     </div>
+                    {% endif %}
                 {% endfor %}
             {% endif %}
         </div>

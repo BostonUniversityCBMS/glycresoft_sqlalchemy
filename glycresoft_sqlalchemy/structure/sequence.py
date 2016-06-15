@@ -281,7 +281,7 @@ class PeptideSequence(PeptideSequenceBase):
                 mod_list.append(mod)
                 seq.mass += mod.mass
                 seq.modification_index[mod.name] += 1
-            seq.seq.append(cls.position_class([resid, mod_list]))
+            seq.sequence.append(cls.position_class([resid, mod_list]))
         if not isinstance(n_term, MoleculeBase):
             n_term = Modification(n_term)
         if not isinstance(c_term, MoleculeBase):
@@ -293,7 +293,7 @@ class PeptideSequence(PeptideSequenceBase):
 
     def __init__(self, sequence=None, **kwargs):
         self.mass = 0.0
-        self.seq = []
+        self.sequence = []
         self.modification_index = defaultdict(int)
 
         self._glycan = None
@@ -314,7 +314,7 @@ class PeptideSequence(PeptideSequenceBase):
                         mods.append(mod)
                         self.modification_index[mod.name] += 1
                         self.mass += mod.mass
-                self.seq.append(self.position_class([res, mods]))
+                self.sequence.append(self.position_class([res, mods]))
 
             self.glycan = glycan if glycan != "" else None
             self.n_term = Modification(n_term) if isinstance(n_term, basestring) else n_term
@@ -333,14 +333,14 @@ class PeptideSequence(PeptideSequenceBase):
         c_term = ""
         if self.c_term is not None:
             c_term = "-({0})".format(self.c_term)
-        rep = "{n_term}{seq}{c_term}{glycan}[{mass}]".format(
+        rep = "{n_term}{sequence}{c_term}{glycan}[{mass}]".format(
             n_term=n_term, c_term=c_term,
             glycan=self._glycan if self._glycan is not None else "",
             **self.__dict__)
         return rep
 
     def __len__(self):
-        return len(self.seq)
+        return len(self.sequence)
 
     @property
     def total_mass(self):
@@ -398,15 +398,15 @@ class PeptideSequence(PeptideSequenceBase):
 
     def __iter__(self):
         '''Makes the sequence iterable'''
-        for i in self.seq:
+        for i in self.sequence:
             yield (i)
 
     def __getitem__(self, index):
-        sub = self.seq[index]
+        sub = self.sequence[index]
         return sub
 
     def __setitem__(self, index, value):
-        self.seq[index] = value
+        self.sequence[index] = value
 
     def subseq(self, slice_obj):
         sub = self[slice_obj]
@@ -448,12 +448,12 @@ class PeptideSequence(PeptideSequenceBase):
         pos = 0
         residues_in_b = []
         for pos in range(idx):
-            for mod in self.seq[pos][1]:
+            for mod in self.sequence[pos][1]:
                 mod_b[mod.serialize()] += 1
-            residues_in_b.append(self.seq[pos][0].symbol)
-            mass_b += self.seq[pos][0].mass
+            residues_in_b.append(self.sequence[pos][0].symbol)
+            mass_b += self.sequence[pos][0].mass
 
-        flanking_residues = [self.seq[pos][0], self.seq[pos + 1][0]]
+        flanking_residues = [self.sequence[pos][0], self.sequence[pos + 1][0]]
         b_frag = PeptideFragment(
             b_series, pos + structure_constants.FRAG_OFFSET, mod_b, mass_b + b_shift,
             flanking_amino_acids=flanking_residues)
@@ -461,10 +461,10 @@ class PeptideSequence(PeptideSequenceBase):
         break_point = pos + 1
         residues_in_y = []
         for pos in range(break_point, len(self)):
-            for mod in self.seq[pos][1]:
+            for mod in self.sequence[pos][1]:
                 mod_y[mod.serialize()] += 1
-            residues_in_y.append(self.seq[pos][0].symbol)
-            mass_y += self.seq[pos][0].mass
+            residues_in_y.append(self.sequence[pos][0].symbol)
+            mass_y += self.sequence[pos][0].mass
 
         y_frag = PeptideFragment(
             y_series, len(self) - (break_point - 1 + structure_constants.FRAG_OFFSET),
@@ -499,20 +499,22 @@ class PeptideSequence(PeptideSequenceBase):
         running_composition = Composition()
 
         if kind in (b_series, "a", "c"):
-            seq_list = self.seq
+            seq_list = self.sequence
 
             mass_shift = fragment_shift[kind]
             running_composition += fragment_shift_composition[kind]
-            if self.n_term != structure_constants.N_TERM_DEFAULT:
-                mass_shift = mass_shift + self.n_term.mass
+            # if self.n_term != structure_constants.N_TERM_DEFAULT:
+                # mass_shift = mass_shift + self.n_term.mass
+            mass_shift = mass_shift + self.n_term.mass
             running_composition += self.n_term.composition
 
         elif kind in (y_series, 'x', 'z'):
             mass_shift = fragment_shift[kind]
             running_composition += fragment_shift_composition[kind]
-            if self.c_term != structure_constants.C_TERM_DEFAULT:
-                mass_shift = mass_shift + self.c_term.mass
-            seq_list = list(reversed(self.seq))
+            # if self.c_term != structure_constants.C_TERM_DEFAULT:
+            #     mass_shift = mass_shift + self.c_term.mass
+            mass_shift = mass_shift + self.c_term.mass
+            seq_list = list(reversed(self.sequence))
             running_composition += self.c_term.composition
 
         else:
@@ -528,6 +530,7 @@ class PeptideSequence(PeptideSequenceBase):
         hexnac_composition = Modification("HexNAc").composition
 
         current_mass = mass_shift
+
         for idx in range(len(seq_list) - 1):
             for mod in seq_list[idx][1]:
                 mod_serial = mod.serialize()
@@ -598,12 +601,12 @@ class PeptideSequence(PeptideSequenceBase):
             self.c_term = Modification("OH")
             return
 
-        for i, mod in enumerate(self.seq[position][1]):
+        for i, mod in enumerate(self.sequence[position][1]):
             if modification_type == mod.name:
                 dropped_index = i
                 break
         try:
-            drop_mod = self.seq[position][1].pop(dropped_index)
+            drop_mod = self.sequence[position][1].pop(dropped_index)
             self.mass -= drop_mod.mass
             self.modification_index[drop_mod.name] -= 1
         except:
@@ -623,12 +626,12 @@ class PeptideSequence(PeptideSequenceBase):
         elif position is SequenceLocation.c_term:
             self.c_term = mod
         else:
-            if (position == -1) or (position >= len(self.seq)):
+            if (position == -1) or (position >= len(self.sequence)):
                 raise IndexError(
                     "Invalid modification position. %s, %s, %s" %
-                    (position, str(self.seq), modification_type))
+                    (position, str(self.sequence), modification_type))
 
-            self.seq[position][1].append(mod)
+            self.sequence[position][1].append(mod)
             self.mass += mod.mass
             self.modification_index[mod.name] += 1
 
@@ -667,7 +670,7 @@ class PeptideSequence(PeptideSequenceBase):
             implicit_c_term = structure_constants.C_TERM_DEFAULT
 
         seq_list = []
-        for x, y in self.seq[start:]:
+        for x, y in self.sequence[start:]:
             mod_str = ''
             if y != []:
                 mod_str = '|'.join(mod.serialize() for mod in y)
@@ -702,13 +705,13 @@ class PeptideSequence(PeptideSequenceBase):
     def insert(self, position, residue, modifications=None):
         if modifications is None:
             modifications = []
-        self.seq.insert(position, [residue, modifications])
+        self.sequence.insert(position, [residue, modifications])
         self.mass += residue.mass
         for mod in modifications:
             self.mass += mod.mass
 
     def delete(self, position):
-        residue, mods = self.seq.pop(position)
+        residue, mods = self.sequence.pop(position)
         self.mass -= residue.mass
         for mod in mods:
             self.mass -= mod.mass
@@ -722,12 +725,12 @@ class PeptideSequence(PeptideSequenceBase):
             next_pos.append([modification])
             self.mass += modification.mass
             self.modification_index[modification.name] += 1
-        self.seq.append(self.position_class(next_pos))
+        self.sequence.append(self.position_class(next_pos))
 
     def extend(self, sequence):
         if not isinstance(sequence, PeptideSequenceBase):
             sequence = PeptideSequence(sequence)
-        self.seq.extend(sequence.seq)
+        self.sequence.extend(sequence.seq)
         self.mass += sequence.mass - sequence.n_term.mass - sequence.c_term.mass
         for mod, count in sequence.modification_index.items():
             self.modification_index[mod] += count
@@ -735,7 +738,7 @@ class PeptideSequence(PeptideSequenceBase):
     def leading_extend(self, sequence):
         if not isinstance(sequence, PeptideSequenceBase):
             sequence = PeptideSequence(sequence)
-        self.seq = sequence.seq + self.seq
+        self.sequence = sequence.seq + self.sequence
         self.mass += sequence.mass - sequence.n_term.mass - sequence.c_term.mass
         for mod, count in sequence.modification_index.items():
             self.modification_index[mod] += count
@@ -758,8 +761,9 @@ class PeptideSequence(PeptideSequenceBase):
         elif isinstance(self.glycan, GlycanComposition):
             glycan = self.glycan
         else:
-            raise TypeError("Cannot infer monosaccharides from non-Glycan\
-             or GlycanComposition {}".format(self.glycan))
+            raise TypeError((
+                "Cannot infer monosaccharides from non-Glycan"
+                "or GlycanComposition {}").format(self.glycan))
         fucose_count = glycan['Fuc'] or glycan['dHex']
         core_count = self.modification_index['HexNAc']
 
@@ -853,8 +857,9 @@ class PeptideSequence(PeptideSequenceBase):
             elif isinstance(self.glycan, GlycanComposition):
                 glycan = FrozenGlycanComposition(self.glycan)
             else:
-                raise TypeError("Cannot infer monosaccharides from non-Glycan or\
-                 GlycanComposition {}".format(self.glycan))
+                raise TypeError(
+                    "Cannot infer monosaccharides from non-Glycan or GlycanComposition {}".format(
+                        self.glycan))
             for k in glycan:
                 key = str(k)
                 mass = k.mass()
@@ -977,7 +982,7 @@ class FragmentationStrategyBase(object):
     def __init__(self, name, *args, **kwargs):
         self.name = name
 
-    def handle_modification(self, fragment_state, modification):
+    def handle_modifications(self, fragment_state, modifications):
         raise NotImplementedError()
 
     def handle_peptide_backbone(self, fragment_state, position):
@@ -988,8 +993,92 @@ class FragmentationState(object):
     def __init__(self, peptide):
         self.peptide = peptide
 
+        self.index = 0
+        self.current_fragment_mass = 0.
+        self.current_fragment_modifications = dict()
+        self.current_fragment_composition = Composition()
+
+    def _reset(self):
+        self.current_fragment_mass = 0.
+        self.current_fragment_modifications = dict()
+        self.current_fragment_composition = Composition()
+
     def __repr__(self):
         return "FragmentationState(%s)" % self.peptide
+
+    def partition_forward(self, position):
+        if position > len(self.peptide) - 1 or position < 1:
+            raise IndexError(position)
+        return self.peptide[:position], self.peptide[position:]
+
+    def partition_reverse(self, position):
+        if position > len(self.peptide) - 1 or position < 1:
+            raise IndexError(position)
+        return self.peptide[-position:], self.peptide[:-position]
+
+    def configure_from_sequence_segment(self, segment):
+        mass = 0.
+        composition = Composition()
+        modification_dict = Counter()
+        for residue, modifications in segment:
+            mass += residue.mass
+            composition += residue.composition
+            for mod in modifications:
+                mass += mod.mass
+                composition += mod.composition
+                modification_dict[mod.rule] += 1
+        self.current_fragment_composition = composition
+        self.current_fragment_mass = mass
+        self.current_fragment_modifications = dict(modification_dict)
+
+    def get_flanking_amino_acids(self, front, back):
+        return front[-1][0], back[0][0]
+
+    def adjust_for_series(self, series):
+        self.current_fragment_mass += series.mass_shift
+        self.current_fragment_composition += series.composition_shift
+        if series.direction > 0:
+            self.current_fragment_mass += self.peptide.n_term.mass
+            self.current_fragment_composition += self.peptide.n_term.composition
+        elif series.direction < 0:
+            self.current_fragment_mass += self.peptide.c_term.mass
+            self.current_fragment_composition += self.peptide.c_term.composition
+        else:
+            self.current_fragment_mass += self.peptide.n_term.mass
+            self.current_fragment_composition += self.peptide.n_term.composition
+
+            self.current_fragment_mass += self.peptide.c_term.mass
+            self.current_fragment_composition += self.peptide.c_term.composition
+
+    def build_position(self, position, series):
+        self._reset()
+
+        if series.direction > 0:
+            forward, backward = self.partition_forward(position)
+            self.configure_from_sequence_segment(forward)
+            self.adjust_for_series(series)
+        elif series.direction < 0:
+            backward, forward = self.partition_reverse(position)
+            self.configure_from_sequence_segment(backward)
+            self.adjust_for_series(series)
+
+        flanking_residues = self.get_flanking_amino_acids(forward, backward)
+
+        return PeptideFragment(
+            series, position, self.current_fragment_modifications,
+            self.current_fragment_mass,
+            flanking_amino_acids=flanking_residues,
+            composition=self.current_fragment_composition)
+
+
+class HCDFragmentationStrategy(FragmentationStrategyBase):
+    _name = "HCDFragmentationStrategy"
+
+    def __init__(self):
+        super(HCDFragmentationStrategy, self).__init__(self._name)
+
+    def handle_peptide_backbone(self, fragment_state, position):
+        pass
 
 
 class ExDFragmentationStrategy(FragmentationStrategyBase):

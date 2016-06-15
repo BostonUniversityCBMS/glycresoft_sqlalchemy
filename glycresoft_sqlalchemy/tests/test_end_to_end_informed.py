@@ -17,8 +17,9 @@ from glycresoft_sqlalchemy.scoring import pair_counting
 
 
 def test_main():
-    db_file_name = "./datafiles/integrated_omics_simple.db"
-    os.remove(db_file_name)
+    #db_file_name = "./datafiles/integrated_omics_simple.1.db"
+    #os.remove(db_file_name)
+    db_file_name = "postgres://localhost:5432/db"
 
     rules_table = {
         "Hex": (3, 10),
@@ -29,7 +30,7 @@ def test_main():
 
     constraints_list = [
         ["Fuc", "<", "HexNAc"],
-        ["NeuAc",  "<", "HexNAc - 1"]
+        ["NeuAc", "<", "HexNAc - 1"]
     ]
 
     job = constrained_combinatorics.ConstrainedCombinatoricsGlycanHypothesisBuilder(

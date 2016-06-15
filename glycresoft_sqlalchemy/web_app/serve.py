@@ -1,7 +1,8 @@
 import logging
-from flask import Flask, request, session, g, redirect, url_for, \
-     abort, render_template, flash, Markup, make_response, jsonify, \
-     Response
+from flask import (
+    Flask, request, session, g, redirect, url_for,
+    abort, render_template, flash, Markup, make_response, jsonify,
+    Response)
 
 import argparse
 
@@ -9,7 +10,6 @@ from werkzeug.contrib.profiler import ProfilerMiddleware
 from werkzeug.wsgi import LimitedStream
 
 from glycresoft_sqlalchemy.web_app.project_manager import ProjectManager
-from glycresoft_sqlalchemy.web_app.utils.cache import ApplicationDataCache
 from glycresoft_sqlalchemy.web_app import report
 
 from glycresoft_sqlalchemy.data_model import (
@@ -31,6 +31,12 @@ from glycresoft_sqlalchemy.web_app.services.make_glycan_hypothesis import make_g
 from glycresoft_sqlalchemy.web_app.services.view_hypothesis import view_hypothesis
 
 from glycresoft_sqlalchemy.web_app.utils.pagination import paginate
+
+import pkg_resources
+
+
+def _find_nw_executable():
+    return pkg_resources.resource_filename(__name__, "app_build/GlycReSoft.exe")
 
 
 class StreamConsumingMiddleware(object):
@@ -81,6 +87,33 @@ app.register_blueprint(tandem_glycopeptide_search)
 app.register_blueprint(view_hypothesis)
 
 
+class ApplicationServerManager(object):
+    def __init__(self, state=None):
+        if state is None:
+            state = dict()
+        self.state = state
+
+    @property
+    def shutdown_server(self):
+        return self.state["shutdown_server"]
+
+    @shutdown_server.setter
+    def shutdown_server(self, value):
+        self.state["shutdown_server"] = value
+
+    @classmethod
+    def werkzeug_server(cls):
+        def shutdown_func():
+            func = request.environ.get('werkzeug.server.shutdown')
+            if func is None:
+                raise RuntimeError('Not running with the Werkzeug Server')
+
+            func()
+        inst = cls()
+        inst.shutdown_server = shutdown_func
+        return inst
+
+
 @app.route("/ms1_or_ms2_choice")
 def branch_ms1_ms2():
     # This would be better done completely client-side, but
@@ -95,19 +128,12 @@ def branch_ms1_ms2():
 # Server Shutdown
 # ----------------------------------------
 
-def shutdown_server():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-
-    func()
-
 
 @app.route('/internal/shutdown', methods=['POST'])
 def shutdown():
     g.manager.halting = True
-    shutdown_server()
     g.manager.stoploop()
+    SERVER.shutdown_server()
     return Response("Should be dead")
 
 # ----------------------------------------
@@ -218,8 +244,8 @@ def run(store_path, external, no_execute_tasks, port, **kwargs):
 
     app.debug = DEBUG
     app.secret_key = SECRETKEY
-    # setup_logging()
-    SERVER = app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=port, passthrough_errors=True)
+    SERVER = ApplicationServerManager.werkzeug_server()
+    app.run(host=host, use_reloader=False, threaded=True, debug=DEBUG, port=port, passthrough_errors=True)
 
 
 def main():

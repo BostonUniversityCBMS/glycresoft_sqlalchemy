@@ -346,7 +346,7 @@ class GlycanBase(HasClassBakedQueries):
 @with_glycan_composition("composition")
 class StructureMotif(GlycanBase, HasReferenceAccessionNumber, Base):
     __tablename__ = "StructureMotif"
-    canonical_sequence = Column(Unicode(256), index=True)
+    canonical_sequence = Column(Unicode(256 * 5), index=True)
     motif_class = Column(Unicode(64), index=True)
     is_core_motif = Column(Boolean)
     _structure = None

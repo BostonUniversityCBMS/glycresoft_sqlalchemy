@@ -160,11 +160,11 @@ class GlycopeptideSpectrumMatch(Base, SpectrumMatchBase):
     scores = association_proxy(
         "_scores", "value", creator=lambda k, v: GlycopeptideSpectrumMatchScore(name=k, value=v))
 
-    def __getattr__(self, name):
-        try:
-            return self.scores[name]
-        except:
-            raise AttributeError("%s has no attribute named %s" % (self.__class__.__name__, name))
+    # def __getattr__(self, name):
+    #     try:
+    #         return self.scores[name]
+    #     except:
+    #         raise AttributeError("%s has no attribute named %s" % (self.__class__.__name__, name))
 
 
 class GlycopeptideSpectrumMatchScore(Base):

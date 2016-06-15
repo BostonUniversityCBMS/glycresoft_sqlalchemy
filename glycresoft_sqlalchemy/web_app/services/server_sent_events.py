@@ -2,9 +2,9 @@ import json
 import random
 import logging
 
-from flask import Response, Blueprint, g
+from flask import Response, Blueprint, g, request
 
-from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException
+from glycresoft_sqlalchemy.web_app.task.task_process import QueueEmptyException, Message
 
 
 server_sent_events = Blueprint("server_sent_events", __name__)
@@ -56,3 +56,10 @@ def message_queue_stream(manager):
 def message_stream():
     return Response(message_queue_stream(g.manager),
                     mimetype="text/event-stream")
+
+
+@server_sent_events.route("/internal/chat", methods=["POST"])
+def echo_message():
+    message = request.values['message']
+    g.manager.add_message(Message(message, type='update'))
+    return Response("Done")

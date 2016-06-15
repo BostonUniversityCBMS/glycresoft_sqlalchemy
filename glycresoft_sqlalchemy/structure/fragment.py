@@ -16,12 +16,12 @@ fragment_pairing = {
 }
 
 fragment_shift_composition = {
-    'a': -Composition("CO"),
-    'b': Composition({}),
+    'a': -Composition("CHO"),
+    'b': -Composition({"H": 1}),
     'c': Composition("NH3"),
-    'x': Composition("CO2"),
-    'y': Composition('H2O'),
-    'z': (-Composition("HN") + Composition("O"))
+    'x': Composition("CO2") - Composition("H"),
+    'y': Composition('H'),
+    'z': (-Composition("NH2"))
 }
 
 fragment_shift = {
@@ -277,6 +277,7 @@ class IonSeries(object):
         self.includes_peptide = includes_peptide
         self.mass_shift = mass_shift
         self.regex = re.compile(regex) if regex is not None else regex
+        self.composition_shift = fragment_shift_composition.get(self.name, Composition())
 
     def __hash__(self):
         return hash(self.name)

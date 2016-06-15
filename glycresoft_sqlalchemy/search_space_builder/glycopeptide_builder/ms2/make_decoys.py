@@ -141,7 +141,7 @@ def make_decoy(theoretical_sequence, prefix_len=0, suffix_len=1,
         session.add(decoy)
         session.commit()
     except Exception, e:
-        logger.exception("%r", locals(), exc_info=e)
+        logger.exception("%r", theoretical_sequence, exc_info=e)
         raise e
     finally:
         session.close()
@@ -308,7 +308,7 @@ def batch_make_decoys(theoretical_ids, database_manager, prefix_len=0, suffix_le
 
 
 class BatchingDecoySearchSpaceBuilder(DecoySearchSpaceBuilder):
-    def stream_theoretical_glycopeptides(self, chunk_size=3000):
+    def stream_theoretical_glycopeptides(self, chunk_size=1500):
         chunk_size *= SCALE
         session = self.manager.session()
         i = 0

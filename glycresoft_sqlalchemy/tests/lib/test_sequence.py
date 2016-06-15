@@ -1,9 +1,10 @@
 import unittest
 
-from glycresoft_sqlalchemy.structure import sequence, modification, residue
+from glycresoft_sqlalchemy.structure import sequence, modification, residue, composition
 from glypy import GlycanComposition, Glycan, MonosaccharideResidue
 
 
+PROTON = composition.Composition("H").mass
 R = residue.Residue
 
 
@@ -25,6 +26,21 @@ class TestPeptideSequence(unittest.TestCase):
         self.assertEqual(GlycanComposition.parse("{Hex:9; HexNAc:2}"), glycan)
         self.assertEqual(len(mods), 2)
         self.assertEqual(len(chunks), 16)
+
+    def test_fragmentation(self):
+        seq = sequence.parse(p1)
+        mapping = {
+            "b3": 324.1554 - PROTON,
+            "b6": 653.3141 - PROTON,
+            "y2": 263.0874 - PROTON,
+            "y5": 574.2719 - PROTON,
+            "a4": 397.2082 - PROTON,
+            "a5": 510.2922 - PROTON,
+            "z3": 360.1527 - PROTON * 2,
+        }
+        for fragment, mass in mapping.items():
+            fmass = seq.fragment(fragment).mass
+            self.assertAlmostEqual(mass, fmass, 2, (mass, fmass, fragment))
 
     def test_stub_ions(self):
         peptide = sequence.parse(p3)

@@ -9,12 +9,6 @@ var PROJECTS_KEY = "projects"
 var PROJECT_FILE = "store.glycresoftdb"
 var VERSION = 0.1
 
-var PROJECT_SCHEMA = {
-    name: String,
-    path: String,
-    version: Number
-}
-
 
 function Project(name, path, version){
     if(name instanceof Object){
@@ -79,35 +73,6 @@ function _RemoveProject(project){
         localforage.setItem(PROJECTS_KEY, filter)
     })
 }
-
-
-/*function ExistingProjectChooserWidget(container, projects){
-    this.container = container
-    this.projects = projects
-}
-
-ExistingProjectChooserWidget.prototype.draw = function(){
-    var container = $(this.container)
-    container.empty()
-    container.addClass("project-list-view")
-    var template = "<div class='project-container'>" +
-        "<div><span class='project-name'></span></div>" +
-        "<div>" +
-            "<button class='waves-effect btn-flat open-project-button'>Open</button>" +
-            "<button class='waves-effect btn-flat remove-project-button'>Remove</button>" +
-        "</div>" +
-    "</div>"
-
-    var addProjectWidget = function(container, project, i){
-        var entry = $(template)
-        entry.find(".project-name").text(project.name)
-        entry.data("project-index", i)
-        container.append(entry)
-    }
-    for(var i=0; i<this.projects.length;i++){
-        addProjectWidget(container, this.projects[i], i)
-    }
-}*/
 
 
 function makeNewProjectDirectory(path, name){

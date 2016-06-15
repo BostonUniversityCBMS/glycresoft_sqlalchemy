@@ -3,10 +3,11 @@ from collections import OrderedDict
 
 from sqlalchemy.ext.baked import bakery
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import relationship, backref, make_transient, Query
+from sqlalchemy.orm import relationship, backref, make_transient, Query, validates
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
-                        Column, Integer, ForeignKey, UnicodeText, Boolean)
+                        Column, Integer, ForeignKey, UnicodeText, Boolean,
+                        event)
 from sqlalchemy.orm.exc import DetachedInstanceError
 from ..generic import MutableDict, MutableList, HasClassBakedQueries
 from ..base import Base
@@ -254,6 +255,10 @@ class InformedPeptide(PeptideBase, Base):
     id = Column(Integer, primary_key=True)
     peptide_score = Column(Numeric(12, 6, asdecimal=False), index=True)
     peptide_score_type = Column(Unicode(56))
+
+    # @validates("modified_peptide_sequence")
+    # def validate_modified_peptide_sequence(self, key, peptide_sequence):
+    #     assert peptide_sequence is not None
 
     count_variable_modifications = Column(Integer)
 

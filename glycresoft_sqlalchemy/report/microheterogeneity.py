@@ -167,17 +167,24 @@ class GlycoformAbundancePlot(object):
             ax.set_ylabel("Relative Intensity")
         ax.set_xticks(indices + bar_width * 1.5)
 
-        font_size = max((200. / (len(indices) / 2.)), 3)
+        if len(indices) != 0:
+            font_size = max((200. / (len(indices) / 2.)), 3)
 
-        ax.set_xlabel(xtick_labeler.label_key)
-        ax.set_xticklabels(tuple(xtick_labeler), rotation=90, ha='center', size=font_size)
-        ax.xaxis.set_ticks_position('none')
-        ax.set_title("Glycan Composition Total Abundances")
-        if legend:
-            handles = self.color_chooser.make_legend(
-                include_classes, alpha=alpha)
-            if handles:
-                ax.legend(
-                    handles=handles,
-                    bbox_to_anchor=(1.20, 1.0))
+            ax.set_xlabel(xtick_labeler.label_key)
+            ax.set_xticklabels(tuple(xtick_labeler), rotation=90, ha='center', size=font_size)
+            ax.xaxis.set_ticks_position('none')
+            ax.set_title("Glycan Composition Total Abundances")
+            if legend:
+                handles = self.color_chooser.make_legend(
+                    include_classes, alpha=alpha)
+                if handles:
+                    ax.legend(
+                        handles=handles,
+                        bbox_to_anchor=(1.20, 1.0))
+        else:
+            ax.set_xlabel(xtick_labeler.label_key)
+            ax.set_xticklabels(tuple(xtick_labeler), rotation=90, ha='center', size=12)
+            ax.xaxis.set_ticks_position('none')
+            ax.text(0., 0., "No matches meet this criterion", fontsize=12., ha='center')
+            ax.set_title("Glycan Composition Total Abundances")
         return ax

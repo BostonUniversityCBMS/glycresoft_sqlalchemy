@@ -214,7 +214,7 @@ class DatabaseManager(object):
         if conn is None:
             conn = self.connect()
         try:
-            conn.execute("SELECT id FROM Hypothesis LIMIT 1;")
+            conn.execute("""SELECT id FROM "Hypothesis" LIMIT 1;""")
             if force:
                 raise Exception()
         except:

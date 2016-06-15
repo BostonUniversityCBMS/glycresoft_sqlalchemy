@@ -23,7 +23,7 @@ from glycresoft_sqlalchemy.utils.database_utils import temp_table
 
 def make_base_sequence(peptide, constant_modifications, modification_table):
     seq = peptide.base_peptide_sequence
-    seq = sequence.Sequence(seq)
+    seq = sequence.parse(seq)
     for mod in {modification_table[const_mod]
                 for const_mod in constant_modifications}:
         for site in mod.find_valid_sites(seq):
@@ -66,12 +66,12 @@ def remove_duplicates(session, hypothesis_id):
     table = store_best_peptides(session, keepers)
     ids = session.query(table.c.value)
     q = session.query(InformedPeptide.id).filter(
-                    InformedPeptide.protein_id == Protein.id,
-                    Protein.hypothesis_id == hypothesis_id,
-                    ~InformedPeptide.id.in_(ids.correlate(None)))
+        InformedPeptide.protein_id == Protein.id,
+        Protein.hypothesis_id == hypothesis_id,
+        ~InformedPeptide.id.in_(ids.correlate(None)))
 
     session.execute(InformedPeptide.__table__.delete(
-               InformedPeptide.__table__.c.id.in_(q.selectable)))
+        InformedPeptide.__table__.c.id.in_(q.selectable)))
     conn = session.connection()
     table.drop(conn)
     session.commit()
@@ -106,6 +106,8 @@ class ProteomeImporter(PipelineModule):
                         peptide_class=self.peptide_type,
                         **{"count_variable_modifications": 0, "peptide_score": 0}):
                     peptidoform.count_variable_modifications = 0
+                    if peptidoform.modified_peptide_sequence is None:
+                        peptidoform.modified_peptide_sequence = peptidoform.base_peptide_sequence
                     session.add(peptidoform)
                 protein.informed_peptides.filter(
                     self.peptide_type.count_glycosylation_sites == None).delete("fetch")
@@ -132,7 +134,7 @@ class ProteomeImporter(PipelineModule):
     def _display_protein_peptide_counts(self, session):
         peptide_counts = session.query(Protein.name, func.count(InformedPeptide.id)).filter(
             Protein.hypothesis_id == self.hypothesis_id).join(InformedPeptide).group_by(
-            InformedPeptide.protein_id).all()
+            InformedPeptide.protein_id, Protein.name).all()
 
         logger.info("Peptide Counts: %r", peptide_counts)
 

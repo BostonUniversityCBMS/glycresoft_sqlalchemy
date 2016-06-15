@@ -12,6 +12,20 @@ WINDOW_OPTIONS = {
     "icon": "static/nwjs/logo.png"
 }
 
+
+function _getServerExecutable(){
+    var argIx = gui.App.argv.indexOf("--executable")
+    if(argIx == -1){
+        return "glycresoft-report web"
+    } else {
+        return gui.App.argv[argIx + 1]
+    }
+}
+
+
+var EXECUTABLE = _getServerExecutable()
+
+
 function BackendServerControl(project, options){
     options = options === undefined ? {} : options;
     this.project = project
@@ -24,9 +38,15 @@ function BackendServerControl(project, options){
     this.window = null
 }
 
+BackendServerControl.EXECUTABLE = EXECUTABLE
+BackendServerControl.prototype.EXECUTABLE = EXECUTABLE
+
+BackendServerControl.prototype.constructServerProcessCall = function(){
+    return this.EXECUTABLE + " " + this.project.getStorePath() + " --port " + this.port
+}
 
 BackendServerControl.prototype.launchServer = function(){
-    child = child_process.exec("glycresoft-report web " + this.project.getStorePath() + " --port " + this.port)
+    child = child_process.exec(this.constructServerProcessCall())
     child.stdout.on("data", function(){
         console.log("stdout", arguments)
         console.log(arguments[0])
