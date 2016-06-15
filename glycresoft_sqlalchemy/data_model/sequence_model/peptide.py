@@ -165,11 +165,19 @@ class PeptideBase(HasClassBakedQueries):
             s = self.glycopeptide_sequence
             if s is not None and s != "":
                 return s
+            else:
+                s = self.modified_peptide_sequence
+                if s is not None and s != "":
+                    return s
+                else:
+                    return self.base_peptide_sequence
         except:
             try:
                 s = self.modified_peptide_sequence
                 if s is not None and s != "":
                     return s
+                else:
+                    return self.base_peptide_sequence
             except:
                 return self.base_peptide_sequence
 

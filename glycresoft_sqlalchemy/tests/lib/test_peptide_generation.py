@@ -55,12 +55,12 @@ class TestPeptidoformBuilder(unittest.TestCase):
                        1897.83905275106,
                        [6])]
 
-        self.assertEqual(solutions, solution_1)
+        self.assertEqual(sorted(solutions), sorted(solution_1))
 
         solutions = list(peptide_utilities.unpositioned_isoforms(
             peptide_obj2, constant_modifications, variable_modifications, mt))
 
-        self.assertEqual(solutions, solution_2)
+        self.assertEqual(sorted(solutions), sorted(solution_2))
 
 
 if __name__ == '__main__':
