@@ -61,6 +61,10 @@ class TestPeptideSequence(unittest.TestCase):
         self.assertAlmostEqual(stubs["peptide+{Hex:4; HexNAc:3}"],
                                1687.6571 + hexnac_mass + hexose_mass, 3)
 
+    def test_clone(self):
+        peptide = sequence.parse(p3)
+        self.assertEqual(peptide, peptide.clone())
+
     # def test_mass(self):
     #     case = sequence.PeptideSequence(p1)
     #     self.assertAlmostEqual(case.mass, )
