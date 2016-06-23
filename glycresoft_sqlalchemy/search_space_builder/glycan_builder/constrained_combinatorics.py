@@ -5,11 +5,22 @@ from glycresoft_sqlalchemy.data_model import MS1GlycanHypothesis, TheoreticalGly
 from glycresoft_sqlalchemy.utils.database_utils import get_or_create
 from glypy import GlycanComposition
 from glycresoft_sqlalchemy.search_space_builder.glycan_builder import registry
+from glycresoft_sqlalchemy.search_space_builder.glycan_builder.composition_source import make_motif_lookup_index
 
 import logging
 from itertools import product
 
 logger = logging.getLogger("glycan_composition_constrained_combinatorics")
+
+
+motifs = {
+    "N-Glycan": "N-Glycan core basic 1",
+    "O-Glycan": "O-Glycan core 1"
+}
+
+
+def resolve_motif(name, lookup):
+    return lookup[motifs[name]]
 
 
 @registry.composition_source_type.register("constrained_combinatorics")
@@ -61,11 +72,13 @@ class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
         self.manager.initialize()
         session = self.manager.session()
 
+        motif_lookup = make_motif_lookup_index(session)
+
         hypothesis, _ = get_or_create(session, self.HypothesisType, id=self.hypothesis_id)
         hypothesis.name = self.options.get(
-                "hypothesis_name",
-                "glycan-hypothesis-%s" % datetime.datetime.strftime(
-                    datetime.datetime.now(), "%Y%m%d-%H%M%S"))
+            "hypothesis_name",
+            "glycan-hypothesis-%s" % datetime.datetime.strftime(
+                datetime.datetime.now(), "%Y%m%d-%H%M%S"))
         hypothesis.parameters = hypothesis.parameters or {}
         hypothesis.parameters['rules_table'] = self.rules_table
         hypothesis.parameters['constraints'] = self.constraints_list
@@ -78,18 +91,24 @@ class ConstrainedCombinatoricsGlycanHypothesisBuilder(PipelineModule):
             rules_table=self.rules_table, constraints=self.constraints_list)
 
         acc = []
-        for composition in generator:
+        for composition, classifications in generator:
             mass = composition.mass()
             serialized = composition.serialize()
+            matched_motifs = []
+            if classifications:
+                for cls in classifications:
+                    matched_motifs.append(resolve_motif(cls, motif_lookup))
             rec = TheoreticalGlycanComposition(
                 calculated_mass=mass, composition=serialized,
                 hypothesis_id=hypothesis_id)
+            rec.motifs = matched_motifs
             acc.append(rec)
 
             if len(acc) > 1000:
                 session.add_all(acc)
                 session.commit()
                 acc = []
+
         session.add_all(acc)
         session.commit()
         acc = []
@@ -161,8 +180,11 @@ class CombinatoricCompositionGenerator(object):
                 if not constraint(combin):
                     passed = False
                     break
+            classifications = [classifier.classification for classifier in
+                               [is_n_glycan_classifier, is_o_glycan_classifier]
+                               if classifier(combin)]
             if passed:
-                yield GlycanComposition(**combin.context)
+                yield GlycanComposition(**combin.context), classifications
 
     __iter__ = generate
 

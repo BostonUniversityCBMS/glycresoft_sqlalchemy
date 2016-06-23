@@ -214,7 +214,7 @@ class GlycanCompositionClassifierColorizer(object):
     def make_legend(self, included=allset(), alpha=0.5):
         return [
             mpatches.Patch(
-                label=rule.name, color=color, alpha=0.5) for rule, color in self.rule_color_map.items()
+                label=rule.name, color=color, alpha=alpha) for rule, color in self.rule_color_map.items()
             if rule.name in included
             ]
 

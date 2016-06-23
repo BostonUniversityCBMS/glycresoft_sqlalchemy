@@ -1067,10 +1067,10 @@ class Modification(ModificationBase):
         return not self == other
 
     def __getstate__(self):
-        return [self.name, self.mass, self.position, self.number, self.rule]
+        return [self.name, self.mass, self.position, self.number, self.rule, self.composition]
 
     def __setstate__(self, state):
-        self.name, self.mass, self.position, self.number, self.rule = state
+        self.name, self.mass, self.position, self.number, self.rule, self.composition = state
 
     def clone(self):
         return self.__class__(self.rule)

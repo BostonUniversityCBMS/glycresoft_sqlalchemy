@@ -3,6 +3,8 @@ import logging
 from contextlib import contextmanager
 
 try:
+    import matplotlib
+    matplotlib.use("agg")
     logging.basicConfig(level=logging.DEBUG, filename='glycresoft-log', filemode='w',
                         format="%(asctime)s - %(name)s:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s",
                         datefmt="%H:%M:%S")

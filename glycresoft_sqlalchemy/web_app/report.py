@@ -24,6 +24,7 @@ except:
     from io import StringIO
 
 import matplotlib
+matplotlib.use("agg")
 from matplotlib import rcParams as mpl_params
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes

@@ -60,14 +60,14 @@ class SequenceSpace:
                 # Invalid Configuration, can't place all Glycans
                 continue
 
-            raw_sequence = copy.deepcopy(self.sequence)
+            raw_sequence = (self.sequence).clone()
 
             for index in range(num_modifications):
                 for mod_site in mod_sites[index]:
                     raw_sequence.add_modification(mod_site, self.modifications[index].rule)
 
             for sites in itertools.combinations(glycosylation_sites, required_glycosylation_sites):
-                temp_seq = copy.deepcopy(raw_sequence)
+                temp_seq = (raw_sequence).clone()
                 for site in sites:
                     gly_mod = Modification(ModificationTable.other_modifications["HexNAc"], site, 1)
                     temp_seq.add_modification(modification_type=gly_mod)

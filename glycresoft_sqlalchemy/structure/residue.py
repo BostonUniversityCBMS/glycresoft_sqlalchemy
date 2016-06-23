@@ -23,7 +23,9 @@ symbol_to_residue = {
     'T': 'Thr',
     'W': 'Trp',
     'Y': 'Tyr',
-    'V': 'Val'
+    'V': 'Val',
+    "U": "Sec",
+    "O": "Pyl",
 }
 
 
@@ -51,6 +53,8 @@ residue_table = {
     'Trp': 'C11H10N2O1',
     'Tyr': 'C9H9N1O2',
     'Val': 'C5H9N1O1',
+    "Sec": "C3H7NO2Se",
+    "Pyl": "C12H21N3O3"
 }
 
 residue_chemical_property_group = {

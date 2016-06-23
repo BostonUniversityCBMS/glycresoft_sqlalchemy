@@ -1,6 +1,3 @@
-'''
-Simplisitic Glycan Implementation
-'''
 from glycresoft_sqlalchemy.utils import Enum
 from glycresoft_sqlalchemy.utils.collectiontools import decoratordict
 

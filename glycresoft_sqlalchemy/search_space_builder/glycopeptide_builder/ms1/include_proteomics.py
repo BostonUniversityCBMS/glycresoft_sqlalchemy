@@ -165,26 +165,25 @@ class ProteomeImporter(PipelineModule):
 
         logger.info("Constant Modifications: %r", self.constant_modifications)
         logger.info("Enzyme: %r", self.enzymes)
-        if self.glycosylation_sites_file is None:
+        if True:  # self.glycosylation_sites_file is None:
             for protein in session.query(Protein).filter(Protein.hypothesis_id == self.hypothesis_id):
-                protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
                 session.add(protein)
                 session.flush()
                 if self.include_all_baseline:
                     self.build_baseline_peptides(session, protein)
 
-        else:
-            site_list_gen = SiteListFastaFileParser(self.glycosylation_sites_file)
-            site_list_map = {d['name']: d["glycosylation_sites"] for d in site_list_gen}
-            for protein in session.query(Protein):
-                try:
-                    protein.glycosylation_sites = site_list_map[protein.name]
-                except KeyError:
-                    protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
-                session.add(protein)
-                session.flush()
-                if self.include_all_baseline:
-                    self.build_baseline_peptides(session, protein)
+        # else:
+        #     site_list_gen = SiteListFastaFileParser(self.glycosylation_sites_file)
+        #     site_list_map = {d['name']: d["glycosylation_sites"] for d in site_list_gen}
+        #     for protein in session.query(Protein):
+        #         try:
+        #             protein.glycosylation_sites = site_list_map[protein.name]
+        #         except KeyError:
+        #             protein.glycosylation_sites = find_n_glycosylation_sequons(protein.protein_sequence)
+        #         session.add(protein)
+        #         session.flush()
+        #         if self.include_all_baseline:
+        #             self.build_baseline_peptides(session, protein)
 
         if not self.include_all_baseline:
             logger.info("Building Unmodified Reference Peptides")

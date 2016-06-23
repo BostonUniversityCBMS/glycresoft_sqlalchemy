@@ -425,7 +425,6 @@ class Proteome(object):
                 p = Protein(
                     name=protein.pop('accession'),
                     protein_sequence=seq,
-                    glycosylation_sites=sequence.find_n_glycosylation_sequons(seq),
                     other=protein,
                     hypothesis_id=self.hypothesis_id)
                 session.add(p)

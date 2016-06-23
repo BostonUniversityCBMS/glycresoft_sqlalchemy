@@ -29,7 +29,6 @@ class Protein(Base):
     name = Column(Unicode(128), default=u"", index=True)
     other = Column(MutableDict.as_mutable(PickleType))
     hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id", ondelete="CASCADE"))
-    glycosylation_sites = Column(MutableList.as_mutable(PickleType))
 
     _n_glycan_sequon_sites = None
 
@@ -43,8 +42,8 @@ class Protein(Base):
 
     @property
     def o_glycan_sequon_sites(self):
-        if self.o_glycan_sequon_sites is None:
-            self.o_glycan_sequon_sites = sequence.find_o_glycosylation_sequons(self.protein_sequence)
+        if self._o_glycan_sequon_sites is None:
+            self._o_glycan_sequon_sites = sequence.find_o_glycosylation_sequons(self.protein_sequence)
         return self._o_glycan_sequon_sites
 
     _glycosaminoglycan_sequon_sites = None
@@ -54,6 +53,10 @@ class Protein(Base):
         if self._glycosaminoglycan_sequon_sites is None:
             self._glycosaminoglycan_sequon_sites = sequence.find_glycosaminoglycan_sequons(self.protein_sequence)
         return self._glycosaminoglycan_sequon_sites
+
+    @property
+    def glycosylation_sites(self):
+        return self.n_glycan_sequon_sites  # + self.o_glycan_sequon_sites
 
     def __repr__(self):
         return "<Protein {0} {1} {2} {3}...>".format(

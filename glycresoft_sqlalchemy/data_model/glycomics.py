@@ -300,28 +300,53 @@ class GlycanBase(HasClassBakedQueries):
     composition = Column(Unicode(128), index=True)
 
     _query_ppm_tolerance_search_hypothesis = None
+    _query_ppm_tolerance_search_hypothesis_dehydrate = None
     _query_ppm_tolerance_search = None
+    _query_ppm_tolerance_search_dehydrate = None
+
+    @hybrid_method
+    def dehydrated_mass(self, water_mass=glypy.Composition("H2O").mass):
+        mass = self.calculated_mass
+        return mass - water_mass
 
     @classmethod
-    def ppm_error_tolerance_search(cls, session, mass, tolerance, hypothesis_id=None):
+    def ppm_error_tolerance_search(cls, session, mass, tolerance, hypothesis_id=None, dehydrate=False):
         width = (mass * tolerance)
         lower = mass - width
         upper = mass + width
+
         if hypothesis_id is not None:
-            if cls._query_ppm_tolerance_search_hypothesis is None:
-                q = cls.getbakery()(lambda session: session.query(cls))
-                q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
-                q += lambda q: q.filter(cls.hypothesis_id == bindparam('hypothesis_id'))
-                cls._query_ppm_tolerance_search_hypothesis = q
-            return cls._query_ppm_tolerance_search_hypothesis(session).params(
-                lower=lower, upper=upper, hypothesis_id=hypothesis_id)
+            if dehydrate:
+                if cls._query_ppm_tolerance_search_hypothesis_dehydrate is None:
+                    q = cls.getbakery()(lambda session: session.query(cls))
+                    q += lambda q: q.filter(cls.dehydrated_mass().between(bindparam("lower"), bindparam("upper")))
+                    q += lambda q: q.filter(cls.hypothesis_id == bindparam('hypothesis_id'))
+                    cls._query_ppm_tolerance_search_hypothesis_dehydrate = q
+                return cls._query_ppm_tolerance_search_hypothesis_dehydrate(session).params(
+                    lower=lower, upper=upper, hypothesis_id=hypothesis_id)
+            else:
+                if cls._query_ppm_tolerance_search_hypothesis is None:
+                    q = cls.getbakery()(lambda session: session.query(cls))
+                    q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
+                    q += lambda q: q.filter(cls.hypothesis_id == bindparam('hypothesis_id'))
+                    cls._query_ppm_tolerance_search_hypothesis = q
+                return cls._query_ppm_tolerance_search_hypothesis(session).params(
+                    lower=lower, upper=upper, hypothesis_id=hypothesis_id)
         else:
-            if cls._query_ppm_tolerance_search is None:
-                q = cls.getbakery()(lambda session: session.query(cls))
-                q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
-                cls._query_ppm_tolerance_search = q
-            return cls._query_ppm_tolerance_search(session).params(
-                lower=lower, upper=upper)
+            if dehydrate:
+                if cls._query_ppm_tolerance_search_dehydrate is None:
+                    q = cls.getbakery()(lambda session: session.query(cls))
+                    q += lambda q: q.filter(cls.dehydrated_mass().between(bindparam("lower"), bindparam("upper")))
+                    cls._query_ppm_tolerance_search_dehydrate = q
+                return cls._query_ppm_tolerance_search_dehydrate(session).params(
+                    lower=lower, upper=upper)
+            else:
+                if cls._query_ppm_tolerance_search is None:
+                    q = cls.getbakery()(lambda session: session.query(cls))
+                    q += lambda q: q.filter(cls.calculated_mass.between(bindparam("lower"), bindparam("upper")))
+                    cls._query_ppm_tolerance_search = q
+                return cls._query_ppm_tolerance_search(session).params(
+                    lower=lower, upper=upper)
 
     @declared_attr
     def hypothesis_id(self):

@@ -17,9 +17,9 @@ from glycresoft_sqlalchemy.scoring import pair_counting
 
 
 def test_main():
-    #db_file_name = "./datafiles/integrated_omics_simple.1.db"
-    #os.remove(db_file_name)
-    db_file_name = "postgres://localhost:5432/db"
+    db_file_name = "./datafiles/integrated_omics_simple.1.db"
+    os.remove(db_file_name)
+    # db_file_name = "postgresql://mobiusklein:pgsql@localhost:5432/gstest"
 
     rules_table = {
         "Hex": (3, 10),
@@ -49,13 +49,12 @@ def test_main():
         "P02763|A1AG1_HUMAN", "P19652|A1AG2_HUMAN"
     ]
 
-    ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics"
-    # ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/MS1-Reduced"
-    ms2_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics-MS2"
+    ms1_data = r"./datafiles/sample_dir/AGP-MS1"
+    ms2_data = r"./datafiles/sample_dir/AGP-MS2"
 
     job = integrated_omics.IntegratedOmicsMS1SearchSpaceBuilder(
         db_file_name,
-        protein_ids=complex_proteome,
+        protein_ids=simple_proteome,
         mzid_path="datafiles/AGP_Proteomics2.mzid",
         # glycomics_path='./datafiles/human_n_glycans.txt',
         # glycomics_format='txt',

@@ -1,5 +1,4 @@
 import re
-import copy
 import itertools
 import operator
 from collections import defaultdict, deque, Counter, namedtuple
@@ -68,6 +67,7 @@ def find_o_glycosylation_sequons(sequence, allow_modified=frozenset()):
     positions = []
     ser = Residue("S")
     thr = Residue("T")
+    asn = Residue("N")
 
     site_set = (ser, thr)
 
@@ -76,7 +76,8 @@ def find_o_glycosylation_sequons(sequence, allow_modified=frozenset()):
 
     for i, position in enumerate(sequence):
         if position[0] in site_set:
-            if ((len(position[1]) == 0) or position[1][0] in allow_modified):
+            if ((len(position[1]) == 0) or position[1][0] in allow_modified) and not (
+                    sequence[i - 2][0] == asn):
                 positions.append(i)
     return positions
 
@@ -295,7 +296,7 @@ class PeptideSequence(PeptideSequenceBase):
         self.mass = 0.0
         self.sequence = []
         self.modification_index = defaultdict(int)
-
+        self._fragment_index = None
         self._glycan = None
 
         self._n_term = None
@@ -431,58 +432,10 @@ class PeptideSequence(PeptideSequenceBase):
             for mod in mods:
                 self.drop_modification(i, mod)
 
-    def break_at(self, idx, neutral_losses=None):
-        b_shift = fragment_shift['b']
-        if self.n_term != structure_constants.N_TERM_DEFAULT:
-            b_shift = b_shift + self.n_term.mass
-        y_shift = fragment_shift['y']
-        if self.c_term != structure_constants.C_TERM_DEFAULT:
-            y_shift = y_shift + self.c_term.mass
-
-        mod_b = defaultdict(int)
-        mass_b = 0
-
-        mod_y = defaultdict(int)
-        mass_y = 0
-
-        pos = 0
-        residues_in_b = []
-        for pos in range(idx):
-            for mod in self.sequence[pos][1]:
-                mod_b[mod.serialize()] += 1
-            residues_in_b.append(self.sequence[pos][0].symbol)
-            mass_b += self.sequence[pos][0].mass
-
-        flanking_residues = [self.sequence[pos][0], self.sequence[pos + 1][0]]
-        b_frag = PeptideFragment(
-            b_series, pos + structure_constants.FRAG_OFFSET, mod_b, mass_b + b_shift,
-            flanking_amino_acids=flanking_residues)
-
-        break_point = pos + 1
-        residues_in_y = []
-        for pos in range(break_point, len(self)):
-            for mod in self.sequence[pos][1]:
-                mod_y[mod.serialize()] += 1
-            residues_in_y.append(self.sequence[pos][0].symbol)
-            mass_y += self.sequence[pos][0].mass
-
-        y_frag = PeptideFragment(
-            y_series, len(self) - (break_point - 1 + structure_constants.FRAG_OFFSET),
-            mod_y, mass_y + y_shift, flanking_amino_acids=flanking_residues)
-        if structure_constants.PARTIAL_HEXNAC_LOSS:
-            b_frag.golden_pairs = [frag.name for frag in y_frag.partial_loss()]
-            y_frag.golden_pairs = [frag.name for frag in b_frag.partial_loss()]
-            b_frag = list(b_frag.partial_loss())
-            y_frag = list(y_frag.partial_loss())
-        else:
-            b_frag.golden_pairs = [y_frag.name]
-            y_frag.golden_pairs = [b_frag.name]
-
-        if neutral_losses is not None:
-            b_frag = list(b_frag.generate_neutral_losses(neutral_losses))
-            y_frag = list(y_frag.generate_neutral_losses(neutral_losses))
-
-        return b_frag, y_frag
+    def break_at(self, idx):
+        if self._fragment_index is None:
+            self._build_fragment_index()
+        return self._fragment_index[idx]
 
     def get_fragments(self, kind, neutral_losses=None, **kwargs):
         """Return a list of mass values for each fragment of `kind`"""
@@ -550,8 +503,9 @@ class PeptideSequence(PeptideSequenceBase):
             # If incremental loss of HexNAc is not allowed, only one fragment of a given type is generated
             if not structure_constants.PARTIAL_HEXNAC_LOSS:
                 frag = PeptideFragment(
-                    kind, idx + structure_constants.FRAG_OFFSET, dict(mod_dict), current_mass,
-                    flanking_amino_acids=flanking_residues, composition=running_composition)
+                    kind, idx + structure_constants.FRAG_OFFSET, dict(mod_dict),
+                    current_mass, flanking_amino_acids=flanking_residues,
+                    composition=running_composition)
                 fragments_from_site.append(frag)
                 bare_dict = dict(mod_dict)
 
@@ -644,6 +598,23 @@ class PeptideSequence(PeptideSequenceBase):
                     self._fragments_map[frag.name] = frag
             return self._fragments_map[key]
 
+    def _build_fragment_index(self, types='by', neutral_losses=None):
+        self._fragment_index = [[] for i in range(len(self) + 1)]
+        for series in types:
+            series = IonSeries(series)
+            if series.direction > 0:
+                g = self.get_fragments(
+                    series, neutral_losses=neutral_losses)
+                for frags in g:
+                    position = self._fragment_index[frags[0].position]
+                    position.append(frags)
+            else:
+                g = self.get_fragments(
+                    series, neutral_losses=neutral_losses)
+                for frags in g:
+                    position = self._fragment_index[len(self) - frags[0].position]
+                    position.append(frags)
+
     def get_sequence(self, start=0, include_glycan=True, include_termini=True,
                      implicit_n_term=None, implicit_c_term=None):
         """
@@ -730,7 +701,7 @@ class PeptideSequence(PeptideSequenceBase):
     def extend(self, sequence):
         if not isinstance(sequence, PeptideSequenceBase):
             sequence = PeptideSequence(sequence)
-        self.sequence.extend(sequence.seq)
+        self.sequence.extend(sequence.sequence)
         self.mass += sequence.mass - sequence.n_term.mass - sequence.c_term.mass
         for mod, count in sequence.modification_index.items():
             self.modification_index[mod] += count
@@ -738,7 +709,7 @@ class PeptideSequence(PeptideSequenceBase):
     def leading_extend(self, sequence):
         if not isinstance(sequence, PeptideSequenceBase):
             sequence = PeptideSequence(sequence)
-        self.sequence = sequence.seq + self.sequence
+        self.sequence = sequence.sequence + self.sequence
         self.mass += sequence.mass - sequence.n_term.mass - sequence.c_term.mass
         for mod, count in sequence.modification_index.items():
             self.modification_index[mod] += count
@@ -755,6 +726,12 @@ class PeptideSequence(PeptideSequenceBase):
     def glycosaminoglycan_sequon_sites(self):
         return find_glycosaminoglycan_sequons(self)
 
+    @property
+    def glycosylation_sites(self):
+        sites = find_n_glycosylation_sequons(self, structure_constants.ALLOW_MODIFIED_ASPARAGINE)
+        sites += find_o_glycosylation_sequons(self)
+        return sites
+
     def stub_fragments(self):
         if isinstance(self.glycan, Glycan):
             glycan = GlycanComposition.from_glycan(self.glycan)
@@ -763,7 +740,7 @@ class PeptideSequence(PeptideSequenceBase):
         else:
             raise TypeError((
                 "Cannot infer monosaccharides from non-Glycan"
-                "or GlycanComposition {}").format(self.glycan))
+                " or GlycanComposition {}").format(self.glycan))
         fucose_count = glycan['Fuc'] or glycan['dHex']
         core_count = self.modification_index['HexNAc']
 

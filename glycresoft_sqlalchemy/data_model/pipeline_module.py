@@ -17,7 +17,7 @@ from glycresoft_sqlalchemy.utils.worker_utils import profile_task
 logger = logging.getLogger("pipeline_module")
 
 
-DEBUG = False
+DEBUG = True
 
 
 class User(Base):

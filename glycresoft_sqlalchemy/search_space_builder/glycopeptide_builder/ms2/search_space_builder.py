@@ -513,7 +513,7 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
 
     def load_protein_from_sitelist(self, glycosylation_site_map):
         for name, sites in self.glycosylation_site_map.items():
-            self.session.add(Protein(name=name, glycosylation_sites=sites, hypothesis_id=self.hypothesis.id))
+            self.session.add(Protein(name=name, hypothesis_id=self.hypothesis.id))
         self.session.commit()
 
     def load_protein_from_hypothesis(self, hypothesis_id):
@@ -527,7 +527,6 @@ class TheoreticalSearchSpaceBuilder(PipelineModule):
             prot = (Protein(
                 name=protein.name,
                 protein_sequence=protein.protein_sequence,
-                glycosylation_sites=protein.glycosylation_sites,
                 hypothesis_id=hid))
             session.add(prot)
             session.flush()
