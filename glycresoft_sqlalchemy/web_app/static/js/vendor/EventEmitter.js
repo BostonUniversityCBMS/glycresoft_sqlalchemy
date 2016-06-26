@@ -451,7 +451,7 @@
      * Reverts the global {@link EventEmitter} to its previous value and returns a reference to this version.
      *
      * @return {Function} Non conflicting EventEmitter class.
-     */
+     *//*
     EventEmitter.noConflict = function noConflict() {
         exports.EventEmitter = originalGlobalValue;
         return EventEmitter;
@@ -468,5 +468,9 @@
     }
     else {
         exports.EventEmitter = EventEmitter;
-    }
+    }*/
+
+    //Force Browser loading behavior
+    console.log(exports, this)
+    exports.EventEmitter = EventEmitter;
 }.call(this));

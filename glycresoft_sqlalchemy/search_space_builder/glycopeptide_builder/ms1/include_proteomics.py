@@ -165,12 +165,16 @@ class ProteomeImporter(PipelineModule):
 
         logger.info("Constant Modifications: %r", self.constant_modifications)
         logger.info("Enzyme: %r", self.enzymes)
+        assert session.query(InformedPeptide).filter(
+            InformedPeptide.protein_id == None).count() == 0
         if True:  # self.glycosylation_sites_file is None:
             for protein in session.query(Protein).filter(Protein.hypothesis_id == self.hypothesis_id):
                 session.add(protein)
                 session.flush()
                 if self.include_all_baseline:
                     self.build_baseline_peptides(session, protein)
+                    # assert session.query(InformedPeptide).filter(
+                    #     InformedPeptide.protein_id == None).count() == 0, protein
 
         # else:
         #     site_list_gen = SiteListFastaFileParser(self.glycosylation_sites_file)
@@ -184,6 +188,9 @@ class ProteomeImporter(PipelineModule):
         #         session.flush()
         #         if self.include_all_baseline:
         #             self.build_baseline_peptides(session, protein)
+
+        assert session.query(InformedPeptide).filter(
+            InformedPeptide.protein_id == None).count() == 0
 
         if not self.include_all_baseline:
             logger.info("Building Unmodified Reference Peptides")

@@ -247,8 +247,8 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
     constant_modifications = kwargs.get("constant_modifications", [])
     modification_translation_table = kwargs.get("modification_translation_table", {})
 
-    glycosite_candidates = (sequence.find_n_glycosylation_sequons(
-                peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
+    glycosite_candidates = sequence.find_n_glycosylation_sequons(
+        peptide_sequence, WHITELIST_GLYCOSITE_PTMS)
 
     if "SubstitutionModification" in sequence_dict:
         subs = sequence_dict["SubstitutionModification"]
@@ -343,16 +343,12 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
         sequence_copy = remove_peptide_sequence_alterations(
             base_sequence, insert_sites, deleteion_sites)
 
-        # sequence_copy = list(base_sequence)
-        # for i, position in enumerate(insert_sites):
-        #     sequence_copy.pop(position - i)
-        # sequence_copy = ''.join(sequence_copy)
         found = parent_protein.protein_sequence.find(sequence_copy)
         if found == -1:
             raise ValueError("Peptide not found in Protein\n%s\n%s\n\n%s" % (
                 parent_protein.name, parent_protein.protein_sequence, (
                     sequence_copy, sequence_dict
-                    )))
+                )))
         if found != start:
             start = found
             end = start + len(base_sequence)
@@ -361,6 +357,8 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                 missed_cleavages = len(enzyme.findall(base_sequence))
             else:
                 missed_cleavages = None
+            if "X" in str(peptide_sequence):
+                continue
             match = InformedPeptide(
                 calculated_mass=peptide_sequence.mass,
                 base_peptide_sequence=base_sequence,
@@ -385,6 +383,8 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
             match.glycosylation_sites = list(glycosites)
             session.add(match)
             counter += 1
+        except residue.UnknownAminoAcidException:
+            continue
         except:
             print(evidence)
             raise

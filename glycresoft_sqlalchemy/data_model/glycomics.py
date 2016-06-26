@@ -309,6 +309,13 @@ class GlycanBase(HasClassBakedQueries):
         mass = self.calculated_mass
         return mass - water_mass
 
+    @property
+    def most_detailed_sequence(self):
+        try:
+            return self.canonical_sequence
+        except:
+            return self.composition
+
     @classmethod
     def ppm_error_tolerance_search(cls, session, mass, tolerance, hypothesis_id=None, dehydrate=False):
         width = (mass * tolerance)

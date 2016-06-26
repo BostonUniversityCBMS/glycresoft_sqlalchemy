@@ -6,8 +6,8 @@ import multiprocessing
 from collections import Counter
 import textwrap
 
-from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide, PeptideBase
-from glycresoft_sqlalchemy.structure import sequence, modification
+from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide, PeptideBase, object_session
+from glycresoft_sqlalchemy.structure import sequence, modification, residue
 from glycresoft_sqlalchemy.proteomics.enzyme import expasy_rules, merge_enzyme_rules
 from glycresoft_sqlalchemy.proteomics.fasta import (
     ProteinFastaFileParser, SiteListFastaFileParser, FastaFileWriter, ProteinFastFileWriter)
@@ -182,22 +182,26 @@ def unpositioned_isoforms(
         variable_modifications = []
     if constant_modifications is None:
         constant_modifications = []
+    try:
+        sequence = get_base_peptide(theoretical_peptide)
 
-    sequence = get_base_peptide(theoretical_peptide)
+        has_fixed_n_term = False
+        has_fixed_c_term = False
 
-    has_fixed_n_term = False
-    has_fixed_c_term = False
+        for mod in {modification_table[const_mod]
+                    for const_mod in constant_modifications}:
+            for site in mod.find_valid_sites(sequence):
+                if site == SequenceLocation.n_term:
+                    has_fixed_n_term = True
+                elif site == SequenceLocation.c_term:
+                    has_fixed_c_term = True
+                sequence.add_modification(site, mod.name)
 
-    for mod in {modification_table[const_mod]
-                for const_mod in constant_modifications}:
-        for site in mod.find_valid_sites(sequence):
-            if site == SequenceLocation.n_term:
-                has_fixed_n_term = True
-            elif site == SequenceLocation.c_term:
-                has_fixed_c_term = True
-            sequence.add_modification(site, mod.name)
-
-    sequons = glycosylation_site_finder(theoretical_peptide)
+        sequons = glycosylation_site_finder(theoretical_peptide)
+    except residue.UnknownAminoAcidException, e:
+        logger.info("Invalid Amino Acid %s. Skipping %r", e,
+                    theoretical_peptide.most_detailed_sequence)
+        raise StopIteration()
 
     variable_modifications = {
         modification_table[mod] for mod in variable_modifications}
@@ -297,6 +301,9 @@ def generate_peptidoforms(reference_protein, constant_modifications,
             continue
         missed = len(re.findall(enzyme, peptide))
         if missed > missed_cleavages:
+            continue
+
+        if "X" in peptide:
             continue
 
         ref_peptide = peptide_class(

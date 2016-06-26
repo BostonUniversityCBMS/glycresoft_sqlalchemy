@@ -1011,10 +1011,10 @@ static const char __pyx_k_pymodification[] = "pymodification";
 static const char __pyx_k_test_residue_sym[] = "test_residue_sym";
 static const char __pyx_k_test_modifications[] = "test_modifications";
 static const char __pyx_k_glycresoft_sqlalchemy_structure[] = "glycresoft_sqlalchemy.structure";
-static const char __pyx_k_D_Programming_exploration_glycre[] = "D:\\Programming\\exploration\\glycresoft_sqlalchemy\\glycresoft_sqlalchemy\\structure\\ext\\structure.pyx";
+static const char __pyx_k_C_Users_Joshua_Klein_Dropbox_Gly[] = "C:\\Users\\Joshua Klein\\Dropbox\\GlycomicsSandbox\\glycresoft_sqlalchemy\\glycresoft_sqlalchemy\\structure\\ext\\structure.pyx";
 static const char __pyx_k_glycresoft_sqlalchemy_structure_2[] = "glycresoft_sqlalchemy.structure.ext.structure";
 static PyObject *__pyx_n_s_AminoAcids;
-static PyObject *__pyx_kp_s_D_Programming_exploration_glycre;
+static PyObject *__pyx_kp_s_C_Users_Joshua_Klein_Dropbox_Gly;
 static PyObject *__pyx_n_s_Modification;
 static PyObject *__pyx_n_s_Modifications;
 static PyObject *__pyx_n_s_Residue;
@@ -3735,7 +3735,7 @@ static struct PyModuleDef __pyx_moduledef = {
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_AminoAcids, __pyx_k_AminoAcids, sizeof(__pyx_k_AminoAcids), 0, 0, 1, 1},
-  {&__pyx_kp_s_D_Programming_exploration_glycre, __pyx_k_D_Programming_exploration_glycre, sizeof(__pyx_k_D_Programming_exploration_glycre), 0, 0, 1, 0},
+  {&__pyx_kp_s_C_Users_Joshua_Klein_Dropbox_Gly, __pyx_k_C_Users_Joshua_Klein_Dropbox_Gly, sizeof(__pyx_k_C_Users_Joshua_Klein_Dropbox_Gly), 0, 0, 1, 0},
   {&__pyx_n_s_Modification, __pyx_k_Modification, sizeof(__pyx_k_Modification), 0, 0, 1, 1},
   {&__pyx_n_s_Modifications, __pyx_k_Modifications, sizeof(__pyx_k_Modifications), 0, 0, 1, 1},
   {&__pyx_n_s_Residue, __pyx_k_Residue, sizeof(__pyx_k_Residue), 0, 0, 1, 1},
@@ -3806,7 +3806,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__2 = PyTuple_Pack(2, __pyx_n_s_name, __pyx_n_s_residue); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
-  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test, 254, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_C_Users_Joshua_Klein_Dropbox_Gly, __pyx_n_s_test, 254, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 254, __pyx_L1_error)
 
   /* "glycresoft_sqlalchemy/structure/ext/structure.pyx":258
  *     return residue[0]
@@ -3818,7 +3818,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__4 = PyTuple_Pack(2, __pyx_n_s_symbol, __pyx_n_s_residue); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
-  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__4, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test_residue_sym, 258, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__4, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_C_Users_Joshua_Klein_Dropbox_Gly, __pyx_n_s_test_residue_sym, 258, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 258, __pyx_L1_error)
 
   /* "glycresoft_sqlalchemy/structure/ext/structure.pyx":262
  *     return residue[0]
@@ -3830,7 +3830,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__6 = PyTuple_Pack(4, __pyx_n_s_mapping, __pyx_n_s_name, __pyx_n_s_array, __pyx_n_s_modification); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 262, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
-  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test_modifications, 262, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 262, __pyx_L1_error)
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_C_Users_Joshua_Klein_Dropbox_Gly, __pyx_n_s_test_modifications, 262, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 262, __pyx_L1_error)
 
   /* "glycresoft_sqlalchemy/structure/ext/structure.pyx":271
  *     return modification[0]
@@ -3842,7 +3842,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__8 = PyTuple_Pack(1, __pyx_n_s_obj); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 271, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__8);
   __Pyx_GIVEREF(__pyx_tuple__8);
-  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_D_Programming_exploration_glycre, __pyx_n_s_test_sequence, 271, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 271, __pyx_L1_error)
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_C_Users_Joshua_Klein_Dropbox_Gly, __pyx_n_s_test_sequence, 271, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 271, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;

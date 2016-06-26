@@ -1,9 +1,12 @@
 import os
+import gc
 import csv
 import argparse
 from glycresoft_sqlalchemy.data_model import (DatabaseManager, Hypothesis, Protein, TheoreticalGlycanComposition,
                                               GlycopeptideMatch, PipelineModule, HypothesisSampleMatch,
                                               TheoreticalGlycopeptideComposition)
+
+from glypy.composition.glycan_composition import FrozenGlycanComposition
 
 
 def export_glycopeptide_ms2_matches(glycopeptides, output_path):
@@ -167,18 +170,25 @@ def export_glycan_composition_hypothesis(glycan_compositions, monosaccharide_ide
     return output_path
 
 
-def export_theoretical_glycopeptide_hypothesis(glycopeptides, monosaccharide_identities, output_path):
+def export_theoretical_glycopeptide_hypothesis(glycopeptides, monosaccharide_identities, output_path, session):
     headers = ["theoretical mass", "peptide sequence", "modifications", "glycan composition"] +\
-             monosaccharide_identities + ["protein name", "start", "end", "missed cleavages", "glycosylation sites"]
+        monosaccharide_identities + ["protein name", "start", "end", "missed cleavages", "glycosylation sites"]
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         writer.writerow(headers)
-        for row in glycopeptides:
-            writer.writerow([
-                str(row.calculated_mass), row.modified_peptide_sequence, str(row.peptide_modifications),
-                row.glycan_composition_str] + [str(row.glycan_composition[k]) for k in monosaccharide_identities] + [
-                str(row.protein.name), str(row.start_position), str(row.end_position), str(row.count_missed_cleavages),
-                str(row.count_glycosylation_sites)])
+        i = 0
+        n = glycopeptides.count()
+        while i < n:
+            for row in (glycopeptides.slice(i, i + 15000)):
+                glycan_comp = FrozenGlycanComposition.parse(row.glycan_composition_str)
+                writer.writerow([
+                    str(row.calculated_mass), row.modified_peptide_sequence, str(row.peptide_modifications),
+                    row.glycan_composition_str] + [str(glycan_comp[k]) for k in monosaccharide_identities] + [
+                    str(row.protein.name), str(row.start_position), str(row.end_position),
+                    str(row.count_missed_cleavages), str(row.count_glycosylation_sites)])
+                i += 1
+            session.expunge_all()
+            print i, '/', n
     return output_path
 
 
@@ -278,8 +288,16 @@ class CSVExportDriver(PipelineModule):
                 session.query(TheoreticalGlycanComposition).filter(
                     TheoreticalGlycanComposition.hypothesis_id == hypothesis.id).yield_per(1000),
                 monosaccharide_identities,
-                output_path
-                )
+                output_path)
+        elif hypothesis.theoretical_structure_type == TheoreticalGlycopeptideComposition:
+            output_path = self.output_path + ".{}.glycopeptide_compositions.csv".format(getname(hypothesis))
+            outputs.append(output_path)
+            monosaccharide_identities = hypothesis.parameters['monosaccharide_identities']
+            export_theoretical_glycopeptide_hypothesis(
+                session.query(TheoreticalGlycopeptideComposition).join(Protein).filter(
+                    Protein.hypothesis_id == hypothesis.id).yield_per(1000),
+                monosaccharide_identities,
+                output_path, session=session)
         else:
             print("Unsupported Hypothesis Type: %s" % hypothesis.theoretical_structure_type.__name__)
         return outputs
@@ -293,7 +311,7 @@ app = argparse.ArgumentParser("export-csv")
 
 app.add_argument("database_path", help="path to the database file to export")
 app.add_argument("-d", "--hypothesis-id", action="append", type=int, help="The hypothesis to export.")
-app.add_argument("-e", "--hypothesis-sample-match-id",  action="append", type=int,
+app.add_argument("-e", "--hypothesis-sample-match-id", action="append", type=int,
                  help="The hypothesis sample match to export.")
 app.add_argument("-o", "--out", default=None, help="Where to save the result")
 

@@ -39,6 +39,9 @@ module.exports = (grunt) ->
             vendor:
                 src: ["static/js/vendor/**.js"]
                 dest: "static/js/dist/vendor-bundle.js"
+            jquery:
+                src: ["static/js/vendor/_jquery.js"]
+                dest: "static/js/dist/jquery.js"
             css:
                 src: ["static/css/*.css"]
                 dest: "static/css/dist/bundle.css"

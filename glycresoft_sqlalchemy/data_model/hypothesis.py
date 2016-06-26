@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from sqlalchemy.orm.session import object_session
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
@@ -85,6 +86,12 @@ class Hypothesis(Base, ParameterStore, HasUniqueName):
             return None
 
     ms_level = 0
+
+    def search_by_mass(self, mass, ppm_error_tolerance):
+        structure_type = self.theoretical_structure_type
+        session = object_session(self)
+        return structure_type.ppm_error_tolerance_search(
+            session, mass=mass, tolerance=ppm_error_tolerance, hypothesis_id=self.id).all()
 
 
 class MS1GlycanHypothesis(Hypothesis):

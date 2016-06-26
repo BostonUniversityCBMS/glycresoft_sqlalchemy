@@ -15,7 +15,7 @@ from ..hypothesis import Hypothesis
 from ..glycomics import (
     with_glycan_composition, TheoreticalGlycanCombination, has_glycan_composition_listener)
 
-from ...structure import sequence
+from ...structure import sequence, residue
 
 
 peptide_bakery = bakery()
@@ -56,7 +56,10 @@ class Protein(Base):
 
     @property
     def glycosylation_sites(self):
-        return self.n_glycan_sequon_sites  # + self.o_glycan_sequon_sites
+        try:
+            return self.n_glycan_sequon_sites  # + self.o_glycan_sequon_sites
+        except residue.UnknownAminoAcidException:
+            return []
 
     def __repr__(self):
         return "<Protein {0} {1} {2} {3}...>".format(

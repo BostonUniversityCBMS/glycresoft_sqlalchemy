@@ -1,0 +1,34 @@
+<div class='mass-search-control' data-target="{{hypothesis.id}}" style='position: relative;'>
+    <div class="col s2" style="padding-top: 45px;">
+        <label for="mass-search-value" class="">Search Mass</label>
+        <input type="number" id="mass-search-value" name="mass-search-value">
+    </div>
+    <div class="col s2" style="padding-top: 45px;">
+        <label for="matching-ppm-error-tolerance" class="active">Error Tolerance (PPM)</label>
+        <input type="number" value="10" id="matching-ppm-error-tolerance" name="matching-ppm-error-tolerance">
+    </div>
+    <div class="col s1" style="padding-top: 45px;">
+        <button id='mass-search-btn' class="btn btn-flat" style='margin-top: 15px;'>
+            <i class="material-icons" style='margin-bottom: 15px;'>search</i>
+        </button>
+    </div>
+    <br>
+</div>
+<script>
+    $("#mass-search-btn").click(function(evt){
+        var hypothesisId = $('.mass-search-control').attr("data-target")
+        GlycReSoft.ajaxWithContext("/view_hypothesis/" + hypothesisId + "/mass_search", {
+            data: {
+                "mass": parseFloat($("#mass-search-value").val()),
+                "tolerance": parseFloat($("#matching-ppm-error-tolerance").val()) * 1e-6
+            }
+        }).success(function(matches){
+            var output = $("<div></div")
+            for(var i = 0; i < matches.length; i++){
+                output.append($("<div></div>").text(matches[i].sequence))
+                console.log(matches[i])
+            }
+            GlycReSoft.displayMessageModal(output)
+        })
+    })
+</script>

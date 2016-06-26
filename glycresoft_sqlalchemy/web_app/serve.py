@@ -213,9 +213,6 @@ parser.add_argument("--external", action='store_true', required=False, default=F
 parser.add_argument("-p", "--port", required=False, type=int, default=5000, help="The port on which to run the server")
 
 
-DEBUG = False
-
-
 def setup_logging():
     try:
         logging.basicConfig(
