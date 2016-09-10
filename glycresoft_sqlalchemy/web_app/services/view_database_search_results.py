@@ -11,6 +11,7 @@ from glycresoft_sqlalchemy.web_app.utils.pagination import paginate
 from glycresoft_sqlalchemy.web_app.report import svg_plot
 from glycresoft_sqlalchemy.web_app.utils.state_transfer import request_arguments_and_context, MonosaccharideFilterSet
 from glycresoft_sqlalchemy.web_app.utils.cache import CachablePartialFunction, ApplicationDataCache
+from glycresoft_sqlalchemy.web_app.services import peptide_match_table
 
 view_database_search_results = Blueprint("view_database_search_results", __name__)
 
@@ -253,25 +254,15 @@ def view_tandem_glycopeptide_glycopeptide_details(id):
 
 # Dispatch through view_database_search_results
 def view_composition_database_search_results(id):
+    print "Begin view_composition_database_search_results", id
     hsm = g.db.query(HypothesisSampleMatch).get(id)
-    hypothesis_sample_match_id = id
-
-    def filter_context(q):
-        return q.filter_by(
-            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
-            PeakGroupMatchType.ms1_score > 0.2)
 
     if isinstance(hsm, MS1GlycopeptideHypothesisSampleMatch):
         return render_glycopeptide_composition_database_search_results(hsm, id)
-        # return render_template(
-        #     "glycopeptide_peak_group_search/view_database_search_results.templ",
-        #     hsm=hsm,
-        #     filter_context=filter_context)
     elif isinstance(hsm, MS1GlycanHypothesisSampleMatch):
         return render_template(
             "view_glycan_peak_group_search_results/view_database_search_results.templ",
-            hsm=hsm,
-            filter_context=filter_context)
+            hsm=hsm)
 
 
 # ----------------------------------------------------------------------
@@ -280,16 +271,30 @@ def view_composition_database_search_results(id):
 
 
 def render_glycopeptide_composition_database_search_results(hsm, hypothesis_sample_match_id):
+    print "Begin render_glycopeptide_composition_database_search_results", hsm, hypothesis_sample_match_id
+    arguments, context = request_arguments_and_context(request)
+
+    monosaccharide_filters = context.monosaccharide_filters
+    minimum_score = context.minimum_ms1_score
+
+    results_type = hsm.results_type
+    theoretical_type, generator = hsm.results().next()
+
+    print "Filter Context", minimum_score, hypothesis_sample_match_id, monosaccharide_filters
+
     def filter_context(q):
-        return q.filter_by(
-            hypothesis_sample_match_id=hypothesis_sample_match_id).filter(
-            PeakGroupMatchType.ms1_score > 0.2)
+        q = theoretical_type.glycan_composition_filters(q, monosaccharide_filters)
+        return q.filter(
+            results_type.hypothesis_sample_match_id == hypothesis_sample_match_id,
+            results_type.ms1_score > minimum_score)
 
-    protein_table = protein_table_data_composer_ms1(g.db, hsm.target_hypothesis_id, hsm.id, filter_context)
-
+    print "Begin Table Building"
+    # protein_table = protein_table_data_composer_ms1(g.db, hsm.target_hypothesis_id, hsm.id, filter_context)
+    protein_table = peptide_match_table.GlycopeptideCompositionProteinAssociationTable(
+        g.db, hsm.target_hypothesis_id, hsm.id, filter_context)
     protein_table_cache[hypothesis_sample_match_id] = protein_table
 
-    print protein_table
+    print(protein_table.as_table())
 
     return render_template(
         "glycopeptide_peak_group_search/view_database_search_results.templ",
@@ -335,22 +340,12 @@ def protein_table_data_composer_ms1(session, hypothesis_id, hypothesis_sample_ma
 
 @app.route("/view_database_search_results/protein_composition_view/<int:id>", methods=["POST"])
 def view_composition_glycopeptide_protein_results(id):
-    arguments, context = request_arguments_and_context(request)
-    hypothesis_sample_match_id = context.hypothesis_sample_match_id
-    hsm = g.db.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+    # arguments, context = request_arguments_and_context(request)
     protein = g.db.query(Protein).get(id)
-    minimum_score = context.minimum_ms1_score
-
-    def filter_context(q):
-
-        return q.filter(
-            PeakGroupMatchType.hypothesis_sample_match_id == hypothesis_sample_match_id,
-            PeakGroupMatchType.ms1_score > minimum_score)
 
     return render_template(
         "glycopeptide_peak_group_search/components/protein_view.templ",
-        protein=protein,
-        filter_context=filter_context)
+        protein=protein)
 
 
 @app.route("/view_database_search_results/glycopeptide_matches_composition_table"
@@ -359,34 +354,23 @@ def view_composition_glycopeptide_table_partial(protein_id, page):
     arguments, context = request_arguments_and_context(request)
     hypothesis_sample_match_id = context.hypothesis_sample_match_id
 
-    hsm = g.db.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
+    print("view_composition_glycopeptide_table_partial", page, protein_id)
+    # hsm = g.db.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
 
-    monosaccharide_filters = context.monosaccharide_filters
-    minimum_score = context.minimum_ms1_score
+    # monosaccharide_filters = context.monosaccharide_filters
+    # minimum_score = context.minimum_ms1_score
 
-    try:
-        table = protein_table_cache[hypothesis_sample_match_id]
-        table_data = get_protein_from_tabulated_table(table, protein_id)
-        total_count = table_data['match_count']
-    except Exception, e:
-        total_count = None
+    # def filter_context(q):
+    #     results_type = hsm.results_type
+    #     theoretical_type, generator = hsm.results().next()
+    #     q = theoretical_type.glycan_composition_filters(q, monosaccharide_filters)
+    #     return q.filter(
+    #         results_type.hypothesis_sample_match_id == hypothesis_sample_match_id,
+    #         results_type.ms1_score > minimum_score)
 
-    def filter_context(q):
-        results_type = hsm.results_type
-        theoretical_type, generator = hsm.results().next()
-        q = theoretical_type.glycan_composition_filters(q, monosaccharide_filters)
-        return q.filter(
-            results_type.hypothesis_sample_match_id == hypothesis_sample_match_id,
-            results_type.ms1_score > minimum_score)
-
-    paginator = paginate(
-        filter_context(
-            g.db.query(PeakGroupMatchType).join(
-                TheoreticalGlycopeptideComposition,
-                TheoreticalGlycopeptideComposition.id == PeakGroupMatchType.theoretical_match_id).filter(
-                TheoreticalGlycopeptideComposition.protein_id == protein_id,
-                PeakGroupMatchType.hypothesis_sample_match_id == hypothesis_sample_match_id)).order_by(
-            PeakGroupMatchType.ms1_score.desc()), page, 50, total_count)
+    table = protein_table_cache[hypothesis_sample_match_id]
+    table.proxy(g.db)
+    paginator = table.paginate(protein_id, page, per_page=50)
 
     return render_template(
         "glycopeptide_peak_group_search/components/glycopeptide_match_table.templ",

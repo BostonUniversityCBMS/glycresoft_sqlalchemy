@@ -295,6 +295,9 @@ def generate_peptidoforms(reference_protein, constant_modifications,
         constant_modifications,
         variable_modifications, reuse=False)
     enzyme = expasy_rules.get(enzyme, enzyme)
+
+    hypothesis_id = reference_protein.hypothesis_id
+
     for peptide, start, end in sequence.cleave(
             reference_protein.protein_sequence, enzyme, missed_cleavages=missed_cleavages):
         if len(peptide) < 5:
@@ -312,6 +315,7 @@ def generate_peptidoforms(reference_protein, constant_modifications,
             protein_id=reference_protein.id,
             start_position=start,
             end_position=end,
+            hypothesis_id=hypothesis_id,
             **peptide_kwargs)
         ref_peptide.protein = reference_protein
         for modseq, modifications, mass, sequons_occupied in unpositioned_isoforms(
@@ -330,6 +334,7 @@ def generate_peptidoforms(reference_protein, constant_modifications,
                 count_glycosylation_sites=len(sequons_occupied),
                 glycosylation_sites=sequons_occupied,
                 sequence_length=len(peptide),
+                hypothesis_id=hypothesis_id,
                 **peptide_kwargs
             )
             yield peptidoform

@@ -23,14 +23,6 @@ PROTEOMICS_SCORE = ["PEAKS:peptideScore", "mascot:score", "PEAKS:proteinScore"]
 WHITELIST_GLYCOSITE_PTMS = ["Deamidation"]
 
 
-class MultipleProteinMatchesException(Exception):
-    def __init__(self, message, evidence_id, db_sequences, key):
-        Exception.__init__(self, message)
-        self.evidence_id = evidence_id
-        self.db_sequences = db_sequences
-        self.key = key
-
-
 def protein_names(mzid_path, pattern=r'.*'):
     pattern = re.compile(pattern)
     parser = Parser(mzid_path, retrieve_refs=True, iterative=False, build_id_cache=True)
@@ -39,6 +31,14 @@ def protein_names(mzid_path, pattern=r'.*'):
         name = protein['accession']
         if pattern.match(name):
             yield name
+
+
+class MultipleProteinMatchesException(Exception):
+    def __init__(self, message, evidence_id, db_sequences, key):
+        Exception.__init__(self, message)
+        self.evidence_id = evidence_id
+        self.db_sequences = db_sequences
+        self.key = key
 
 
 class Parser(MzIdentML):
@@ -320,8 +320,6 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
     # mzid parsing
     if isinstance(evidence_list[0], list):
         evidence_list = [x for sub in evidence_list for x in sub]
-        # for ev in evidence_list:
-        #     print ev['accession']
     score = score_type = None
     for k, v in sequence_dict.items():
         if k in PROTEOMICS_SCORE:
@@ -372,11 +370,12 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                 peptide_score_type=score_type,
                 sequence_length=end - start,
                 protein_id=parent_protein.id,
+                hypothesis_id=hypothesis_id,
                 glycosylation_sites=None,
                 other={k: v for k, v in sequence_dict.items() if k not in
                        exclude_keys_from_sequence_dict})
             match.protein = parent_protein
-
+            assert match.hypothesis_id is not None
             glycosites = set(match.n_glycan_sequon_sites) | set(sequence.find_n_glycosylation_sequons(
                 peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
             match.count_glycosylation_sites = len(glycosites)

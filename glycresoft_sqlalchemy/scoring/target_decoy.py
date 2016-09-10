@@ -46,7 +46,7 @@ class NearestKeyMapping(dict):
             next_key = self.keylist[next_lowest_key_index + 1]
             if next_key < key:
                 return 0
-            return dict.__getitem__(self,  next_key)
+            return dict.__getitem__(self, next_key)
 
 
 class TargetDecoyAnalyzer(PipelineModule):
@@ -551,6 +551,6 @@ class InMemoryTargetDecoyAnalyzer(object):
     def q_values(self):
         q_map = self._calculate_q_values()
         for target in self.targets:
-            target.q_value2 = q_map[target.ms2_score]
+            target.q_value = q_map[target.ms2_score]
         for decoy in self.decoys:
-            decoy.q_value2 = q_map[decoy.ms2_score]
+            decoy.q_value = q_map[decoy.ms2_score]

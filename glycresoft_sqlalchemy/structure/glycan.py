@@ -52,6 +52,14 @@ class TypedGlycanComposition(glypy.GlycanComposition):
         return self.glycosylation_type is GlycosylationType[glycosylation_type]
 
 
+class HashableGlycanComposition(glypy.glycan_composition.FrozenGlycanComposition):
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+
 class TypedGlycan(NamedGlycan):
 
     def __init__(self, glycosylation_type=None, *args, **kwargs):

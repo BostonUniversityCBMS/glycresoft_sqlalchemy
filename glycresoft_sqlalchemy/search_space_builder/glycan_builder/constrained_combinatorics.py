@@ -226,7 +226,7 @@ def parse_rules_from_file(path):
         return parts[0], int(parts[1]), int(parts[2])
 
     for line in stream:
-        if line.startswith("#"):
+        if line.startswith(";"):
             continue
         parts = line.replace("\n", "").split(" ")
         if len(parts) == 3:
@@ -851,10 +851,10 @@ is_n_glycan_classifier = ClassificationConstraint(
         CompositionConstraint.from_list(
             ["HexNAc", ">=", "2"]) & CompositionConstraint.from_list(
             ["Hex", ">=", "3"]))
-    )
+)
 
 is_o_glycan_classifier = ClassificationConstraint(
     "O-Glycan", ((CompositionConstraint.from_list(["HexNAc", ">=", "1"]) &
                   CompositionConstraint.from_list(["Hex", ">=", "1"])) |
                  (CompositionConstraint.from_list(["HexNAc", ">=", "2"])))
-    )
+)

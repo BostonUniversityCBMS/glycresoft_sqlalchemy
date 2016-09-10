@@ -3,10 +3,10 @@ from glycresoft_sqlalchemy.structure import sequence
 from glycresoft_sqlalchemy.search_space_builder.glycopeptide_builder.ms2 import make_decoys
 
 sequences = [
-    "QD(Dehydrated)QC(Carbamidomethyl)IYN(HexNAc)TTYLNVQR{Fuc:3; Hex:7; HexNAc:5; Neu5Ac:1}",
-    "QDQC(Carbamidomethyl)IYN(HexNAc)TTYLNVQR{Hex:6; HexNAc:5; Neu5Ac:3}",
-    "QDQC(Carbamidomethyl)IYN(HexNAc)TTYLNVQR{Fuc:5; Hex:4; HexNAc:3; Neu5Ac:3}",
-    "(Gln->pyro-Glu)-QDQC(Carbamidomethyl)IYN(HexNAc)TTYLNVQR{Fuc:3; Hex:7; HexNAc:5; Neu5Ac:1}"
+    "QD(Dehydrated)QC(Carbamidomethyl)IYN(NGlycanCoreGlycosylation)TTYLNVQR{Fuc:3; Hex:7; HexNAc:5; Neu5Ac:1}",
+    "QDQC(Carbamidomethyl)IYN(NGlycanCoreGlycosylation)TTYLNVQR{Hex:6; HexNAc:5; Neu5Ac:3}",
+    "QDQC(Carbamidomethyl)IYN(NGlycanCoreGlycosylation)TTYLNVQR{Fuc:5; Hex:4; HexNAc:3; Neu5Ac:3}",
+    "(Gln->pyro-Glu)-QDQC(Carbamidomethyl)IYN(NGlycanCoreGlycosylation)TTYLNVQR{Fuc:3; Hex:7; HexNAc:5; Neu5Ac:1}"
 ]
 
 

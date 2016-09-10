@@ -87,11 +87,10 @@ def color_dict():
 def _degree_monosaccharide_alteration(x):
     try:
         if not isinstance(x, FrozenMonosaccharideResidue):
-            x = FrozenMonosaccharideResidue.from_iupac_lite(x)
+            x = FrozenMonosaccharideResidue.from_iupac_lite(str(x))
         return (len(x.modifications), len(x.substituent_links))
     except:
-        print x
-        return 0, 0
+        return (float('inf'), float('inf'))
 
 
 class GlycanCompositionOrderer(object):
@@ -144,11 +143,15 @@ class CompositionRangeRule(object):
 
     __repr__ = simple_repr
 
-    def __call__(self, obj):
+    def get_composition(self, obj):
         try:
             composition = obj.glycan_composition
         except:
             composition = FrozenGlycanComposition.parse(obj)
+        return composition
+
+    def __call__(self, obj):
+        composition = self.get_composition(obj)
         if self.name in composition:
             if self.low is None:
                 return composition[self.name] <= self.high
@@ -216,7 +219,7 @@ class GlycanCompositionClassifierColorizer(object):
             mpatches.Patch(
                 label=rule.name, color=color, alpha=alpha) for rule, color in self.rule_color_map.items()
             if rule.name in included
-            ]
+        ]
 
 
 NGlycanCompositionColorizer = GlycanCompositionClassifierColorizer(OrderedDict([
@@ -247,8 +250,7 @@ class GlycanLabelTransformer(object):
                 item = FrozenGlycanComposition.parse(item)
             residues.update(item)
 
-        residues = sorted(residues, key=lambda x: (
-            len(x.modifications), len(x.substituent_links)))
+        residues = sorted(residues, key=_degree_monosaccharide_alteration)
         self.residues = self.order_chooser.key_order(residues)
 
     def transform(self):

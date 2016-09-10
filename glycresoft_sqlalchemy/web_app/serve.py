@@ -147,12 +147,6 @@ def show_cache():
     return Response("Printed")
 
 
-@app.route("/internal/interrupt_query")
-def interrupt_query():
-    g.manager.interrupt()
-    return Response("interrupting")
-
-
 def connect_db():
     g.manager = manager
     g.db = manager.session()

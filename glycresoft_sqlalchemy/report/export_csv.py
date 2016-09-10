@@ -1,5 +1,4 @@
 import os
-import gc
 import csv
 import argparse
 from glycresoft_sqlalchemy.data_model import (DatabaseManager, Hypothesis, Protein, TheoreticalGlycanComposition,
@@ -9,7 +8,7 @@ from glycresoft_sqlalchemy.data_model import (DatabaseManager, Hypothesis, Prote
 from glypy.composition.glycan_composition import FrozenGlycanComposition
 
 
-def export_glycopeptide_ms2_matches(glycopeptides, output_path):
+def export_glycopeptide_ms2_matches(glycopeptides, output_path, session=None):
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         header = [
@@ -44,7 +43,7 @@ def export_glycopeptide_ms2_matches(glycopeptides, output_path):
     return output_path
 
 
-def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_identities, output_path):
+def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_identities, output_path, session=None):
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         headers = [
@@ -85,7 +84,7 @@ def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_id
         return output_path
 
 
-def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identities, output_path):
+def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identities, output_path, session=None):
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         headers = [
@@ -100,7 +99,7 @@ def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identiti
             if x.mass_shift_type:
                 return "%s:%d" % (x.mass_shift.name, x.mass_shift_count)
             return 'No Shift'
-
+        i = 0
         for pgm in peak_group_matches.yield_per(1000):
             theoretical_match = pgm.theoretical_match
             if theoretical_match is not None:
@@ -118,10 +117,13 @@ def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identiti
                 theoretical_match.calculated_mass if pgm.matched else ""
             ] + glycan_composition + [",".join(adduct_label(g) for g in pgm.subgroups), pgm.id]
             writer.writerow(row)
+            i += 1
+            if i % 1e5 == 0:
+                session.expunge_all()
         return output_path
 
 
-def export_glycan_ms1_matches_legacy_ungrouping(peak_group_matches, monosaccharide_identities, output_path):
+def export_glycan_ms1_matches_legacy_ungrouping(peak_group_matches, monosaccharide_identities, output_path, session=None):
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         headers = [
@@ -159,7 +161,7 @@ def export_glycan_ms1_matches_legacy_ungrouping(peak_group_matches, monosacchari
         return output_path
 
 
-def export_glycan_composition_hypothesis(glycan_compositions, monosaccharide_identities, output_path):
+def export_glycan_composition_hypothesis(glycan_compositions, monosaccharide_identities, output_path, session=None):
     headers = ["theoretical mass", "composition"] + monosaccharide_identities
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
@@ -240,14 +242,14 @@ class CSVExportDriver(PipelineModule):
                 # Only export target hypothesis
                 export_glycopeptide_ms2_matches(filterfunc(query.filter(
                     GlycopeptideMatch.protein_id == Protein.id,
-                    Protein.hypothesis_id == hsm.target_hypothesis_id)), output_path)
+                    Protein.hypothesis_id == hsm.target_hypothesis_id)), output_path, session)
             elif (res_type == TheoreticalGlycopeptideComposition):
                 output_path = self.output_path + '.{}.glycopeptide_compositions.csv'.format(getname(hsm))
                 outputs.append(output_path)
                 export_glycopeptide_ms1_matches_legacy(
                     filterfunc(query),
                     hsm.target_hypothesis.parameters['monosaccharide_identities'],
-                    output_path)
+                    output_path, session)
             elif (res_type == TheoreticalGlycanComposition):
                 output_path = self.output_path + ".{}.glycan_compositions.csv".format(getname(hsm))
                 outputs.append(output_path)
@@ -259,8 +261,7 @@ class CSVExportDriver(PipelineModule):
                 export_glycan_ms1_matches_legacy(
                     filterfunc(query),
                     monosaccharide_identities,
-                    output_path
-                    )
+                    output_path, session)
             else:
                 pass
         return outputs
@@ -288,7 +289,7 @@ class CSVExportDriver(PipelineModule):
                 session.query(TheoreticalGlycanComposition).filter(
                     TheoreticalGlycanComposition.hypothesis_id == hypothesis.id).yield_per(1000),
                 monosaccharide_identities,
-                output_path)
+                output_path, session)
         elif hypothesis.theoretical_structure_type == TheoreticalGlycopeptideComposition:
             output_path = self.output_path + ".{}.glycopeptide_compositions.csv".format(getname(hypothesis))
             outputs.append(output_path)

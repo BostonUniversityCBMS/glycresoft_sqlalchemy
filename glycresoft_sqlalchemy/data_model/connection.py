@@ -230,7 +230,8 @@ class DatabaseManager(object):
             connection = self.connect()
         return sessionmaker(bind=connection, autoflush=False)()
 
-    __call__ = session
+    def __call__(self, connection=None):
+        return self.session(connection)
 
     def query(self, *args, **kwargs):
         return self().query(*args, **kwargs)

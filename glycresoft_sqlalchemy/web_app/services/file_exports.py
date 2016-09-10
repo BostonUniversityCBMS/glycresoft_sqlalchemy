@@ -6,7 +6,7 @@ from flask import Response, g, Blueprint, request, jsonify
 
 from glycresoft_sqlalchemy.data_model import (
     HypothesisSampleMatch, MS1GlycanHypothesisSampleMatch, MS1GlycopeptideHypothesisSampleMatch,
-    MS2GlycopeptideHypothesisSampleMatch, GlycopeptideMatch, PeakGroupMatch)
+    MS2GlycopeptideHypothesisSampleMatch, GlycopeptideMatch, PeakGroupMatchType)
 
 from glycresoft_sqlalchemy.web_app.task.do_export_csv import ExportCSVTask
 
@@ -44,7 +44,7 @@ def export_csv_task(id):
     if isinstance(hypothesis_sample_match, (MS1GlycopeptideHypothesisSampleMatch,
                                             MS1GlycanHypothesisSampleMatch)):
         filterfunc = functools.partial(
-            filterfunc_template, model=PeakGroupMatch, attr="ms1_score", value=minimum_score)
+            filterfunc_template, model=PeakGroupMatchType, attr="ms1_score", value=minimum_score)
     elif isinstance(hypothesis_sample_match, MS2GlycopeptideHypothesisSampleMatch):
         filterfunc = functools.partial(
             filterfunc_template, model=GlycopeptideMatch, attr="ms2_score", value=minimum_score)

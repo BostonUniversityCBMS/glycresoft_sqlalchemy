@@ -100,6 +100,11 @@ class PeptideBase(HasClassBakedQueries):
             Protein.id, ondelete="CASCADE"), index=True)
 
     @declared_attr
+    def hypothesis_id(self):
+        return Column(Integer, ForeignKey(
+            Hypothesis.id, ondelete="CASCADE"), index=True)
+
+    @declared_attr
     def protein(self):
         if not hasattr(self, "__collection_name__"):
             name = _convert_class_name_to_collection_name(self.__name__)
@@ -197,10 +202,6 @@ class PeptideBase(HasClassBakedQueries):
         except AttributeError:
             pass
         return list(sites)
-
-    @property
-    def hypothesis_id(self):
-        return self.protein.hypothesis_id
 
     def __hash__(self):
         return hash((self.most_detailed_sequence, self.protein_id))

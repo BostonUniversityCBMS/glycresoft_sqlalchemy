@@ -1,15 +1,15 @@
 import re
 import itertools
 import operator
-from collections import defaultdict, deque, Counter, namedtuple
+from collections import defaultdict, deque, Counter
 
 from . import PeptideSequenceBase, MoleculeBase
 from . import constants as structure_constants
 from .composition import Composition
-from .fragment import PeptideFragment, fragment_shift, fragment_shift_composition, SimpleFragment, IonSeries
+from .fragment import PeptideFragment, fragment_shift, fragment_shift_composition, SimpleFragment, IonSeries, _n_glycosylation
 from .modification import Modification, SequenceLocation, ModificationCategory
 from .residue import Residue
-from glypy import GlycanComposition, Glycan, MonosaccharideResidue, Substituent, ReducedEnd
+from glypy import GlycanComposition, Glycan, ReducedEnd
 from glypy.composition.glycan_composition import FrozenGlycanComposition, FrozenMonosaccharideResidue
 
 from .parser import sequence_tokenizer, sequence_length, strip_modifications
@@ -86,9 +86,9 @@ def find_o_glycosylation_sequons(sequence, allow_modified=frozenset()):
 def find_n_glycosylation_sequons(sequence, allow_modified=frozenset()):
     try:
         iter(allow_modified)
-        allow_modified = set(allow_modified) | {Modification("HexNAc")}
+        allow_modified = set(allow_modified) | {Modification("HexNAc"), Modification(_n_glycosylation)}
     except:
-        allow_modified = (Modification("HexNAc"),)
+        allow_modified = (Modification("HexNAc"), Modification(_n_glycosylation))
     state = "seek"  # [seek, n, ^p, st]
     if isinstance(sequence, basestring):
         sequence = PeptideSequence(sequence)
@@ -131,9 +131,9 @@ def find_n_glycosylation_sequons(sequence, allow_modified=frozenset()):
 def find_glycosaminoglycan_sequons(sequence, allow_modified=frozenset()):
     try:
         iter(allow_modified)
-        allow_modified = set(allow_modified) | {Modification("HexNAc")}
+        allow_modified = set(allow_modified) | {Modification("HexNAc"), Modification(_n_glycosylation)}
     except:
-        allow_modified = (Modification("HexNAc"),)
+        allow_modified = (Modification("HexNAc"), Modification(_n_glycosylation))
     state = "seek"  # [seek, s, g1, x, g2]
     ser = Residue("Ser")
     gly = Residue("Gly")
@@ -186,7 +186,7 @@ def _total_composition(sequence):
         for position in sequence:
             total += position[0].composition
             for mod in position[1]:
-                if mod.name == "HexNAc":
+                if mod.name == (_n_glycosylation):
                     continue
                 total += mod.composition
         total += sequence.n_term.composition
@@ -292,7 +292,9 @@ class PeptideSequence(PeptideSequenceBase):
         seq.c_term = c_term
         return seq
 
-    def __init__(self, sequence=None, **kwargs):
+    def __init__(self, sequence=None, parser_function=None, **kwargs):
+        if parser_function is None:
+            parser_function = sequence_tokenizer
         self.mass = 0.0
         self.sequence = []
         self.modification_index = defaultdict(int)
@@ -301,10 +303,14 @@ class PeptideSequence(PeptideSequenceBase):
 
         self._n_term = None
         self._c_term = None
+
+        self._total_composition = None
+        self._peptide_composition = None
+
         if sequence == "" or sequence is None:
             pass
         else:
-            seq_list, modifications, glycan, n_term, c_term = sequence_tokenizer(sequence)
+            seq_list, modifications, glycan, n_term, c_term = parser_function(sequence)
             for item in seq_list:
                 res = Residue(item[0])
                 self.mass += res.mass
@@ -322,8 +328,12 @@ class PeptideSequence(PeptideSequenceBase):
             self.c_term = Modification(c_term) if isinstance(c_term, basestring) else c_term
         self._fragments_map = {}
 
+    def _invalidate(self):
+        self._total_composition = None
+        self._peptide_composition = None
+
     def _patch_glycan_composition(self):
-        occupied_sites = self.modification_index['HexNAc']
+        occupied_sites = self.modification_index['N-Glycosylation']
         offset = Composition({"H": 2, "O": 1}) * occupied_sites
         self.glycan.composition_offset -= offset
 
@@ -354,6 +364,7 @@ class PeptideSequence(PeptideSequenceBase):
     @glycan.setter
     def glycan(self, value):
         self._glycan = value
+        self._invalidate()
         if isinstance(value, GlycanComposition):
             self._patch_glycan_composition()
         elif isinstance(value, Glycan):
@@ -365,6 +376,7 @@ class PeptideSequence(PeptideSequenceBase):
 
     @n_term.setter
     def n_term(self, value):
+        self._invalidate()
         reset_mass = 0
         try:
             reset_mass = self._n_term.mass
@@ -384,6 +396,7 @@ class PeptideSequence(PeptideSequenceBase):
 
     @c_term.setter
     def c_term(self, value):
+        self._invalidate()
         reset_mass = 0
         try:
             reset_mass = self._c_term.mass
@@ -398,7 +411,6 @@ class PeptideSequence(PeptideSequenceBase):
         self.mass += new_mass - reset_mass
 
     def __iter__(self):
-        '''Makes the sequence iterable'''
         for i in self.sequence:
             yield (i)
 
@@ -407,6 +419,7 @@ class PeptideSequence(PeptideSequenceBase):
         return sub
 
     def __setitem__(self, index, value):
+        self._invalidate()
         self.sequence[index] = value
 
     def subseq(self, slice_obj):
@@ -425,12 +438,15 @@ class PeptideSequence(PeptideSequenceBase):
         return str(self) != str(other)
 
     def deglycosylate(self):
+        self._invalidate()
         _glycosylation_enum = ModificationCategory.glycosylation
         for i, pos in enumerate(self):
             mods = [mod.name for mod in pos[1] if mod.is_a(
                 _glycosylation_enum)]
             for mod in mods:
                 self.drop_modification(i, mod)
+        self.glycan = None
+        return self
 
     def break_at(self, idx):
         if self._fragment_index is None:
@@ -486,11 +502,10 @@ class PeptideSequence(PeptideSequenceBase):
 
         for idx in range(len(seq_list) - 1):
             for mod in seq_list[idx][1]:
-                mod_serial = mod.serialize()
-                if mod_serial in mod_dict:
-                    mod_dict[mod_serial] += 1
+                if mod in mod_dict:
+                    mod_dict[mod] += 1
                 else:
-                    mod_dict[mod_serial] = 1
+                    mod_dict[mod] = 1
 
             current_mass += seq_list[idx][0].mass
 
@@ -509,9 +524,9 @@ class PeptideSequence(PeptideSequenceBase):
                 fragments_from_site.append(frag)
                 bare_dict = dict(mod_dict)
 
-                lost_composition = running_composition - mod_dict['HexNAc'] * hexnac_composition
+                lost_composition = running_composition - mod_dict['N-Glycosylation'] * hexnac_composition
 
-                bare_dict["HexNAc"] = 0
+                bare_dict[_n_glycosylation] = 0
 
                 frag = PeptideFragment(
                     kind, idx + structure_constants.FRAG_OFFSET, dict(bare_dict), current_mass,
@@ -547,7 +562,7 @@ class PeptideSequence(PeptideSequenceBase):
             The modification to drop
         '''
         dropped_index = None
-
+        self._invalidate()
         if position is SequenceLocation.n_term:
             self.n_term = Modification("H")
             return
@@ -569,7 +584,7 @@ class PeptideSequence(PeptideSequenceBase):
     def add_modification(self, position=None, modification_type=None):
         if position is None and isinstance(modification_type, Modification):
             position = modification_type.position
-
+        self._invalidate()
         if isinstance(modification_type, Modification):
             mod = modification_type
         else:
@@ -598,7 +613,7 @@ class PeptideSequence(PeptideSequenceBase):
                     self._fragments_map[frag.name] = frag
             return self._fragments_map[key]
 
-    def _build_fragment_index(self, types='by', neutral_losses=None):
+    def _build_fragment_index(self, types=tuple('by'), neutral_losses=None):
         self._fragment_index = [[] for i in range(len(self) + 1)]
         for series in types:
             series = IonSeries(series)
@@ -643,7 +658,7 @@ class PeptideSequence(PeptideSequenceBase):
         seq_list = []
         for x, y in self.sequence[start:]:
             mod_str = ''
-            if y != []:
+            if y:
                 mod_str = '|'.join(mod.serialize() for mod in y)
                 mod_str = ''.join(['(', mod_str, ')'])
             seq_list.append(''.join([x.symbol, mod_str]))
@@ -676,18 +691,21 @@ class PeptideSequence(PeptideSequenceBase):
     def insert(self, position, residue, modifications=None):
         if modifications is None:
             modifications = []
+        self._invalidate()
         self.sequence.insert(position, [residue, modifications])
         self.mass += residue.mass
         for mod in modifications:
             self.mass += mod.mass
 
     def delete(self, position):
+        self._invalidate()
         residue, mods = self.sequence.pop(position)
         self.mass -= residue.mass
         for mod in mods:
             self.mass -= mod.mass
 
     def append(self, residue, modification=None):
+        self._invalidate()
         self.mass += residue.mass
         next_pos = [residue]
         if modification is None:
@@ -699,6 +717,7 @@ class PeptideSequence(PeptideSequenceBase):
         self.sequence.append(self.position_class(next_pos))
 
     def extend(self, sequence):
+        self._invalidate()
         if not isinstance(sequence, PeptideSequenceBase):
             sequence = PeptideSequence(sequence)
         self.sequence.extend(sequence.sequence)
@@ -707,6 +726,7 @@ class PeptideSequence(PeptideSequenceBase):
             self.modification_index[mod] += count
 
     def leading_extend(self, sequence):
+        self._invalidate()
         if not isinstance(sequence, PeptideSequenceBase):
             sequence = PeptideSequence(sequence)
         self.sequence = sequence.sequence + self.sequence
@@ -729,10 +749,10 @@ class PeptideSequence(PeptideSequenceBase):
     @property
     def glycosylation_sites(self):
         sites = find_n_glycosylation_sequons(self, structure_constants.ALLOW_MODIFIED_ASPARAGINE)
-        sites += find_o_glycosylation_sequons(self)
+        # sites += find_o_glycosylation_sequons(self)
         return sites
 
-    def stub_fragments(self):
+    def stub_fragments(self, extended=False):
         if isinstance(self.glycan, Glycan):
             glycan = GlycanComposition.from_glycan(self.glycan)
         elif isinstance(self.glycan, GlycanComposition):
@@ -742,74 +762,117 @@ class PeptideSequence(PeptideSequenceBase):
                 "Cannot infer monosaccharides from non-Glycan"
                 " or GlycanComposition {}").format(self.glycan))
         fucose_count = glycan['Fuc'] or glycan['dHex']
-        core_count = self.modification_index['HexNAc']
+        core_count = self.modification_index['N-Glycosylation']
 
         per_site_shifts = []
-        hexose_mass = FrozenMonosaccharideResidue.from_iupac_lite("Hex").mass()
-        hexnac_mass = FrozenMonosaccharideResidue.from_iupac_lite("HexNAc").mass()
-        fucose_mass = FrozenMonosaccharideResidue.from_iupac_lite("Fuc").mass()
-        base_mass = self.mass - (hexnac_mass * core_count)
+        hexose = FrozenMonosaccharideResidue.from_iupac_lite("Hex")
+        hexnac = FrozenMonosaccharideResidue.from_iupac_lite("HexNAc")
+        fucose = FrozenMonosaccharideResidue.from_iupac_lite("Fuc")
+        base_composition = self.peptide_composition()
+        base_mass = base_composition.mass
+
+        def fucosylate_increment(shift):
+            fucosylated = shift.copy()
+            fucosylated['key'] = fucosylated['key'].copy()
+            fucosylated['mass'] += fucose.mass()
+            fucosylated['composition'] = fucosylated['composition'] + fucose.total_composition()
+            fucosylated['key']["Fuc"] = 1
+            return fucosylated
+
         for i in range(core_count):
             core_shifts = []
             for hexnac_count in range(3):
                 if hexnac_count == 0:
                     shift = {
                         "mass": 0,
+                        "composition": Composition(),
                         "key": ""
                     }
                     core_shifts.append(shift)
                 elif hexnac_count == 1:
                     shift = {
-                        "mass": (hexnac_count * hexnac_mass),
+                        "mass": (hexnac_count * hexnac.mass()),
+                        "composition": hexnac_count * hexnac.total_composition(),
                         "key": {"HexNAc": hexnac_count}
                     }
                     core_shifts.append(shift)
                     if i < fucose_count:
-                        fucosylated = shift.copy()
-                        fucosylated['key'] = fucosylated['key'].copy()
-                        fucosylated['mass'] += fucose_mass
-                        fucosylated['key']["Fuc"] = 1
+                        fucosylated = fucosylate_increment(shift)
                         core_shifts.append(fucosylated)
                 elif hexnac_count == 2:
                     shift = {
-                        "mass": (hexnac_count * hexnac_mass),
+                        "mass": (hexnac_count * hexnac.mass()),
+                        "composition": hexnac_count * hexnac.total_composition(),
                         "key": {"HexNAc": hexnac_count}
                     }
                     core_shifts.append(shift)
 
                     if i < fucose_count:
-                        fucosylated = shift.copy()
-                        fucosylated['key'] = fucosylated['key'].copy()
-                        fucosylated['mass'] += fucose_mass
-                        fucosylated['key']["Fuc"] = 1
+                        fucosylated = fucosylate_increment(shift)
                         core_shifts.append(fucosylated)
 
                     for hexose_count in range(1, 4):
                         shift = {
-                            "mass": (hexnac_count * hexnac_mass) + (hexose_count * hexose_mass),
+                            "mass": (hexnac_count * hexnac.mass()) + (hexose_count * hexose.mass()),
+                            "composition": (hexnac_count * hexnac.total_composition()) + (
+                                hexose_count * hexose.total_composition()),
                             "key": {"HexNAc": hexnac_count, "Hex": hexose_count}
                         }
                         core_shifts.append(shift)
                         if i < fucose_count:
-                            fucosylated = shift.copy()
-                            fucosylated['key'] = fucosylated['key'].copy()
-                            fucosylated['mass'] += fucose_mass
-                            fucosylated['key']["Fuc"] = 1
+                            fucosylated = fucosylate_increment(shift)
                             core_shifts.append(fucosylated)
+                        if hexose_count == 3 and glycan["HexNAc"] > 2 * core_count and extended:
+                            for extra_hexnac_count in range(0, 3):
+                                if extra_hexnac_count + hexnac_count > glycan["HexNAc"]:
+                                    continue
+                                shift = {
+                                    "mass": (
+                                        (hexnac_count + extra_hexnac_count) * hexnac.mass()) + (
+                                        hexose_count * hexose.mass()),
+                                    "composition": (
+                                        (hexnac_count + extra_hexnac_count) * hexnac.total_composition()) + (
+                                        hexose_count * hexose.total_composition()),
+                                    "key": {"HexNAc": hexnac_count + extra_hexnac_count, "Hex": hexose_count}
+                                }
+                                core_shifts.append(shift)
+                                if i < fucose_count:
+                                    fucosylated = fucosylate_increment(shift)
+                                    core_shifts.append(fucosylated)
+                                for extra_hexose_count in range(1, 3):
+                                    if extra_hexose_count + hexose_count > glycan["Hex"]:
+                                        continue
+                                    shift = {
+                                        "mass": (
+                                            (hexnac_count + extra_hexnac_count) * hexnac.mass()) + (
+                                            (hexose_count + extra_hexose_count) * hexose.mass()),
+                                        "composition": (
+                                            (hexnac_count + extra_hexnac_count) * hexnac.total_composition()) + (
+                                            (hexose_count + extra_hexose_count) * hexose.total_composition()),
+                                        "key": {"HexNAc": hexnac_count + extra_hexnac_count, "Hex": (
+                                            hexose_count + extra_hexose_count)}
+                                    }
+                                    core_shifts.append(shift)
+                                    if i < fucose_count:
+                                        fucosylated = fucosylate_increment(shift)
+                                        core_shifts.append(fucosylated)
             per_site_shifts.append(core_shifts)
         for positions in itertools.product(*per_site_shifts):
             key_base = 'peptide'
             names = Counter()
             mass = base_mass
+            composition = base_composition.clone()
             for site in positions:
                 mass += site['mass']
                 names += Counter(site['key'])
+                composition += site['composition']
             extended_key = ''.join("%s%d" % kv for kv in names.items())
             if len(extended_key) > 0:
                 key_base = "%s+%s" % (key_base, extended_key)
-            yield SimpleFragment(name=key_base, mass=mass, kind='stub_glycopeptide')
+            yield SimpleFragment(name=key_base, mass=mass, composition=composition, kind='stub_glycopeptide')
 
-    def glycan_fragments(self, oxonium=True, all_series=False, allow_ambiguous=False):
+    def glycan_fragments(self, oxonium=True, all_series=False, allow_ambiguous=False,
+                         include_large_glycan_fragments=True, maximum_fragment_size=5):
         r'''
         Generate all oxonium ions for the attached glycan, and
         if `all_series` is `True`, then include the B/Y glycan
@@ -825,8 +888,14 @@ class PeptideSequence(PeptideSequenceBase):
         ------
         SimpleFragment
         '''
-        WATER = Composition("H2O").mass
-        TAIL = Composition("CH2O").mass
+        water = Composition("H2O")
+        water2 = water * 2
+        side_chain_plus_carbon = Composition("CH2O")
+        water2_plus_sidechain_plus_carbon = water2 + side_chain_plus_carbon
+        _hexnac = FrozenMonosaccharideResidue.from_iupac_lite("HexNAc")
+        _hexose = FrozenMonosaccharideResidue.from_iupac_lite("Hex")
+        _neuac = FrozenMonosaccharideResidue.from_iupac_lite("NeuAc")
+
         if oxonium:
             glycan = None
             if isinstance(self.glycan, Glycan):
@@ -840,13 +909,24 @@ class PeptideSequence(PeptideSequenceBase):
             for k in glycan:
                 key = str(k)
                 mass = k.mass()
-                yield SimpleFragment(name=key, mass=mass, kind=oxonium_ion_series)
-                yield SimpleFragment(name=key + "-H2O", mass=mass - WATER, kind=oxonium_ion_series)
-
+                composition = k.total_composition()
                 yield SimpleFragment(
-                    name=key + "-2H2O", mass=mass - 2 * WATER, kind=oxonium_ion_series)
+                    name=key, mass=mass,
+                    composition=composition,
+                    kind=oxonium_ion_series)
                 yield SimpleFragment(
-                    name=key + "-2H2O-CH2O", mass=mass - (2 * WATER) - TAIL, kind=oxonium_ion_series)
+                    name=key + "-H2O", mass=mass - water.mass,
+                    composition=composition - water,
+                    kind=oxonium_ion_series)
+                yield SimpleFragment(
+                    name=key + "-2H2O", mass=mass - water2.mass,
+                    composition=composition - (
+                        water2), kind=oxonium_ion_series)
+                yield SimpleFragment(
+                    name=key + "-2H2O-CH2O",
+                    mass=mass - water2_plus_sidechain_plus_carbon.mass,
+                    composition=composition - water2_plus_sidechain_plus_carbon,
+                    kind=oxonium_ion_series)
             for i in range(2, 4):
                 for kk in itertools.combinations_with_replacement(glycan, i):
                     for k, v in Counter(kk).items():
@@ -854,61 +934,98 @@ class PeptideSequence(PeptideSequenceBase):
                             continue
                     key = ''.join(map(str, kk))
                     mass = sum(k.mass() for k in kk)
+                    composition = sum((k.total_composition() for k in kk), Composition())
                     yield SimpleFragment(
-                        name=key, mass=mass, kind=oxonium_ion_series)
+                        name=key, mass=mass, kind=oxonium_ion_series, composition=composition)
                     yield SimpleFragment(
-                        name=key + "-H2O", mass=mass - WATER, kind=oxonium_ion_series)
+                        name=key + "-H2O", mass=mass - water.mass, kind=oxonium_ion_series,
+                        composition=composition - water)
                     yield SimpleFragment(
-                        name=key + "-2H2O", mass=mass - 2 * WATER, kind=oxonium_ion_series)
+                        name=key + "-2H2O", mass=mass - water2.mass, kind=oxonium_ion_series,
+                        composition=composition - (water2))
                     yield SimpleFragment(
-                        name=key + "-2H2O-CH2O", mass=mass - (2 * WATER) - TAIL, kind=oxonium_ion_series)
+                        name=key + "-2H2O-CH2O", mass=mass - water2_plus_sidechain_plus_carbon.mass,
+                        kind=oxonium_ion_series,
+                        composition=composition - water2_plus_sidechain_plus_carbon)
 
         if isinstance(self.glycan, Glycan) and all_series:
             glycan = self.glycan
-            hexnac_mass = MonosaccharideResidue.from_iupac_lite("HexNAc").mass()
-            base_mass = self.mass - (hexnac_mass)
+            base_composition = self.total_composition() - self.glycan.total_composition()
+            base_mass = base_composition.mass
+
             for fragment in glycan.fragments("BY"):
                 if fragment.is_reducing():
                     # TODO:
                     # When self.glycan is adjusted for the attachment cost with the anchoring
-                    # amino acid, this WATER penalty can be removed
+                    # amino acid, this water.mass penalty can be removed
                     yield SimpleFragment(
-                        name="peptide+" + fragment.name, mass=base_mass + fragment.mass - WATER,
-                        kind=stub_glycopeptide_series)
+                        name="peptide+" + fragment.name, mass=base_mass + fragment.mass - water.mass,
+                        kind=stub_glycopeptide_series, composition=base_composition + fragment.composition)
                 else:
                     yield SimpleFragment(
-                        name=fragment.name, mass=fragment.mass, kind=oxonium_ion_series)
+                        name=fragment.name, mass=fragment.mass, kind=oxonium_ion_series,
+                        composition=fragment.composition)
         elif allow_ambiguous and all_series:
             _offset = Composition()
             total = FrozenGlycanComposition(self.glycan)
+            total_count = sum(total.values())
+
             base = FrozenGlycanComposition(Hex=3, HexNAc=2)
             remainder = total - base
+
+            peptide_base_composition = self.total_composition() - self.glycan.total_composition()
+            stub_composition = peptide_base_composition + base.total_composition() - water
+            stub_mass = stub_composition.mass
+
             # GlycanComposition's clone semantics do not propagate the
             # composition_offset attribute yet. Should it?
             remainder.composition_offset = _offset
-            stub_mass = self.mass + base.mass() - WATER - FrozenMonosaccharideResidue.from_iupac_lite("HexNAc").mass()
+            remainder_elemental_composition = remainder.total_composition()
+            remainder_mass = remainder.mass()
+
             for composition in descending_combination_counter(remainder):
+                frag_size = sum(composition.values())
+
+                # Don't waste time on compositions that are impossible under
+                # common enzymatic pathways in this already questionable stop-gap
+                if composition.get(_hexnac, 0) + composition.get(
+                        _hexose, 0) < composition.get(_neuac, 0):
+                    continue
+
                 composition = FrozenGlycanComposition(composition)
                 composition.composition_offset = _offset
-                if sum(composition.values()) > 2:
+
+                elemental_composition = composition.total_composition()
+                composition_mass = elemental_composition.mass
+
+                if frag_size > 2 and include_large_glycan_fragments and frag_size < maximum_fragment_size:
+                    string_form = composition.serialize()
                     yield SimpleFragment(
-                        name=composition.serialize(), mass=composition.mass(),
-                        kind=oxonium_ion_series)
+                        name=string_form, mass=composition_mass,
+                        composition=elemental_composition, kind=oxonium_ion_series)
                     yield SimpleFragment(
-                        name=composition.serialize() + "-H2O", mass=composition.mass() - (WATER),
-                        kind=oxonium_ion_series)
-                    yield SimpleFragment(
-                        name=composition.serialize() + "-H2O-H2O", mass=composition.mass() - (WATER * 2),
-                        kind=oxonium_ion_series)
-                f = SimpleFragment(
-                    name="peptide+" + str(total - composition),
-                    mass=stub_mass + remainder.mass() - composition.mass(),
-                    kind=stub_glycopeptide_series)
-                yield f
+                        name=string_form + "-H2O", mass=composition_mass - water.mass,
+                        composition=elemental_composition - water, kind=oxonium_ion_series)
+
+                if (total_count - frag_size) < (maximum_fragment_size + 4):
+                    f = SimpleFragment(
+                        name="peptide+" + str(total - composition),
+                        mass=stub_mass + remainder_mass - composition_mass,
+                        composition=stub_composition + remainder_elemental_composition - elemental_composition,
+                        kind=stub_glycopeptide_series)
+                    yield f
         elif all_series:
             raise TypeError("Cannot generate B/Y fragments from non-Glycan {}".format(self.glycan))
 
-    total_composition = _total_composition
+    def peptide_composition(self):
+        if self._peptide_composition is None:
+            self._peptide_base_composition = self.total_composition() - self.glycan.total_composition()
+        return self._peptide_base_composition
+
+    def total_composition(self):
+        if self._total_composition is None:
+            self._total_composition = _total_composition(self)
+        return self._total_composition
 
 
 Sequence = PeptideSequence

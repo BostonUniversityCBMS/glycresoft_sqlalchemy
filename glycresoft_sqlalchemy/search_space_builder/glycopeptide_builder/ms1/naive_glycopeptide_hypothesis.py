@@ -53,6 +53,7 @@ def generate_glycopeptide_compositions(peptide, database_manager, hypothesis_id,
                 calculated_mass=peptide.calculated_mass + glycan_mass,
                 glycan_composition_str=glycan_composition_str,
                 glycan_mass=glycan_mass,
+                hypothesis_id=hypothesis_id,
                 glycan_combination_id=glycan_set.id
             )
 

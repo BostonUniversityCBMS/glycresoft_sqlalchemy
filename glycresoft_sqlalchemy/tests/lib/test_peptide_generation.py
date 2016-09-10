@@ -11,21 +11,25 @@ variable_modifications = ["Deamidation (N)", "Pyro-glu from Q (Q@N-term)"]
 peptide_sequence = "SVQEIQATFFYFTPNK"
 peptide_sequence2 = "QDQCIYNTTYLNVQR"
 
-protein_sequence = "MALSWVLTVLSLLPLLEAQIPLCANLVPVPITNATLDQITGKWFYIASAFRNEEYNKSVQEIQATFFYFTPNKTEDTIFLREYQTRQDQCIYNTTYLNVQRENGTISRYVGGQEHFAHLLILRDTKTYMLAFDVNDEKNWGLSVYADKPETTKEQLGEFYEALDCLRIPKSDVVYTDWKKDKCEPLEKQHEKERKQEEGES"
+protein_sequence = (
+    "MALSWVLTVLSLLPLLEAQIPLCANLVPVPITNATLDQITGKWFYIASAFRNEEYNKSVQEIQATFFYFTPNKT"
+    "EDTIFLREYQTRQDQCIYNTTYLNVQRENGTISRYVGGQEHFAHLLILRDTKTYMLAFDVNDEKNWGLSVYADK"
+    "PETTKEQLGEFYEALDCLRIPKSDVVYTDWKKDKCEPLEKQHEKERKQEEGES")
 
 protein = Protein(
     protein_sequence=protein_sequence,
-    glycosylation_sites=sequence.parse(protein_sequence).n_glycan_sequon_sites)
+    # glycosylation_sites=sequence.parse(protein_sequence).n_glycan_sequon_sites
+)
 
 peptide_obj = NaivePeptide(
     base_peptide_sequence=peptide_sequence,
-    start_position=78-21,
-    end_position=94-21)
+    start_position=78 - 21,
+    end_position=94 - 21)
 
 peptide_obj2 = NaivePeptide(
     base_peptide_sequence=peptide_sequence2,
-    start_position=107-21,
-    end_position=122-21)
+    start_position=107 - 21,
+    end_position=122 - 21)
 
 
 protein.naive_peptides.append(peptide_obj)
