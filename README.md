@@ -1,3 +1,7 @@
+# Deprecated
+
+This program is deprecated in favor of https://github.com/mobiusklein/glycresoft_desktop, which wraps the application server in https://github.com/mobiusklein/glycresoft_app to run https://github.com/mobiusklein/glycan_profiling
+
 ## GlycReSoft
 This is a complete re-write of the GlycReSoft glycomics and glycoproteomics pipeline in `Python`. It is suffixed `_sqlalchemy` to reflect the fact that the majority of its data model is implemented using the SQLAlchemy database toolkit.
 
