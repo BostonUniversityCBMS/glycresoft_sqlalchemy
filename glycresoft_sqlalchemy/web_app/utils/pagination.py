@@ -11,18 +11,10 @@ except:
 # Variation on the Pagination class and methods found in Flask-SQLAlchemy
 
 
-class Pagination(object):
-    """Internal helper class returned by :meth:`BaseQuery.paginate`.  You
-    can also construct it from any other SQLAlchemy query object if you are
-    working with other libraries.  Additionally it is possible to pass `None`
-    as query object in which case the :meth:`prev` and :meth:`next` will
-    no longer work.
-    """
+class PaginationBase(object):
 
-    def __init__(self, query, page, per_page, total, items):
-        #: the unlimited query object that was used to create this
-        #: pagination object.
-        self.query = query
+    def __init__(self, source, page, per_page, total, items):
+        self.source = source
         #: the current page number (1 indexed)
         self.page = page
         #: the number of items to be displayed on a page.
@@ -31,6 +23,10 @@ class Pagination(object):
         self.total = total
         #: the items for the current page
         self.items = items
+        print(self)
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.page}, {self.per_page})".format(self=self)
 
     @property
     def pages(self):
@@ -41,11 +37,14 @@ class Pagination(object):
             pages = int(ceil(self.total / float(self.per_page)))
         return pages
 
+    @classmethod
+    def paginate(cls, source, page, per_page, error_out, total=None):
+        raise NotImplementedError()
+
     def prev(self, error_out=False):
         """Returns a :class:`Pagination` object for the previous page."""
-        assert self.query is not None, 'a query object is required ' \
-                                       'for this method to work'
-        return paginate(self.query, self.page - 1, self.per_page, error_out)
+        assert self.source is not None
+        return self.paginate(self.source, self.page - 1, self.per_page, error_out, self.total)
 
     @property
     def prev_num(self):
@@ -59,9 +58,8 @@ class Pagination(object):
 
     def next(self, error_out=False):
         """Returns a :class:`Pagination` object for the next page."""
-        assert self.query is not None, 'a query object is required ' \
-                                       'for this method to work'
-        return paginate(self.query, self.page + 1, self.per_page, error_out)
+        assert self.source is not None
+        return self.paginate(self.source, self.page + 1, self.per_page, error_out, self.total)
 
     @property
     def has_next(self):
@@ -78,12 +76,11 @@ class Pagination(object):
         """Iterates over the page numbers in the pagination.  The four
         parameters control the thresholds how many numbers should be produced
         from the sides.  Skipped page numbers are represented as `None`.
-        This is how you could render such a pagination in the templates:
         """
         last = 0
         for num in range(1, self.pages + 1):
             if num <= left_edge or \
-               (num > self.page - left_current - 1 and \
+               (num > self.page - left_current - 1 and
                 num < self.page + right_current) or \
                num > self.pages - right_edge:
                 if last + 1 != num:
@@ -92,7 +89,10 @@ class Pagination(object):
                 last = num
 
 
-def paginate(query, page=None, per_page=None, error_out=True):
+class QueryPagination(PaginationBase):
+
+    @classmethod
+    def paginate(cls, query, page=None, per_page=None, error_out=True, total=None):
         """Returns `per_page` items from page `page`.  By default it will
         abort with 404 if no items were found and the page was larger than
         1.  This behavor can be disabled by setting `error_out` to `False`.
@@ -133,15 +133,22 @@ def paginate(query, page=None, per_page=None, error_out=True):
             abort(404)
 
         items = query.limit(per_page).offset((page - 1) * per_page).all()
+        print(len(items), page, per_page)
 
         if not items and page != 1 and error_out:
             abort(404)
 
-        # No need to count if we're on the first page and there are fewer
-        # items than we expected.
-        if page == 1 and len(items) < per_page:
-            total = len(items)
-        else:
-            total = query.order_by(None).count()
+        if total is None:
+            # No need to count if we're on the first page and there are fewer
+            # items than we expected.
+            if page == 1 and len(items) < per_page:
+                total = len(items)
+            else:
+                total = query.count()
 
-        return Pagination(query, page, per_page, total, items)
+        return cls(query, page, per_page, total, items)
+
+
+Pagination = QueryPagination
+
+paginate = QueryPagination.paginate

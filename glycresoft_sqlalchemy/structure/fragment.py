@@ -1,10 +1,13 @@
 import re
 from collections import defaultdict
 
-from .modification import Modification
+from .modification import Modification, NGlycanCoreGlycosylation
 from .composition import Composition
 from ..utils.collectiontools import descending_combination_counter
 from ..utils import simple_repr
+
+_n_glycosylation = NGlycanCoreGlycosylation()
+_modificaiton_hexnac = Modification("HexNAc").rule
 
 fragment_pairing = {
     "a": "x",
@@ -16,12 +19,12 @@ fragment_pairing = {
 }
 
 fragment_shift_composition = {
-    'a': -Composition("CO"),
-    'b': Composition({}),
+    'a': -Composition("CHO"),
+    'b': -Composition({"H": 1}),
     'c': Composition("NH3"),
-    'x': Composition("CO2"),
-    'y': Composition('H2O'),
-    'z': (-Composition("HN") + Composition("O"))
+    'x': Composition("CO2") - Composition("H"),
+    'y': Composition('H'),
+    'z': (-Composition("NH2"))
 }
 
 fragment_shift = {
@@ -72,6 +75,25 @@ class FragmentBase(object):
     _glycosylation = None
     _name = None
 
+    def get_series(self):
+        raise NotImplementedError()
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        try:
+            return self.name == other.name and abs(self.mass - other.mass) < 1e-5
+        except AttributeError:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
+
+    @property
+    def series(self):
+        return self.get_series()
+
     def clone(self):
         raise NotImplementedError()
 
@@ -110,10 +132,8 @@ class FragmentBase(object):
 
 
 class PeptideFragment(FragmentBase):
-    """Glycopeptide Fragment"""
-
     # parser = re.compile(r"(?P<kind>[abcxyz])(?P<position>[0-9]+)(?P<modificaiton>\+.*)?")
-    concerned_mods = ['HexNAc']
+    concerned_mods = [_n_glycosylation]
 
     def __init__(self, frag_type, position, modification_dict, mass, golden_pairs=None,
                  flanking_amino_acids=None, glycosylation=None, neutral_loss=None,
@@ -121,30 +141,34 @@ class PeptideFragment(FragmentBase):
         if golden_pairs is None:
             golden_pairs = []
         self.type = frag_type
+
         # The mass value is the bare backbone's mass
         self.bare_mass = mass
-
+        self.modification_dict = modification_dict
         self.mass = mass
         self.composition = composition
+        self._update_mass_with_modifications()
 
         self.flanking_amino_acids = flanking_amino_acids
-
         self.position = position
-        self.modification_dict = modification_dict
-
-        for key, value in self.modification_dict.items():
-            self.mass += Modification(key).mass * value
 
         self.golden_pairs = golden_pairs
         self.glycosylation = glycosylation
         self.neutral_loss = neutral_loss
+
+    def _update_mass_with_modifications(self):
+        for key, value in self.modification_dict.items():
+            self.mass += (key).mass * value
+
+    def get_series(self):
+        return self.type
 
     def clone(self):
         corrected_mass = self.mass
         if self._neutral_loss is not None:
             corrected_mass - self.neutral_loss.mss
         return self.__class__(
-            self.type, self.position, dict(self.modification_dict),
+            self.series, self.position, dict(self.modification_dict),
             corrected_mass, self.golden_pairs, tuple(self.flanking_amino_acids),
             self.glycosylation.clone() if self.glycosylation is not None else None,
             self._neutral_loss.clone() if self._neutral_loss is not None else None)
@@ -152,18 +176,17 @@ class PeptideFragment(FragmentBase):
     def base_name(self):
         """Simply return string like b2, y3 with no modificaiton information."""
         fragment_name = []
-        fragment_name.append(self.type)
+        fragment_name.append(self.series)
         fragment_name.append(str(self.position))
         return ''.join(fragment_name)
 
     def get_fragment_name(self):
-        """Connect the information into string."""
         fragment_name = []
-        fragment_name.append(str(self.type))
+        fragment_name.append(str(self.series))
         fragment_name.append(str(self.position))
 
         # Only concerned modifications are reported.
-        for mod_name in self.concerned_mods:
+        for mod_name in self.concerned_mods + ["HexNAc"]:
             if mod_name in self.modification_dict:
                 if self.modification_dict[mod_name] > 1:
                     fragment_name.extend(['+', str(self.modification_dict[mod_name]), mod_name])
@@ -180,6 +203,8 @@ class PeptideFragment(FragmentBase):
     def partial_loss(self, modifications=None):
         if modifications is None:
             modifications = self.concerned_mods
+        modifications = list(modifications)
+        modifications.append(_modificaiton_hexnac)
         mods = dict(self.modification_dict)
         mods_of_interest = defaultdict(int, {k: v for k, v in mods.items() if k in modifications})
 
@@ -188,22 +213,23 @@ class PeptideFragment(FragmentBase):
         delta_composition = sum((mod_to_composition[k] * v for k, v in mods_of_interest.items()), Composition())
         base_composition = self.composition - delta_composition
 
-        mods_of_interest["HexNAc"] *= 2  # Allow partial destruction of N-glycan core
+        n_cores = mods_of_interest.pop(_n_glycosylation, 0)
+        mods_of_interest[_modificaiton_hexnac] += n_cores * 2  # Allow partial destruction of N-glycan core
 
         other_mods = {k: v for k, v in mods.items() if k not in modifications}
         for varied_modifications in descending_combination_counter(mods_of_interest):
-            other_mods.update({k: v for k, v in varied_modifications.items() if v != 0})
+            updated_mods = other_mods.copy()
+            updated_mods.update({k: v for k, v in varied_modifications.items() if v != 0})
+
+            extra_composition = Composition()
+            for mod, mod_count in varied_modifications.items():
+                extra_composition += mod_to_composition[mod] * mod_count
+
             yield PeptideFragment(
-                self.type, self.position, dict(other_mods), self.bare_mass,
+                self.series, self.position, dict(updated_mods), self.bare_mass,
                 golden_pairs=self.golden_pairs,
                 flanking_amino_acids=self.flanking_amino_acids,
-                composition=base_composition + sum(
-                    (mod_to_composition[k] * v for k, v in varied_modifications.items()),
-                    Composition()))
-
-    def to_json(self):
-        d = dict(self.__dict__)
-        d['key'] = self.name
+                composition=base_composition + extra_composition)
 
     @property
     def name(self):
@@ -212,28 +238,40 @@ class PeptideFragment(FragmentBase):
     def __repr__(self):
         return ("PeptideFragment(%(type)s %(position)s %(mass)s "
                 "%(modification_dict)s %(flanking_amino_acids)s %(neutral_loss)r)") % {
-            "type": self.type, "position": self.position, "mass": self.mass,
+            "type": self.series, "position": self.position, "mass": self.mass,
             "modification_dict": self.modification_dict, "flanking_amino_acids": self.flanking_amino_acids,
             "neutral_loss": self.neutral_loss
         }
 
 
 class SimpleFragment(FragmentBase):
-    def __init__(self, name, mass, kind, neutral_loss=None):
+    __slots__ = ["name", "mass", "kind", "composition", "neutral_loss"]
+
+    def __init__(self, name, mass, kind, composition, neutral_loss=None):
         self.name = name
         self.mass = mass
         self.kind = kind
         self.neutral_loss = neutral_loss
+        self.composition = composition
 
     def clone(self):
         corrected_mass = self.mass
         if self._neutral_loss is not None:
-            corrected_mass - self.neutral_loss.mss
+            corrected_mass - self.neutral_loss.mass
         return self.__class__(self.name, corrected_mass, self.kind,
                               self._neutral_loss.clone() if self._neutral_loss is not None else None)
 
+    def __reduce__(self):
+        corrected_mass = self.mass
+        if self._neutral_loss is not None:
+            corrected_mass - self.neutral_loss.mass
+        return SimpleFragment, (self.name, corrected_mass, self.kind, self.composition, self.neutral_loss)
+
     def __repr__(self):
         return "SimpleFragment(name={self.name}, mass={self.mass:.04f}, kind={self.kind})".format(self=self)
+
+    def get_series(self):
+        return self.kind
 
 
 class MemoizedIonSeriesMetaclass(type):
@@ -277,13 +315,14 @@ class IonSeries(object):
         self.includes_peptide = includes_peptide
         self.mass_shift = mass_shift
         self.regex = re.compile(regex) if regex is not None else regex
+        self.composition_shift = fragment_shift_composition.get(self.name, Composition())
 
     def __hash__(self):
         return hash(self.name)
 
     def __eq__(self, other):
         try:
-            return self.name == other.name
+            return self is other or self.name == other.name
         except AttributeError:
             return self.name == other
 

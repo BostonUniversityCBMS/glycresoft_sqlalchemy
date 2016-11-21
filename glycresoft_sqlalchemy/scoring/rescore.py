@@ -93,6 +93,7 @@ class RescoreHypothesisSampleMatch(PipelineModule):
             score_parameters = {}
         self.manager = self.manager_type(database_path)
         self.hypothesis_sample_match_id = hypothesis_sample_match_id
+        self.hypothesis_sample_match = self.manager.query(HypothesisSampleMatch).get(hypothesis_sample_match_id)
         self.scorer = scorer
         self.score_parameters = score_parameters
         self.n_processes = n_processes
@@ -101,13 +102,13 @@ class RescoreHypothesisSampleMatch(PipelineModule):
     def stream_ids(self, is_decoy=False):
         session = self.manager()
         if is_decoy:
-            q = session.query(GlycopeptideMatch.id).filter(
+            q = session.query(GlycopeptideMatch.id).join(GlycopeptideMatch.protein).filter(
                 GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-                GlycopeptideMatch.is_decoy())
+                Protein.hypothesis_id == self.hypothesis_sample_match.decoy_hypothesis_id)
         else:
-            q = session.query(GlycopeptideMatch.id).filter(
+            q = session.query(GlycopeptideMatch.id).join(GlycopeptideMatch.protein).filter(
                 GlycopeptideMatch.hypothesis_sample_match_id == self.hypothesis_sample_match_id,
-                GlycopeptideMatch.is_not_decoy())
+                Protein.hypothesis_id == self.hypothesis_sample_match.target_hypothesis_id)
         for chunk in yield_ids(session, q, chunk_size=500):
             yield chunk
         session.close()

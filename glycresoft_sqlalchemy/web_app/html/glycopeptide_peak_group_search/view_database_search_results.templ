@@ -2,9 +2,7 @@
     
     <div class='col s8'>
         <h5>Proteins:</h5>
-        {% with proteins=hsm.target_hypothesis.proteins %}
-            {% include "glycopeptide_peak_group_search/components/protein_matches_table.templ" %}
-        {% endwith %}
+        {% include "glycopeptide_peak_group_search/components/protein_matches_table.templ" %}
     </div>
     <div class='col s4'>
         <h5>Target Database:</h5>

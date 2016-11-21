@@ -71,7 +71,7 @@ def database_exists(url):
 
     url = copy(make_url(url))
     database = url.database
-    if url.drivername.startswith('postgresql'):
+    if url.drivername.startswith('postgres'):
         url.database = 'template1'
     else:
         url.database = None
@@ -79,7 +79,7 @@ def database_exists(url):
     engine = create_engine(url)
 
     if engine.dialect.name == 'postgresql':
-        text = "SELECT 1 FROM pg_database WHERE datname='%s'" % database
+        text = "SELECT 1 FROM \"pg_database\" WHERE datname='%s'" % database
         return bool(engine.execute(text).scalar())
 
     elif engine.dialect.name == 'mysql':

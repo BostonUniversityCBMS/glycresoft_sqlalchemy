@@ -3,6 +3,7 @@ from setuptools import setup, find_packages, Extension
 import traceback
 import os
 import platform
+import re
 # With gratitude to the SqlAlchemy setup.py authors
 
 from distutils.command.build_ext import build_ext
@@ -20,6 +21,10 @@ try:
     from Cython.Build import cythonize
 except:
     c_ext = "c"
+
+
+def version():
+    return re.sub(r'[\s\'"\n]', '', open("glycresoft_sqlalchemy/version.py").readline().split("=")[1])
 
 
 def has_option(name):
@@ -124,7 +129,7 @@ def status_msgs(*msgs):
 def run_setup(include_cext=True):
     setup(
       name='glycresoft_sqlalchemy',
-      version='0.0.5',
+      version=version(),
       packages=find_packages(),
       install_requires=required,
       entry_points={

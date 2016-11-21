@@ -1,6 +1,3 @@
-'''
-Simplisitic Glycan Implementation
-'''
 from glycresoft_sqlalchemy.utils import Enum
 from glycresoft_sqlalchemy.utils.collectiontools import decoratordict
 
@@ -53,6 +50,14 @@ class TypedGlycanComposition(glypy.GlycanComposition):
 
     def is_type(self, glycosylation_type):
         return self.glycosylation_type is GlycosylationType[glycosylation_type]
+
+
+class HashableGlycanComposition(glypy.glycan_composition.FrozenGlycanComposition):
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other):
+        return str(self) == str(other)
 
 
 class TypedGlycan(NamedGlycan):

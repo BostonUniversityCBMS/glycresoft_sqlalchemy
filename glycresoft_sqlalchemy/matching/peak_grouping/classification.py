@@ -1,7 +1,6 @@
-import csv
-import os
 import logging
 import itertools
+import uuid
 import functools
 import multiprocessing
 import operator
@@ -11,11 +10,6 @@ try:
 except Exception, e:
     logging.exception("Logger could not be initialized", exc_info=e)
     raise e
-
-try:
-    from cPickle import Pickler, Unpickler
-except:
-    from pickle import Pickler, Unpickler
 
 from sqlalchemy.ext.baked import bakery
 from sqlalchemy import func, bindparam, select
@@ -189,7 +183,7 @@ def _merge_groups(group_matches, minimum_abundance_ratio=0.01):
         "total_volume": total_volume,
         "scan_count": scan_count_total,
         "peak_data": merged_peak_data,
-        "fingerprint": ':'.join(map(str, scan_times)),
+        "fingerprint": str(uuid.uuid4()),
         "weighted_monoisotopic_mass": group_matches[0].weighted_monoisotopic_mass,
         "hypothesis_sample_match_id": group_matches[0].hypothesis_sample_match_id,
         "theoretical_match_id": group_matches[0].theoretical_match_id
@@ -294,7 +288,7 @@ def _batch_merge_groups(id_bunches, database_manager, minimum_abundance_ratio):
                 "total_volume": total_volume,
                 "scan_count": scan_count_total,
                 "peak_data": merged_peak_data,
-                "fingerprint": ':'.join(map(str, scan_times)),
+                "fingerprint": str(uuid.uuid4()),
                 "weighted_monoisotopic_mass": group_matches[0].weighted_monoisotopic_mass,
                 "hypothesis_sample_match_id": group_matches[0].hypothesis_sample_match_id,
                 "theoretical_match_id": group_matches[0].theoretical_match_id,
@@ -307,7 +301,7 @@ def _batch_merge_groups(id_bunches, database_manager, minimum_abundance_ratio):
         conn = session.connection()
         relations = []
         for instance_dict, member_ids in results:
-            joint_id = conn.execute(T_JointPeakGroupMatch.insert(), instance_dict).lastrowid
+            joint_id = conn.execute(T_JointPeakGroupMatch.insert(), instance_dict).inserted_primary_key[0]
             relations.extend({"peak_group_id": i, "joint_group_id": joint_id} for i in member_ids)
 
         conn.execute(PeakGroupMatchToJointPeakGroupMatch.insert(), relations)
@@ -326,7 +320,7 @@ def _exactly_one_group_joiner(ids, database_manager, minimum_abundance_ratio=Non
         hsm_id = items[0].hypothesis_sample_match_id
 
         for peak_group in items:
-            fingerprint = peak_group.fingerprint = ':'.join(map(str, peak_group.peak_data['scan_times']))
+            fingerprint = peak_group.fingerprint = str(uuid.uuid4())
             instance_dict = {
                 "first_scan_id": peak_group.first_scan_id,
                 "last_scan_id": peak_group.last_scan_id,
@@ -673,6 +667,7 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
         return {f.name: v for f, v in zip(self.features, self.classifier.coef_[0])}
 
     def transfer_peak_groups(self):
+        self.inform("Transfer Peak Groups")
         data_model_session = self.manager.session()
         lcms_database_session = self.lcms_database.session()
         peak_group_labels = [
@@ -695,8 +690,8 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
         ]
 
         stmt = lcms_database_session.query(
-                *[getattr(Decon2LSPeakGroup, label) for label in peak_group_labels]).filter(
-                Decon2LSPeakGroup.sample_run_id == self.sample_run_id)
+            *[getattr(Decon2LSPeakGroup, label) for label in peak_group_labels]).filter(
+            Decon2LSPeakGroup.sample_run_id == self.sample_run_id)
 
         id_stmt = data_model_session.query(
             PeakGroupMatch.peak_group_id).filter(
@@ -762,6 +757,7 @@ class PeakGroupMassShiftJoiningClassifier(PipelineModule):
     def clear_peak_groups(self):
         """Delete all TempPeakGroupMatch rows.
         """
+        self.inform("Clearing Temp Peak Groups")
         data_model_session = self.manager.session()
         data_model_session.query(TempPeakGroupMatch).delete()
         data_model_session.commit()

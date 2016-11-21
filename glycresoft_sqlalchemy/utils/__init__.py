@@ -9,7 +9,7 @@ except:
     import pickle
 
 
-from glypy.utils import classproperty, opener, uid
+from glypy.utils import classproperty, opener, uid, make_struct, opener
 from glypy.utils.enum import Enum
 
 from .vendor import appdir, pager, sqlitedict

@@ -101,7 +101,7 @@ def glycosylate_callback(peptide, glycan_combinator, position_selector, max_site
                         target.drop_modification(site, mod)
                 mass = target.mass
                 for site in sites:
-                    hexnac = Modification("HexNAc")
+                    hexnac = Modification("NGlycanCoreGlycosylation")
                     target.add_modification(site, hexnac)
                 mass += glycans.dehydrated_mass()
                 result.append((target, mass, glycans))
@@ -182,8 +182,9 @@ def batch_make_theoretical_glycopeptides(peptide_ids, position_selector, databas
                     glycan_mass=glycans.calculated_mass,
                     glycan_composition_str=glycans.composition,
                     glycan_combination_id=glycan_ids,
+                    hypothesis_id=hypothesis_id,
                     sequence_type="InformedTheoreticalGlycopeptideComposition"
-                    )
+                )
 
                 glycopeptide_acc.append(informed_glycopeptide)
                 i += 1
@@ -341,7 +342,7 @@ class IntegratedOmicsMS1SearchSpaceBuilder(PipelineModule, MS1GlycanImportManage
             TheoreticalGlycopeptideComposition.glycopeptide_sequence,
             TheoreticalGlycopeptideComposition.start_position,
             TheoreticalGlycopeptideComposition.protein_id
-            )
+        )
 
         q = session.query(TheoreticalGlycopeptideComposition.id).filter(
             TheoreticalGlycopeptideComposition.protein_id == Protein.id,
@@ -455,6 +456,6 @@ def glycopeptide_to_columns(glycopeptide):
     r = [glycopeptide.calculated_mass, 0, glycopeptide.glycan_composition_str] +\
          glycopeptide.glycan_composition_str[1:-1].split(";") +\
         ["/0", 0,
-         glycopeptide.modified_peptide_sequence, "", 0, glycopeptide.glycopeptide_sequence.count("HexNAc"),
+         glycopeptide.modified_peptide_sequence, "", 0, glycopeptide.glycopeptide_sequence.count("NGlycanCoreGlycosylation"),
          glycopeptide.start_position, glycopeptide.end_position, glycopeptide.protein_id]
     return r

@@ -45,10 +45,10 @@ class PrefixTree(TreeReprMixin, defaultdict):
         layer = self
         j = 0
         for i in sequence:
-            j += 1
             if not dict.__contains__(layer, i):
                 break
             layer = layer[i]
+            j += 1
         return len(sequence) == j
 
     def depth_in(self, sequence):

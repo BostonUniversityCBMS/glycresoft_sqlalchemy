@@ -252,6 +252,7 @@ Application = (function(superClass) {
         self.sideNav = $('.side-nav');
         self.addLayer(ActionBook.home);
         $("#run-matching").click(function(event) {
+          $(".lean-overlay").remove();
           return setupAjaxForm("/ms1_or_ms2_choice?ms1_choice=peakGroupingMatchSamples&ms2_choice=tandemMatchSamples", "#message-modal");
         });
         $("#build-glycan-search-space").click(function(event) {
@@ -1150,7 +1151,7 @@ viewPeakGroupingDatabaseSearchResults = function() {
     handle = $(this);
     currentProtein = id = handle.attr('data-target');
     $("#chosen-protein-container").html("<div class=\"progress\"><div class=\"indeterminate\"></div></div>").fadeIn();
-    return $.post('/view_database_search_results/protein_composition_view/' + id, GlycReSoft.context).success(function(doc) {
+    return GlycReSoft.ajaxWithContext('/view_database_search_results/protein_composition_view/' + id).success(function(doc) {
       var tabs;
       $('#chosen-protein-container').hide();
       $('#chosen-protein-container').html(doc).fadeIn();

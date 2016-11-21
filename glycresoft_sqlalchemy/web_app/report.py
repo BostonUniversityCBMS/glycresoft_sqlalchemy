@@ -24,6 +24,7 @@ except:
     from io import StringIO
 
 import matplotlib
+matplotlib.use("agg")
 from matplotlib import rcParams as mpl_params
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
@@ -38,11 +39,6 @@ mpl_params.update({
     'savefig.dpi': 72,
     # 10pt still needs a little more room on the xlabel:
     'figure.subplot.bottom': .125})
-
-
-def q_value_below(query, threshold):
-    q = query.filter(GlycopeptideMatch.q_value <= threshold)
-    return q
 
 
 def _string_to_deep_getter(string):
@@ -104,14 +100,13 @@ def plot_glycoforms(protein, filter_context):
 def plot_chromatogram(peak_group):
     with matplotlib.rc_context({
             "figure.figsize": (16, 4),
-            "axes.edgecolor": 'grey'
-            }):
+            "axes.edgecolor": 'grey'}):
         ax = draw_chromatogram(peak_group, color='teal', alpha=0.3)
     return ax
 
 
 def rgbpack(color):
-    return "rgba(%d,%d,%d,0.5)" % tuple(i*255 for i in color)
+    return "rgba(%d,%d,%d,0.5)" % tuple(i * 255 for i in color)
 
 
 def glycopeptide_string(sequence, long=False, include_glycan=True):
@@ -144,6 +139,10 @@ def glycopeptide_string(sequence, long=False, include_glycan=True):
     return ''.join(parts)
 
 
+def formula(composition):
+    return ''.join("<b>%s</b><sub>%d</sub>" % (k, v) for k, v in sorted(composition.items()))
+
+
 def glycan_composition_string(composition):
     composition = FrozenGlycanComposition.parse(composition)
     parts = []
@@ -165,9 +164,8 @@ def prepare_environment(env=None):
         env = Environment(loader=loader, extensions=[FragmentCacheExtension])
     else:
         env.loader = loader
-        env.add_extension(FragmentCacheExtension)
+    env.add_extension(FragmentCacheExtension)
     env.fragment_cache = dict()
-    # env.filters["q_value_below"] = q_value_below
     env.filters["n_per_row"] = n_per_row
     env.filters['highlight_sequence_site'] = highlight_sequence_site
     env.filters['plot_glycoforms'] = plot_glycoforms
@@ -178,6 +176,7 @@ def prepare_environment(env=None):
     env.filters['glycopeptide_string'] = glycopeptide_string
     env.filters['glycan_composition_string'] = glycan_composition_string
     env.filters["glycopeptide_match_logo"] = glycopeptide_match_logo
+    env.filters["formula"] = formula
     env.globals
     return env
 
@@ -197,7 +196,7 @@ def n_per_row(sequence, n=60):
     while i < len(sequence):
         row_buffer.append(
             ''.join(sequence[i:(i + n)])
-            )
+        )
         i += n
     return '<br>'.join(row_buffer)
 

@@ -13,13 +13,13 @@ class TestConstrainedCombinatorics(unittest.TestCase):
 
         constraints_list = [
             ["Fuc", "<", "HexNAc"],
-            ["NeuAc",  "<", "HexNAc - 1"]
+            ["NeuAc", "<", "HexNAc - 1"]
         ]
 
         generator = constrained_combinatorics.CombinatoricCompositionGenerator(
             rules_table=rules_table, constraints=constraints_list)
         compositions = list(generator)
-        for composit in compositions:
+        for composit, classifications in compositions:
             self.assertTrue(composit['Fuc'] < composit['HexNAc'])
             self.assertTrue(composit['NeuAc'] < (composit['HexNAc'] - 1))
 

@@ -6,7 +6,7 @@ from glypy.composition.glycan_composition import FrozenGlycanComposition
 glycan_parser = FrozenGlycanComposition.parse
 
 
-def sequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
+def sequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None, glycan_parser_function=None):
     '''A simple stateful sequence parser implementing a formally context-free language
     describing components of a polypeptide sequence with N-, C- and internal modifications,
     as well as a glycan composition written at the end.
@@ -19,6 +19,9 @@ def sequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
     c_term: str
     glycan: :class:`glypy.composition.glycan_composition.FrozenGlycanComposition`
     '''
+    if glycan_parser_function is None:
+        glycan_parser_function = glycan_parser
+
     state = "start"  # [start, n_term, aa, mod, c_term]
     n_term = implicit_n_term or structure_constants.N_TERM_DEFAULT
     c_term = implicit_c_term or structure_constants.C_TERM_DEFAULT
@@ -70,7 +73,7 @@ def sequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
                             chunks.append([current_aa, current_mods])
 
                     elif state == "n_term":
-                        if sequence[i+1] != "-":
+                        if sequence[i + 1] != "-":
                             raise Exception("Malformed N-terminus for " + sequence)
                         # Only one modification on termini
                         n_term = current_mod
@@ -140,18 +143,20 @@ def sequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
 
     if glycan != "":
         try:
-            glycan = glycan_parser(glycan)
+            glycan = glycan_parser_function(glycan)
         except Exception, e:
             logging.exception("Error in parser, %s and %s", glycan, sequence, exc_info=e)
 
     return chunks, mods, glycan, n_term, c_term
 
 
-def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
+def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None, glycan_parser_function=None):
     '''A version of the :func:`sequence_tokenizer` which places modifications
     to the left of the amino acid which they are associated with, as is the convention
     in mzIdentML and some other software.
     '''
+    if glycan_parser_function is None:
+        glycan_parser_function = glycan_parser
     state = "start"  # [start, n_term, aa, mod, c_term]
     n_term = implicit_n_term or structure_constants.N_TERM_DEFAULT
     c_term = implicit_c_term or structure_constants.C_TERM_DEFAULT
@@ -161,7 +166,6 @@ def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
     current_aa = ""
     current_mod = ""
     current_mods = []
-    #current_chunk = ['!', []]
     paren_level = 0
     i = 0
     while i < len(sequence):
@@ -171,7 +175,6 @@ def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
         # internal to the sequence
         if next_char == "(":
             if state == "aa":
-                #print(5, current_mods, current_aa, current_mod, sequence[i-2:i+2])
                 chunks.append([current_aa, current_mods])
                 current_mods = []
                 state = "mod"
@@ -201,8 +204,7 @@ def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
                         state = 'aa'
 
                     elif state == "n_term":
-                        if sequence[i+1] != "-":
-                            #print(4, current_mods, current_aa, current_mod, sequence[i-2:i+2])
+                        if sequence[i + 1] != "-":
                             current_mods.append(current_mod)
                             current_mod = ""
                             state = "aa"
@@ -245,7 +247,6 @@ def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
                 state = "c_term"
                 if(current_aa != ""):
                     current_mods.append(current_mod)
-                    #print(3, current_mods, current_aa, current_mod, sequence[i-2:i+2])
                     chunks.append([current_aa, [""]])
                     current_mod = ""
                     current_mods = []
@@ -261,7 +262,6 @@ def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
             if(current_aa != ""):
                 current_mods.append(current_mod)
                 mods.append(current_mod) if current_mod != "" else ()
-                #print(2, current_mods, current_aa, current_mod, sequence[i-2:i+2])
                 chunks.append([current_aa, current_mods])
                 current_mod = ""
                 current_mods = []
@@ -273,14 +273,19 @@ def rsequence_tokenizer(sequence, implicit_n_term=None, implicit_c_term=None):
         else:
             raise Exception("Unknown Tokenizer State", current_aa, current_mod, i, next_char)
         i += 1
-    print(1, current_mods, current_aa, current_mod, sequence[i-2:i+2])
+    # print(1, current_mods, current_aa, current_mod, sequence[i-2:i+2])
     if current_mod != "":
         mods.append(current_mod)
         current_mods.append(current_mod)
     if current_aa != "":
         current_mods.append("")
-        #print([current_aa, current_mods])
         chunks.append([current_aa, current_mods])
+
+    if glycan != "":
+        try:
+            glycan = glycan_parser_function(glycan)
+        except Exception, e:
+            logging.exception("Error in parser, %s and %s", glycan, sequence, exc_info=e)
 
     return chunks, mods, glycan, n_term, c_term
 

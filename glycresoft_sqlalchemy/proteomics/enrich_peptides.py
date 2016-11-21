@@ -8,12 +8,58 @@ try:
     logger = logging.getLogger("enrich_peptides")
 except:
     pass
-from glycresoft_sqlalchemy.data_model import InformedPeptide, Protein, PipelineModule, make_transient
+from glycresoft_sqlalchemy.data_model import (
+    InformedPeptide, Protein, PipelineModule, make_transient,
+    _TemplateNumberStore)
+
+from glycresoft_sqlalchemy.utils.database_utils import temp_table
 
 try:
     range = xrange
 except:
     pass
+
+
+def find_best_peptides(session, hypothesis_id):
+    q = session.query(
+        InformedPeptide.id, InformedPeptide.peptide_score,
+        InformedPeptide.modified_peptide_sequence, InformedPeptide.protein_id).join(
+        Protein).filter(Protein.hypothesis_id == hypothesis_id).yield_per(10000)
+    keepers = dict()
+    for id, score, modified_peptide_sequence, protein_id in q:
+        try:
+            old_id, old_score = keepers[modified_peptide_sequence, protein_id]
+            if score > old_score:
+                keepers[modified_peptide_sequence, protein_id] = id, score
+        except KeyError:
+            keepers[modified_peptide_sequence, protein_id] = id, score
+    return keepers
+
+
+def store_best_peptides(session, keepers):
+    table = temp_table(_TemplateNumberStore)
+    conn = session.connection()
+    table.create(conn)
+    payload = [{"value": x[0]} for x in keepers.values()]
+    conn.execute(table.insert(), payload)
+    session.commit()
+    return table
+
+
+def remove_duplicates(session, hypothesis_id):
+    keepers = find_best_peptides(session, hypothesis_id)
+    table = store_best_peptides(session, keepers)
+    ids = session.query(table.c.value)
+    q = session.query(InformedPeptide.id).filter(
+        InformedPeptide.protein_id == Protein.id,
+        Protein.hypothesis_id == hypothesis_id,
+        ~InformedPeptide.id.in_(ids.correlate(None)))
+
+    session.execute(InformedPeptide.__table__.delete(
+        InformedPeptide.__table__.c.id.in_(q.selectable)))
+    conn = session.connection()
+    table.drop(conn)
+    session.commit()
 
 
 def flatten(iterable):
@@ -108,13 +154,11 @@ def find_all_overlapping_peptides_task(protein_id, database_manager, decider_fn,
 
 
 def stream_distinct_peptides(session, protein, hypothesis_id):
-    for i in session.query(InformedPeptide).join(Protein).filter(
-            Protein.hypothesis_id == hypothesis_id).group_by(
-            InformedPeptide.modified_peptide_sequence,
-            ~InformedPeptide.modified_peptide_sequence.in_(
-                session.query(InformedPeptide.modified_peptide_sequence).filter(
-                    InformedPeptide.protein_id == protein.id))
-            ).group_by(InformedPeptide.modified_peptide_sequence):
+    q = session.query(InformedPeptide).join(Protein).filter(
+        Protein.hypothesis_id == hypothesis_id).distinct(
+        InformedPeptide.modified_peptide_sequence)
+
+    for i in q:
         yield i
 
 
@@ -127,15 +171,21 @@ class EnrichDistinctPeptides(PipelineModule):
 
     def stream_distinct_peptides(self, protein):
         session = self.manager.session()
-        get = session.query(InformedPeptide).get
-        for i, in session.query(InformedPeptide.id).join(Protein).filter(
-                Protein.hypothesis_id == self.hypothesis_id).group_by(
-                InformedPeptide.modified_peptide_sequence,
-                ~InformedPeptide.modified_peptide_sequence.in_(
-                    session.query(InformedPeptide.modified_peptide_sequence).filter(
-                        InformedPeptide.protein_id == protein.id))
-                ).group_by(InformedPeptide.modified_peptide_sequence):
-            yield get(i)
+        # get = session.query(InformedPeptide).get
+        # for i, in session.query(InformedPeptide.id).join(Protein).filter(
+        #         Protein.hypothesis_id == self.hypothesis_id).group_by(
+        #         InformedPeptide.modified_peptide_sequence,
+        #         ~InformedPeptide.modified_peptide_sequence.in_(
+        #             session.query(InformedPeptide.modified_peptide_sequence).filter(
+        #                 InformedPeptide.protein_id == protein.id))
+        #         ).group_by(InformedPeptide.modified_peptide_sequence):
+        #     yield get(i)
+        q = session.query(InformedPeptide).join(Protein).filter(
+            Protein.hypothesis_id == self.hypothesis_id).distinct(
+            InformedPeptide.modified_peptide_sequence)
+
+        for i in q:
+            yield i
 
     def run(self):
         session = self.manager.session()
@@ -175,21 +225,22 @@ class EnrichDistinctPeptides(PipelineModule):
                     session.commit()
 
             session.commit()
-            ids = session.query(InformedPeptide.id).filter(
-                InformedPeptide.protein_id == Protein.id,
-                Protein.hypothesis_id == self.hypothesis_id).group_by(
-                InformedPeptide.modified_peptide_sequence,
-                InformedPeptide.peptide_modifications,
-                InformedPeptide.glycosylation_sites,
-                InformedPeptide.protein_id).order_by(InformedPeptide.peptide_score.desc())
+            remove_duplicates(session, self.hypothesis_id)
+            # ids = session.query(InformedPeptide.id).filter(
+            #     InformedPeptide.protein_id == Protein.id,
+            #     Protein.hypothesis_id == self.hypothesis_id).group_by(
+            #     InformedPeptide.modified_peptide_sequence,
+            #     InformedPeptide.peptide_modifications,
+            #     InformedPeptide.glycosylation_sites,
+            #     InformedPeptide.protein_id).order_by(InformedPeptide.peptide_score.desc())
 
-            q = session.query(InformedPeptide.id).filter(
-                InformedPeptide.protein_id == Protein.id,
-                Protein.hypothesis_id == self.hypothesis_id,
-                ~InformedPeptide.id.in_(ids.correlate(None)))
-            conn = session.connection()
-            conn.execute(InformedPeptide.__table__.delete(
-                InformedPeptide.__table__.c.id.in_(q.selectable)))
+            # q = session.query(InformedPeptide.id).filter(
+            #     InformedPeptide.protein_id == Protein.id,
+            #     Protein.hypothesis_id == self.hypothesis_id,
+            #     ~InformedPeptide.id.in_(ids.correlate(None)))
+            # conn = session.connection()
+            # conn.execute(InformedPeptide.__table__.delete(
+            #     InformedPeptide.__table__.c.id.in_(q.selectable)))
 
             session.commit()
 
@@ -236,23 +287,24 @@ class EnrichDistinctPeptidesMultiprocess(EnrichDistinctPeptides):
                 count += result
                 logger.info("%d proteins enriched", count)
 
-        ids = session.query(InformedPeptide.id).filter(
-            InformedPeptide.protein_id == Protein.id,
-            Protein.hypothesis_id == hypothesis_id).group_by(
-            InformedPeptide.modified_peptide_sequence,
-            InformedPeptide.peptide_modifications,
-            InformedPeptide.glycosylation_sites,
-            InformedPeptide.protein_id).order_by(InformedPeptide.peptide_score.desc())
+        remove_duplicates(session, hypothesis_id)
+        # ids = session.query(InformedPeptide.id).join(Protein).filter(
+        #     InformedPeptide.protein_id == Protein.id,
+        #     Protein.hypothesis_id == hypothesis_id).group_by(
+        #     InformedPeptide.modified_peptide_sequence,
+        #     InformedPeptide.peptide_modifications,
+        #     InformedPeptide.glycosylation_sites,
+        #     InformedPeptide.protein_id).order_by(InformedPeptide.peptide_score.desc())
 
-        session = self.manager()
+        # session = self.manager()
 
-        q = session.query(InformedPeptide.id).filter(
-            InformedPeptide.protein_id == Protein.id,
-            Protein.hypothesis_id == hypothesis_id,
-            ~InformedPeptide.id.in_(ids.correlate(None)))
-        conn = session.connection()
-        conn.execute(InformedPeptide.__table__.delete(
-            InformedPeptide.__table__.c.id.in_(q.selectable)))
+        # q = session.query(InformedPeptide.id).filter(
+        #     InformedPeptide.protein_id == Protein.id,
+        #     Protein.hypothesis_id == hypothesis_id,
+        #     ~InformedPeptide.id.in_(ids.correlate(None)))
+        # conn = session.connection()
+        # conn.execute(InformedPeptide.__table__.delete(
+        #     InformedPeptide.__table__.c.id.in_(q.selectable)))
 
         session.commit()
 

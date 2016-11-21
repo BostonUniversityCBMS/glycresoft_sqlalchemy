@@ -6,9 +6,11 @@ import multiprocessing
 from collections import Counter
 import textwrap
 
-from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide
-from glycresoft_sqlalchemy.structure import sequence, modification
+from glycresoft_sqlalchemy.data_model import Protein, NaivePeptide, PeptideBase, object_session
+from glycresoft_sqlalchemy.structure import sequence, modification, residue
 from glycresoft_sqlalchemy.proteomics.enzyme import expasy_rules, merge_enzyme_rules
+from glycresoft_sqlalchemy.proteomics.fasta import (
+    ProteinFastaFileParser, SiteListFastaFileParser, FastaFileWriter, ProteinFastFileWriter)
 
 from glycresoft_sqlalchemy.utils.collectiontools import SqliteSet, descending_combination_counter
 
@@ -166,30 +168,40 @@ def all_combinations(site_assignments):
     return result
 
 
+def get_base_peptide(peptide_obj):
+    if isinstance(peptide_obj, PeptideBase):
+        return Sequence(peptide_obj.base_peptide_sequence)
+    else:
+        return Sequence(str(peptide_obj))
+
+
 def unpositioned_isoforms(
-        theoretical_peptide, constant_modifications, variable_modifications, modification_table, max_modifications=4):
+        theoretical_peptide, constant_modifications, variable_modifications, modification_table, max_modifications=4,
+        glycosylation_site_finder=n_glycan_sequon_sites, max_glycosylation_events=1):
     if variable_modifications is None:
         variable_modifications = []
     if constant_modifications is None:
         constant_modifications = []
-
-    sequence = Sequence(theoretical_peptide.base_peptide_sequence)
-
-    has_fixed_n_term = False
-    has_fixed_c_term = False
-
-    for mod in {modification_table[const_mod]
-                for const_mod in constant_modifications}:
-        for site in mod.find_valid_sites(sequence):
-            if site == SequenceLocation.n_term:
-                has_fixed_n_term = True
-            elif site == SequenceLocation.c_term:
-                has_fixed_c_term = True
-            sequence.add_modification(site, mod.name)
     try:
-        sequons = theoretical_peptide.n_glycan_sequon_sites
-    except:
-        sequons = n_glycan_sequon_sites(theoretical_peptide)
+        sequence = get_base_peptide(theoretical_peptide)
+
+        has_fixed_n_term = False
+        has_fixed_c_term = False
+
+        for mod in {modification_table[const_mod]
+                    for const_mod in constant_modifications}:
+            for site in mod.find_valid_sites(sequence):
+                if site == SequenceLocation.n_term:
+                    has_fixed_n_term = True
+                elif site == SequenceLocation.c_term:
+                    has_fixed_c_term = True
+                sequence.add_modification(site, mod.name)
+
+        sequons = glycosylation_site_finder(theoretical_peptide)
+    except residue.UnknownAminoAcidException, e:
+        logger.info("Invalid Amino Acid %s. Skipping %r", e,
+                    theoretical_peptide.most_detailed_sequence)
+        raise StopIteration()
 
     variable_modifications = {
         modification_table[mod] for mod in variable_modifications}
@@ -230,7 +242,7 @@ def unpositioned_isoforms(
         strseq_map[n_term, c_term] = str(seq)
 
     solutions = SqliteSet()
-    for i in range(len(sequons)):
+    for i in range(max_glycosylation_events):
         for sequons_occupied in (combinations(sequons, i + 1)):
             sequons_occupied = set(sequons_occupied)
             _sequons_occupied = list(sequons_occupied)
@@ -277,11 +289,15 @@ def unpositioned_isoforms(
 
 def generate_peptidoforms(reference_protein, constant_modifications,
                           variable_modifications, enzyme, missed_cleavages=1,
-                          max_modifications=4, peptide_class=NaivePeptide, **peptide_kwargs):
+                          max_modifications=4, peptide_class=NaivePeptide,
+                          glycosylation_site_finder=n_glycan_sequon_sites, **peptide_kwargs):
     modtable = modification.RestrictedModificationTable.bootstrap(
         constant_modifications,
         variable_modifications, reuse=False)
     enzyme = expasy_rules.get(enzyme, enzyme)
+
+    hypothesis_id = reference_protein.hypothesis_id
+
     for peptide, start, end in sequence.cleave(
             reference_protein.protein_sequence, enzyme, missed_cleavages=missed_cleavages):
         if len(peptide) < 5:
@@ -290,17 +306,21 @@ def generate_peptidoforms(reference_protein, constant_modifications,
         if missed > missed_cleavages:
             continue
 
+        if "X" in peptide:
+            continue
+
         ref_peptide = peptide_class(
             base_peptide_sequence=peptide,
             protein=reference_protein,
             protein_id=reference_protein.id,
             start_position=start,
             end_position=end,
+            hypothesis_id=hypothesis_id,
             **peptide_kwargs)
         ref_peptide.protein = reference_protein
-        for modseq, modifications, mass, sequons_occupied in unpositioned_isoforms(ref_peptide, constant_modifications,
-                                                                                   variable_modifications,
-                                                                                   modtable):
+        for modseq, modifications, mass, sequons_occupied in unpositioned_isoforms(
+                ref_peptide, constant_modifications, variable_modifications,
+                modtable, glycosylation_site_finder=glycosylation_site_finder):
             peptidoform = peptide_class(
                 base_peptide_sequence=peptide,
                 modified_peptide_sequence=modseq,
@@ -314,93 +334,10 @@ def generate_peptidoforms(reference_protein, constant_modifications,
                 count_glycosylation_sites=len(sequons_occupied),
                 glycosylation_sites=sequons_occupied,
                 sequence_length=len(peptide),
+                hypothesis_id=hypothesis_id,
                 **peptide_kwargs
             )
             yield peptidoform
-
-
-class FastaFileParser(object):
-    def __init__(self, path):
-        self.state = "defline"
-        self.handle = open(path)
-        self.defline = None
-        self.sequence_chunks = []
-
-    def process_result(self, d):
-        return d
-
-    def __iter__(self):
-        for line in self.handle:
-            if self.state == 'defline':
-                if line[0] == ">":
-                    self.defline = re.sub(r"[\n\r]", "", line[1:])
-                    self.state = "sequence"
-                else:
-                    continue
-            else:
-                if not re.match(r"^(\s+|>)", line):
-                    self.sequence_chunks.append(re.sub(r"[\n\r]", "", line))
-                else:
-                    if self.defline is not None:
-                        yield self.process_result({
-                            "name": self.defline,
-                            "protein_sequence": ''.join(self.sequence_chunks)
-                            })
-                    self.sequence_chunks = []
-                    self.defline = None
-                    self.state = 'defline'
-                    if line[0] == '>':
-                        self.defline = re.sub(r"[\n\r]", "", line[1:])
-                        self.state = "sequence"
-
-        if len(self.sequence_chunks) > 0:
-            yield self.process_result({"name": self.defline, "protein_sequence": ''.join(self.sequence_chunks)})
-
-
-class ProteinFastaFileParser(FastaFileParser):
-    def __init__(self, path):
-        super(ProteinFastaFileParser, self).__init__(path)
-
-    def process_result(self, d):
-        p = Protein(**d)
-        p.glycosylation_sites = sequence.find_n_glycosylation_sequons(p.protein_sequence)
-        return p
-
-
-class SiteListFastaFileParser(FastaFileParser):
-    def __init__(self, path):
-        super(SiteListFastaFileParser, self).__init__(path)
-
-    def process_result(self, d):
-        v = d.pop("protein_sequence")
-        d['glycosylation_sites'] = set(map(int, v.split(" ")))
-        return d
-
-
-class FastaFileWriter(object):
-    def __init__(self, handle):
-        self.handle = handle
-
-    def write(self, defline, sequence):
-        self.handle.write(defline)
-        self.handle.write("\n")
-        self.handle.write(sequence)
-        self.handle.write("\n\n")
-
-    def writelines(self, iterable):
-        for defline, seq in iterable:
-            self.write(defline, seq)
-
-
-class ProteinFastFileWriter(FastaFileWriter):
-    def write(self, protein):
-        defline = ''.join([">", protein.name, " ", str(protein.glycosylation_sites)])
-        seq = '\n'.join(textwrap.wrap(protein.protein_sequence, 80))
-        super(ProteinFastFileWriter, self).write(defline, seq)
-
-    def writelines(self, iterable):
-        for protein in iterable:
-            self.write(protein)
 
 
 class ProteomeDigestor(object):

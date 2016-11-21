@@ -19,21 +19,27 @@ def test_main():
     os.remove(db_file_name)
 
     rules_table = {
-        "Hex": (3, 8),
-        "HexNAc": (2, 8),
+        "Hex": (3, 10),
+        "HexNAc": (2, 10),
         "Fuc": (0, 5),
         "NeuAc": (0, 4)
     }
 
+    constraints_list = [
+        ["Fuc", "<", "HexNAc"],
+        ["NeuAc",  "<", "HexNAc - 1"]
+    ]
+
     job = constrained_combinatorics.ConstrainedCombinatoricsGlycanHypothesisBuilder(
-        db_file_name, rules_table=rules_table, constraints_list=[])
+        db_file_name, rules_table=rules_table, constraints_list=constraints_list)
+
     combn_glycan_hypothesis_id = job.start()
-    combn_glycan_hypothesis_id = 1
+
     constant_mods, variable_mods = (["Carbamidomethyl (C)"], ["Deamidated (N)", "Pyro-glu from Q (Q@N-term)"])
     enzyme = 'trypsin'
 
-    ms1_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics"
-    ms2_data = r"./datafiles/scaling_complexity_test_data/sample_dir/AGP-Glycoproteomics-MS2"
+    ms1_data = r"./datafiles/sample_dir/AGP-MS1"
+    ms2_data = r"./datafiles/sample_dir/AGP-MS2"
 
     job = naive_glycopeptide_hypothesis.NaiveGlycopeptideHypothesisBuilder(
         database_path=db_file_name,
@@ -52,7 +58,7 @@ def test_main():
         max_missed_cleavages=1,
         n_processes=6)
     glycopeptide_hypothesis_id = job.start()
-    glycopeptide_hypothesis_id = 2
+    #glycopeptide_hypothesis_id = 2
     ec = os.system(
         ("glycresoft-database-search ms1 -n 6 -i %s %s %d "
          "-p db -g 2e-5 --skip-grouping") % (ms1_data, db_file_name, glycopeptide_hypothesis_id))

@@ -116,6 +116,7 @@ class Application extends ActionLayerManager
                 self.sideNav = $('.side-nav')
                 self.addLayer ActionBook.home
                 $("#run-matching").click (event) ->
+                    $(".lean-overlay").remove()
                     setupAjaxForm "/ms1_or_ms2_choice?ms1_choice=peakGroupingMatchSamples&ms2_choice=tandemMatchSamples",
                                   "#message-modal"
 

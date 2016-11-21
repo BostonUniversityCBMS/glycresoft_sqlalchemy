@@ -7,6 +7,23 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='dist/css/bundle.css') }}">    
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
+    <script src="{{ url_for('static',filename='dist/js/jquery.js') }}"></script>
+    <script>
+    /*
+        Electron's multiple require mechanisms make loading libraries that try to play
+        all sides of the dependency loading game a pain. This shim will handle the patching
+        of the require path and resolve the external scripts that are known to cause trouble.
+    */
+    if(window.jQuery === undefined){
+        if(require("electron") !== undefined){
+            require('electron').remote.process.mainModule.paths.forEach(function(path) {
+                require('module').globalPaths.push(path);
+            });
+            window.$ = window.jQuery = require("jquery")
+            window.Hammer = require("hammerjs")
+        }
+    }    
+    </script>
     <script src="{{ url_for('static',filename='dist/js/vendor-bundle.js') }}"></script>
     <script src="{{ url_for('static',filename='dist/js/lib-bundle.js') }}"></script>
     <script src="{{ url_for('static',filename='dist/js/app-bundle.js') }}"></script>

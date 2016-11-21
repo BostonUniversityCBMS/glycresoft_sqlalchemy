@@ -5,8 +5,10 @@ from glycresoft_sqlalchemy.data_model import (DatabaseManager, Hypothesis, Prote
                                               GlycopeptideMatch, PipelineModule, HypothesisSampleMatch,
                                               TheoreticalGlycopeptideComposition)
 
+from glypy.composition.glycan_composition import FrozenGlycanComposition
 
-def export_glycopeptide_ms2_matches(glycopeptides, output_path):
+
+def export_glycopeptide_ms2_matches(glycopeptides, output_path, session=None):
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         header = [
@@ -41,7 +43,7 @@ def export_glycopeptide_ms2_matches(glycopeptides, output_path):
     return output_path
 
 
-def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_identities, output_path):
+def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_identities, output_path, session=None):
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         headers = [
@@ -82,7 +84,7 @@ def export_glycopeptide_ms1_matches_legacy(peak_group_matches, monosaccharide_id
         return output_path
 
 
-def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identities, output_path):
+def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identities, output_path, session=None):
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         headers = [
@@ -97,7 +99,7 @@ def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identiti
             if x.mass_shift_type:
                 return "%s:%d" % (x.mass_shift.name, x.mass_shift_count)
             return 'No Shift'
-
+        i = 0
         for pgm in peak_group_matches.yield_per(1000):
             theoretical_match = pgm.theoretical_match
             if theoretical_match is not None:
@@ -115,10 +117,13 @@ def export_glycan_ms1_matches_legacy(peak_group_matches, monosaccharide_identiti
                 theoretical_match.calculated_mass if pgm.matched else ""
             ] + glycan_composition + [",".join(adduct_label(g) for g in pgm.subgroups), pgm.id]
             writer.writerow(row)
+            i += 1
+            if i % 1e5 == 0:
+                session.expunge_all()
         return output_path
 
 
-def export_glycan_ms1_matches_legacy_ungrouping(peak_group_matches, monosaccharide_identities, output_path):
+def export_glycan_ms1_matches_legacy_ungrouping(peak_group_matches, monosaccharide_identities, output_path, session=None):
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         headers = [
@@ -156,7 +161,7 @@ def export_glycan_ms1_matches_legacy_ungrouping(peak_group_matches, monosacchari
         return output_path
 
 
-def export_glycan_composition_hypothesis(glycan_compositions, monosaccharide_identities, output_path):
+def export_glycan_composition_hypothesis(glycan_compositions, monosaccharide_identities, output_path, session=None):
     headers = ["theoretical mass", "composition"] + monosaccharide_identities
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
@@ -167,18 +172,25 @@ def export_glycan_composition_hypothesis(glycan_compositions, monosaccharide_ide
     return output_path
 
 
-def export_theoretical_glycopeptide_hypothesis(glycopeptides, monosaccharide_identities, output_path):
+def export_theoretical_glycopeptide_hypothesis(glycopeptides, monosaccharide_identities, output_path, session):
     headers = ["theoretical mass", "peptide sequence", "modifications", "glycan composition"] +\
-             monosaccharide_identities + ["protein name", "start", "end", "missed cleavages", "glycosylation sites"]
+        monosaccharide_identities + ["protein name", "start", "end", "missed cleavages", "glycosylation sites"]
     with open(output_path, 'wb') as fh:
         writer = csv.writer(fh)
         writer.writerow(headers)
-        for row in glycopeptides:
-            writer.writerow([
-                str(row.calculated_mass), row.modified_peptide_sequence, str(row.peptide_modifications),
-                row.glycan_composition_str] + [str(row.glycan_composition[k]) for k in monosaccharide_identities] + [
-                str(row.protein.name), str(row.start_position), str(row.end_position), str(row.count_missed_cleavages),
-                str(row.count_glycosylation_sites)])
+        i = 0
+        n = glycopeptides.count()
+        while i < n:
+            for row in (glycopeptides.slice(i, i + 15000)):
+                glycan_comp = FrozenGlycanComposition.parse(row.glycan_composition_str)
+                writer.writerow([
+                    str(row.calculated_mass), row.modified_peptide_sequence, str(row.peptide_modifications),
+                    row.glycan_composition_str] + [str(glycan_comp[k]) for k in monosaccharide_identities] + [
+                    str(row.protein.name), str(row.start_position), str(row.end_position),
+                    str(row.count_missed_cleavages), str(row.count_glycosylation_sites)])
+                i += 1
+            session.expunge_all()
+            print i, '/', n
     return output_path
 
 
@@ -230,14 +242,14 @@ class CSVExportDriver(PipelineModule):
                 # Only export target hypothesis
                 export_glycopeptide_ms2_matches(filterfunc(query.filter(
                     GlycopeptideMatch.protein_id == Protein.id,
-                    Protein.hypothesis_id == hsm.target_hypothesis_id)), output_path)
+                    Protein.hypothesis_id == hsm.target_hypothesis_id)), output_path, session)
             elif (res_type == TheoreticalGlycopeptideComposition):
                 output_path = self.output_path + '.{}.glycopeptide_compositions.csv'.format(getname(hsm))
                 outputs.append(output_path)
                 export_glycopeptide_ms1_matches_legacy(
                     filterfunc(query),
                     hsm.target_hypothesis.parameters['monosaccharide_identities'],
-                    output_path)
+                    output_path, session)
             elif (res_type == TheoreticalGlycanComposition):
                 output_path = self.output_path + ".{}.glycan_compositions.csv".format(getname(hsm))
                 outputs.append(output_path)
@@ -249,8 +261,7 @@ class CSVExportDriver(PipelineModule):
                 export_glycan_ms1_matches_legacy(
                     filterfunc(query),
                     monosaccharide_identities,
-                    output_path
-                    )
+                    output_path, session)
             else:
                 pass
         return outputs
@@ -278,8 +289,16 @@ class CSVExportDriver(PipelineModule):
                 session.query(TheoreticalGlycanComposition).filter(
                     TheoreticalGlycanComposition.hypothesis_id == hypothesis.id).yield_per(1000),
                 monosaccharide_identities,
-                output_path
-                )
+                output_path, session)
+        elif hypothesis.theoretical_structure_type == TheoreticalGlycopeptideComposition:
+            output_path = self.output_path + ".{}.glycopeptide_compositions.csv".format(getname(hypothesis))
+            outputs.append(output_path)
+            monosaccharide_identities = hypothesis.parameters['monosaccharide_identities']
+            export_theoretical_glycopeptide_hypothesis(
+                session.query(TheoreticalGlycopeptideComposition).join(Protein).filter(
+                    Protein.hypothesis_id == hypothesis.id).yield_per(1000),
+                monosaccharide_identities,
+                output_path, session=session)
         else:
             print("Unsupported Hypothesis Type: %s" % hypothesis.theoretical_structure_type.__name__)
         return outputs
@@ -293,7 +312,7 @@ app = argparse.ArgumentParser("export-csv")
 
 app.add_argument("database_path", help="path to the database file to export")
 app.add_argument("-d", "--hypothesis-id", action="append", type=int, help="The hypothesis to export.")
-app.add_argument("-e", "--hypothesis-sample-match-id",  action="append", type=int,
+app.add_argument("-e", "--hypothesis-sample-match-id", action="append", type=int,
                  help="The hypothesis sample match to export.")
 app.add_argument("-o", "--out", default=None, help="Where to save the result")
 

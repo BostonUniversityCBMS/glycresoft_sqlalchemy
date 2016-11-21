@@ -16,14 +16,19 @@ def test_main():
     os.remove(db_file)
 
     rules_table = {
-        "Hex": (3, 8),
-        "HexNAc": (2, 8),
+        "Hex": (3, 10),
+        "HexNAc": (2, 10),
         "Fuc": (0, 5),
         "NeuAc": (0, 4)
     }
 
+    constraints_list = [
+        ["Fuc", "<", "HexNAc"],
+        ["NeuAc", "<", "HexNAc - 1"]
+    ]
+
     job = constrained_combinatorics.ConstrainedCombinatoricsGlycanHypothesisBuilder(
-        db_file, rules_table=rules_table, constraints_list=[])
+        db_file, rules_table=rules_table, constraints_list=constraints_list)
     job.start()
 
     n_processes = 6

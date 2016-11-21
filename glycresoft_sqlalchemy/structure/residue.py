@@ -23,7 +23,9 @@ symbol_to_residue = {
     'T': 'Thr',
     'W': 'Trp',
     'Y': 'Tyr',
-    'V': 'Val'
+    'V': 'Val',
+    "U": "Sec",
+    "O": "Pyl",
 }
 
 
@@ -51,6 +53,8 @@ residue_table = {
     'Trp': 'C11H10N2O1',
     'Tyr': 'C9H9N1O2',
     'Val': 'C5H9N1O1',
+    "Sec": "C3H7NO2Se",
+    "Pyl": "C12H21N3O3"
 }
 
 residue_chemical_property_group = {
@@ -87,20 +91,20 @@ residue_to_neutral_loss.update({
     "Lys": -Composition("NH3"),
     "Gln": -Composition("NH3"),
     "Asn": -Composition("NH3"),
-    })
+})
 
 residue_to_neutral_loss.update({
     "Arg": -Composition("H2O"),
     "His": -Composition("H2O"),
     "Lys": -Composition("H2O")
-    })
+})
 
 
 degeneracy_index = {
 }
 
 
-class UnknownAminoAcidException(Exception):
+class UnknownAminoAcidException(KeyError):
     pass
 
 
@@ -117,6 +121,7 @@ class MemoizedResidueMetaclass(type):
     _cache: dict
 
     '''
+
     def __call__(self, symbol=None, name=None, *args, **kwargs):
         if not hasattr(self, "_cache"):
             self._cache = dict()
@@ -140,7 +145,8 @@ class MemoizedResidueMetaclass(type):
                 self._cache[inst.name] = inst
                 return inst
             else:
-                raise UnknownAminoAcidException("Cannot find a Residue for %r" % ((symbol, name),))
+                raise UnknownAminoAcidException(
+                    "Cannot find a Residue for %r" % ((symbol, name),))
 
 
 class Residue(ResidueBase):
@@ -271,7 +277,8 @@ def register_degenerate(name, symbol, mappings):
     residue_to_symbol[name] = symbol
     symbol_to_residue[symbol] = name
     residue_table[name] = residue_table[mappings[0]]
-    residue_chemical_property_group[name] = residue_chemical_property_group[mappings[0]]
+    residue_chemical_property_group[
+        name] = residue_chemical_property_group[mappings[0]]
     residue_to_neutral_loss[name] = residue_to_neutral_loss[mappings[0]]
     degeneracy_index[name] = frozenset(mappings)
     return Residue(symbol=symbol)

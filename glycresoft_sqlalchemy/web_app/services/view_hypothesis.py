@@ -1,12 +1,32 @@
 import logging
-from flask import request, g, render_template, Response, Blueprint
+from flask import request, g, render_template, Response, Blueprint, jsonify
 
 from glycresoft_sqlalchemy.data_model import (Hypothesis, MS1GlycanHypothesis, MS1GlycopeptideHypothesis,
                                               Protein, MS2GlycopeptideHypothesis)
 
+from glycresoft_sqlalchemy.web_app.utils.state_transfer import request_arguments_and_context
 from glycresoft_sqlalchemy.web_app.utils.pagination import paginate
 
 app = view_hypothesis = Blueprint("view_hypothesis", __name__)
+
+
+@app.route("/view_hypothesis/<int:id>/mass_search", methods=["POST"])
+def mass_search(id):
+    arguments, state = request_arguments_and_context(request)
+    hypothesis = g.db.query(Hypothesis).get(id)
+    mass = arguments['mass']
+    tolerance = arguments['tolerance']
+    output_format = arguments.get("format", 'json')
+    hypothesis = g.db.query(Hypothesis).get(id)
+    matches = hypothesis.search_by_mass(mass, tolerance)
+    if output_format == "json":
+        results = [{
+            "mass": r.calculated_mass,
+            "sequence": r.most_detailed_sequence,
+            "type": hypothesis.theoretical_structure_type.__name__,
+            "id": r.id
+        } for r in matches]
+        return jsonify(results)
 
 
 @app.route("/view_hypothesis/<int:id>", methods=["POST"])

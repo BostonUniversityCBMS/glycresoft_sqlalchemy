@@ -36,7 +36,7 @@ viewPeakGroupingDatabaseSearchResults = ->
         currentProtein = id = handle.attr 'data-target'
 
         $("#chosen-protein-container").html("""<div class="progress"><div class="indeterminate"></div></div>""").fadeIn()
-        $.post('/view_database_search_results/protein_composition_view/' + id, GlycReSoft.context).success((doc) ->
+        GlycReSoft.ajaxWithContext('/view_database_search_results/protein_composition_view/' + id).success((doc) ->
             $('#chosen-protein-container').hide()
             $('#chosen-protein-container').html(doc).fadeIn()
             tabs = $('ul.tabs')

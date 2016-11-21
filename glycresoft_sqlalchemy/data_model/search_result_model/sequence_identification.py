@@ -126,7 +126,7 @@ class GlycopeptideSpectrumMatch(Base, SpectrumMatchBase):
     __tablename__ = "GlycopeptideSpectrumMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    glycopeptide_match_id = Column(Integer, ForeignKey("GlycopeptideMatch.id", ondelete='CASCADE'), index=True)
+    glycopeptide_match_id = Column(Integer, ForeignKey("GlycopeptideMatch.id"), index=True)
 
     theoretical_glycopeptide_id = Column(
         Integer, ForeignKey("TheoreticalGlycopeptide.id", ondelete='CASCADE'), index=True)
@@ -157,20 +157,14 @@ class GlycopeptideSpectrumMatch(Base, SpectrumMatchBase):
         except:
             return "(No Sequence Error)"
 
-    @classmethod
-    def is_not_decoy(cls):
-        return ((cls.glycopeptide_match_id == GlycopeptideMatch.id) &
-                (GlycopeptideMatch.protein_id == Protein.id) &
-                (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy))
-
-    @classmethod
-    def is_decoy(cls):
-        return ((cls.glycopeptide_match_id == GlycopeptideMatch.id) &
-                (GlycopeptideMatch.protein_id == Protein.id) &
-                (Protein.hypothesis_id == Hypothesis.id) & (Hypothesis.is_decoy))
-
     scores = association_proxy(
         "_scores", "value", creator=lambda k, v: GlycopeptideSpectrumMatchScore(name=k, value=v))
+
+    # def __getattr__(self, name):
+    #     try:
+    #         return self.scores[name]
+    #     except:
+    #         raise AttributeError("%s has no attribute named %s" % (self.__class__.__name__, name))
 
 
 class GlycopeptideSpectrumMatchScore(Base):

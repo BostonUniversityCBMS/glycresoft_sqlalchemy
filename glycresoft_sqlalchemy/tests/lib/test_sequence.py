@@ -1,15 +1,16 @@
 import unittest
 
-from glycresoft_sqlalchemy.structure import sequence, modification, residue
+from glycresoft_sqlalchemy.structure import sequence, modification, residue, composition
 from glypy import GlycanComposition, Glycan, MonosaccharideResidue
 
 
+PROTON = composition.Composition("H").mass
 R = residue.Residue
 
 
 p1 = "PEPTIDE"
-p2 = "YPVLN(HexNAc)VTMPN(Deamidation)NGKFDK{Hex:9; HexNAc:2}"
-p3 = "NEEYN(HexNAc)K{Hex:5; HexNAc:4; NeuAc:2}"
+p2 = "YPVLN(NGlycanCoreGlycosylation)VTMPN(Deamidation)NGKFDK{Hex:9; HexNAc:2}"
+p3 = "NEEYN(NGlycanCoreGlycosylation)K{Hex:5; HexNAc:4; NeuAc:2}"
 hexnac_mass = MonosaccharideResidue.from_iupac_lite("HexNAc").mass()
 hexose_mass = MonosaccharideResidue.from_iupac_lite("Hex").mass()
 
@@ -25,6 +26,21 @@ class TestPeptideSequence(unittest.TestCase):
         self.assertEqual(GlycanComposition.parse("{Hex:9; HexNAc:2}"), glycan)
         self.assertEqual(len(mods), 2)
         self.assertEqual(len(chunks), 16)
+
+    def test_fragmentation(self):
+        seq = sequence.parse(p1)
+        mapping = {
+            "b3": 324.1554 - PROTON,
+            "b6": 653.3141 - PROTON,
+            "y2": 263.0874 - PROTON,
+            "y5": 574.2719 - PROTON,
+            "a4": 397.2082 - PROTON,
+            "a5": 510.2922 - PROTON,
+            "z3": 360.1527 - PROTON * 2,
+        }
+        for fragment, mass in mapping.items():
+            fmass = seq.fragment(fragment).mass
+            self.assertAlmostEqual(mass, fmass, 2, (mass, fmass, fragment))
 
     def test_stub_ions(self):
         peptide = sequence.parse(p3)
@@ -44,6 +60,10 @@ class TestPeptideSequence(unittest.TestCase):
                                1687.6571 + hexnac_mass, 3)
         self.assertAlmostEqual(stubs["peptide+{Hex:4; HexNAc:3}"],
                                1687.6571 + hexnac_mass + hexose_mass, 3)
+
+    def test_clone(self):
+        peptide = sequence.parse(p3)
+        self.assertEqual(peptide, peptide.clone())
 
     # def test_mass(self):
     #     case = sequence.PeptideSequence(p1)

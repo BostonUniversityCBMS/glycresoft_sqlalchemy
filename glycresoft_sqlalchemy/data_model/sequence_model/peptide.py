@@ -3,10 +3,11 @@ from collections import OrderedDict
 
 from sqlalchemy.ext.baked import bakery
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import relationship, backref, make_transient, Query
+from sqlalchemy.orm import relationship, backref, make_transient, Query, validates
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy import (PickleType, Numeric, Unicode, Table, bindparam,
-                        Column, Integer, ForeignKey, UnicodeText, Boolean)
+                        Column, Integer, ForeignKey, UnicodeText, Boolean,
+                        event)
 from sqlalchemy.orm.exc import DetachedInstanceError
 from ..generic import MutableDict, MutableList, HasClassBakedQueries
 from ..base import Base
@@ -14,7 +15,7 @@ from ..hypothesis import Hypothesis
 from ..glycomics import (
     with_glycan_composition, TheoreticalGlycanCombination, has_glycan_composition_listener)
 
-from ...structure import sequence
+from ...structure import sequence, residue
 
 
 peptide_bakery = bakery()
@@ -28,7 +29,6 @@ class Protein(Base):
     name = Column(Unicode(128), default=u"", index=True)
     other = Column(MutableDict.as_mutable(PickleType))
     hypothesis_id = Column(Integer, ForeignKey("Hypothesis.id", ondelete="CASCADE"))
-    glycosylation_sites = Column(MutableList.as_mutable(PickleType))
 
     _n_glycan_sequon_sites = None
 
@@ -42,8 +42,8 @@ class Protein(Base):
 
     @property
     def o_glycan_sequon_sites(self):
-        if self.o_glycan_sequon_sites is None:
-            self.o_glycan_sequon_sites = sequence.find_o_glycosylation_sequons(self.protein_sequence)
+        if self._o_glycan_sequon_sites is None:
+            self._o_glycan_sequon_sites = sequence.find_o_glycosylation_sequons(self.protein_sequence)
         return self._o_glycan_sequon_sites
 
     _glycosaminoglycan_sequon_sites = None
@@ -53,6 +53,13 @@ class Protein(Base):
         if self._glycosaminoglycan_sequon_sites is None:
             self._glycosaminoglycan_sequon_sites = sequence.find_glycosaminoglycan_sequons(self.protein_sequence)
         return self._glycosaminoglycan_sequon_sites
+
+    @property
+    def glycosylation_sites(self):
+        try:
+            return self.n_glycan_sequon_sites  # + self.o_glycan_sequon_sites
+        except residue.UnknownAminoAcidException:
+            return []
 
     def __repr__(self):
         return "<Protein {0} {1} {2} {3}...>".format(
@@ -91,6 +98,11 @@ class PeptideBase(HasClassBakedQueries):
     def protein_id(self):
         return Column(Integer, ForeignKey(
             Protein.id, ondelete="CASCADE"), index=True)
+
+    @declared_attr
+    def hypothesis_id(self):
+        return Column(Integer, ForeignKey(
+            Hypothesis.id, ondelete="CASCADE"), index=True)
 
     @declared_attr
     def protein(self):
@@ -164,11 +176,19 @@ class PeptideBase(HasClassBakedQueries):
             s = self.glycopeptide_sequence
             if s is not None and s != "":
                 return s
+            else:
+                s = self.modified_peptide_sequence
+                if s is not None and s != "":
+                    return s
+                else:
+                    return self.base_peptide_sequence
         except:
             try:
                 s = self.modified_peptide_sequence
                 if s is not None and s != "":
                     return s
+                else:
+                    return self.base_peptide_sequence
             except:
                 return self.base_peptide_sequence
 
@@ -182,26 +202,6 @@ class PeptideBase(HasClassBakedQueries):
         except AttributeError:
             pass
         return list(sites)
-
-    @property
-    def hypothesis_id(self):
-        return self.protein.hypothesis_id
-
-    @hybrid_property
-    def is_decoy(self):
-        return self.protein.hypothesis.is_decoy
-
-    @is_decoy.expression
-    def is_decoy(cls):
-        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (Hypothesis.is_decoy))
-
-    @hybrid_property
-    def is_not_decoy(self):
-        return ~self.protein.hypothesis.is_decoy
-
-    @is_not_decoy.expression
-    def is_not_decoy(cls):
-        return ((cls.protein_id == Protein.id) & (Protein.hypothesis_id == Hypothesis.id) & (~Hypothesis.is_decoy))
 
     def __hash__(self):
         return hash((self.most_detailed_sequence, self.protein_id))
@@ -270,6 +270,10 @@ class InformedPeptide(PeptideBase, Base):
     id = Column(Integer, primary_key=True)
     peptide_score = Column(Numeric(12, 6, asdecimal=False), index=True)
     peptide_score_type = Column(Unicode(56))
+
+    # @validates("modified_peptide_sequence")
+    # def validate_modified_peptide_sequence(self, key, peptide_sequence):
+    #     assert peptide_sequence is not None
 
     count_variable_modifications = Column(Integer)
 

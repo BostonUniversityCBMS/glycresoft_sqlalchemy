@@ -23,14 +23,6 @@ PROTEOMICS_SCORE = ["PEAKS:peptideScore", "mascot:score", "PEAKS:proteinScore"]
 WHITELIST_GLYCOSITE_PTMS = ["Deamidation"]
 
 
-class MultipleProteinMatchesException(Exception):
-    def __init__(self, message, evidence_id, db_sequences, key):
-        Exception.__init__(self, message)
-        self.evidence_id = evidence_id
-        self.db_sequences = db_sequences
-        self.key = key
-
-
 def protein_names(mzid_path, pattern=r'.*'):
     pattern = re.compile(pattern)
     parser = Parser(mzid_path, retrieve_refs=True, iterative=False, build_id_cache=True)
@@ -39,6 +31,14 @@ def protein_names(mzid_path, pattern=r'.*'):
         name = protein['accession']
         if pattern.match(name):
             yield name
+
+
+class MultipleProteinMatchesException(Exception):
+    def __init__(self, message, evidence_id, db_sequences, key):
+        Exception.__init__(self, message)
+        self.evidence_id = evidence_id
+        self.db_sequences = db_sequences
+        self.key = key
 
 
 class Parser(MzIdentML):
@@ -247,8 +247,8 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
     constant_modifications = kwargs.get("constant_modifications", [])
     modification_translation_table = kwargs.get("modification_translation_table", {})
 
-    glycosite_candidates = (sequence.find_n_glycosylation_sequons(
-                peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
+    glycosite_candidates = sequence.find_n_glycosylation_sequons(
+        peptide_sequence, WHITELIST_GLYCOSITE_PTMS)
 
     if "SubstitutionModification" in sequence_dict:
         subs = sequence_dict["SubstitutionModification"]
@@ -320,8 +320,6 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
     # mzid parsing
     if isinstance(evidence_list[0], list):
         evidence_list = [x for sub in evidence_list for x in sub]
-        # for ev in evidence_list:
-        #     print ev['accession']
     score = score_type = None
     for k, v in sequence_dict.items():
         if k in PROTEOMICS_SCORE:
@@ -343,16 +341,12 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
         sequence_copy = remove_peptide_sequence_alterations(
             base_sequence, insert_sites, deleteion_sites)
 
-        # sequence_copy = list(base_sequence)
-        # for i, position in enumerate(insert_sites):
-        #     sequence_copy.pop(position - i)
-        # sequence_copy = ''.join(sequence_copy)
         found = parent_protein.protein_sequence.find(sequence_copy)
         if found == -1:
             raise ValueError("Peptide not found in Protein\n%s\n%s\n\n%s" % (
                 parent_protein.name, parent_protein.protein_sequence, (
                     sequence_copy, sequence_dict
-                    )))
+                )))
         if found != start:
             start = found
             end = start + len(base_sequence)
@@ -361,6 +355,8 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                 missed_cleavages = len(enzyme.findall(base_sequence))
             else:
                 missed_cleavages = None
+            if "X" in str(peptide_sequence):
+                continue
             match = InformedPeptide(
                 calculated_mass=peptide_sequence.mass,
                 base_peptide_sequence=base_sequence,
@@ -374,17 +370,20 @@ def convert_dict_to_sequence(sequence_dict, session, hypothesis_id, enzyme=None,
                 peptide_score_type=score_type,
                 sequence_length=end - start,
                 protein_id=parent_protein.id,
+                hypothesis_id=hypothesis_id,
                 glycosylation_sites=None,
                 other={k: v for k, v in sequence_dict.items() if k not in
                        exclude_keys_from_sequence_dict})
             match.protein = parent_protein
-
+            assert match.hypothesis_id is not None
             glycosites = set(match.n_glycan_sequon_sites) | set(sequence.find_n_glycosylation_sequons(
                 peptide_sequence, WHITELIST_GLYCOSITE_PTMS))
             match.count_glycosylation_sites = len(glycosites)
             match.glycosylation_sites = list(glycosites)
             session.add(match)
             counter += 1
+        except residue.UnknownAminoAcidException:
+            continue
         except:
             print(evidence)
             raise
@@ -425,7 +424,6 @@ class Proteome(object):
                 p = Protein(
                     name=protein.pop('accession'),
                     protein_sequence=seq,
-                    glycosylation_sites=sequence.find_n_glycosylation_sequons(seq),
                     other=protein,
                     hypothesis_id=self.hypothesis_id)
                 session.add(p)

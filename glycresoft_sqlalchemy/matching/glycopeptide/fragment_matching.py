@@ -16,8 +16,7 @@ from glycresoft_sqlalchemy.spectra.bupid_topdown_deconvoluter_sa import BUPIDMSM
 from glycresoft_sqlalchemy.data_model import (
     PipelineModule, MSMSSqlDB, TandemScan, slurp, HypothesisSampleMatch,
     Protein, TheoreticalGlycopeptide, GlycopeptideSpectrumMatch,
-    GlycopeptideMatch,
-    )
+    GlycopeptideMatch)
 
 from glycresoft_sqlalchemy.utils.common_math import ppm_error, median
 
@@ -329,16 +328,16 @@ def batch_match_theoretical_ions(scan_ids, msmsdb_path, ms1_tolerance, ms2_toler
 
             spectrum_matches = []
 
-            query = TheoreticalGlycopeptide.ppm_error_tolerance_search(
-                session, spectrum.precursor_neutral_mass,
-                ms1_tolerance, hypothesis_id)
-
             peak_list = spectrum.tandem_data
             if len(peak_list) == 0:
                 continue
             intensity_threshold = median(p.intensity for p in peak_list)
             peak_list = [p for p in peak_list if p.intensity >= intensity_threshold]
             peak_list = sorted(peak_list, key=neutral_mass_getter)
+
+            query = TheoreticalGlycopeptide.ppm_error_tolerance_search(
+                session, spectrum.precursor_neutral_mass,
+                ms1_tolerance, hypothesis_id).all()
 
             for theoretical in query:
                 precursor_ppm_error = lppm_error(theoretical.calculated_mass, spectrum.precursor_neutral_mass)
@@ -461,15 +460,14 @@ def batch_match_theoretical_ions(scan_ids, msmsdb_path, ms1_tolerance, ms2_toler
                         precursor_charge_state=spectrum.precursor_charge_state,
                         precursor_ppm_error=precursor_ppm_error,
                         peaks_explained=len(peak_match_map) - oxcount,
-                        peaks_unexplained=len(spectrum.tandem_data) - len(peak_match_map),
+                        peaks_unexplained=len(peak_list) - len(peak_match_map),
                         hypothesis_sample_match_id=hypothesis_sample_match_id,
                         theoretical_glycopeptide_id=theoretical.id,
                         hypothesis_id=hypothesis_id)
                     glycopeptide_matches_spectrum_matches.append(spectrum_match_inst)
 
-        if len(glycopeptide_matches_spectrum_matches) > 0:
-            session.bulk_save_objects(glycopeptide_matches_spectrum_matches)
-            session.commit()
+        session.bulk_save_objects(glycopeptide_matches_spectrum_matches)
+        session.commit()
         return len(scan_ids)
     except Exception, e:
         logger.exception("An error occurred, %r", locals(), exc_info=e)

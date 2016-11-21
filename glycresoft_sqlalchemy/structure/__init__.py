@@ -16,6 +16,9 @@ __all__ = [
 class MoleculeBase(object):
     mass = None
 
+    def __copy__(self):
+        return self.clone()
+
 
 # A few base types for doing type-based behavior changes
 class PeptideSequenceBase(MoleculeBase):

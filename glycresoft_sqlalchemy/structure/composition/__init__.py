@@ -9,7 +9,6 @@ from glypy.composition.composition import (
 
 @memoize()
 def composition_to_mass(formula):
-    '''Fast, low allocation mass computation'''
     return Composition(formula).mass
 
 

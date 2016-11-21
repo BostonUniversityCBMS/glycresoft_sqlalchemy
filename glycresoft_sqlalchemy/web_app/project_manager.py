@@ -2,6 +2,10 @@ import os
 from os import path
 import shutil
 import logging
+import pickle
+
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import sessionmaker
 
 from glycresoft_sqlalchemy.data_model import (
     DatabaseManager, Hypothesis, SampleRun,
@@ -10,7 +14,7 @@ from glycresoft_sqlalchemy.data_model import (
     MS1GlycopeptideHypothesis, MS2GlycopeptideHypothesis,
     MS1GlycopeptideHypothesisSampleMatch)
 
-from task.task_process import TaskManager, pickle
+from task.task_process import TaskManager
 from glycresoft_sqlalchemy.utils import sqlitedict
 
 logger = logging.getLogger("project_manager")
@@ -36,7 +40,10 @@ class ProjectManager(DatabaseManager, TaskManager):
         self.task_dir = task_dir
         self._ensure_paths_exist()
         self.sample_submanagers = []
+        self._session_factory = scoped_session(sessionmaker(bind=self.connect()))
         for sample in os.listdir(self.sample_dir):
+            if sample.endswith("shm") or sample.endswith("wal"):
+                continue
             manager = DatabaseManager(
                 path.join(self.sample_dir, sample)
                 )
@@ -47,6 +54,9 @@ class ProjectManager(DatabaseManager, TaskManager):
                 pass
         self.app_data = sqlitedict.SqliteDict(self.app_data_path, autocommit=True)
         TaskManager.__init__(self, task_dir)
+
+    def session(self, connection=None):
+        return self._session_factory()
 
     @property
     def app_data_path(self):
